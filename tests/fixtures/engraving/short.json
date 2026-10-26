@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 2,
+  "id": "short",
+  "revision": 0,
+  "title": "Short phrase",
+  "tempo": 96,
+  "measures": [
+    {
+      "id": "q1",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "sp0",
+          "pitch": {
+            "step": "G",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          }
+        },
+        {
+          "id": "sp1",
+          "pitch": {
+            "step": "A",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          }
+        },
+        {
+          "id": "sp2",
+          "pitch": {
+            "step": "B",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "sp3",
+          "pitch": {
+            "step": "C",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "sp4",
+          "pitch": {
+            "step": "D",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          }
+        }
+      ]
+    }
+  ],
+  "annotations": [],
+  "repeats": []
+}

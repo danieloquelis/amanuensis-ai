@@ -1,7 +1,8 @@
 import { useCallback, useRef, useState } from "react";
 import { layoutScore } from "@/modules/engraving";
-import { meterName, type Score } from "@/modules/score";
+import { keyName, meterName, scoreKey, type Score, type Step } from "@/modules/score";
 import { applyGesturePreview } from "../../../application/gesture-preview";
+import type { SheetItem } from "../../../application/notation-edits";
 import type { CommitEdit } from "../../hooks/use-score-editor";
 import { useSheetGestures } from "../../hooks/use-sheet-gestures";
 import { SheetContextMenu } from "../sheet-menu/SheetContextMenu";
@@ -15,9 +16,17 @@ type ScoreSurfaceProps = {
   playBeat: number | null;
   interactive: boolean;
   onSelect: (id: string | null) => void;
+  selectedBarId: string | null;
+  onSelectBar: (measureId: string | null) => void;
+  onDeleteBar: (measureId: string) => void;
+  selectedItem: SheetItem | null;
+  onSelectItem: (item: SheetItem | null) => void;
+  onDeleteItem: (item: SheetItem) => void;
   onCommand: CommitEdit;
   onStep: (id: string, steps: number) => void;
   onDelete: (id: string) => void;
+  onEnterLetter: (id: string, step: Step) => void;
+  onToggleRest: (id: string) => void;
 };
 
 /** The editable sheet: engraved score plus selection, drag gestures and context menus. */
@@ -27,9 +36,17 @@ export function ScoreSurface({
   playBeat,
   interactive,
   onSelect,
+  selectedBarId,
+  onSelectBar,
+  onDeleteBar,
+  selectedItem,
+  onSelectItem,
+  onDeleteItem,
   onCommand,
   onStep,
   onDelete,
+  onEnterLetter,
+  onToggleRest,
 }: ScoreSurfaceProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [menu, setMenu] = useState<SheetMenuTarget | null>(null);
@@ -46,9 +63,17 @@ export function ScoreSurface({
   const interactions: SheetInteractions = {
     interactive,
     select: onSelect,
+    selectedBarId,
+    selectBar: onSelectBar,
+    deleteBar: onDeleteBar,
+    selectedItem,
+    selectItem: onSelectItem,
+    deleteItem: onDeleteItem,
     commit: onCommand,
     stepPitch: onStep,
     removeEvent: onDelete,
+    enterLetter: onEnterLetter,
+    toggleRest: onToggleRest,
     gestures,
     openMenu: (kind, id, x, y) => {
       if (!interactive) return;
@@ -68,10 +93,12 @@ export function ScoreSurface({
         ref={svgRef}
         className={styles.surface}
         viewBox={`0 0 ${scene.width} ${scene.height}`}
-        aria-label={`${score.title}, treble clef, C major, ${meters} meter. Select a note to edit.`}
+        aria-label={`${score.title}, treble clef, ${keyName(scoreKey(score))}, ${meters} meter. Select a note to edit.`}
         onPointerDown={(e) => {
           if (e.target !== e.currentTarget) return;
           onSelect(null);
+          onSelectBar(null);
+          onSelectItem(null);
           closeMenu();
         }}
       >
@@ -80,7 +107,6 @@ export function ScoreSurface({
           <SheetSystem
             key={system.firstMeasure}
             system={system}
-            score={score}
             eventOrder={eventOrder}
             selectedId={selectedId}
             playBeat={playBeat}

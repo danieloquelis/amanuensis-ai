@@ -1,7 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ProjectRepository } from "@/modules/projects";
-import { createExample, createSession, execute, parseScore, travel, type Operation, type Score } from "@/modules/score";
-import { stepPitchEdit } from "../../application/note-edits";
+import {
+  createExample,
+  createSession,
+  execute,
+  locateEvent,
+  parseScore,
+  scoreKey,
+  travel,
+  type Operation,
+  type Score,
+  type Step,
+} from "@/modules/score";
+import { removeItemOperation, type SheetItem } from "../../application/notation-edits";
+import { letterNoteEdit, stepPitchEdit, toggleRestOperation } from "../../application/note-edits";
 import { findSelection, selectionAfterEdit } from "../../application/selection";
 
 const RECEIPT_LIMIT = 5;
@@ -19,6 +31,9 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
   // Mirrors `session` so rapid successive edits read the latest revision, not a stale render.
   const latest = useRef(session);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // A whole bar can be selected instead of a note; the two are exclusive.
+  const [selectedBarId, setSelectedBarId] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<SheetItem | null>(null);
   const [ready, setReady] = useState(false);
   const [saveStatus, setSaveStatus] = useState("Opening local score…");
   const [error, setError] = useState<string | null>(null);
@@ -113,10 +128,23 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
     onBeforeEdit();
     replaceSession(createSession(score));
     setSelectedId(null);
+    setSelectedBarId(null);
     setError(null);
     canSave.current = true;
     persist(score);
     setReceipts(["Opened score from file"]);
+  };
+
+  /** A–G typed on a selected note or rest. */
+  const enterLetter = (eventId: string, step: Step) => {
+    const edit = letterNoteEdit(latest.current.score, eventId, step);
+    commit(edit.operation, edit.receipt);
+  };
+
+  const toggleRest = (eventId: string) => {
+    const score = latest.current.score;
+    const { event } = locateEvent(score, eventId);
+    commit(toggleRestOperation(event, scoreKey(score)), event.pitch ? "Replaced note with rest" : "Added note");
   };
 
   const stepPitch = (eventId: string, steps: number) => {
@@ -124,12 +152,50 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
     if (edit) commit(edit.operation, edit.receipt);
   };
 
+  // Notes, bars and other sheet items are selected one at a time.
+  const select = useCallback((id: string | null) => {
+    setSelectedBarId(null);
+    setSelectedItem(null);
+    setSelectedId(id);
+  }, []);
+
+  const selectBar = useCallback((measureId: string | null) => {
+    setSelectedId(null);
+    setSelectedItem(null);
+    setSelectedBarId(measureId);
+  }, []);
+
+  const selectItem = useCallback((item: SheetItem | null) => {
+    setSelectedId(null);
+    setSelectedBarId(null);
+    setSelectedItem(item);
+  }, []);
+
+  const deleteItem = (item: SheetItem) => {
+    commit(removeItemOperation(item), "Removed");
+    setSelectedItem(null);
+  };
+
+  /** Deletes a bar; the last remaining bar is cleared instead. */
+  const deleteBar = (measureId: string) => {
+    const lastBar = latest.current.score.measures.length === 1;
+    if (lastBar) commit({ type: "clearMeasure", measureId }, "Cleared bar");
+    else commit({ type: "deleteMeasure", measureId }, "Deleted bar");
+  };
+
   const selection = findSelection(session.score, selectedId);
+  const selectedBar = session.score.measures.some((m) => m.id === selectedBarId) ? selectedBarId : null;
   return {
     score: session.score,
     selection,
     selectedId: selection?.event.id ?? null,
-    select: setSelectedId,
+    select,
+    selectedBarId: selectedBar,
+    selectBar,
+    deleteBar,
+    selectedItem,
+    selectItem,
+    deleteItem,
     ready,
     saveStatus,
     error,
@@ -137,6 +203,8 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
     receipts,
     commit,
     stepPitch,
+    enterLetter,
+    toggleRest,
     undoRedo,
     openScore,
     canUndo: session.past.length > 0,

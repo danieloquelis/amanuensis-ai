@@ -3,7 +3,7 @@ import { EventGlyph } from "@/modules/engraving/ui";
 import { beats, pitchName } from "@/modules/score";
 import { classNames } from "@/shared/ui/class-names";
 import styles from "./score-surface.module.css";
-import { isMenuKey, type SheetInteractions } from "./sheet-interactions";
+import { isMenuKey, noteLetterOf, type SheetInteractions } from "./sheet-interactions";
 
 type SheetEventProps = {
   item: EngravedEvent;
@@ -13,20 +13,22 @@ type SheetEventProps = {
   interactions: SheetInteractions;
 };
 
-/** A selectable, draggable note, rest or empty space with keyboard equivalents. */
+/**
+ * A selectable, draggable note or rest. Keyboard: ↑/↓ step the pitch, A–G enter a note,
+ * Delete turns a note into a rest, Enter opens its menu.
+ */
 export function SheetEvent({ item, system, selected, playBeat, interactions }: SheetEventProps) {
-  const { select, stepPitch, removeEvent, openMenu, gestures } = interactions;
+  const { select, stepPitch, removeEvent, enterLetter, openMenu, gestures } = interactions;
   const { event, x, y } = item;
   const length = beats(event.duration);
   const sounding = playBeat !== null && playBeat >= item.beat && playBeat < item.beat + length;
-  const description = event.gap ? "Empty space" : pitchName(event.pitch);
 
   return (
     <g
       className={classNames(styles.event, selected && styles.selected, sounding && styles.sounding)}
       role="button"
       tabIndex={0}
-      aria-label={`Bar ${item.measure + 1}, beat ${item.localBeat + 1}, ${description}, ${length} beats`}
+      aria-label={`Bar ${item.measure + 1}, beat ${item.localBeat + 1}, ${pitchName(event.pitch)}, ${length} beats`}
       aria-pressed={selected}
       onFocus={() => select(event.id)}
       onContextMenu={(e) => {
@@ -38,6 +40,11 @@ export function SheetEvent({ item, system, selected, playBeat, interactions }: S
         if (e.key === "ArrowUp" || e.key === "ArrowDown") {
           e.preventDefault();
           stepPitch(event.id, e.key === "ArrowUp" ? 1 : -1);
+        }
+        const letter = noteLetterOf(e);
+        if (letter) {
+          e.preventDefault();
+          enterLetter(event.id, letter);
         }
         if (e.key === "Delete" || e.key === "Backspace") {
           e.preventDefault();
@@ -63,7 +70,7 @@ export function SheetEvent({ item, system, selected, playBeat, interactions }: S
       onPointerUp={gestures.finishGesture}
       onPointerCancel={gestures.cancelGesture}
     >
-      <rect className={styles.hit} x={x - 19} y={y - 25} width="38" height="50" rx="8" />
+      <rect className={styles.hit} x={x - 13} y={y - 22} width="26" height="44" rx="7" />
       <g pointerEvents="none">
         {selected && <ellipse className={styles.halo} cx={x} cy={y} rx="18" ry="15" />}
         <EventGlyph item={item} systemTop={system.top} beamed={system.beamedIds.includes(event.id)} />

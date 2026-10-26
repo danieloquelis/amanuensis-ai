@@ -36,6 +36,8 @@ export function createExample(): Score {
     tempo: 88,
     annotations: [],
     repeats: [],
+    chords: [],
+    marks: [],
     measures: OPENING_PHRASE.map((bar, barIndex) => ({
       id: `bar-${barIndex + 1}`,
       meter: { numerator: 4, denominator: 4 },

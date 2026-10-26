@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent, type RefObject } from "react";
 import type { BarScene, EngravedEvent, System } from "@/modules/engraving";
-import { isWithinOctaveRange, movePitch, type Pitch, type Score } from "@/modules/score";
-import { clampMeasureWidth, measureWidth } from "../../application/bar-spacing";
+import { isWithinOctaveRange, LABEL_OFFSET_LIMIT, movePitch, scoreKey, type Pitch, type Score } from "@/modules/score";
+import { clampMeasureWidth } from "../../application/bar-spacing";
 import type { GesturePreview } from "../../application/gesture-preview";
 import type { CommitEdit } from "./use-score-editor";
 
@@ -26,6 +26,17 @@ type NoteDrag = {
   revision: number;
 };
 type BarDrag = { kind: "bar"; id: string; startX: number; width: number; nextWidth: number; revision: number };
+type LabelDrag = {
+  kind: "label";
+  id: string;
+  startX: number;
+  startY: number;
+  origin: { x: number; y: number };
+  offset: { x: number; y: number } | null;
+  revision: number;
+};
+
+const clampOffset = (value: number, limit: number) => Math.round(Math.max(-limit, Math.min(limit, value)));
 
 type Options = {
   svgRef: RefObject<SVGSVGElement | null>;
@@ -42,7 +53,7 @@ type Options = {
  * changes; releasing commits exactly one revision-checked edit. Escape or window blur cancels.
  */
 export function useSheetGestures({ svgRef, score, interactive, onCommand, onSelect, closeContextMenu }: Options) {
-  const drag = useRef<NoteDrag | BarDrag | null>(null);
+  const drag = useRef<NoteDrag | BarDrag | LabelDrag | null>(null);
   const [preview, setPreview] = useState<GesturePreview | null>(null);
 
   const cancelGesture = useCallback(() => {
@@ -71,7 +82,7 @@ export function useSheetGestures({ svgRef, score, interactive, onCommand, onSele
     return matrix ? point.matrixTransform(matrix.inverse()) : point;
   };
 
-  const capturePointer = (event: PointerEvent<SVGGElement>) => {
+  const capturePointer = (event: PointerEvent<SVGElement>) => {
     closeContextMenu();
     event.currentTarget.focus();
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -114,7 +125,7 @@ export function useSheetGestures({ svgRef, score, interactive, onCommand, onSele
     }
     if (gesture.axis === "y" && gesture.pitch) {
       const delta = Math.round(-dy / PITCH_DRAG_STEP);
-      if (!isWithinOctaveRange(movePitch(gesture.pitch, delta))) return;
+      if (!isWithinOctaveRange(movePitch(gesture.pitch, delta, scoreKey(score)))) return;
       gesture.delta = delta;
       setPreview({ kind: "pitch", id: eventId, delta });
     } else if (gesture.axis === "x") {
@@ -123,11 +134,11 @@ export function useSheetGestures({ svgRef, score, interactive, onCommand, onSele
     }
   };
 
-  /** Only the first bar of a two-bar system has a draggable divider. */
+  /** Starts resizing a bar from its current engraved width. */
   const startBarDrag = (event: PointerEvent<SVGGElement>, bar: BarScene) => {
     if (!interactive || event.button !== 0) return;
     capturePointer(event);
-    const width = measureWidth(score.measures[bar.number - 1]);
+    const width = Math.round(bar.width);
     const startX = scenePoint(event.clientX, event.clientY).x;
     drag.current = { kind: "bar", id: bar.id, width, nextWidth: width, startX, revision: score.revision };
   };
@@ -140,15 +151,49 @@ export function useSheetGestures({ svgRef, score, interactive, onCommand, onSele
     setPreview({ kind: "width", id: barId, width: gesture.nextWidth });
   };
 
+  /** Text and dynamics move freely; a press without movement is left for double-click editing. */
+  const startLabelDrag = (event: PointerEvent<SVGElement>, annotationId: string) => {
+    if (!interactive || event.button !== 0) return;
+    capturePointer(event);
+    const point = scenePoint(event.clientX, event.clientY);
+    const origin = score.annotations.find((a) => a.id === annotationId)?.offset ?? { x: 0, y: 0 };
+    drag.current = {
+      kind: "label",
+      id: annotationId,
+      startX: point.x,
+      startY: point.y,
+      origin,
+      offset: null,
+      revision: score.revision,
+    };
+  };
+
+  const moveLabelDrag = (event: PointerEvent<SVGElement>, annotationId: string) => {
+    const gesture = drag.current;
+    if (gesture?.kind !== "label" || gesture.id !== annotationId) return;
+    const point = scenePoint(event.clientX, event.clientY);
+    const dx = point.x - gesture.startX;
+    const dy = point.y - gesture.startY;
+    if (!gesture.offset && Math.max(Math.abs(dx), Math.abs(dy)) <= AXIS_LOCK_DISTANCE) return;
+    gesture.offset = {
+      x: clampOffset(gesture.origin.x + dx, LABEL_OFFSET_LIMIT.x),
+      y: clampOffset(gesture.origin.y + dy, LABEL_OFFSET_LIMIT.y),
+    };
+    setPreview({ kind: "label", id: annotationId, offset: gesture.offset });
+  };
+
   const finishGesture = () => {
     const gesture = drag.current;
     if (gesture?.kind === "bar" && gesture.width !== gesture.nextWidth) {
       const operation = { type: "setMeasureWidth", measureId: gesture.id, width: gesture.nextWidth } as const;
       onCommand(operation, "Adjusted bar spacing", gesture.revision);
     }
+    if (gesture?.kind === "label" && gesture.offset) {
+      onCommand({ type: "moveAnnotation", id: gesture.id, offset: gesture.offset }, "Moved text", gesture.revision);
+    }
     if (gesture?.kind === "note") {
       if (gesture.axis === "y" && gesture.delta && gesture.pitch) {
-        const pitch = movePitch(gesture.pitch, gesture.delta);
+        const pitch = movePitch(gesture.pitch, gesture.delta, scoreKey(score));
         onCommand({ type: "setPitch", eventId: gesture.id, pitch }, "Moved note pitch", gesture.revision);
       }
       if (gesture.axis === "x" && gesture.beforeId !== gesture.originalBeforeId) {
@@ -159,5 +204,15 @@ export function useSheetGestures({ svgRef, score, interactive, onCommand, onSele
     cancelGesture();
   };
 
-  return { preview, cancelGesture, startNoteDrag, moveNoteDrag, startBarDrag, moveBarDrag, finishGesture };
+  return {
+    preview,
+    cancelGesture,
+    startNoteDrag,
+    moveNoteDrag,
+    startBarDrag,
+    moveBarDrag,
+    startLabelDrag,
+    moveLabelDrag,
+    finishGesture,
+  };
 }

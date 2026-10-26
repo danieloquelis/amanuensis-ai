@@ -1,15 +1,17 @@
 // Public API of the engraving module (framework-free). React glyphs live in "./ui".
 export { layoutScore } from "./domain/layout-score";
 export {
-  DEFAULT_MEASURE_WIDTH,
+  beatX,
   SCENE_WIDTH,
   STAFF_GAP,
-  STAFF_LINES_X,
+  STAFF_LEFT,
   stemX,
   SYSTEM_HEIGHT,
   type BarScene,
   type Beam,
+  type BeatColumn,
   type EngravedEvent,
+  type KeyAccidentalMark,
   type Scene,
   type SceneLabel,
   type System,

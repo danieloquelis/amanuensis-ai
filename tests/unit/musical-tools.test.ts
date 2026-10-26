@@ -141,6 +141,8 @@ test("v1 files migrate without losing identity or edits", () => {
   } as Record<string, unknown>;
   delete legacy.annotations;
   delete legacy.repeats;
+  delete legacy.chords;
+  delete legacy.marks;
   assert.deepEqual(parseScore(legacy), original);
 });
 
@@ -152,7 +154,7 @@ test("AI tool previews do not mutate; stale applies fail; duplicate apply is saf
       session = next;
     },
   );
-  assert.equal(scoreTools.length, 4);
+  assert.equal(scoreTools.length, 5);
   const command = {
     requestId: "ai",
     expectedRevision: 0,
@@ -171,12 +173,16 @@ test("AI tool previews do not mutate; stale applies fail; duplicate apply is saf
 
 test("bar spacing changes engraving but never musical timing, and persists", () => {
   const original = createExample();
-  const wider = edit(original, { type: "setMeasureWidth", measureId: "bar-1", width: 444 });
+  const naturalWidth = Math.round(layoutScore(original).systems[0].bars[0].width);
+  const wider = edit(original, { type: "setMeasureWidth", measureId: "bar-1", width: naturalWidth + 40 });
   assert.deepEqual(createPlaybackPlan(wider), createPlaybackPlan(original));
   assert.deepEqual(wider.measures[0].events, original.measures[0].events);
-  assert.equal(layoutScore(wider).systems[0].bars[0].endX, layoutScore(original).systems[0].bars[0].endX + 80);
-  assert.equal(parseScore(JSON.parse(JSON.stringify(wider))).measures[0].width, 444);
-  assert.throws(() => edit(original, { type: "setMeasureWidth", measureId: "bar-1", width: 600 }), /Invalid operation/);
+  // The override sets the bar's engraved width; the rest of the line re-justifies around it.
+  const widened = layoutScore(wider).systems[0];
+  assert.equal(widened.bars[0].width, naturalWidth + 40);
+  assert.equal(widened.endX, layoutScore(original).systems[0].endX);
+  assert.equal(parseScore(JSON.parse(JSON.stringify(wider))).measures[0].width, naturalWidth + 40);
+  assert.throws(() => edit(original, { type: "setMeasureWidth", measureId: "bar-1", width: 800 }), /Invalid operation/);
   assert.deepEqual(
     edit(wider, { type: "setMeasureWidth", measureId: "bar-1", width: null }, "reset").measures,
     original.measures,

@@ -1,48 +1,38 @@
-import { useState } from "react";
 import { DYNAMICS, type Annotation } from "@/modules/score";
+import { LabelMenuSection } from "./LabelMenuSection";
 import type { CheckedCommit } from "./SheetContextMenu";
 import styles from "./sheet-menu.module.css";
 
-/** Edit a text indication in place, switch a dynamic, or remove either. */
+/** Edit a text indication in place, switch a dynamic, or remove either. Drag on the sheet to move. */
 export function IndicationMenuSection({ annotation, commit }: { annotation: Annotation; commit: CheckedCommit }) {
-  const [text, setText] = useState(annotation.text);
+  const remove = { type: "removeNotation", id: annotation.id } as const;
+  if (annotation.kind === "text") {
+    return (
+      <LabelMenuSection
+        ariaLabel="Indication text"
+        initial={annotation.text}
+        maxLength={120}
+        commit={commit}
+        save={(text) => ({ type: "putAnnotation", ...annotation, text })}
+        remove={remove}
+      />
+    );
+  }
   return (
     <>
-      {annotation.kind === "text" ? (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            commit({ type: "putAnnotation", ...annotation, text }, "Edited indication");
-          }}
-        >
-          <input
-            autoComplete="off"
-            aria-label="Indication text"
-            value={text}
-            maxLength={120}
-            onChange={(e) => setText(e.target.value)}
-          />
-          <button className={styles.action} disabled={!text.trim()}>
-            Save text
+      <div className={styles.row}>
+        {DYNAMICS.map((dynamic) => (
+          <button
+            key={dynamic}
+            aria-pressed={annotation.text === dynamic}
+            onClick={() => commit({ type: "putAnnotation", ...annotation, text: dynamic }, "Changed dynamic")}
+          >
+            {dynamic}
           </button>
-        </form>
-      ) : (
-        <div className={styles.row}>
-          {DYNAMICS.map((dynamic) => (
-            <button
-              key={dynamic}
-              onClick={() => commit({ type: "putAnnotation", ...annotation, text: dynamic }, "Changed dynamic")}
-            >
-              {dynamic}
-            </button>
-          ))}
-        </div>
-      )}
-      <button
-        className={styles.action}
-        onClick={() => commit({ type: "removeNotation", id: annotation.id }, "Removed indication")}
-      >
-        Remove indication
+        ))}
+      </div>
+      <button className={styles.action} onClick={() => commit(remove, "Removed dynamic")}>
+        Remove
       </button>
     </>
   );

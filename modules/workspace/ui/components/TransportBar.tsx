@@ -34,6 +34,7 @@ export function TransportBar({ editor, playing, onTogglePlay, zoom, onZoom }: Tr
         <ScoreToolMenus
           score={editor.score}
           selection={editor.selection}
+          selectedBarId={editor.selectedBarId}
           ready={ready}
           onCommand={editor.commit}
           onError={editor.setError}

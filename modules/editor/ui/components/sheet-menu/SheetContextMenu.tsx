@@ -1,17 +1,27 @@
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { findEvent, meterName, pitchName, type Operation, type Score } from "@/modules/score";
+import { findEvent, formatChord, scoreKey, SECTION_LABEL_MAX, type Operation, type Score } from "@/modules/score";
 import { useDismissableLayer } from "@/shared/ui/hooks/use-dismissable-layer";
 import { moveMenuFocus } from "@/shared/ui/menu-keyboard";
 import { checkOperation } from "../../../application/operation-check";
 import type { CommitEdit } from "../../hooks/use-score-editor";
 import type { SheetMenuTarget } from "../surface/sheet-interactions";
 import { BarMenuSection } from "./BarMenuSection";
+import { MeterGrid } from "../toolbar/MeterGrid";
 import { IndicationMenuSection } from "./IndicationMenuSection";
+import { LabelMenuSection } from "./LabelMenuSection";
 import { NoteMenuSection } from "./NoteMenuSection";
 import styles from "./sheet-menu.module.css";
 
-const MENU_SIZE = { width: 272, height: 390 };
+const MENU_SIZE = { width: 272, height: 260 };
+const MENU_LABELS = {
+  note: "Note actions",
+  bar: "Bar actions",
+  meter: "Time signature",
+  annotation: "Indication actions",
+  chord: "Chord actions",
+  section: "Section actions",
+};
 const VIEWPORT_MARGIN = 8;
 
 /** Edits proposed from a menu; returns false and shows why when the edit cannot apply. */
@@ -24,17 +34,17 @@ type SheetContextMenuProps = {
   onClose: () => void;
 };
 
-/** Right-click / keyboard menu for a note, bar or indication, rendered in a portal. */
+/** Right-click, double-click or keyboard menu for something on the sheet, rendered in a portal. */
 export function SheetContextMenu({ target, score, onCommand, onClose }: SheetContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
   const [message, setMessage] = useState("");
   useDismissableLayer(menuRef, onClose);
 
-  const annotation = score.annotations.find((a) => a.id === target.id);
   const location = findEvent(score, target.id);
   const measure = location?.measure ?? score.measures.find((m) => m.id === target.id);
-  if (!measure && !annotation) return null;
-  const barIndex = measure ? score.measures.indexOf(measure) : -1;
+  const annotation = score.annotations.find((a) => a.id === target.id);
+  const chord = score.chords.find((c) => c.id === target.id);
+  if (!measure && !annotation && !chord) return null;
 
   const commit: CheckedCommit = (operation, receipt) => {
     const problem = checkOperation(score, operation);
@@ -47,19 +57,53 @@ export function SheetContextMenu({ target, score, onCommand, onClose }: SheetCon
     return true;
   };
 
-  const event = location?.event;
-  const title = event
-    ? `${event.gap ? "Empty space" : pitchName(event.pitch)} · Bar ${barIndex + 1}`
-    : measure
-      ? `Bar ${barIndex + 1} · ${meterName(measure.meter)}`
-      : "Indication";
-  const label = { note: "Note actions", bar: "Bar actions", annotation: "Indication actions" }[target.kind];
+  const content = () => {
+    if (target.kind === "note" && location) {
+      return <NoteMenuSection event={location.event} keySignature={scoreKey(score)} commit={commit} />;
+    }
+    if (target.kind === "bar" && measure) return <BarMenuSection score={score} measure={measure} commit={commit} />;
+    if (target.kind === "meter" && measure) {
+      return (
+        <MeterGrid
+          score={score}
+          barIndex={score.measures.indexOf(measure)}
+          onCommand={(operation, receipt) => commit(operation, receipt)}
+          onError={setMessage}
+        />
+      );
+    }
+    if (target.kind === "section" && measure) {
+      return (
+        <LabelMenuSection
+          ariaLabel="Section name"
+          initial={measure.section ?? ""}
+          maxLength={SECTION_LABEL_MAX}
+          commit={commit}
+          save={(label) => ({ type: "setSection", measureId: measure.id, label })}
+          remove={{ type: "setSection", measureId: measure.id, label: null }}
+        />
+      );
+    }
+    if (target.kind === "chord" && chord) {
+      return (
+        <LabelMenuSection
+          ariaLabel="Chord symbol"
+          initial={formatChord(chord).replace(/♯/g, "#").replace(/♭/g, "b")}
+          maxLength={24}
+          commit={commit}
+          save={(symbol) => ({ type: "putChord", id: chord.id, measureId: chord.measureId, beat: chord.beat, symbol })}
+          remove={{ type: "removeNotation", id: chord.id }}
+        />
+      );
+    }
+    return annotation ? <IndicationMenuSection annotation={annotation} commit={commit} /> : null;
+  };
 
   return createPortal(
     <div
       ref={menuRef}
       role="dialog"
-      aria-label={label}
+      aria-label={MENU_LABELS[target.kind]}
       className={styles.menu}
       style={{
         left: Math.max(VIEWPORT_MARGIN, Math.min(target.x, window.innerWidth - MENU_SIZE.width)),
@@ -73,17 +117,7 @@ export function SheetContextMenu({ target, score, onCommand, onClose }: SheetCon
         moveMenuFocus(e);
       }}
     >
-      <header>
-        <strong>{title}</strong>
-        <button aria-label="Close actions" onClick={onClose}>
-          ×
-        </button>
-      </header>
-      {event && <NoteMenuSection event={event} commit={commit} />}
-      {target.kind === "bar" && measure && (
-        <BarMenuSection score={score} measure={measure} commit={commit} onProblem={setMessage} />
-      )}
-      {annotation && <IndicationMenuSection annotation={annotation} commit={commit} />}
+      {content()}
       {message && (
         <p role="status" className={styles.message}>
           {message}

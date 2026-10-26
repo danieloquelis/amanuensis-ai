@@ -1,16 +1,26 @@
 import { z } from "zod";
-import { anchorIds, applyCommand, commandSchema, execute, travel, type Command, type Session } from "@/modules/score";
+import {
+  anchorIds,
+  applyCommand,
+  commandSchema,
+  describeScore,
+  execute,
+  SCORE_VOCABULARY,
+  summarizeChange,
+  travel,
+  type Command,
+  type Session,
+} from "@/modules/score";
 import { applyPreviewSchema, readContextSchema, undoSchema, type ScoreToolName } from "./tool-definitions";
 
 const PREVIEW_LIMIT = 128;
 const UNSUPPORTED_NOTATION = [
-  "polyphony",
+  "polyphony and chords in the melody staff",
   "tuplets",
-  "ties/slurs",
+  "ties and slurs",
   "hairpins",
-  "nested repeats",
-  "alternate endings",
-  "arbitrary executable notation",
+  "nested repeats and alternate endings",
+  "mid-score key or clef changes",
 ];
 
 type StoredPreview = { command: Command; applied: boolean };
@@ -25,34 +35,50 @@ type ToolHandler = (raw: unknown) => ToolResult;
 export function createScoreToolGateway(getSession: () => Session, setSession: (session: Session) => void) {
   const previews = new Map<string, StoredPreview>();
 
+  const commit = (command: Command): ToolResult => {
+    const session = getSession();
+    const next = execute(session, command);
+    setSession(next);
+    return { ok: true, revision: next.score.revision, changes: summarizeChange(session.score, next.score) };
+  };
+
   const handlers: Record<ScoreToolName, ToolHandler> = {
     score_get_context(raw) {
-      const { selectedIds } = readContextSchema.parse(raw);
+      const { selectedIds, includeRaw } = readContextSchema.parse(raw);
       const { score } = getSession();
-      const valid = anchorIds(score.measures);
+      const valid = new Set([
+        ...anchorIds(score.measures),
+        ...score.chords.map((c) => c.id),
+        ...score.marks.map((m) => m.id),
+      ]);
       if (selectedIds.some((id) => !valid.has(id))) throw new Error("Selection contains a missing target.");
       return {
         ok: true,
-        score: structuredClone(score),
+        revision: score.revision,
+        score: describeScore(score),
         selectedIds,
-        durationUnit: "quarter-note beats",
-        unsupported: UNSUPPORTED_NOTATION,
+        vocabulary: SCORE_VOCABULARY,
+        notYetSupported: UNSUPPORTED_NOTATION,
+        ...(includeRaw ? { raw: structuredClone(score) } : {}),
       };
+    },
+
+    score_edit(raw) {
+      return commit(commandSchema.parse(raw));
     },
 
     score_preview(raw) {
       const command = commandSchema.parse(raw);
       const before = getSession().score;
       const proposed = applyCommand(before, command);
-      const previewId = command.requestId;
-      rememberPreview(previewId, command);
-      const changedMeasureIds = proposed.measures
-        .filter((m) => JSON.stringify(m) !== JSON.stringify(before.measures.find((b) => b.id === m.id)))
-        .map((m) => m.id);
-      const removedMeasureIds = before.measures
-        .filter((m) => !proposed.measures.some((n) => n.id === m.id))
-        .map((m) => m.id);
-      return { ok: true, previewId, expectedRevision: before.revision, proposed, changedMeasureIds, removedMeasureIds };
+      rememberPreview(command.requestId, command);
+      return {
+        ok: true,
+        previewId: command.requestId,
+        expectedRevision: before.revision,
+        changes: summarizeChange(before, proposed),
+        proposed: describeScore(proposed),
+      };
     },
 
     score_apply(raw) {
@@ -60,12 +86,10 @@ export function createScoreToolGateway(getSession: () => Session, setSession: (s
       const preview = previews.get(previewId);
       if (!preview) throw new Error("Preview not found. Preview the operation first.");
       if (expectedRevision !== preview.command.expectedRevision) throw new Error("Preview revision does not match.");
-      const session = getSession();
-      if (preview.applied) return { ok: true, duplicate: true, revision: session.score.revision };
-      const next = execute(session, preview.command);
-      setSession(next);
+      if (preview.applied) return { ok: true, duplicate: true, revision: getSession().score.revision };
+      const result = commit(preview.command);
       preview.applied = true;
-      return { ok: true, revision: next.score.revision, score: structuredClone(next.score) };
+      return result;
     },
 
     score_undo(raw) {
@@ -76,7 +100,12 @@ export function createScoreToolGateway(getSession: () => Session, setSession: (s
       }
       const next = travel(session, "undo");
       setSession(next);
-      return { ok: true, revision: next.score.revision, changed: next !== session };
+      return {
+        ok: true,
+        revision: next.score.revision,
+        changed: next !== session,
+        changes: summarizeChange(session.score, next.score),
+      };
     },
   };
 
@@ -99,13 +128,16 @@ export function createScoreToolGateway(getSession: () => Session, setSession: (s
       if (!handler) throw new Error("Unknown score tool.");
       return handler(raw);
     } catch (error) {
-      const message =
-        error instanceof z.ZodError
-          ? "Invalid tool arguments."
-          : error instanceof Error
-            ? error.message
-            : "Score operation failed.";
-      return { ok: false, error: message };
+      return { ok: false, error: toolError(error) };
     }
   };
+}
+
+/** Zod errors become a readable path and message the model can act on. */
+function toolError(error: unknown): string {
+  if (error instanceof z.ZodError) {
+    const issue = error.issues[0];
+    return `Invalid tool arguments at ${issue.path.join(".") || "(root)"}: ${issue.message}`;
+  }
+  return error instanceof Error ? error.message : "Score operation failed.";
 }

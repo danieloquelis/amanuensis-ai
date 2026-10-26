@@ -1,15 +1,14 @@
-import type { System } from "@/modules/engraving";
-import { BeamLines, IndicationText, StaffLines, TrebleClef } from "@/modules/engraving/ui";
-import type { Score } from "@/modules/score";
+import { beatX, type System } from "@/modules/engraving";
+import { BeamLines, ChordSymbol, IndicationText, KeySignature, StaffLines, TrebleClef } from "@/modules/engraving/ui";
 import styles from "./score-surface.module.css";
+import { BarArea } from "./BarArea";
 import { SelectedNoteToolbar } from "./SelectedNoteToolbar";
 import { SheetBar } from "./SheetBar";
 import { SheetEvent } from "./SheetEvent";
-import type { SheetInteractions } from "./sheet-interactions";
+import { selectableItem, type SheetInteractions } from "./sheet-interactions";
 
 type SheetSystemProps = {
   system: System;
-  score: Score;
   eventOrder: Map<string, number>;
   selectedId: string | null;
   playBeat: number | null;
@@ -20,7 +19,6 @@ type SheetSystemProps = {
 /** One line of music. Children are drawn in paint order: staff, bars, notes, beams, overlays. */
 export function SheetSystem({
   system,
-  score,
   eventOrder,
   selectedId,
   playBeat,
@@ -32,15 +30,19 @@ export function SheetSystem({
 
   return (
     <g>
-      <StaffLines top={system.top} />
+      <StaffLines top={system.top} endX={system.endX} />
       <TrebleClef top={system.top} />
+      <KeySignature marks={system.keySignature} />
+      {system.bars.map((bar) => (
+        <BarArea key={`area-${bar.id}`} bar={bar} system={system} interactions={interactions} />
+      ))}
       {system.bars.map((bar, index) => (
         <SheetBar
           key={bar.id}
           bar={bar}
           system={system}
           isFirstInSystem={index === 0}
-          score={score}
+          isLastInSystem={index === system.bars.length - 1}
           interactions={interactions}
         />
       ))}
@@ -59,19 +61,40 @@ export function SheetSystem({
         <IndicationText
           key={label.id}
           label={label}
-          className={styles.annotation}
-          role="button"
-          tabIndex={0}
-          aria-label={`Edit indication ${label.text}`}
+          {...selectableItem(
+            interactions,
+            { kind: "annotation", id: label.annotationId },
+            `Edit indication ${label.text}`,
+            {
+              selected: styles.itemSelected,
+              base: `${styles.annotation} ${styles.draggable}`,
+            },
+          )}
           onDoubleClick={(e) => interactions.openMenu("annotation", label.annotationId, e.clientX, e.clientY)}
           onContextMenu={(e) => {
             e.preventDefault();
             interactions.openMenu("annotation", label.annotationId, e.clientX, e.clientY);
           }}
-          onKeyDown={(e) => {
-            if (e.key !== "Enter") return;
-            const rect = e.currentTarget.getBoundingClientRect();
-            interactions.openMenu("annotation", label.annotationId, rect.right, rect.bottom);
+          onPointerDown={(e) => interactions.gestures.startLabelDrag(e, label.annotationId)}
+          onPointerMove={(e) => interactions.gestures.moveLabelDrag(e, label.annotationId)}
+          onPointerUp={interactions.gestures.finishGesture}
+          onPointerCancel={interactions.gestures.cancelGesture}
+        />
+      ))}
+      {system.chords.map((chord) => (
+        <ChordSymbol
+          key={chord.id}
+          text={chord.text}
+          x={chord.x}
+          y={system.chordY}
+          {...selectableItem(interactions, { kind: "chord", id: chord.id }, `Chord ${chord.text}`, {
+            selected: styles.itemSelected,
+            base: styles.chord,
+          })}
+          onDoubleClick={(e) => interactions.openMenu("chord", chord.id, e.clientX, e.clientY)}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            interactions.openMenu("chord", chord.id, e.clientX, e.clientY);
           }}
         />
       ))}
@@ -84,6 +107,6 @@ export function SheetSystem({
 function Playhead({ system, playBeat }: { system: System; playBeat: number }) {
   const bar = system.bars.find((b) => playBeat >= b.beat && playBeat < b.beat + b.capacity);
   if (!bar) return null;
-  const x = bar.notesX + (playBeat - bar.beat) * bar.unit;
+  const x = beatX(bar, playBeat);
   return <line className={styles.playhead} x1={x} x2={x} y1={system.top - 20} y2={system.top + 78} />;
 }

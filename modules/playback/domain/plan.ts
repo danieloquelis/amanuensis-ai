@@ -1,4 +1,6 @@
 import { beats, measureStarts, midiPitch, type Score, type ScoreEvent } from "@/modules/score";
+import { CHORD_VOICE_GAIN, voiceChord, writtenChordSegments } from "./chord-track";
+import { performanceOrder, soundingSource } from "./performance-order";
 
 /** Reference-tone gain for each written dynamic. */
 const DYNAMIC_GAIN: Record<string, number> = { pp: 0.045, p: 0.07, mp: 0.1, mf: 0.14, f: 0.19, ff: 0.24 };
@@ -22,7 +24,15 @@ export type PlaybackEvent = {
   gate: number;
 };
 
-export type PlaybackPlan = { events: PlaybackEvent[]; duration: number; secondsPerBeat: number };
+/** A soft chord under the melody. */
+export type ChordSound = { start: number; duration: number; frequencies: number[]; gain: number };
+
+export type PlaybackPlan = {
+  events: PlaybackEvent[];
+  chords: ChordSound[];
+  duration: number;
+  secondsPerBeat: number;
+};
 
 const frequencyOf = (event: ScoreEvent) => (event.pitch ? 440 * 2 ** ((midiPitch(event.pitch) - 69) / 12) : null);
 
@@ -33,20 +43,48 @@ function gateOf(event: ScoreEvent) {
 }
 
 /**
- * Compiles a score revision into timed sound events. Written tempo and dynamics are resolved in
- * score order first, then repeats are unfolded, so each pass replays the written context.
+ * Compiles a score revision into timed sound. Written tempo and dynamics are resolved in score
+ * order first; then bars are laid out in performance order (repeats, D.C./D.S., coda), so every
+ * pass replays its written context. Chords sound from their beat until the next chord.
  */
 export function createPlaybackPlan(score: Score): PlaybackPlan {
   const written = resolveWrittenEvents(score);
+  const harmony = writtenChordSegments(score);
+  const events: PlaybackEvent[] = [];
+  const chords: ChordSound[] = [];
   let time = 0;
-  const events = unfoldRepeats(score).flatMap((measureIndex) =>
-    written[measureIndex].map((event) => {
-      const entry = { ...event, start: time };
+  for (const measureIndex of performanceOrder(score)) {
+    const barEvents = written[measureIndex];
+    const barStart = time;
+    for (const event of barEvents) {
+      events.push({ ...event, start: time });
       time += event.duration;
-      return entry;
-    }),
-  );
-  return { events, duration: time, secondsPerBeat: 60 / score.tempo };
+    }
+    const at = (localBeat: number) => barStart + secondsInto(barEvents, localBeat);
+    const segments = harmony[measureIndex];
+    segments.forEach(({ beat, chord }, i) => {
+      const end = i + 1 < segments.length ? at(segments[i + 1].beat) : time;
+      chords.push({
+        start: at(beat),
+        duration: end - at(beat),
+        frequencies: voiceChord(chord),
+        gain: CHORD_VOICE_GAIN,
+      });
+    });
+  }
+  return { events, chords, duration: time, secondsPerBeat: 60 / score.tempo };
+}
+
+/** Seconds from the bar's start to a beat inside it, following the bar's actual event timing. */
+function secondsInto(barEvents: Omit<PlaybackEvent, "start">[], localBeat: number): number {
+  let seconds = 0;
+  let beat = 0;
+  for (const event of barEvents) {
+    if (localBeat < beat + event.beats) return seconds + ((localBeat - beat) / event.beats) * event.duration;
+    seconds += event.duration;
+    beat += event.beats;
+  }
+  return seconds;
 }
 
 /** Events per measure with tempo, dynamics and articulation applied; times not yet placed. */
@@ -58,10 +96,12 @@ function resolveWrittenEvents(score: Score): Omit<PlaybackEvent, "start">[][] {
   let gain = DEFAULT_GAIN;
   return score.measures.map((measure, measureIndex) => {
     tempo = measure.tempo ?? tempo;
+    // A repeat (%) bar plays its source bar's notes in its own written place and tempo.
+    const sounding = score.measures[soundingSource(score, measureIndex)].events;
     const measureDynamic = dynamicAt(measure.id);
     if (measureDynamic) gain = DYNAMIC_GAIN[measureDynamic.text];
     let localBeat = 0;
-    return measure.events.map((event) => {
+    return sounding.map((event) => {
       const eventDynamic = dynamicAt(event.id);
       if (eventDynamic) gain = DYNAMIC_GAIN[eventDynamic.text];
       const length = beats(event.duration);
@@ -79,22 +119,4 @@ function resolveWrittenEvents(score: Score): Omit<PlaybackEvent, "start">[][] {
       return entry;
     });
   });
-}
-
-/** Measure indexes in performance order, with each repeat range played `count` times. */
-function unfoldRepeats(score: Score): number[] {
-  const order: number[] = [];
-  for (let index = 0; index < score.measures.length; index++) {
-    const repeat = score.repeats.find((r) => r.startMeasureId === score.measures[index].id);
-    if (!repeat) {
-      order.push(index);
-      continue;
-    }
-    const end = score.measures.findIndex((m) => m.id === repeat.endMeasureId);
-    for (let pass = 0; pass < repeat.count; pass++) {
-      for (let bar = index; bar <= end; bar++) order.push(bar);
-    }
-    index = end;
-  }
-  return order;
 }

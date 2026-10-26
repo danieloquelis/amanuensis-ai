@@ -7,6 +7,25 @@ export function findSelection(score: Score, selectedId: string | null): Selectio
   return location ? { event: location.event, measureIndex: location.measureIndex } : null;
 }
 
+/** Where a toolbar tool acts: the selected note or rest, the selected bar, or the start of bar 1. */
+export type ToolTarget = { barIndex: number; measureId: string; eventId: string | null; beat: number };
+
+export function toolTarget(score: Score, selection: Selection | null, selectedBarId: string | null = null): ToolTarget {
+  if (!selection) {
+    const barIndex = Math.max(
+      0,
+      score.measures.findIndex((m) => m.id === selectedBarId),
+    );
+    return { barIndex, measureId: score.measures[barIndex].id, eventId: null, beat: 0 };
+  }
+  const measure = score.measures[selection.measureIndex];
+  const index = measure.events.findIndex((e) => e.id === selection.event.id);
+  const beat = measure.events
+    .slice(0, index)
+    .reduce((sum, e) => sum + e.duration.numerator / e.duration.denominator, 0);
+  return { barIndex: selection.measureIndex, measureId: measure.id, eventId: selection.event.id, beat };
+}
+
 /** Selecting a bar selects its first event. */
 export const firstEventOfMeasure = (score: Score, measureIndex: number) => score.measures[measureIndex].events[0].id;
 

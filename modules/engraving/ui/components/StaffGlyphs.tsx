@@ -1,15 +1,17 @@
 import type { SVGProps } from "react";
 import type { Meter } from "@/modules/score";
-import { STAFF_GAP, STAFF_HEIGHT, STAFF_LINES_X, type BarScene } from "../../domain/scene";
+import { STAFF_GAP, STAFF_HEIGHT, STAFF_LEFT, type BarScene, type KeyAccidentalMark } from "../../domain/scene";
+import { AccidentalGlyph } from "./AccidentalGlyph";
 import { classNames } from "@/shared/ui/class-names";
 import styles from "./glyphs.module.css";
 
-export function StaffLines({ top }: { top: number }) {
+/** Five lines from the system's left edge to its last barline. */
+export function StaffLines({ top, endX }: { top: number; endX: number }) {
   return [0, 1, 2, 3, 4].map((line) => (
     <line
       key={line}
-      x1={STAFF_LINES_X.start}
-      x2={STAFF_LINES_X.end}
+      x1={STAFF_LEFT}
+      x2={endX}
       y1={top + line * STAFF_GAP}
       y2={top + line * STAFF_GAP}
       className={styles.staffLine}
@@ -44,6 +46,22 @@ export function Barline({ x, top }: { x: number; top: number }) {
   return <line x1={x} x2={x} y1={top} y2={top + STAFF_HEIGHT} className={styles.barline} />;
 }
 
+/** Thin then thick line closing the score. */
+export function FinalBarline({ x, top }: { x: number; top: number }) {
+  return (
+    <g>
+      <line x1={x - 7} x2={x - 7} y1={top} y2={top + STAFF_HEIGHT} className={styles.barline} />
+      <rect x={x - 4} y={top} width="4" height={STAFF_HEIGHT} fill="currentColor" />
+    </g>
+  );
+}
+
+/** Key signature repeated after the clef on every system. */
+export function KeySignature({ marks }: { marks: KeyAccidentalMark[] }) {
+  // Glyph origins sit 3 units right of the mark's left edge (the sharp's crossbars reach left).
+  return marks.map((mark) => <AccidentalGlyph key={mark.x} value={mark.alter} x={mark.x + 3} y={mark.y} />);
+}
+
 type TimeSignatureProps = { meter: Meter; x: number; top: number } & SVGProps<SVGGElement>;
 
 /** Stacked meter digits. Extra SVG props (handlers, a11y) land on the root group. */
@@ -60,33 +78,35 @@ export function TimeSignature({ meter, x, top, ...rest }: TimeSignatureProps) {
   );
 }
 
-type BarNumberProps = { bar: BarScene; top: number } & SVGProps<SVGTextElement>;
+type BarNumberProps = { bar: BarScene; x?: number; y: number } & SVGProps<SVGTextElement>;
 
-export function BarNumber({ bar, top, className, ...rest }: BarNumberProps) {
+/** Bar number; defaults to just inside the bar's left barline. */
+export function BarNumber({ bar, x = bar.x + 8, y, className, ...rest }: BarNumberProps) {
   return (
-    <text x={bar.x + 8} y={top - 34} className={classNames(styles.barNumber, className)} {...rest}>
+    <text x={x} y={y} className={classNames(styles.barNumber, className)} {...rest}>
       {String(bar.number).padStart(2, "0")}
     </text>
   );
 }
 
-export function TempoMark({ bar, top }: { bar: BarScene; top: number }) {
+export function TempoMark({ tempo, x, y }: { tempo: number; x: number; y: number }) {
   return (
-    <text x={bar.notesX} y={top - 16} fontSize="11">
-      {`♩ = ${bar.tempo}`}
+    <text x={x} y={y} fontSize="12" fontWeight="600">
+      {`♩ = ${tempo}`}
     </text>
   );
 }
 
 const REPEAT_DOT_OFFSETS = [18, 30];
 
-export function RepeatStart({ bar, top }: { bar: BarScene; top: number }) {
+/** Thick line, thin line, then dots, starting at `x`. */
+export function RepeatStart({ x, barNumber, top }: { x: number; barNumber: number; top: number }) {
   return (
-    <g aria-label={`Repeat starts at bar ${bar.number}`}>
-      <line x1={bar.x - 5} x2={bar.x - 5} y1={top} y2={top + STAFF_HEIGHT} stroke="currentColor" strokeWidth="3" />
-      <line x1={bar.x} x2={bar.x} y1={top} y2={top + STAFF_HEIGHT} stroke="currentColor" />
+    <g aria-label={`Repeat starts at bar ${barNumber}`}>
+      <line x1={x} x2={x} y1={top} y2={top + STAFF_HEIGHT} stroke="currentColor" strokeWidth="3" />
+      <line x1={x + 5} x2={x + 5} y1={top} y2={top + STAFF_HEIGHT} stroke="currentColor" />
       {REPEAT_DOT_OFFSETS.map((dy) => (
-        <circle key={dy} cx={bar.x + 6} cy={top + dy} r="2" fill="currentColor" />
+        <circle key={dy} cx={x + 11} cy={top + dy} r="2" fill="currentColor" />
       ))}
     </g>
   );

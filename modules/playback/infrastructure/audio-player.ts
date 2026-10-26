@@ -1,10 +1,12 @@
 import type { Score } from "@/modules/score";
-import { createPlaybackPlan, type PlaybackEvent } from "../domain/plan";
+import { createPlaybackPlan, type ChordSound, type PlaybackEvent } from "../domain/plan";
 
 /** Small delay so the first note is not clipped while the context starts. */
 const START_DELAY = 0.08;
 const ATTACK = 0.012;
 const RELEASE = 0.01;
+const CHORD_ATTACK = 0.04;
+const CHORD_RELEASE = 0.08;
 
 /**
  * Web Audio reference-tone player. Notes are scheduled on the audio clock; animation frames
@@ -45,6 +47,7 @@ export class AudioPlayer {
     for (const event of plan.events) {
       if (event.frequency !== null) this.scheduleTone(context, event, event.frequency, origin + event.start);
     }
+    for (const chord of plan.chords) this.scheduleChord(context, chord, origin + chord.start);
     const tick = () => {
       if (generation !== this.generation) return;
       const elapsed = context.currentTime - origin;
@@ -67,6 +70,22 @@ export class AudioPlayer {
     this.context = null;
   }
 
+  /** Soft sine voices that swell in and fade before the next chord. */
+  private scheduleChord(context: AudioContext, chord: ChordSound, start: number) {
+    const end = start + chord.duration;
+    for (const frequency of chord.frequencies) {
+      const oscillator = context.createOscillator();
+      const envelope = context.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.value = frequency;
+      envelope.gain.setValueAtTime(0, start);
+      envelope.gain.linearRampToValueAtTime(chord.gain, start + CHORD_ATTACK);
+      envelope.gain.setValueAtTime(chord.gain, Math.max(start + CHORD_ATTACK, end - CHORD_RELEASE));
+      envelope.gain.linearRampToValueAtTime(0, end);
+      this.connect(context, oscillator, envelope, start, end);
+    }
+  }
+
   private scheduleTone(context: AudioContext, event: PlaybackEvent, frequency: number, start: number) {
     const oscillator = context.createOscillator();
     const envelope = context.createGain();
@@ -78,6 +97,10 @@ export class AudioPlayer {
     envelope.gain.linearRampToValueAtTime(event.gain, start + ATTACK);
     envelope.gain.exponentialRampToValueAtTime(event.gain * 0.4, start + sounding * 0.65);
     envelope.gain.linearRampToValueAtTime(0, end - RELEASE);
+    this.connect(context, oscillator, envelope, start, end);
+  }
+
+  private connect(context: AudioContext, oscillator: OscillatorNode, envelope: GainNode, start: number, end: number) {
     oscillator.connect(envelope);
     envelope.connect(context.destination);
     this.nodes.add(oscillator);

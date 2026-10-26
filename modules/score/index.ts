@@ -1,6 +1,30 @@
 // Public API of the score module. Other modules import from "@/modules/score" only.
+export { describeScore, SCORE_VOCABULARY, summarizeChange } from "./application/describe-score";
 export { createSession, execute, travel, type Session } from "./application/session";
+export {
+  CHORD_QUALITIES,
+  CHORD_QUALITY_NAMES,
+  formatChord,
+  parseChordSymbol,
+  pitchClass,
+  type ChordQuality,
+  type ChordRoot,
+} from "./domain/chords";
 export { createExample } from "./domain/example";
+export { C_MAJOR, inKey, KEY_FIFTHS, keyAlter, keyName, keySignatureSteps, scoreKey } from "./domain/key";
+export {
+  END_MARKS,
+  isStartMark,
+  JUMP_MARKS,
+  MARK_KINDS,
+  MARK_LABELS,
+  nextSectionLabel,
+  SECTION_LABEL_MAX,
+  START_MARKS,
+  type EndMark,
+  type MarkKind,
+  type StartMark,
+} from "./domain/navigation";
 export { ARTICULATIONS, DYNAMICS, REPEAT_PASSES, type Articulation, type Dynamic } from "./domain/notation";
 export { applyCommand } from "./domain/operations/apply-command";
 export {
@@ -35,10 +59,15 @@ export {
   type Fraction,
 } from "./domain/rhythm";
 export {
+  LABEL_OFFSET_LIMIT,
   MEASURE_WIDTH,
   SCORE_LIMITS,
   TEMPO_RANGE,
   type Annotation,
+  type Chord,
+  type LabelOffset,
+  type Mark,
+  type KeySignature,
   type Measure,
   type Meter,
   type Pitch,

@@ -1,7 +1,7 @@
 .tools {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .trigger {
@@ -19,7 +19,7 @@
   background: #e5ecde;
 }
 
-/* Music-symbol triggers such as ƒ and :‖ */
+/* Music-symbol triggers such as ƒ and 𝄋 */
 .trigger.symbol {
   font:
     22px Georgia,
@@ -30,11 +30,9 @@
   position: fixed;
   inset: auto;
   margin: 0;
-  width: 320px;
+  width: max-content;
   max-width: calc(100vw - 24px);
-  max-height: min(65dvh, 620px);
-  overflow-y: auto;
-  padding: 18px;
+  padding: 8px;
   border: 1px solid #d1d9c9;
   border-radius: 9px;
   background: #fcfdf8;
@@ -46,127 +44,81 @@
   background: transparent;
 }
 
-.popover h2 {
-  font-size: 13px;
-  font-weight: 600;
-  margin: 0 0 16px;
-}
-
-.popover label {
-  font-size: 11px;
+.grid {
   display: grid;
-  gap: 6px;
-  color: #58664f;
-  margin-bottom: 10px;
+  grid-template-columns: repeat(4, minmax(44px, auto));
+  gap: 2px;
 }
 
-.popover input,
-.popover select {
-  width: 100%;
-  min-width: 0;
-  border: 1px solid #cdd6c6;
+.wideGrid {
+  grid-template-columns: repeat(5, minmax(44px, auto));
+}
+
+.grid button,
+.segmented button {
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 0;
   border-radius: 5px;
-  padding: 7px;
-  font-size: 12px;
-  color: #34452e;
-  background: white;
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  white-space: nowrap;
 }
 
-.popover button {
-  padding: 7px 10px;
-  border: 1px solid #cdd6c6;
-  border-radius: 5px;
-  background: #f2f6ed;
-  font-size: 11px;
-  color: #415b38;
+.grid button:hover,
+.segmented button:hover {
+  background: #e9efe2;
 }
 
-.popover button:hover {
-  background: #e4ecdd;
-}
-
-.popover button[aria-pressed="true"] {
+.grid button[aria-pressed="true"],
+.segmented button[aria-pressed="true"],
+.segmented button[aria-checked="true"] {
   background: #45663c;
   color: white;
 }
 
-.row {
-  display: flex;
-  gap: 10px;
-  align-items: end;
-  margin-bottom: 10px;
-}
-
-.row > label {
-  flex: 1;
-  margin: 0;
-  min-width: 0;
-}
-
-.hint {
-  font-size: 11px;
-  line-height: 1.5;
-  color: #6e7964;
-  margin: 10px 0;
-}
-
-.actions {
-  display: flex;
-  gap: 7px;
-  flex-wrap: wrap;
-}
-
-.dynamics {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 3px;
-  margin: 12px 0;
-}
-
-.dynamics button {
+.music {
   font:
-    bold italic 17px Georgia,
+    italic bold 17px Georgia,
     serif;
-  padding: 7px 0;
 }
 
-.item {
+.segmented {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 12px;
-  margin-top: 10px;
+  gap: 2px;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid #e3e9dc;
 }
 
-.item > span {
-  overflow-wrap: anywhere;
+.divider {
+  grid-column: 1 / -1;
+  height: 1px;
+  margin: 4px 0;
+  background: #e3e9dc;
 }
 
-.item > div {
-  display: flex;
-  gap: 4px;
+.field {
+  width: 220px;
+  padding: 8px 10px;
+  border: 1px solid #cdd6c6;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #34452e;
+  background: white;
 }
 
-.item button {
-  font-size: 10px;
-  padding: 5px;
-}
-
-.preview {
-  padding-top: 12px;
-  margin-top: 12px;
-  border-top: 1px solid #d5dfcc;
-}
-
-.preview strong {
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.preview p {
+.fieldHint {
+  margin: 6px 2px 0;
   font-size: 11px;
-  line-height: 1.5;
+  color: #7c8771;
+}
+
+.error {
+  margin: 6px 2px 0;
+  font-size: 11px;
+  color: #8a5a2b;
 }
 
 @media print {

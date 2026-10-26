@@ -1,0 +1,519 @@
+{
+  "schemaVersion": 2,
+  "id": "dense",
+  "revision": 0,
+  "title": "Dense passage",
+  "tempo": 96,
+  "measures": [
+    {
+      "id": "m1",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "s0",
+          "pitch": {
+            "step": "C",
+            "octave": 4,
+            "alter": 1
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 4
+          }
+        },
+        {
+          "id": "s1",
+          "pitch": {
+            "step": "E",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 4
+          }
+        },
+        {
+          "id": "s2",
+          "pitch": {
+            "step": "G",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 4
+          }
+        },
+        {
+          "id": "s3",
+          "pitch": {
+            "step": "B",
+            "octave": 4,
+            "alter": 1
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 4
+          }
+        },
+        {
+          "id": "s4",
+          "pitch": {
+            "step": "D",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 4
+          }
+        },
+        {
+          "id": "s5",
+          "pitch": {
+            "step": "F",
+            "octave": 4,
+            "alter": -1
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 4
+          }
+        },
+        {
+          "id": "s6",
+          "pitch": {
+            "step": "A",
+            "octave": 4,
+            "alter": 1
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 4
+          }
+        },
+        {
+          "id": "s7",
+          "pitch": {
+            "step": "C",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 4
+          }
+        },
+        {
+          "id": "s8",
+          "pitch": {
+            "step": "E",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 4
+          }
+        },
+        {
+          "id": "s9",
+          "pitch": {
+            "step": "G",
+            "octave": 4,
+            "alter": 1
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 4
+          }
+        },
+        {
+          "id": "s10",
+          "pitch": {
+            "step": "B",
+            "octave": 5,
+            "alter": -1
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 4
+          }
+        },
+        {
+          "id": "s11",
+          "pitch": {
+            "step": "D",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 4
+          }
+        },
+        {
+          "id": "s12",
+          "pitch": {
+            "step": "F",
+            "octave": 5,
+            "alter": 1
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 4
+          }
+        },
+        {
+          "id": "s13",
+          "pitch": {
+            "step": "A",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 4
+          }
+        },
+        {
+          "id": "s14",
+          "pitch": {
+            "step": "C",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 4
+          }
+        },
+        {
+          "id": "s15",
+          "pitch": {
+            "step": "E",
+            "octave": 5,
+            "alter": 1
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 4
+          }
+        }
+      ]
+    },
+    {
+      "id": "m2",
+      "meter": {
+        "numerator": 12,
+        "denominator": 8
+      },
+      "events": [
+        {
+          "id": "t0",
+          "pitch": {
+            "step": "F",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "t1",
+          "pitch": {
+            "step": "G",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "t2",
+          "pitch": {
+            "step": "A",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          },
+          "articulation": "accent"
+        },
+        {
+          "id": "t3",
+          "pitch": {
+            "step": "B",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "t4",
+          "pitch": {
+            "step": "C",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "t5",
+          "pitch": {
+            "step": "D",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "t6",
+          "pitch": {
+            "step": "E",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "t7",
+          "pitch": {
+            "step": "F",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "t8",
+          "pitch": {
+            "step": "G",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "t9",
+          "pitch": {
+            "step": "A",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "t10",
+          "pitch": {
+            "step": "B",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "t11",
+          "pitch": {
+            "step": "C",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        }
+      ],
+      "tempo": 120
+    },
+    {
+      "id": "m3",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "d0",
+          "pitch": {
+            "step": "A",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 3,
+            "denominator": 4
+          }
+        },
+        {
+          "id": "d1",
+          "pitch": {
+            "step": "C",
+            "octave": 6,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 4
+          }
+        },
+        {
+          "id": "d2",
+          "pitch": {
+            "step": "B",
+            "octave": 3,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 3,
+            "denominator": 4
+          }
+        },
+        {
+          "id": "d3",
+          "pitch": null,
+          "duration": {
+            "numerator": 1,
+            "denominator": 4
+          }
+        },
+        {
+          "id": "d4",
+          "pitch": {
+            "step": "G",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 2,
+            "denominator": 1
+          },
+          "articulation": "fermata"
+        }
+      ]
+    },
+    {
+      "id": "m4",
+      "meter": {
+        "numerator": 6,
+        "denominator": 8
+      },
+      "events": [
+        {
+          "id": "r0",
+          "pitch": null,
+          "duration": {
+            "numerator": 3,
+            "denominator": 1
+          },
+          "measureRest": true
+        }
+      ]
+    },
+    {
+      "id": "m5",
+      "meter": {
+        "numerator": 3,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "x0",
+          "pitch": {
+            "step": "E",
+            "octave": 4,
+            "alter": -1
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          }
+        },
+        {
+          "id": "x1",
+          "pitch": null,
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          }
+        },
+        {
+          "id": "x2",
+          "pitch": {
+            "step": "D",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "articulation": "tenuto"
+        }
+      ]
+    }
+  ],
+  "annotations": [
+    {
+      "id": "an1",
+      "targetId": "s0",
+      "kind": "text",
+      "text": "dolce, with a long expressive indication that wraps"
+    },
+    {
+      "id": "an2",
+      "targetId": "s3",
+      "kind": "dynamic",
+      "text": "mp"
+    },
+    {
+      "id": "an3",
+      "targetId": "m2",
+      "kind": "dynamic",
+      "text": "ff"
+    }
+  ],
+  "repeats": [
+    {
+      "id": "rp",
+      "startMeasureId": "m2",
+      "endMeasureId": "m3",
+      "count": 3
+    }
+  ]
+}

@@ -4,6 +4,7 @@ Read [docs/architecture/code-conventions.md](docs/architecture/code-conventions.
 
 - **Modules and layers.** Code lives in `modules/<name>/{domain,application,infrastructure,ui}`. `domain/` and `application/` are pure TypeScript: no React, Next.js or browser APIs. React state and effects go in `ui/hooks/`, markup in `ui/components/`. Components render; rules live in plain functions that tests can call.
 - **Public entrypoints only.** Across modules, import from `@/modules/<name>` (framework-free) or `@/modules/<name>/ui` (React), never from another module's internal files.
+- **AI-first.** Every capability is a typed operation in `score/domain/operations` with `.describe()` text (that text is the agent's documentation), reachable through the score tools in `@/modules/assistant`. Smart defaults belong in the operation, never only in UI code. If a person can do it in the editor, an agent can do it with a tool.
 - **One mutation path.** Every score change is a typed `Operation` applied through `applyCommand`/`execute` against an expected revision. To add one, update `score/domain/operations/`. Never edit a `Score` object in UI code.
 - **Readable code.** Prettier formats everything; files stay under 200 lines; meaningful numbers get names. Don't compress logic onto long lines.
 - **Verify.** Run `yarn check` (format, lint, typecheck, unit tests), then `yarn build && yarn test:e2e`. ESLint enforces the layer and import rules; fix violations, don't disable them.

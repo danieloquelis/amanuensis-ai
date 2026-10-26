@@ -29,29 +29,66 @@ test("rational rhythm is exact, and every example measure is complete", () => {
     );
 });
 
-test("shortening leaves editable space; lengthening consumes it without changing note IDs", () => {
+test("shortening a note fills the rest of its value with silence", () => {
+  const shorter = edit(createExample(), { type: "setDuration", eventId: "note-0-0", duration: 0.5 });
+  const [note, rest] = shorter.measures[0].events;
+  assert.equal(beats(note.duration), 0.5);
+  assert.equal(rest.pitch, null);
+  assert.equal(beats(rest.duration), 0.5);
+  assert.equal(createPlaybackPlan(shorter).events[1].frequency, null);
+});
+
+test("lengthening a note consumes the rests after it and keeps note IDs", () => {
   const original = createExample();
   const shorter = edit(original, { type: "setDuration", eventId: "note-0-0", duration: 0.5 });
-  assert.equal(shorter.measures[0].events.length, 5);
-  assert.equal(shorter.measures[0].events[1].pitch, null);
-  assert.equal(shorter.measures[0].events[1].gap, true);
-  assert.equal(beats(shorter.measures[0].events[1].duration), 0.5);
-  assert.equal(parseScore(JSON.parse(JSON.stringify(shorter))).measures[0].events[1].gap, true);
-  assert.equal(createPlaybackPlan(shorter).events[1].frequency, null);
   const restored = edit(shorter, { type: "setDuration", eventId: "note-0-0", duration: 1 }, "restore");
   assert.deepEqual(restored.measures, original.measures);
-  assert.throws(() => edit(original, { type: "setDuration", eventId: "note-0-0", duration: 2 }), /Make space/);
-  assert.equal(edit(original, { type: "removeEvent", eventId: "note-0-0" }, "remove").measures[0].events[0].gap, true);
-  assert.equal(
-    edit(original, { type: "setPitch", eventId: "note-0-0", pitch: null }, "rest").measures[0].events[0].gap,
-    undefined,
+});
+
+test("a note cannot grow over the next note", () => {
+  assert.throws(() => edit(createExample(), { type: "setDuration", eventId: "note-0-0", duration: 2 }), /Make space/);
+});
+
+test("deleting a note leaves a rest of the same length", () => {
+  const removed = edit(createExample(), { type: "removeEvent", eventId: "note-0-0" });
+  assert.deepEqual(removed.measures[0].events[0], {
+    id: "note-0-0",
+    pitch: null,
+    duration: { numerator: 1, denominator: 1 },
+  });
+});
+
+test("rests complete the beat first, then follow the beats of a simple meter", () => {
+  const score = edit(createExample(), { type: "setDuration", eventId: "note-3-0", duration: 0.5 });
+  assert.deepEqual(
+    score.measures[3].events.slice(1).map((e) => beats(e.duration)),
+    [0.5, 1, 2],
   );
-  const rest = edit(original, { type: "setPitch", eventId: "note-0-0", pitch: null }, "rest-short");
-  assert.equal(
-    edit(rest, { type: "setDuration", eventId: "note-0-0", duration: 0.5 }, "split-rest").measures[0].events[1].gap,
-    undefined,
+});
+
+test("rests follow dotted-quarter beats in compound meter", () => {
+  const sixEight = edit(createExample(), {
+    type: "setMeter",
+    measureIds: ["bar-4"],
+    meter: { numerator: 6, denominator: 8 },
+    policy: "scale",
+  });
+  const score = edit(sixEight, { type: "setDuration", eventId: "note-3-0", duration: 0.5 }, "shorten");
+  assert.deepEqual(
+    score.measures[3].events.slice(1).map((e) => beats(e.duration)),
+    [0.5, 0.5, 1.5],
   );
-  assert.equal(original.revision, 0);
+});
+
+test("drafts saved with the old empty-space marker open as ordinary rests", () => {
+  const legacy = JSON.parse(JSON.stringify(createExample()));
+  legacy.measures[0].events[0] = { id: "note-0-0", pitch: null, duration: { numerator: 1, denominator: 1 }, gap: true };
+  const opened = parseScore(legacy);
+  assert.deepEqual(opened.measures[0].events[0], {
+    id: "note-0-0",
+    pitch: null,
+    duration: { numerator: 1, denominator: 1 },
+  });
 });
 
 test("stale agent writes cannot overwrite a newer manual edit", () => {
@@ -130,7 +167,8 @@ test("playback uses tempo and pitch, preserves rests, and keeps notation IDs", (
 
 test("engraving has stable identity, middle-C ledger lines and beat-aligned eighth beams", () => {
   const scene = layoutScore(createExample());
-  assert.equal(scene.systems.length, 2);
+  // Four short bars fit comfortably on one justified line.
+  assert.equal(scene.systems.length, 1);
   assert.deepEqual(scene.systems[0].events[0].ledgerLines, [150]);
   assert.equal(scene.systems[0].beams.length, 1);
   assert.deepEqual(scene.systems[0].beamedIds, ["note-1-1", "note-1-2"]);

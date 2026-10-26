@@ -1,0 +1,591 @@
+{
+  "schemaVersion": 2,
+  "id": "long",
+  "revision": 0,
+  "title": "Twelve bars",
+  "tempo": 96,
+  "measures": [
+    {
+      "id": "L0",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "L0-0",
+          "pitch": {
+            "step": "E",
+            "octave": 4,
+            "alter": -1
+          },
+          "duration": {
+            "numerator": 2,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L0-1",
+          "pitch": {
+            "step": "G",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 2,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L0-2",
+          "pitch": {
+            "step": "C",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 4,
+            "denominator": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "L1",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "L1-0",
+          "pitch": {
+            "step": "D",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L1-1",
+          "pitch": {
+            "step": "E",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L1-2",
+          "pitch": {
+            "step": "F",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L1-3",
+          "pitch": {
+            "step": "G",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L1-4",
+          "pitch": {
+            "step": "A",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 4,
+            "denominator": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "L2",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "L2-0",
+          "pitch": {
+            "step": "G",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 3,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L2-1",
+          "pitch": {
+            "step": "F",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L2-2",
+          "pitch": {
+            "step": "E",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 2,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L2-3",
+          "pitch": {
+            "step": "D",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 2,
+            "denominator": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "L3",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "L3-0",
+          "pitch": {
+            "step": "C",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 8,
+            "denominator": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "L4",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "L4-0",
+          "pitch": {
+            "step": "E",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 2,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L4-1",
+          "pitch": {
+            "step": "G",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 2,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L4-2",
+          "pitch": {
+            "step": "C",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 4,
+            "denominator": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "L5",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "L5-0",
+          "pitch": {
+            "step": "D",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L5-1",
+          "pitch": {
+            "step": "E",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L5-2",
+          "pitch": {
+            "step": "F",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L5-3",
+          "pitch": {
+            "step": "G",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L5-4",
+          "pitch": {
+            "step": "A",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 4,
+            "denominator": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "L6",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "L6-0",
+          "pitch": {
+            "step": "G",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 3,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L6-1",
+          "pitch": {
+            "step": "F",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L6-2",
+          "pitch": {
+            "step": "E",
+            "octave": 4,
+            "alter": -1
+          },
+          "duration": {
+            "numerator": 2,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L6-3",
+          "pitch": {
+            "step": "D",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 2,
+            "denominator": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "L7",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "L7-0",
+          "pitch": {
+            "step": "C",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 8,
+            "denominator": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "L8",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "L8-0",
+          "pitch": {
+            "step": "E",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 2,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L8-1",
+          "pitch": {
+            "step": "G",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 2,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L8-2",
+          "pitch": {
+            "step": "C",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 4,
+            "denominator": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "L9",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "L9-0",
+          "pitch": {
+            "step": "D",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L9-1",
+          "pitch": {
+            "step": "E",
+            "octave": 4,
+            "alter": -1
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L9-2",
+          "pitch": {
+            "step": "F",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L9-3",
+          "pitch": {
+            "step": "G",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L9-4",
+          "pitch": {
+            "step": "A",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 4,
+            "denominator": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "L10",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "L10-0",
+          "pitch": {
+            "step": "G",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 3,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L10-1",
+          "pitch": {
+            "step": "F",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L10-2",
+          "pitch": {
+            "step": "E",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 2,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "L10-3",
+          "pitch": {
+            "step": "D",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 2,
+            "denominator": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "L11",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "L11-0",
+          "pitch": {
+            "step": "C",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 8,
+            "denominator": 2
+          }
+        }
+      ]
+    }
+  ],
+  "annotations": [],
+  "repeats": [],
+  "key": {
+    "fifths": -3,
+    "mode": "minor"
+  }
+}

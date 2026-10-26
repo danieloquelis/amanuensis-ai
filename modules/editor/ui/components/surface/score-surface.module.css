@@ -10,7 +10,7 @@
   overflow: visible;
 }
 
-/* Notes, rests and empty spaces */
+/* Notes and rests */
 
 .event {
   cursor: grab;
@@ -29,12 +29,6 @@
 
 .event:hover .hit {
   fill: #4878650b;
-}
-
-.event:hover [data-glyph="empty-space"],
-.event:focus-visible [data-glyph="empty-space"],
-.selected [data-glyph="empty-space"] {
-  opacity: 0.8;
 }
 
 .event:focus-visible .hit {
@@ -76,6 +70,8 @@
 }
 
 .quickBar > button {
+  display: grid;
+  place-items: center;
   width: 28px;
   height: 32px;
   border: 0;
@@ -98,6 +94,41 @@
   touch-action: none;
 }
 
+/* A selected chord, text, mark, section or repeat sign */
+.itemSelected,
+.itemSelected text {
+  color: #407961;
+  fill: #407961;
+  outline: none;
+}
+
+/* Whole-bar selection */
+.barArea {
+  fill: transparent;
+  cursor: pointer;
+  outline: none;
+}
+
+.barArea:hover {
+  fill: #4878650a;
+}
+
+.barSelected {
+  fill: #71978024;
+  outline: none;
+}
+
+/* Bar numbers other than at line starts appear while hovering their bar. */
+.hoverOnly {
+  opacity: 0;
+  transition: opacity 120ms;
+}
+
+g:hover > .hoverOnly,
+.hoverOnly:focus-visible {
+  opacity: 1;
+}
+
 .barTarget,
 .meter,
 .barNumber,
@@ -118,12 +149,24 @@
   opacity: 0.7;
 }
 
+.chord {
+  cursor: pointer;
+}
+
+.draggable {
+  cursor: move;
+}
+
 .meter:hover,
-.annotation:hover {
+.annotation:hover,
+.chord:hover {
   fill: #65884e;
 }
 
 @media print {
+  .hoverOnly,
+  .barArea,
+  .barSelected,
   .halo,
   .hit,
   .playhead,

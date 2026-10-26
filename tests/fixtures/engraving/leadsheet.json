@@ -1,0 +1,355 @@
+{
+  "schemaVersion": 2,
+  "id": "lead",
+  "revision": 0,
+  "title": "Lead sheet",
+  "tempo": 112,
+  "key": {
+    "fifths": -1,
+    "mode": "major"
+  },
+  "measures": [
+    {
+      "id": "A1",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "a1",
+          "pitch": {
+            "step": "A",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          }
+        },
+        {
+          "id": "a2",
+          "pitch": {
+            "step": "C",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          }
+        },
+        {
+          "id": "a3",
+          "pitch": {
+            "step": "F",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 2,
+            "denominator": 1
+          }
+        }
+      ],
+      "section": "A"
+    },
+    {
+      "id": "A2",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "b1",
+          "pitch": {
+            "step": "E",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "b2",
+          "pitch": {
+            "step": "D",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          }
+        },
+        {
+          "id": "b3",
+          "pitch": {
+            "step": "C",
+            "octave": 5,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          }
+        },
+        {
+          "id": "b4",
+          "pitch": {
+            "step": "B",
+            "octave": 4,
+            "alter": -1
+          },
+          "duration": {
+            "numerator": 2,
+            "denominator": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "A3",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "c0",
+          "pitch": null,
+          "duration": {
+            "numerator": 4,
+            "denominator": 1
+          },
+          "measureRest": true
+        }
+      ],
+      "style": "slashes"
+    },
+    {
+      "id": "A4",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "d0",
+          "pitch": null,
+          "duration": {
+            "numerator": 4,
+            "denominator": 1
+          },
+          "measureRest": true
+        }
+      ],
+      "style": "repeat"
+    },
+    {
+      "id": "B1",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "e1",
+          "pitch": {
+            "step": "G",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 3,
+            "denominator": 1
+          }
+        },
+        {
+          "id": "e2",
+          "pitch": {
+            "step": "A",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          }
+        }
+      ],
+      "section": "B",
+      "tempo": 96
+    },
+    {
+      "id": "B2",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "f0",
+          "pitch": null,
+          "duration": {
+            "numerator": 4,
+            "denominator": 1
+          },
+          "measureRest": true
+        }
+      ],
+      "style": "slashes"
+    },
+    {
+      "id": "C1",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "g1",
+          "pitch": {
+            "step": "F",
+            "octave": 4,
+            "alter": 0
+          },
+          "duration": {
+            "numerator": 4,
+            "denominator": 1
+          }
+        }
+      ]
+    }
+  ],
+  "annotations": [
+    {
+      "id": "t1",
+      "targetId": "a1",
+      "kind": "text",
+      "text": "swing feel",
+      "offset": {
+        "x": 20,
+        "y": -10
+      }
+    }
+  ],
+  "repeats": [],
+  "chords": [
+    {
+      "id": "h1",
+      "measureId": "A1",
+      "beat": 0,
+      "root": {
+        "step": "F",
+        "alter": 0
+      },
+      "quality": "maj7"
+    },
+    {
+      "id": "h2",
+      "measureId": "A2",
+      "beat": 0,
+      "root": {
+        "step": "G",
+        "alter": 0
+      },
+      "quality": "m7"
+    },
+    {
+      "id": "h3",
+      "measureId": "A2",
+      "beat": 2,
+      "root": {
+        "step": "C",
+        "alter": 0
+      },
+      "quality": "7",
+      "bass": {
+        "step": "E",
+        "alter": 0
+      }
+    },
+    {
+      "id": "h4",
+      "measureId": "A3",
+      "beat": 0,
+      "root": {
+        "step": "F",
+        "alter": 0
+      },
+      "quality": ""
+    },
+    {
+      "id": "h5",
+      "measureId": "B1",
+      "beat": 0,
+      "root": {
+        "step": "B",
+        "alter": -1
+      },
+      "quality": "maj7"
+    },
+    {
+      "id": "h6",
+      "measureId": "B2",
+      "beat": 0,
+      "root": {
+        "step": "E",
+        "alter": 0
+      },
+      "quality": "m7b5"
+    },
+    {
+      "id": "h7",
+      "measureId": "B2",
+      "beat": 2,
+      "root": {
+        "step": "A",
+        "alter": 0
+      },
+      "quality": "7b9"
+    },
+    {
+      "id": "h8",
+      "measureId": "C1",
+      "beat": 0,
+      "root": {
+        "step": "F",
+        "alter": 0
+      },
+      "quality": "6/9"
+    }
+  ],
+  "marks": [
+    {
+      "id": "mk-A2-segno",
+      "measureId": "A2",
+      "kind": "segno"
+    },
+    {
+      "id": "mk-A4-toCoda",
+      "measureId": "A4",
+      "kind": "toCoda"
+    },
+    {
+      "id": "mk-B2-dsAlCoda",
+      "measureId": "B2",
+      "kind": "dsAlCoda"
+    },
+    {
+      "id": "mk-C1-coda",
+      "measureId": "C1",
+      "kind": "coda"
+    },
+    {
+      "id": "mk-B2-fine",
+      "measureId": "B2",
+      "kind": "fine"
+    }
+  ]
+}

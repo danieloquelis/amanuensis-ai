@@ -12,6 +12,11 @@ export function removeTempo(draft: Draft, op: OperationOf<"removeTempo">) {
   delete getMeasure(draft, op.measureId).tempo;
 }
 
+/** Changes the signature only; written pitches keep their spelling and sound the same. */
+export function setKey(draft: Draft, op: OperationOf<"setKey">) {
+  draft.key = { ...op.key };
+}
+
 export function rename(draft: Draft, op: OperationOf<"rename">) {
   draft.title = op.title;
 }
@@ -50,10 +55,12 @@ export function putRepeat(draft: Draft, op: OperationOf<"putRepeat">, { idPrefix
   draft.repeats = [...draft.repeats.filter((r) => r.id !== repeat.id), repeat];
 }
 
-/** Removes an indication or a repeat by ID. */
+/** Removes an indication, repeat, chord symbol or mark by ID. */
 export function removeNotation(draft: Draft, op: OperationOf<"removeNotation">) {
-  const exists = draft.annotations.some((a) => a.id === op.id) || draft.repeats.some((r) => r.id === op.id);
-  if (!exists) throw new Error("Indication not found.");
+  const lists = [draft.annotations, draft.repeats, draft.chords, draft.marks];
+  if (!lists.some((items) => items.some((i) => i.id === op.id))) throw new Error("Indication not found.");
   draft.annotations = draft.annotations.filter((a) => a.id !== op.id);
   draft.repeats = draft.repeats.filter((r) => r.id !== op.id);
+  draft.chords = draft.chords.filter((c) => c.id !== op.id);
+  draft.marks = draft.marks.filter((m) => m.id !== op.id);
 }

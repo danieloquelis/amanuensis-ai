@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { DYNAMICS } from "./notation";
+import { validateBarMarks, validateChords } from "./lead-sheet-validation";
 import { anchorIds } from "./queries";
 import { add, beats, fraction, isSupportedDuration, measureCapacity, meterName, METERS } from "./rhythm";
 import { eventSchema, idSchema, scoreSchema, type Measure, type Score } from "./schema";
@@ -13,14 +14,14 @@ const legacyScoreSchema = z.strictObject({
   measures: z.array(
     z.strictObject({
       id: idSchema,
-      events: z.array(eventSchema.omit({ articulation: true, measureRest: true, gap: true })),
+      events: z.array(eventSchema.omit({ articulation: true, measureRest: true })),
     }),
   ),
 });
 
 /** Parses and validates a native score, migrating v1 files without changing IDs, notes or revision. */
 export function parseScore(value: unknown): Score {
-  const result = scoreSchema.safeParse(migrateVersion1(value));
+  const result = scoreSchema.safeParse(convertLegacyGaps(migrateVersion1(value)));
   if (!result.success) {
     const issue = result.error.issues[0];
     throw new Error(`Invalid or unsupported score data: ${issue.path.join(".")} — ${issue.message}`);
@@ -31,6 +32,8 @@ export function parseScore(value: unknown): Score {
   for (const measure of score.measures) validateMeasure(measure, ids);
   validateAnnotations(score, ids);
   validateRepeats(score, ids);
+  validateChords(score, ids);
+  validateBarMarks(score, ids);
   return score;
 }
 
@@ -47,6 +50,28 @@ function migrateVersion1(value: unknown): unknown {
   };
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
+
+/**
+ * Early v2 drafts marked space left by a shortened note with `gap: true` and drew it as a
+ * placeholder. That space is now an ordinary rest, so the marker is dropped on load.
+ */
+function convertLegacyGaps(value: unknown): unknown {
+  if (!isRecord(value) || !Array.isArray(value.measures)) return value;
+  const withoutGap = (event: unknown) => {
+    if (!isRecord(event) || !("gap" in event)) return event;
+    const rest = { ...event };
+    delete rest.gap;
+    return rest;
+  };
+  const measures = value.measures.map((measure) =>
+    isRecord(measure) && Array.isArray(measure.events)
+      ? { ...measure, events: measure.events.map(withoutGap) }
+      : measure,
+  );
+  return { ...value, measures };
+}
+
 function createUniqueIdRegistry() {
   const ids = new Set<string>();
   return {
@@ -57,7 +82,7 @@ function createUniqueIdRegistry() {
   };
 }
 
-type IdRegistry = ReturnType<typeof createUniqueIdRegistry>;
+export type IdRegistry = ReturnType<typeof createUniqueIdRegistry>;
 
 /** Normalizes event durations in place and checks that the bar is exactly full. */
 function validateMeasure(measure: Measure, ids: IdRegistry) {
@@ -71,9 +96,6 @@ function validateMeasure(measure: Measure, ids: IdRegistry) {
     event.duration = fraction(event.duration.numerator, event.duration.denominator);
     if (event.measureRest && (event.pitch || measure.events.length !== 1)) {
       throw new Error("A full-measure rest must occupy the measure alone.");
-    }
-    if (event.gap && (event.pitch || event.measureRest || event.articulation)) {
-      throw new Error("An unfinished space cannot contain a note, rest, or articulation.");
     }
     if (!event.measureRest && !isSupportedDuration(beats(event.duration))) {
       throw new Error("Unsupported duration; tuplets are not available yet.");

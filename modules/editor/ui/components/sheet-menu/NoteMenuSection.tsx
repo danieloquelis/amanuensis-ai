@@ -1,6 +1,5 @@
-import { ARTICULATIONS, type Articulation, type ScoreEvent } from "@/modules/score";
+import { ARTICULATIONS, type Articulation, type KeySignature, type ScoreEvent } from "@/modules/score";
 import { toggleRestOperation } from "../../../application/note-edits";
-import { DurationButtons } from "./DurationButtons";
 import type { CheckedCommit } from "./SheetContextMenu";
 import styles from "./sheet-menu.module.css";
 
@@ -17,14 +16,21 @@ const ARTICULATION_SYMBOLS: Record<Articulation, string> = {
   fermata: "𝄐",
 };
 
-/** Duration, accidental, articulation and note/rest conversion for one event. */
-export function NoteMenuSection({ event, commit }: { event: ScoreEvent; commit: CheckedCommit }) {
+/** Accidental, articulation and note/rest conversion for one event (durations live in the floating strip). */
+export function NoteMenuSection({
+  event,
+  keySignature,
+  commit,
+}: {
+  event: ScoreEvent;
+  keySignature: KeySignature;
+  commit: CheckedCommit;
+}) {
   const pitch = event.pitch;
-  // Rests only take fermatas; empty space takes no articulation at all.
+  // Rests only take fermatas.
   const articulations = ARTICULATIONS.filter((a) => pitch || a === "fermata");
   return (
     <>
-      <DurationButtons event={event} onCommand={commit} />
       {pitch && (
         <div className={styles.row} role="group" aria-label="Accidental">
           {ACCIDENTALS.map(({ alter, label, symbol }) => (
@@ -42,45 +48,37 @@ export function NoteMenuSection({ event, commit }: { event: ScoreEvent; commit: 
           ))}
         </div>
       )}
-      {!event.gap && (
-        <div className={styles.row} role="group" aria-label="Articulation">
-          {articulations.map((articulation) => (
-            <button
-              key={articulation}
-              aria-label={articulation}
-              title={articulation}
-              aria-pressed={event.articulation === articulation}
-              onClick={() =>
-                commit(
-                  {
-                    type: "setArticulation",
-                    eventId: event.id,
-                    articulation: event.articulation === articulation ? null : articulation,
-                  },
-                  `Changed ${articulation}`,
-                )
-              }
-            >
-              {ARTICULATION_SYMBOLS[articulation]}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className={styles.row} role="group" aria-label="Articulation">
+        {articulations.map((articulation) => (
+          <button
+            key={articulation}
+            aria-label={articulation}
+            title={articulation}
+            aria-pressed={event.articulation === articulation}
+            onClick={() =>
+              commit(
+                {
+                  type: "setArticulation",
+                  eventId: event.id,
+                  articulation: event.articulation === articulation ? null : articulation,
+                },
+                `Changed ${articulation}`,
+              )
+            }
+          >
+            {ARTICULATION_SYMBOLS[articulation]}
+          </button>
+        ))}
+      </div>
       <button
         aria-label={pitch ? "Make rest" : "Add note"}
         className={styles.action}
-        onClick={() => commit(toggleRestOperation(event), pitch ? "Replaced note with rest" : "Added note")}
+        onClick={() =>
+          commit(toggleRestOperation(event, keySignature), pitch ? "Replaced note with rest" : "Added note")
+        }
       >
         {pitch ? "Make rest" : "Add note"}
       </button>
-      {event.gap && (
-        <button
-          className={styles.action}
-          onClick={() => commit({ type: "setPitch", eventId: event.id, pitch: null }, "Added rest")}
-        >
-          Make rest
-        </button>
-      )}
     </>
   );
 }

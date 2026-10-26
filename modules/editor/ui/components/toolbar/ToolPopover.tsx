@@ -2,22 +2,24 @@ import { useId, useState, type ReactNode } from "react";
 import { classNames } from "@/shared/ui/class-names";
 import styles from "./toolbar.module.css";
 
-const POPOVER_WIDTH = 332;
+const ESTIMATED_WIDTH = 300;
 const EDGE_MARGIN = 12;
 
 type ToolPopoverProps = {
-  label: string;
+  label: ReactNode;
   accessibleLabel: string;
   disabled?: boolean;
-  /** Renders the trigger label as a music symbol (ƒ, :‖). */
+  /** Renders the trigger label as a music symbol (ƒ, 𝄋). */
   symbol?: boolean;
-  children: ReactNode;
+  /** Content, optionally a function receiving `close` for one-shot tools. */
+  children: ReactNode | ((close: () => void) => ReactNode);
 };
 
 /** Toolbar button with a native popover placed under it and kept inside the viewport. */
 export function ToolPopover({ label, accessibleLabel, disabled, symbol = false, children }: ToolPopoverProps) {
   const id = useId();
   const [position, setPosition] = useState({ left: EDGE_MARGIN, top: 160 });
+  const close = () => document.getElementById(id)?.hidePopover();
   return (
     <>
       <button
@@ -29,7 +31,7 @@ export function ToolPopover({ label, accessibleLabel, disabled, symbol = false, 
         aria-haspopup="dialog"
         onClick={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
-          const left = Math.max(EDGE_MARGIN, Math.min(rect.left, window.innerWidth - POPOVER_WIDTH));
+          const left = Math.max(EDGE_MARGIN, Math.min(rect.left, window.innerWidth - ESTIMATED_WIDTH));
           setPosition({ left, top: rect.bottom + 8 });
         }}
       >
@@ -43,7 +45,7 @@ export function ToolPopover({ label, accessibleLabel, disabled, symbol = false, 
         className={styles.popover}
         style={position}
       >
-        {children}
+        {typeof children === "function" ? children(close) : children}
       </div>
     </>
   );

@@ -10,8 +10,9 @@ import {
   replaceMeasure,
   setMeasureWidth,
 } from "./measure-operations";
+import { moveAnnotation, putChord, putMark, setMeasureStyle, setSection } from "./lead-sheet-operations";
 import { setMeter } from "./meter-operations";
-import { putAnnotation, putRepeat, removeNotation, removeTempo, rename, setTempo } from "./notation-operations";
+import { putAnnotation, putRepeat, removeNotation, removeTempo, rename, setKey, setTempo } from "./notation-operations";
 import { commandSchema, type Command, type OperationOf, type OperationType } from "./schema";
 
 type OperationHandlers = {
@@ -33,10 +34,16 @@ const handlers: OperationHandlers = {
   setMeter,
   setTempo,
   removeTempo,
+  setKey,
   rename,
   putAnnotation,
   putRepeat,
   removeNotation,
+  moveAnnotation,
+  putChord,
+  setMeasureStyle,
+  setSection,
+  putMark,
 };
 
 /**

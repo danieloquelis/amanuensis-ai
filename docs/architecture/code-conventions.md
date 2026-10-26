@@ -50,6 +50,15 @@ Dependencies point inward: `ui → application → domain`. `infrastructure` imp
 - `"use client"` goes only on the screen components that `app/` routes render (currently `WorkspaceScreen`). Everything they import is already client code (see `node_modules/next/dist/docs/01-app/01-getting-started/05-server-and-client-components.md`).
 - Engraving UI components are stateless SVG glyphs. They accept extra SVG props (`role`, handlers, `className`) on their root element so the editor can make them interactive without the engraving module knowing about editing.
 
+## AI-first
+
+The editor is one client of the engine; agents are another, with equal power.
+
+- **New capability, new operation.** Add a typed operation, with `.describe()` on the variant and on any non-obvious field. The descriptions reach the model through the generated tool schema; `tests/unit/agent-tools.test.ts` checks that they do.
+- **Defaults live in the domain.** Behaviour such as "keep note values if they fit, otherwise fit proportionally" (`setMeter` with `policy: "auto"`) or "apply until the next time-signature change" (`extend`) belongs in the operation, not in a UI helper. UI helpers in `editor/application` may only choose which operation to send.
+- **Readable for agents.** `describeScore` (score module) is the agent's view: bar numbers, beats from 1, pitch and duration names, chord symbols, IDs. Extend it when you add data.
+- **Musician's model in the UI.** Palettes add; they never toggle. Anything on the sheet is selected by clicking and removed with Delete.
+
 ## Score changes
 
 - Every change to a score, whether from a person or the AI, is an `Operation` applied through `applyCommand`/`execute` with an expected revision. UI code never edits a `Score` object directly.
@@ -73,6 +82,7 @@ Dependencies point inward: `ui → application → domain`. `infrastructure` imp
 
 - Unit tests (`tests/unit`, `node:test` via `tsx`) import only public entrypoints such as `@/modules/score`. They cover domain and application code.
 - Browser tests (`tests/e2e`, Playwright) drive the built app through accessible roles and labels. Changing an `aria-label` is a behaviour change.
+- Engraving changes: add or extend a fixture in `tests/fixtures/engraving/`, assert layout invariants in `tests/unit/engraving.test.ts`, and check the screenshot diffs from `tests/e2e/engraving.spec.ts`. Refresh baselines (`yarn test:e2e engraving --update-snapshots`) only after looking at the new rendering.
 
 ## Checks
 

@@ -1,4 +1,5 @@
-import type { Pitch } from "./schema";
+import { keyAlter } from "./key";
+import type { KeySignature, Pitch } from "./schema";
 
 export const STEPS = ["C", "D", "E", "F", "G", "A", "B"] as const;
 export type Step = (typeof STEPS)[number];
@@ -22,14 +23,14 @@ export function midiPitch(pitch: Pitch): number {
   return (pitch.octave + 1) * 12 + SEMITONES_ABOVE_C[STEPS.indexOf(pitch.step)] + pitch.alter;
 }
 
-/** Moves a pitch by diatonic staff steps, keeping its accidental. */
-export function movePitch(pitch: Pitch, steps: number): Pitch {
+/**
+ * Moves a pitch by diatonic staff steps. With a key, the result takes the key's alteration
+ * (F♯ up a step in D major is G); without one, the accidental is kept.
+ */
+export function movePitch(pitch: Pitch, steps: number, key?: KeySignature): Pitch {
   const position = staffPosition(pitch) + steps;
-  return {
-    step: STEPS[((position % 7) + 7) % 7],
-    alter: pitch.alter,
-    octave: Math.floor(position / 7),
-  };
+  const step = STEPS[((position % 7) + 7) % 7];
+  return { step, alter: key ? keyAlter(key, step) : pitch.alter, octave: Math.floor(position / 7) };
 }
 
 export function isWithinOctaveRange(pitch: Pitch): boolean {
