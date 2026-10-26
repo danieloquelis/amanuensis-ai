@@ -1,0 +1,210 @@
+import { test, expect } from "@playwright/test";
+import { readFile } from "node:fs/promises";
+
+test("edit, undo, redo and reload preserve the musical document", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true }).click();
+  await page.keyboard.press("ArrowUp");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, D4, 1 beats", exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Redo", exact: true }).click();
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, D4, 1 beats", exact: true })).toBeVisible();
+  await expect(page.getByText("Saved on this device")).toBeVisible();
+  expect(errors).toEqual([]);
+  await page.screenshot({ path: "test-results/workspace-desktop.png", fullPage: true });
+});
+
+test("duration changes cannot overwrite notes; empty spaces can become new notes", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true }).click();
+  await page.getByRole("toolbar", { name: "Selected note actions" }).getByRole("button", { name: "Half duration", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Score workspace" }).getByRole("alert")).toContainText("Make space first");
+  await page.getByRole("toolbar", { name: "Selected note actions" }).getByRole("button", { name: "Eighth duration", exact: true }).click();
+  const rest = page.getByRole("button", { name: "Bar 1, beat 1.5, Empty space, 0.5 beats", exact: true });
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1.5, Rest, 0.5 beats", exact: true })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await rest.click({ button: "right" });
+  await page.getByRole("button", { name: "Add note", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1.5, C4, 0.5 beats", exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Play score" }).click();
+  await expect(page.getByRole("button", { name: "Stop playback" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "Play score" })).toBeVisible();
+});
+
+test("pointer drag and keyboard editing operate on the same note", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true })).toBeEnabled();
+  const note = page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true });
+  const hit = note.locator("rect");
+  await hit.scrollIntoViewIfNeeded();
+  const box = (await hit.boundingBox())!;
+  const svg = (await page.locator("svg[aria-label*='treble clef']").boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - 12 * svg.width / 900, { steps: 4 });
+  await page.mouse.up();
+  const edited = page.getByRole("button", { name: "Bar 1, beat 1, E4, 1 beats", exact: true });
+  await expect(edited).toBeVisible();
+  await edited.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, D4, 1 beats", exact: true })).toBeVisible();
+});
+
+test("corrupt local data is preserved and the mobile editor remains usable", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => localStorage.setItem("amanuensis.score.v1", "broken draft"));
+  await page.goto("/");
+  await expect(page.getByRole("region", { name: "Score workspace" }).getByRole("alert")).toContainText("left untouched");
+  await page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true }).click();
+  await page.keyboard.press("ArrowUp");
+  await page.keyboard.press("Escape");
+  expect(await page.evaluate(() => localStorage.getItem("amanuensis.score.v1"))).toBe("broken draft");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: "test-results/workspace-mobile.png", fullPage: true });
+});
+
+test("native export reopens losslessly and print hides editing controls", async ({ page }) => {
+  await page.goto("/");
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Save a copy" }).click();
+  const download = await downloadPromise;
+  const score = JSON.parse(await readFile((await download.path())!, "utf8"));
+  expect(score.measures).toHaveLength(4);
+  score.title = "A second idea";
+  await page.getByLabel("Open score file").setInputFiles({ name: "melody.amanuensis.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(score)) });
+  await expect(page.getByRole("textbox", { name: "Score title" })).toHaveValue("A second idea");
+  await page.emulateMedia({ media: "print" });
+  await expect(page.getByRole("heading", { name: "A second idea", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play score" })).toBeHidden();
+  await expect(page.getByRole("region", { name: "Note inspector" })).toBeHidden();
+});
+
+test("mixed meters, expressive indications and repeats are editable musical state", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Change time signature" })).toBeEnabled();
+  await page.getByRole("button", { name: "Select bar 2", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Change time signature" }).click();
+  await page.getByLabel("Time signature", { exact: true }).selectOption("6/8");
+  await page.getByLabel("Meter change policy").selectOption("scale");
+  await page.getByRole("button", { name: "Preview meter change" }).click();
+  await page.getByRole("button", { name: "Apply change", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "Change time signature" })).toHaveText("6/8");
+  await expect(page.locator('svg [aria-label="Time signature 6/8 at bar 2"]')).toBeVisible();
+  await expect(page.locator('svg [aria-label="Time signature 4/4 at bar 3"]')).toBeVisible();
+  await page.getByRole("button", { name: "Dynamics", exact: true }).click();
+  await page.getByRole("button", { name: "Set dynamic f", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Text indications", exact: true }).click();
+  await page.getByLabel("Text indication", { exact: true }).fill("espressivo");
+  await page.getByRole("button", { name: "Add text", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Bar 2, beat 1, D4, 0.75 beats", exact: true }).click({ button: "right" });
+  await page.getByRole("dialog", { name: "Note actions" }).getByRole("button", { name: "accent", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("svg text").filter({ hasText: /^espressivo$/ })).toBeVisible();
+  await page.getByRole("button", { name: "Repeats", exact: true }).click();
+  await page.getByLabel("Repeat end bar").selectOption({ value: "2" });
+  await page.getByRole("button", { name: "Set repeat", exact: true }).click();
+  await page.getByRole("button", { name: "Apply change", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await expect(page.locator('svg [aria-label="Repeat ends at bar 3, 2 passes"]')).toBeVisible();
+  await page.screenshot({ path: "test-results/musical-tools.png", fullPage: true });
+  await page.reload();
+  await expect(page.locator('svg [aria-label="Time signature 6/8 at bar 2"]')).toBeVisible();
+  await page.getByRole("button", { name: "Select bar 2", exact: true }).click();
+  await page.getByRole("button", { name: "Text indications", exact: true }).click();
+  await page.getByRole("button", { name: "Remove indication espressivo", exact: true }).click();
+  await expect(page.locator("svg text").filter({ hasText: /^espressivo$/ })).toHaveCount(0);
+});
+
+test("empty measures become full-bar rests and allow note entry", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Change time signature" })).toBeEnabled();
+  await page.getByRole("button", { name: "Measure actions", exact: true }).click();
+  await page.getByRole("button", { name: "Clear to rests", exact: true }).click();
+  await page.getByRole("button", { name: "Apply change", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Change time signature" }).click();
+  await page.getByLabel("Time signature", { exact: true }).selectOption("6/8");
+  await page.getByRole("button", { name: "Preview meter change", exact: true }).click();
+  await page.getByRole("button", { name: "Apply change", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Bar 1, beat 1, Rest, 3 beats", exact: true }).click({ button: "right" });
+  await page.getByRole("button", { name: "Add note", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, Rest, 3 beats", exact: true })).toBeVisible();
+});
+
+test("sheet context actions replace the old note inspector", async ({ page }) => {
+  await page.goto("/");
+  const note = page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true });
+  await note.click();
+  await expect(page.getByRole("toolbar", { name: "Selected note actions" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Edit selected note", exact: true })).toHaveCount(0);
+  await note.click({ button: "right" });
+  const menu = page.getByRole("dialog", { name: "Note actions" });
+  await expect(menu).toBeVisible();
+  await menu.getByRole("button", { name: "Sharp", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, C♯4, 1 beats", exact: true })).toBeVisible();
+  await expect(menu).toHaveCount(0);
+  await page.getByRole("button", { name: "More note actions", exact: true }).click();
+  await menu.getByRole("button", { name: "staccato", exact: true }).click();
+  await page.screenshot({ path: "test-results/direct-sheet-editing.png", fullPage: true });
+});
+
+test("drag a bar divider, undo it, and restore persisted spacing", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Change time signature" })).toBeEnabled();
+  const divider = page.getByRole("slider", { name: "Resize bar 1" });
+  const box = (await divider.boundingBox())!;
+  const svg = (await page.locator("svg[aria-label*='treble clef']").boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 80 * svg.width / 900, box.y + box.height / 2, { steps: 6 });
+  await page.mouse.up();
+  await expect(divider).toHaveAttribute("aria-valuenow", "444");
+  await page.reload();
+  await expect(divider).toHaveAttribute("aria-valuenow", "444");
+  await divider.focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(divider).toHaveAttribute("aria-valuenow", "436");
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(divider).toHaveAttribute("aria-valuenow", "444");
+  await divider.click({ button: "right" });
+  await page.getByRole("dialog", { name: "Bar actions" }).getByRole("button", { name: "Reset spacing", exact: true }).click();
+  await expect(divider).toHaveAttribute("aria-valuenow", "364");
+});
+
+test("horizontal note drag reorders the bar and Escape cancels a pitch drag", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Change time signature" })).toBeEnabled();
+  const first = page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true });
+  const third = page.getByRole("button", { name: "Bar 1, beat 3, G4, 1 beats", exact: true });
+  const from = (await first.locator("rect").boundingBox())!;
+  const to = (await third.locator("rect").boundingBox())!;
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(to.x + to.width / 2 + 12, from.y + from.height / 2, { steps: 8 });
+  await page.mouse.up();
+  const moved = page.getByRole("button", { name: "Bar 1, beat 3, C4, 1 beats", exact: true });
+  await expect(moved).toBeVisible();
+  const box = (await moved.locator("rect").boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2, box.y - 20, { steps: 4 });
+  await page.keyboard.press("Escape");
+  await page.mouse.up();
+  await expect(moved).toBeVisible();
+});

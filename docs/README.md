@@ -1,6 +1,6 @@
 # Amanuensis AI — product and architecture
 
-Planning baseline: 26 October 2026. These are proposed decisions, not implemented capabilities or measured results. This pass changes documentation only.
+Planning baseline: 26 October 2026. These documents describe the proposed product and architecture, not a claim that every capability is implemented. See the [repository README](../README.md) for the current implementation and checks.
 
 Start with the [product brief](product/product-brief.md), then the [architecture](architecture/system-design.md) and [delivery gates](planning/delivery-plan.md).
 
@@ -9,6 +9,7 @@ Start with the [product brief](product/product-brief.md), then the [architecture
 | [Product brief](product/product-brief.md) | Problem, audience, promise, first release, success criteria |
 | [Experience brief](product/experience-brief.md) | Voice-first workspace, musical intent cards, editing, motion |
 | [System design](architecture/system-design.md) | Engines, deployment boundaries, domain folders, data ownership |
+| [Implemented score engine](architecture/implemented-score-engine.md) | Current commands, meters, indications, repeats, AI tools and limits |
 | [Score and tool contracts](architecture/score-and-tools.md) | Musical state, agent tools, edits, conflicts and undo |
 | [Delivery plan](planning/delivery-plan.md) | Research spikes, implementation order, acceptance gates, unresolved choices |
 | [Models and voice research](research/models-and-voice.md) | Meta capabilities, specialist gaps and source evidence |
@@ -27,6 +28,6 @@ Start with the [product brief](product/product-brief.md), then the [architecture
 
 ## Repository evidence
 
-The scaffold declares Next.js 16.4.3, React 19.3.0, TypeScript, Tailwind 4 and Yarn 4.14.1. There are only starter app files, no application engines or persistence. Yarn Plug'n'Play resolves dependencies from a zip archive, so the absence of a physical `node_modules` directory does not mean dependencies are missing.
+At research time, the scaffold declared Next.js 16.4.3, React 19.3.0, TypeScript, Tailwind 4 and Yarn 4.14.1, with only starter app files. Dependencies initially used Yarn Plug'n'Play. The first implementation switches Yarn to `node_modules` because the bundled Turbopack guide explicitly excludes PnP support.
 
 The installed Next.js guides were read through Yarn's resolver: `dist/docs/01-app/01-getting-started/02-project-structure.md`, `05-server-and-client-components.md`, and `15-route-handlers.md`. Implementation must continue consulting the installed guides as required by `AGENTS.md`.
