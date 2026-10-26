@@ -7,9 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "next typegen && tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "tsx --test tests/unit/*.test.ts",
     "test:e2e": "playwright test",
-    "typecheck": "tsc --noEmit"
+    "check": "yarn format:check && yarn lint && yarn typecheck && yarn test"
   },
   "dependencies": {
     "next": "16.4.3",
@@ -25,6 +28,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
+    "prettier": "^3",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5"

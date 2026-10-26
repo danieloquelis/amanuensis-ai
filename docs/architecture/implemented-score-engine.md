@@ -29,7 +29,7 @@ This is not automatic re-barring across measure boundaries. A future re-bar oper
 
 ## AI tool boundary
 
-`modules/assistant/application/score-tools.ts` exports JSON Schema function definitions and `createScoreToolGateway(getSession, setSession)`:
+`@/modules/assistant` exports JSON Schema function definitions (`scoreTools`, from `application/tool-definitions.ts`) and `createScoreToolGateway(getSession, setSession)` (from `application/score-tool-gateway.ts`):
 
 | Tool | Contract |
 | --- | --- |

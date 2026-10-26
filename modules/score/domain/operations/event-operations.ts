@@ -1,0 +1,80 @@
+import { locateEvent } from "../queries";
+import { beats, durationFromBeats } from "../rhythm";
+import type { Pitch } from "../schema";
+import { detachFrom, makeGaps, makeRests, type Draft, type OperationContext } from "./draft";
+import type { OperationOf } from "./schema";
+
+/** A pitch makes a note; `null` makes an explicit rest. */
+export function setPitch(draft: Draft, op: OperationOf<"setPitch">) {
+  writePitch(draft, op.eventId, op.pitch, false);
+}
+
+/** Removing a note leaves editable space of the same length, never shifting later notes. */
+export function removeEvent(draft: Draft, op: OperationOf<"removeEvent">) {
+  writePitch(draft, op.eventId, null, true);
+}
+
+function writePitch(draft: Draft, eventId: string, pitch: Pitch | null, leaveGap: boolean) {
+  const { event } = locateEvent(draft, eventId);
+  event.pitch = pitch;
+  if (event.pitch) {
+    delete event.measureRest;
+    delete event.gap;
+  } else if (leaveGap) {
+    delete event.measureRest;
+    event.gap = true;
+  } else {
+    delete event.gap;
+  }
+  if (!event.pitch) delete event.articulation;
+}
+
+export function setArticulation(draft: Draft, op: OperationOf<"setArticulation">) {
+  const { event } = locateEvent(draft, op.eventId);
+  if (op.articulation) event.articulation = op.articulation;
+  else delete event.articulation;
+}
+
+/** Reorders within one measure; `beforeEventId: null` moves the event to the end. */
+export function moveEvent(draft: Draft, op: OperationOf<"moveEvent">) {
+  const from = locateEvent(draft, op.eventId);
+  const to = op.beforeEventId ? locateEvent(draft, op.beforeEventId) : null;
+  if (to && from.measure.id !== to.measure.id) {
+    throw new Error("Reordering currently stays within one measure.");
+  }
+  if (from.event.id === to?.event.id) return;
+  const events = from.measure.events;
+  events.splice(from.eventIndex, 1);
+  const index = to ? events.findIndex((e) => e.id === to.event.id) : events.length;
+  events.splice(index, 0, from.event);
+}
+
+/**
+ * Lengthening consumes only the rests or spaces directly after the note; it never overwrites
+ * notes. Shortening leaves the remainder as editable space (or rests, when splitting a rest).
+ */
+export function setDuration(draft: Draft, op: OperationOf<"setDuration">, { idPrefix }: OperationContext) {
+  const { measure, eventIndex, event } = locateEvent(draft, op.eventId);
+  const events = measure.events;
+  let available = beats(event.duration);
+  let consumed = 1;
+  while (available < op.duration && events[eventIndex + consumed]?.pitch === null) {
+    available += beats(events[eventIndex + consumed].duration);
+    consumed++;
+  }
+  if (available < op.duration) {
+    throw new Error("Make space first: a longer note can only use rests immediately after it.");
+  }
+  const remainderSource = op.duration < beats(event.duration) ? event : events[eventIndex + consumed - 1];
+  // Editing a full-bar rest to make room for a note leaves the rest of the bar open.
+  const remainderIsRest = !event.measureRest && !remainderSource.pitch && !remainderSource.gap;
+  const remainder = available - op.duration;
+  detachFrom(
+    draft,
+    events.slice(eventIndex + 1, eventIndex + consumed).map((e) => e.id),
+  );
+  delete event.measureRest;
+  event.duration = durationFromBeats(op.duration);
+  const filler = remainderIsRest ? makeRests(remainder, idPrefix) : makeGaps(remainder, idPrefix);
+  events.splice(eventIndex, consumed, event, ...filler);
+}

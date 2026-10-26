@@ -23,9 +23,17 @@ test("edit, undo, redo and reload preserve the musical document", async ({ page 
 test("duration changes cannot overwrite notes; empty spaces can become new notes", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true }).click();
-  await page.getByRole("toolbar", { name: "Selected note actions" }).getByRole("button", { name: "Half duration", exact: true }).click();
-  await expect(page.getByRole("region", { name: "Score workspace" }).getByRole("alert")).toContainText("Make space first");
-  await page.getByRole("toolbar", { name: "Selected note actions" }).getByRole("button", { name: "Eighth duration", exact: true }).click();
+  await page
+    .getByRole("toolbar", { name: "Selected note actions" })
+    .getByRole("button", { name: "Half duration", exact: true })
+    .click();
+  await expect(page.getByRole("region", { name: "Score workspace" }).getByRole("alert")).toContainText(
+    "Make space first",
+  );
+  await page
+    .getByRole("toolbar", { name: "Selected note actions" })
+    .getByRole("button", { name: "Eighth duration", exact: true })
+    .click();
   const rest = page.getByRole("button", { name: "Bar 1, beat 1.5, Empty space, 0.5 beats", exact: true });
   await expect(page.getByRole("button", { name: "Bar 1, beat 1.5, Rest, 0.5 beats", exact: true })).toHaveCount(0);
   await page.keyboard.press("Escape");
@@ -49,7 +57,7 @@ test("pointer drag and keyboard editing operate on the same note", async ({ page
   const svg = (await page.locator("svg[aria-label*='treble clef']").boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - 12 * svg.width / 900, { steps: 4 });
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - (12 * svg.width) / 900, { steps: 4 });
   await page.mouse.up();
   const edited = page.getByRole("button", { name: "Bar 1, beat 1, E4, 1 beats", exact: true });
   await expect(edited).toBeVisible();
@@ -62,7 +70,9 @@ test("corrupt local data is preserved and the mobile editor remains usable", asy
   await page.setViewportSize({ width: 390, height: 844 });
   await page.addInitScript(() => localStorage.setItem("amanuensis.score.v1", "broken draft"));
   await page.goto("/");
-  await expect(page.getByRole("region", { name: "Score workspace" }).getByRole("alert")).toContainText("left untouched");
+  await expect(page.getByRole("region", { name: "Score workspace" }).getByRole("alert")).toContainText(
+    "left untouched",
+  );
   await page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true }).click();
   await page.keyboard.press("ArrowUp");
   await page.keyboard.press("Escape");
@@ -79,7 +89,11 @@ test("native export reopens losslessly and print hides editing controls", async 
   const score = JSON.parse(await readFile((await download.path())!, "utf8"));
   expect(score.measures).toHaveLength(4);
   score.title = "A second idea";
-  await page.getByLabel("Open score file").setInputFiles({ name: "melody.amanuensis.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(score)) });
+  await page.getByLabel("Open score file").setInputFiles({
+    name: "melody.amanuensis.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(score)),
+  });
   await expect(page.getByRole("textbox", { name: "Score title" })).toHaveValue("A second idea");
   await page.emulateMedia({ media: "print" });
   await expect(page.getByRole("heading", { name: "A second idea", exact: true })).toBeVisible();
@@ -172,7 +186,7 @@ test("drag a bar divider, undo it, and restore persisted spacing", async ({ page
   const svg = (await page.locator("svg[aria-label*='treble clef']").boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
-  await page.mouse.move(box.x + box.width / 2 + 80 * svg.width / 900, box.y + box.height / 2, { steps: 6 });
+  await page.mouse.move(box.x + box.width / 2 + (80 * svg.width) / 900, box.y + box.height / 2, { steps: 6 });
   await page.mouse.up();
   await expect(divider).toHaveAttribute("aria-valuenow", "444");
   await page.reload();
@@ -183,7 +197,10 @@ test("drag a bar divider, undo it, and restore persisted spacing", async ({ page
   await page.getByRole("button", { name: "Undo", exact: true }).click();
   await expect(divider).toHaveAttribute("aria-valuenow", "444");
   await divider.click({ button: "right" });
-  await page.getByRole("dialog", { name: "Bar actions" }).getByRole("button", { name: "Reset spacing", exact: true }).click();
+  await page
+    .getByRole("dialog", { name: "Bar actions" })
+    .getByRole("button", { name: "Reset spacing", exact: true })
+    .click();
   await expect(divider).toHaveAttribute("aria-valuenow", "364");
 });
 

@@ -1,0 +1,31 @@
+.staffLine {
+  stroke: #b7bcb3;
+  stroke-width: 0.85;
+}
+
+.barline {
+  stroke: #737d73;
+  stroke-width: 1;
+}
+
+.barNumber {
+  fill: #9b9f94;
+  font:
+    10px var(--font-geist-mono),
+    monospace;
+  letter-spacing: 1px;
+}
+
+/* Interactive surfaces raise this via [data-glyph="empty-space"]. */
+.emptySpace {
+  opacity: 0.28;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+}
+
+@media print {
+  .emptySpace {
+    display: none;
+  }
+}

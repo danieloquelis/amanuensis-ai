@@ -10,6 +10,7 @@ Start with the [product brief](product/product-brief.md), then the [architecture
 | [Experience brief](product/experience-brief.md) | Voice-first workspace, musical intent cards, editing, motion |
 | [System design](architecture/system-design.md) | Engines, deployment boundaries, domain folders, data ownership |
 | [Implemented score engine](architecture/implemented-score-engine.md) | Current commands, meters, indications, repeats, AI tools and limits |
+| [Code conventions](architecture/code-conventions.md) | Module layers, imports, components vs hooks, enforced checks |
 | [Score and tool contracts](architecture/score-and-tools.md) | Musical state, agent tools, edits, conflicts and undo |
 | [Delivery plan](planning/delivery-plan.md) | Research spikes, implementation order, acceptance gates, unresolved choices |
 | [Models and voice research](research/models-and-voice.md) | Meta capabilities, specialist gaps and source evidence |

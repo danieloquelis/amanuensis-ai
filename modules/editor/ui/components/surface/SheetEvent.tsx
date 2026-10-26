@@ -1,0 +1,73 @@
+import type { EngravedEvent, System } from "@/modules/engraving";
+import { EventGlyph } from "@/modules/engraving/ui";
+import { beats, pitchName } from "@/modules/score";
+import { classNames } from "@/shared/ui/class-names";
+import styles from "./score-surface.module.css";
+import { isMenuKey, type SheetInteractions } from "./sheet-interactions";
+
+type SheetEventProps = {
+  item: EngravedEvent;
+  system: System;
+  selected: boolean;
+  playBeat: number | null;
+  interactions: SheetInteractions;
+};
+
+/** A selectable, draggable note, rest or empty space with keyboard equivalents. */
+export function SheetEvent({ item, system, selected, playBeat, interactions }: SheetEventProps) {
+  const { select, stepPitch, removeEvent, openMenu, gestures } = interactions;
+  const { event, x, y } = item;
+  const length = beats(event.duration);
+  const sounding = playBeat !== null && playBeat >= item.beat && playBeat < item.beat + length;
+  const description = event.gap ? "Empty space" : pitchName(event.pitch);
+
+  return (
+    <g
+      className={classNames(styles.event, selected && styles.selected, sounding && styles.sounding)}
+      role="button"
+      tabIndex={0}
+      aria-label={`Bar ${item.measure + 1}, beat ${item.localBeat + 1}, ${description}, ${length} beats`}
+      aria-pressed={selected}
+      onFocus={() => select(event.id)}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        select(event.id);
+        openMenu("note", event.id, e.clientX, e.clientY);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+          e.preventDefault();
+          stepPitch(event.id, e.key === "ArrowUp" ? 1 : -1);
+        }
+        if (e.key === "Delete" || e.key === "Backspace") {
+          e.preventDefault();
+          removeEvent(event.id);
+        }
+        if (isMenuKey(e)) {
+          e.preventDefault();
+          select(event.id);
+          const rect = e.currentTarget.getBoundingClientRect();
+          openMenu("note", event.id, rect.right, rect.top);
+        }
+        if (e.key === " ") {
+          e.preventDefault();
+          select(event.id);
+        }
+        if (e.key === "Escape") {
+          select(null);
+          gestures.cancelGesture();
+        }
+      }}
+      onPointerDown={(e) => gestures.startNoteDrag(e, item, system)}
+      onPointerMove={(e) => gestures.moveNoteDrag(e, event.id)}
+      onPointerUp={gestures.finishGesture}
+      onPointerCancel={gestures.cancelGesture}
+    >
+      <rect className={styles.hit} x={x - 19} y={y - 25} width="38" height="50" rx="8" />
+      <g pointerEvents="none">
+        {selected && <ellipse className={styles.halo} cx={x} cy={y} rx="18" ry="15" />}
+        <EventGlyph item={item} systemTop={system.top} beamed={system.beamedIds.includes(event.id)} />
+      </g>
+    </g>
+  );
+}

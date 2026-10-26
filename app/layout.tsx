@@ -14,15 +14,13 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Amanuensis AI — Your musical workspace",
-  description: "A quiet space to capture, shape, and hear your musical ideas. An original score editor built for voice-first composition.",
+  description:
+    "A quiet space to capture, shape, and hear your musical ideas. An original score editor built for voice-first composition.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

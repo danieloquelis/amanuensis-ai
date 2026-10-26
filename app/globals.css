@@ -16,13 +16,53 @@
   --font-mono: var(--font-geist-mono);
 }
 
-* { box-sizing: border-box; }
-body { margin: 0; background: var(--background); color: var(--foreground); font-family: var(--font-geist-sans), Arial, sans-serif; -webkit-font-smoothing: antialiased; }
-button, input, select { font: inherit; }
-button, select { cursor: pointer; }
-button:disabled { opacity: .4; cursor: not-allowed; }
-button, a, input, select { -webkit-tap-highlight-color: transparent; }
-:focus-visible { outline: 2px solid #6b8e65; outline-offset: 3px; }
-::selection { background: #d5e2c8; color: #304e37; }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }
-@page { size: A4; margin: 15mm; }
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+button,
+input,
+select {
+  font: inherit;
+}
+button,
+select {
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+button,
+a,
+input,
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+:focus-visible {
+  outline: 2px solid #6b8e65;
+  outline-offset: 3px;
+}
+::selection {
+  background: #d5e2c8;
+  color: #304e37;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation: none !important;
+    transition: none !important;
+  }
+}
+@page {
+  size: A4;
+  margin: 15mm;
+}

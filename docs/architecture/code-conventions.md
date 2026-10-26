@@ -1,0 +1,82 @@
+# Code conventions
+
+How code is organized in this repository. These rules apply to people and coding agents alike. The import and layering rules are enforced by ESLint (`eslint.config.mjs`), formatting by Prettier. Run `yarn check` before you commit.
+
+## Modules
+
+Each domain capability lives in `modules/<name>/`: `score`, `engraving`, `editor`, `playback`, `projects`, `assistant`, `workspace`. `app/` routes only render a screen from a module. `shared/` holds domain-free UI helpers and never imports from `modules/`.
+
+A module is split into layers. Add a layer only when the module needs it:
+
+```text
+modules/<name>/
+  domain/          pure rules and types: no React, no Next.js, no browser APIs
+  application/     use cases and ports, built on domain; still framework-free
+  infrastructure/  adapters to the outside world (localStorage, Web Audio, files, model APIs)
+  ui/
+    components/    React components, one per file, PascalCase.tsx, with colocated *.module.css
+    hooks/         React hooks, use-kebab-case.ts
+    index.ts       public React API
+  index.ts         public framework-free API
+```
+
+Dependencies point inward: `ui → application → domain`. `infrastructure` implements ports that `application` declares (for example `ProjectRepository`). `domain` imports nothing from the other layers.
+
+| Code | Goes in | Example |
+| --- | --- | --- |
+| A musical rule, invariant or calculation | `domain/` | `score/domain/rhythm.ts` `measureCapacity` |
+| A score mutation | `score/domain/operations/`: a handler plus a schema entry | `setDuration` in `event-operations.ts` |
+| Logic a UI needs but that has no React in it (what to select after an edit, what operation a button builds) | `<module>/application/` | `editor/application/selection.ts` |
+| State, effects or event wiring for React | `ui/hooks/` | `editor/ui/hooks/use-sheet-gestures.ts` |
+| Markup | `ui/components/` | `editor/ui/components/surface/SheetEvent.tsx` |
+| Browser or network API calls | `infrastructure/` | `playback/infrastructure/audio-player.ts` |
+| Generic UI with no musical meaning | `shared/ui/` | `shared/ui/hooks/use-dismissable-layer.ts` |
+
+## Imports
+
+- **Across modules**, import only from the public entrypoints, `@/modules/<name>` or `@/modules/<name>/ui`. Never reach into another module's folders. To use something that isn't exported, export it deliberately from that module's `index.ts`.
+- **Within a module**, use relative imports (`../domain/schema`).
+- The two entrypoints are split on purpose. Tests, server code and other domain code can import `@/modules/<name>` without loading React or CSS.
+- `index.ts` files list their exports explicitly. Avoid `export *`, so the public API is a decision rather than an accident.
+
+## Components and hooks
+
+- A component renders. When a component starts to own logic, move it out:
+  - **Musical or editing decisions** go into a pure function in `application/` (or `domain/`) that tests can call directly.
+  - **Stateful React logic** (refs, effects, listeners, multi-step interactions) goes into a hook in `ui/hooks/`.
+- One exported component per file. Small private subcomponents in the same file are fine.
+- Name event props `onX` and handlers inside a component as verbs (`selectBar`, `openBarMenu`).
+- Group props for many interactive children into one object rather than threading ten callbacks, for example `SheetInteractions` in `editor/ui/components/surface/sheet-interactions.ts`.
+- `"use client"` goes only on the screen components that `app/` routes render (currently `WorkspaceScreen`). Everything they import is already client code (see `node_modules/next/dist/docs/01-app/01-getting-started/05-server-and-client-components.md`).
+- Engraving UI components are stateless SVG glyphs. They accept extra SVG props (`role`, handlers, `className`) on their root element so the editor can make them interactive without the engraving module knowing about editing.
+
+## Score changes
+
+- Every change to a score, whether from a person or the AI, is an `Operation` applied through `applyCommand`/`execute` with an expected revision. UI code never edits a `Score` object directly.
+- To add an operation:
+  1. Add its schema to `score/domain/operations/schema.ts`.
+  2. Write a handler `(draft, op, { idPrefix }) => void` in the matching `*-operations.ts` file.
+  3. Register it in `apply-command.ts`. TypeScript fails if a type has no handler.
+  4. Add a unit test.
+- Handlers mutate the cloned draft they are given. `applyCommand` clones, checks the revision, and re-validates the whole score afterwards.
+- Validate before showing a preview with `checkOperation` (`@/modules/editor`) rather than calling `applyCommand` in a `try` block in a component.
+
+## Style
+
+- Prettier formats everything (`yarn format`). Don't hand-format or collapse code onto long lines.
+- Files stay under 200 lines (enforced by ESLint). Split by responsibility when you get close.
+- Name numbers that carry meaning (`STEM_LENGTH`, `MEASURE_WIDTH.max`). Shared limits live with the score schema (`TEMPO_RANGE`, `MEASURE_WIDTH`, `SCORE_LIMITS`).
+- Comments explain *why* or state a contract. A short doc comment on each exported function is expected when its name doesn't say everything.
+- CSS: one CSS module per component folder; target elements by class, never by `aria-label`. Group the `@media print` rules at the end of a file, unless cascade order requires otherwise (see the note in `workspace.module.css`).
+
+## Tests
+
+- Unit tests (`tests/unit`, `node:test` via `tsx`) import only public entrypoints such as `@/modules/score`. They cover domain and application code.
+- Browser tests (`tests/e2e`, Playwright) drive the built app through accessible roles and labels. Changing an `aria-label` is a behaviour change.
+
+## Checks
+
+```sh
+yarn check      # format:check + lint + typecheck + unit tests
+yarn build && yarn test:e2e
+```

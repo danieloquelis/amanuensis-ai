@@ -29,9 +29,7 @@ Open http://localhost:3000. Yarn uses `node_modules` because the installed Next.
 ## Checks
 
 ```sh
-yarn lint
-yarn typecheck
-yarn test
+yarn check      # format:check, lint, typecheck, unit tests
 yarn build
 yarn playwright install chromium
 yarn test:e2e
@@ -53,4 +51,4 @@ This slice assumes one editing tab. Undo history and idempotency receipts are se
 
 ## Architecture
 
-See [the documentation index](docs/README.md), [system design](docs/architecture/system-design.md), and [delivery gates](docs/planning/delivery-plan.md). The domain contains no React, Next.js, audio SDK or model SDK dependencies. UI and future AI tools call typed score operations; SVG geometry is derived state.
+See [the documentation index](docs/README.md), [system design](docs/architecture/system-design.md), [delivery gates](docs/planning/delivery-plan.md) and [code conventions](docs/architecture/code-conventions.md). The domain contains no React, Next.js, audio SDK or model SDK dependencies. UI and future AI tools call typed score operations; SVG geometry is derived state.
