@@ -7,7 +7,15 @@ import nextTs from "eslint-config-next/typescript";
 const MODULES = readdirSync(new URL("./modules", import.meta.url));
 const PUBLIC_ENTRYPOINT =
   'Import other modules through their public entrypoint: "@/modules/<name>" or "@/modules/<name>/ui".';
-const CROSS_MODULE_IMPORTS = { group: ["@/modules/*/*", "!@/modules/*/ui"], message: PUBLIC_ENTRYPOINT };
+const CROSS_MODULE_IMPORTS = {
+  group: ["@/modules/*/*", "!@/modules/*/ui", "!@/modules/*/server"],
+  message: PUBLIC_ENTRYPOINT,
+};
+// Server entrypoints hold secrets (API keys); they must never reach client bundles.
+const SERVER_ENTRYPOINTS = {
+  group: ["@/modules/*/server", "**/server"],
+  message: "UI code must not import server-only modules.",
+};
 // Relative imports stay inside their own module.
 const RELATIVE_CROSS_MODULE_IMPORTS = {
   group: MODULES.flatMap((name) => [`../**/${name}`, `../**/${name}/**`]),
@@ -64,6 +72,15 @@ const eslintConfig = defineConfig([
             { group: ["**/application/**"], message: "domain/ is the innermost layer." },
           ],
         },
+      ],
+    },
+  },
+  {
+    files: ["modules/*/ui/**", "shared/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        { patterns: [CROSS_MODULE_IMPORTS, RELATIVE_CROSS_MODULE_IMPORTS, SERVER_ENTRYPOINTS] },
       ],
     },
   },

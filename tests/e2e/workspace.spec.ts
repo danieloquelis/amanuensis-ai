@@ -267,3 +267,60 @@ test("several marks can be added and any one deleted by selecting it", async ({ 
   await expect(fine).toHaveCount(0);
   await expect(page.locator("svg").getByRole("button", { name: "Segno", exact: true })).toBeVisible();
 });
+
+test("the assistant applies an instruction as one undoable step", async ({ page }) => {
+  // The model is mocked: browser tests never call the real API.
+  await page.route("/api/assistant", async (route) => {
+    const { score } = route.request().postDataJSON();
+    await route.fulfill({
+      json: {
+        reply: "Added Am7 on beat 3 of bar 2.",
+        question: null,
+        commands: [
+          {
+            requestId: "mock-chord",
+            expectedRevision: score.revision,
+            operation: { type: "putChord", measureId: "bar-2", beat: 2, symbol: "Am7" },
+          },
+        ],
+        changes: ["Bar 2: changed"],
+        steps: 3,
+      },
+    });
+  });
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Change time signature" })).toBeEnabled();
+  const instruction = page.getByLabel("Instruction for the assistant");
+  await instruction.fill("Add Am7 on beat 3 of bar 2");
+  await instruction.press("Enter");
+  const assistant = page.getByRole("complementary", { name: "Assistant" });
+  await expect(assistant.getByText("Added Am7 on beat 3 of bar 2.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Chord Am7", exact: true })).toBeVisible();
+  await assistant.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Chord Am7", exact: true })).toHaveCount(0);
+});
+
+test("the assistant's question becomes buttons that answer it", async ({ page }) => {
+  let calls = 0;
+  await page.route("/api/assistant", async (route) => {
+    calls++;
+    const body =
+      calls === 1
+        ? {
+            reply: "Which bar?",
+            question: { text: "Which bar?", choices: ["Bar 1", "Bar 2"] },
+            commands: [],
+            changes: [],
+            steps: 1,
+          }
+        : { reply: "Repeated bar 2.", question: null, commands: [], changes: [], steps: 1 };
+    await route.fulfill({ json: body });
+  });
+  await page.goto("/");
+  const instruction = page.getByLabel("Instruction for the assistant");
+  await instruction.fill("repeat that");
+  await instruction.press("Enter");
+  const assistant = page.getByRole("complementary", { name: "Assistant" });
+  await assistant.getByRole("button", { name: "Bar 2", exact: true }).click();
+  await expect(assistant.getByText("Repeated bar 2.")).toBeVisible();
+});

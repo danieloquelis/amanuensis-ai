@@ -34,6 +34,17 @@ export function execute(session: Session, command: Command): Session {
 }
 
 /**
+ * Applies several commands in order as one undo step (an assistant turn, for example). All or
+ * nothing: if any command is stale or invalid, the original session is returned untouched by
+ * throwing before anything is kept.
+ */
+export function executeAll(session: Session, commands: Command[]): Session {
+  if (!commands.length) return session;
+  const applied = commands.reduce((current, command) => execute(current, command), session);
+  return { ...applied, past: [...session.past.slice(-(UNDO_LIMIT - 1)), session.score] };
+}
+
+/**
  * Restores the previous or next snapshot as a new revision. Snapshots are safe for a single
  * local writer; a server or multi-writer session will need field-level compensation instead.
  */

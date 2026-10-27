@@ -1,6 +1,6 @@
 // Public API of the score module. Other modules import from "@/modules/score" only.
 export { describeScore, SCORE_VOCABULARY, summarizeChange } from "./application/describe-score";
-export { createSession, execute, travel, type Session } from "./application/session";
+export { createSession, execute, executeAll, travel, type Session } from "./application/session";
 export {
   CHORD_QUALITIES,
   CHORD_QUALITY_NAMES,
@@ -11,7 +11,15 @@ export {
   type ChordRoot,
 } from "./domain/chords";
 export { createExample } from "./domain/example";
-export { C_MAJOR, inKey, KEY_FIFTHS, keyAlter, keyName, keySignatureSteps, scoreKey } from "./domain/key";
+export { rankKeysForChords, type ChordSymbol, type KeyCandidate } from "./domain/harmony";
+export {
+  findTempoMarking,
+  TEMPO_MARKINGS,
+  tempoMarkingFor,
+  typicalTempo,
+  type TempoMarking,
+} from "./domain/tempo-markings";
+export { C_MAJOR, inKey, KEY_FIFTHS, keyAlter, keyName, keySignatureSteps, scoreKey, spellMidi } from "./domain/key";
 export {
   END_MARKS,
   isStartMark,
@@ -61,6 +69,8 @@ export {
 export {
   LABEL_OFFSET_LIMIT,
   MEASURE_WIDTH,
+  keySignatureSchema,
+  meterSchema,
   SCORE_LIMITS,
   TEMPO_RANGE,
   type Annotation,

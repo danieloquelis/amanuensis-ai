@@ -91,9 +91,10 @@
 
 /* Layout */
 
+/* Assistant on the left, score on the right; on phones the assistant follows the score. */
 .main {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: 320px minmax(0, 1fr);
   height: calc(100dvh - 76px);
   min-height: 0;
 }
@@ -458,6 +459,10 @@
   .header {
     gap: 30px;
   }
+
+  .main {
+    grid-template-columns: 270px minmax(0, 1fr);
+  }
 }
 
 /*
@@ -528,6 +533,11 @@
     display: flex;
     flex-direction: column;
     height: auto;
+  }
+
+  .main > aside {
+    order: 2;
+    max-height: 70vh;
   }
 
   .header {

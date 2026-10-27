@@ -134,10 +134,10 @@ export function createScoreToolGateway(getSession: () => Session, setSession: (s
 }
 
 /** Zod errors become a readable path and message the model can act on. */
-function toolError(error: unknown): string {
+export function toolError(error: unknown): string {
   if (error instanceof z.ZodError) {
     const issue = error.issues[0];
     return `Invalid tool arguments at ${issue.path.join(".") || "(root)"}: ${issue.message}`;
   }
-  return error instanceof Error ? error.message : "Score operation failed.";
+  return error instanceof Error ? error.message : "The tool failed.";
 }

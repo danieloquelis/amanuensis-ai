@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AssistantPanel } from "@/modules/assistant/ui";
 import { useScoreEditor } from "@/modules/editor/ui";
 import { usePlayback } from "@/modules/playback/ui";
 import { downloadScoreFile, localProjectRepository, readScoreFile } from "@/modules/projects";
@@ -32,6 +33,15 @@ export function WorkspaceScreen() {
     <div className={styles.app}>
       <AppHeader title={editor.score.title} />
       <main className={styles.main}>
+        <AssistantPanel
+          getScore={editor.getScore}
+          revision={editor.score.revision}
+          selectedIds={[editor.selectedId, editor.selectedBarId, editor.selectedItem?.id].filter(
+            (id): id is string => !!id,
+          )}
+          applyCommands={editor.applyCommands}
+          onUndo={() => editor.undoRedo("undo")}
+        />
         <section className={styles.studio} aria-label="Score workspace">
           <DocumentBar
             ready={editor.ready}

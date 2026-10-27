@@ -13,6 +13,7 @@ modules/<name>/
   domain/          pure rules and types: no React, no Next.js, no browser APIs
   application/     use cases and ports, built on domain; still framework-free
   infrastructure/  adapters to the outside world (localStorage, Web Audio, files, model APIs)
+  server.ts        server-only API (adapters holding secrets); imported by app/ route handlers only
   ui/
     components/    React components, one per file, PascalCase.tsx, with colocated *.module.css
     hooks/         React hooks, use-kebab-case.ts
@@ -34,7 +35,7 @@ Dependencies point inward: `ui → application → domain`. `infrastructure` imp
 
 ## Imports
 
-- **Across modules**, import only from the public entrypoints, `@/modules/<name>` or `@/modules/<name>/ui`. Never reach into another module's folders. To use something that isn't exported, export it deliberately from that module's `index.ts`.
+- **Across modules**, import only from the public entrypoints: `@/modules/<name>`, `@/modules/<name>/ui`, or `@/modules/<name>/server` (route handlers only; ESLint forbids it in UI code). Never reach into another module's folders. To use something that isn't exported, export it deliberately from that module's `index.ts`.
 - **Within a module**, use relative imports (`../domain/schema`).
 - The two entrypoints are split on purpose. Tests, server code and other domain code can import `@/modules/<name>` without loading React or CSS.
 - `index.ts` files list their exports explicitly. Avoid `export *`, so the public API is a decision rather than an accident.

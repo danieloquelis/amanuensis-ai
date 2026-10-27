@@ -36,3 +36,27 @@ export function keyName(key: KeySignature): string {
 export function inKey(pitch: Pitch, key: KeySignature): Pitch {
   return { ...pitch, alter: keyAlter(key, pitch.step) };
 }
+
+const NATURAL_PITCH_CLASSES: Record<Step, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+const STEP_ORDER: Step[] = ["C", "D", "E", "F", "G", "A", "B"];
+
+/**
+ * Spells a MIDI note in a key: the key's own spelling when it has one (F♯ in D major), otherwise
+ * sharps in sharp keys and flats in flat keys; in C, B♭ and E♭ as flats and other black keys as sharps.
+ */
+export function spellMidi(midi: number, key: KeySignature): Pitch {
+  const pitchClass = ((midi % 12) + 12) % 12;
+  const candidates = STEP_ORDER.flatMap((step) =>
+    ([-1, 0, 1] as const)
+      .filter((alter) => (NATURAL_PITCH_CLASSES[step] + alter + 12) % 12 === pitchClass)
+      .map((alter) => ({ step, alter })),
+  );
+  const inKeySpelling = candidates.find((c) => keyAlter(key, c.step) === c.alter);
+  const natural = candidates.find((c) => c.alter === 0);
+  const preferFlat = key.fifths < 0 || (key.fifths === 0 && (pitchClass === 10 || pitchClass === 3));
+  const accidental = candidates.find((c) => c.alter === (preferFlat ? -1 : 1));
+  const { step, alter } = inKeySpelling ?? natural ?? accidental ?? candidates[0];
+  // B♯/C♭ cross the octave boundary: octave follows the written letter.
+  const octave = Math.floor((midi - alter) / 12) - 1;
+  return { step, alter, octave };
+}

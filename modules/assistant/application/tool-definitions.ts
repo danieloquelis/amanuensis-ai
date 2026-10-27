@@ -54,13 +54,30 @@ const definitions: { name: ScoreToolName; description: string; schema: z.ZodType
   },
 ];
 
+/** Keys that only matter to strict validators; our gateway validates every call anyway. */
+const VALIDATOR_ONLY_KEYS = new Set(["$schema", "additionalProperties"]);
+
+function compactSchema(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(compactSchema);
+  if (!node || typeof node !== "object") return node;
+  return Object.fromEntries(
+    Object.entries(node)
+      .filter(([key]) => !VALIDATOR_ONLY_KEYS.has(key))
+      .map(([key, value]) => [key, compactSchema(value)]),
+  );
+}
+
 /**
- * Provider-neutral function definitions for a model's tool list. The JSON Schemas are generated
- * from the same Zod schemas that validate the calls, descriptions included, so they cannot drift.
+ * JSON Schema for a model's tool list, generated from the same Zod schemas that validate the
+ * calls (descriptions included), so they cannot drift. Repeated parts are shared through `$defs`
+ * and validator-only keys are dropped: the schema is re-sent on every model step, so size is cost.
  */
+export const toolParameters = (schema: z.ZodType) => compactSchema(z.toJSONSchema(schema, { reused: "ref" }));
+
+/** Provider-neutral function definitions for a model's tool list. */
 export const scoreTools = definitions.map(({ name, description, schema }) => ({
   type: "function" as const,
   name,
   description,
-  parameters: z.toJSONSchema(schema),
+  parameters: toolParameters(schema),
 }));

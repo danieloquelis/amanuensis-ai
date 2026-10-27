@@ -4,10 +4,12 @@ import {
   createExample,
   createSession,
   execute,
+  executeAll,
   locateEvent,
   parseScore,
   scoreKey,
   travel,
+  type Command,
   type Operation,
   type Score,
   type Step,
@@ -15,6 +17,7 @@ import {
 import { removeItemOperation, type SheetItem } from "../../application/notation-edits";
 import { letterNoteEdit, stepPitchEdit, toggleRestOperation } from "../../application/note-edits";
 import { findSelection, selectionAfterEdit } from "../../application/selection";
+import { useSheetSelection } from "./use-sheet-selection";
 
 const RECEIPT_LIMIT = 5;
 
@@ -30,10 +33,8 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
   const [session, setSession] = useState(() => createSession(createExample()));
   // Mirrors `session` so rapid successive edits read the latest revision, not a stale render.
   const latest = useRef(session);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  // A whole bar can be selected instead of a note; the two are exclusive.
-  const [selectedBarId, setSelectedBarId] = useState<string | null>(null);
-  const [selectedItem, setSelectedItem] = useState<SheetItem | null>(null);
+  const { selectedId, setSelectedId, selectedBarId, selectedItem, select, selectBar, selectItem, clear } =
+    useSheetSelection();
   const [ready, setReady] = useState(false);
   const [saveStatus, setSaveStatus] = useState("Opening local score…");
   const [error, setError] = useState<string | null>(null);
@@ -105,7 +106,29 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
         setError(error instanceof Error ? error.message : "The edit could not be applied.");
       }
     },
-    [addReceipt, onBeforeEdit, persist, ready, replaceSession],
+    [addReceipt, onBeforeEdit, persist, ready, replaceSession, setSelectedId],
+  );
+
+  /**
+   * Replays commands made elsewhere (an assistant turn) as one undo step. Returns false, leaving
+   * the score untouched, if they no longer apply, e.g. because the musician edited meanwhile.
+   */
+  const applyCommands = useCallback(
+    (commands: Command[], receipt: string): boolean => {
+      try {
+        const previous = latest.current.score;
+        const next = executeAll(latest.current, commands);
+        onBeforeEdit();
+        replaceSession(next);
+        setSelectedId((id) => selectionAfterEdit(previous, next.score, id));
+        addReceipt(receipt);
+        persist(next.score);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    [addReceipt, onBeforeEdit, persist, replaceSession, setSelectedId],
   );
 
   const undoRedo = useCallback(
@@ -127,8 +150,7 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
     const score = parseScore(value);
     onBeforeEdit();
     replaceSession(createSession(score));
-    setSelectedId(null);
-    setSelectedBarId(null);
+    clear();
     setError(null);
     canSave.current = true;
     persist(score);
@@ -152,28 +174,9 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
     if (edit) commit(edit.operation, edit.receipt);
   };
 
-  // Notes, bars and other sheet items are selected one at a time.
-  const select = useCallback((id: string | null) => {
-    setSelectedBarId(null);
-    setSelectedItem(null);
-    setSelectedId(id);
-  }, []);
-
-  const selectBar = useCallback((measureId: string | null) => {
-    setSelectedId(null);
-    setSelectedItem(null);
-    setSelectedBarId(measureId);
-  }, []);
-
-  const selectItem = useCallback((item: SheetItem | null) => {
-    setSelectedId(null);
-    setSelectedBarId(null);
-    setSelectedItem(item);
-  }, []);
-
   const deleteItem = (item: SheetItem) => {
     commit(removeItemOperation(item), "Removed");
-    setSelectedItem(null);
+    selectItem(null);
   };
 
   /** Deletes a bar; the last remaining bar is cleared instead. */
@@ -202,6 +205,9 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
     setError,
     receipts,
     commit,
+    applyCommands,
+    /** The latest score, including edits not yet rendered. */
+    getScore: () => latest.current.score,
     stepPitch,
     enterLetter,
     toggleRest,

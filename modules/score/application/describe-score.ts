@@ -86,20 +86,34 @@ export const SCORE_VOCABULARY = {
   barStyles: ["notes", "slashes", "repeat"],
 };
 
-/** One line per bar that changed between two revisions, for tool receipts. */
+/** "Bar 2" or "Bars 1–4" for each run of consecutive bar numbers. */
+function barRanges(numbers: number[]): string[] {
+  const runs: [number, number][] = [];
+  for (const n of numbers) {
+    const last = runs.at(-1);
+    if (last && n === last[1] + 1) last[1] = n;
+    else runs.push([n, n]);
+  }
+  return runs.map(([from, to]) => (from === to ? `Bar ${from}` : `Bars ${from}–${to}`));
+}
+
+/** Short lines describing what changed between two revisions, for tool receipts and the panel. */
 export function summarizeChange(before: Score, after: Score): string[] {
-  const lines: string[] = [];
-  const describeBefore = describeScore(before).bars;
-  const describeAfter = describeScore(after).bars;
-  for (const bar of describeAfter) {
-    const previous = describeBefore.find((b) => b.id === bar.id);
-    if (!previous) lines.push(`Bar ${bar.bar}: added`);
-    else if (JSON.stringify(previous) !== JSON.stringify({ ...bar, bar: previous.bar }))
-      lines.push(`Bar ${bar.bar}: changed`);
+  const previous = describeScore(before).bars;
+  const current = describeScore(after).bars;
+  const added: number[] = [];
+  const changed: number[] = [];
+  for (const bar of current) {
+    const old = previous.find((b) => b.id === bar.id);
+    if (!old) added.push(bar.bar);
+    else if (JSON.stringify(old) !== JSON.stringify({ ...bar, bar: old.bar })) changed.push(bar.bar);
   }
-  for (const bar of describeBefore) {
-    if (!describeAfter.some((b) => b.id === bar.id)) lines.push(`Bar ${bar.bar} (${bar.id}): removed`);
-  }
+  const removed = previous.filter((bar) => !current.some((b) => b.id === bar.id)).length;
+  const lines = [
+    ...barRanges(changed).map((range) => `${range}: changed`),
+    ...barRanges(added).map((range) => `${range}: added`),
+    ...(removed ? [`${removed} bar${removed > 1 ? "s" : ""} removed`] : []),
+  ];
   if (before.title !== after.title) lines.push(`Title: ${after.title}`);
   if (before.tempo !== after.tempo) lines.push(`Tempo: ${after.tempo}`);
   if (JSON.stringify(before.key) !== JSON.stringify(after.key)) lines.push(`Key: ${keyName(scoreKey(after))}`);
