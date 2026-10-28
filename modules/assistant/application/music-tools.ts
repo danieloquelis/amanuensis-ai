@@ -1,5 +1,6 @@
 import {
   findTempoMarking,
+  measureCapacity,
   parseChordSymbol,
   rankKeysForChords,
   TEMPO_MARKINGS,
@@ -8,22 +9,20 @@ import {
   type ChordSymbol,
   type KeyCandidate,
 } from "@/modules/score";
-import {
-  distinctTempi,
-  rankKeysForMelody,
-  segmentNotes,
-  spanSignal,
-  tempoCosts,
-  trackPitch,
-  type VoiceTake,
-} from "@/modules/voice";
+import { rankKeysForMelody, reportTempo, segmentNotes, spanFrames, type VoiceTake } from "@/modules/voice";
 import type { ToolSpec } from "./model-port";
-import { inferKeySchema, inferTempoSchema, transcribeSchema } from "./music-tool-schemas";
+import { hearNotesSchema, inferKeySchema, inferTempoSchema, transcribeSchema } from "./music-tool-schemas";
+import { hearNotes } from "./voice-listen-tool";
 import { transcribeIntoScore, type ScoreAccess } from "./voice-transcription-tool";
 import { toolError } from "./score-tool-gateway";
 import { toolParameters } from "./tool-definitions";
 
-export const MUSIC_TOOL_NAMES = ["music_infer_key", "music_infer_tempo", "voice_transcribe_melody"] as const;
+export const MUSIC_TOOL_NAMES = [
+  "music_infer_key",
+  "music_infer_tempo",
+  "voice_hear_notes",
+  "voice_transcribe_melody",
+] as const;
 export type MusicToolName = (typeof MUSIC_TOOL_NAMES)[number];
 type ToolResult = { ok: true; [key: string]: unknown } | { ok: false; error: string };
 
@@ -32,6 +31,8 @@ const CLEAR_MARGIN = 0.5;
 /** Melody evidence counts for less than chords: a tune can sit on any degree of its key. */
 const MELODY_WEIGHT = 0.5;
 const SHOWN_CANDIDATES = 3;
+/** Bars are read as 4/4 when there is no score to take the meter from. */
+const DEFAULT_BAR_BEATS = 4;
 
 const specs: Record<MusicToolName, ToolSpec> = {
   music_infer_key: {
@@ -43,8 +44,14 @@ const specs: Record<MusicToolName, ToolSpec> = {
   music_infer_tempo: {
     name: "music_infer_tempo",
     description:
-      "Quarter-note BPM from a tempo word (Allegro…) and/or the timing of the sung spans; with both, the singing picks a tempo within the word's range. A spoken number needs no tool: use it.",
+      "Quarter-note BPM from a tempo word (Allegro…) and/or the timing of the sung spans, read with a beat that follows the singer's drift; with both, the singing picks a tempo within the word's range. Also says how the same singing fits double and half time: only their words or the style settle that. A spoken number needs no tool: use it.",
     parameters: toolParameters(inferTempoSchema),
+  },
+  voice_hear_notes: {
+    name: "voice_hear_notes",
+    description:
+      "The notes heard in one sung span, as sung (time, pitch, length, how clearly). Read-only. Use it to check the raw singing when a transcription looks wrong, e.g. to count notes per bar or spot a repeated figure.",
+    parameters: toolParameters(hearNotesSchema),
   },
   voice_transcribe_melody: {
     name: "voice_transcribe_melody",
@@ -75,9 +82,9 @@ function parseChords(symbols: string[]): ChordSymbol[] {
  */
 export function createMusicTools(take: VoiceTake | null, access: ScoreAccess | null = null) {
   const sungNotes = (id: string) => {
-    const signal = take && spanSignal(take, id);
-    if (!signal) throw new Error(`There is no sung span ${id}${take ? "" : " (no voice take this turn)"}.`);
-    return segmentNotes(trackPitch(signal));
+    const frames = take && spanFrames(take, id);
+    if (!frames) throw new Error(`There is no sung span ${id}${take ? "" : " (no voice take this turn)"}.`);
+    return segmentNotes(frames);
   };
 
   const handlers: Record<MusicToolName, (raw: unknown) => ToolResult> = {
@@ -109,21 +116,29 @@ export function createMusicTools(take: VoiceTake | null, access: ScoreAccess | n
         if (!marking) throw new Error("Give a tempo word, sung spans, or both.");
         return { ok: true, bpm: typicalTempo(marking), range: [marking.min, marking.max], source: "marking" };
       }
-      // Each span is timed on its own (speech sits between them); their misfits add up per tempo.
-      const total = new Map<number, number>();
-      for (const id of args.spanIds) {
-        for (const { bpm, cost } of tempoCosts(sungNotes(id), marking ?? undefined)) {
-          total.set(bpm, (total.get(bpm) ?? 0) + cost);
-        }
-      }
-      const [best, ...others] = distinctTempi([...total].map(([bpm, cost]) => ({ bpm, cost })));
+      // Each span is timed on its own (speech sits between them), with a beat that may drift.
+      const meter = access?.getScore().measures[0]?.meter;
+      const report = reportTempo(
+        args.spanIds.map((id) => sungNotes(id).map((note) => note.start)),
+        {
+          barBeats: meter ? measureCapacity(meter) : DEFAULT_BAR_BEATS,
+          bpm: marking ? typicalTempo(marking) : undefined,
+          range: marking ? { min: marking.min, max: marking.max } : undefined,
+          bars: args.bars,
+        },
+      );
       return {
         ok: true,
-        bpm: best.bpm,
-        marking: (marking ?? tempoMarkingFor(best.bpm)).name,
-        alternatives: others.slice(0, 2).map((c) => c.bpm),
+        bpm: report.bpm,
+        marking: (marking ?? tempoMarkingFor(report.bpm)).name,
+        drift: `${report.drift[0]}–${report.drift[1]} BPM`,
+        alternatives: report.alternatives.map((a) => `${a.bpm} BPM: ${a.fit} from the timing alone`),
         source: marking ? "singing, within the marking" : "singing",
       };
+    },
+
+    voice_hear_notes(raw) {
+      return { ok: true, ...hearNotes(take, hearNotesSchema.parse(raw).spanId) };
     },
 
     voice_transcribe_melody(raw) {

@@ -1,6 +1,14 @@
 import { z } from "zod";
 import { parseScore } from "@/modules/score";
-import { createTake, decodeWav, type SpeechRecognizer, type SpeechTurn, type SungSpan } from "@/modules/voice";
+import {
+  createTake,
+  decodeWav,
+  type PitchTracker,
+  type PitchTrack,
+  type SpeechRecognizer,
+  type SpeechTurn,
+  type SungSpan,
+} from "@/modules/voice";
 import type { ModelPort } from "./model-port";
 import { runAssistant, type AssistantResult, type ProgressListener } from "./run-assistant";
 
@@ -19,8 +27,8 @@ const payloadSchema = z.strictObject({
     .default([]),
 });
 
-/** What the take contained, so the musician can see what was heard. */
-export type HeardTake = { speech: SpeechTurn[]; sung: SungSpan[] };
+/** What the take contained, so the musician can see what was heard; `ms` is how long hearing took. */
+export type HeardTake = { speech: SpeechTurn[]; sung: SungSpan[]; ms?: { speech: number; pitch: number } };
 export type VoiceResult = AssistantResult & { heard: HeardTake };
 export type VoiceResponse = { status: number; body: VoiceResult | { error: string } };
 
@@ -34,7 +42,7 @@ const NOTHING_USED = { inputTokens: 0, outputTokens: 0 };
  */
 export async function handleVoiceRequest(
   input: { audio: Uint8Array | null; payload: unknown },
-  services: { model: ModelPort; recognizer: SpeechRecognizer },
+  services: { model: ModelPort; recognizer: SpeechRecognizer; pitchTracker?: PitchTracker },
   onProgress: ProgressListener = () => {},
 ): Promise<VoiceResponse> {
   if (!input.audio?.length) return failure(400, "Record a take first.");
@@ -54,18 +62,38 @@ export async function handleVoiceRequest(
   }
   let speech: SpeechTurn[];
   onProgress({ stage: "hearing" });
+  // The learned pitch tracker runs while the words are recognized; without it the ear uses YIN.
+  const started = Date.now();
+  let pitchMs = 0;
+  const tracking: Promise<PitchTrack | undefined> = services.pitchTracker
+    ? services.pitchTracker
+        .track(signal)
+        .catch(() => undefined)
+        .finally(() => (pitchMs = Date.now() - started))
+    : Promise.resolve(undefined);
   try {
     speech = await services.recognizer.transcribe(input.audio);
   } catch (error) {
     return failure(502, error instanceof Error ? error.message : "Speech recognition failed.");
   }
-  const take = createTake(signal, speech);
-  const heard = { speech: take.speech, sung: take.sung };
+  const speechMs = Date.now() - started;
+  const take = createTake(signal, speech, await tracking);
+  const heard = { speech: take.speech, sung: take.sung, ms: { speech: speechMs, pitch: pitchMs } };
   if (!take.speech.length && !take.sung.length && !parsed.data.instruction) {
     const reply = "I didn't hear anything. Try again a little closer to the microphone.";
     return {
       status: 200,
-      body: { reply, question: null, commands: [], changes: [], steps: 0, usage: NOTHING_USED, trace: [], heard },
+      body: {
+        reply,
+        question: null,
+        commands: [],
+        changes: [],
+        steps: 0,
+        usage: NOTHING_USED,
+        trace: [],
+        thinkingMs: [],
+        heard,
+      },
     };
   }
   try {

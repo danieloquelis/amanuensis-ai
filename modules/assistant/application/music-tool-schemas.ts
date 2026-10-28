@@ -10,7 +10,15 @@ export const inferKeySchema = z.strictObject({ chords: chordList.optional(), spa
 export const inferTempoSchema = z.strictObject({
   marking: z.string().max(60).optional().describe('A tempo word the musician used, e.g. "Allegro" or "Andante".'),
   spanIds: z.array(spanId).max(16).optional().describe("Sung spans to time together (all of the take's singing)."),
+  bars: z
+    .number()
+    .int()
+    .min(1)
+    .max(64)
+    .optional()
+    .describe("How many bars the singing fills, when they said so or named one chord per bar. Settles double time."),
 });
+export const hearNotesSchema = z.strictObject({ spanId });
 export const transcribeSchema = z.strictObject({
   spans: z
     .array(
@@ -34,7 +42,12 @@ export const transcribeSchema = z.strictObject({
     .min(1)
     .max(16)
     .describe("Every sung span to write, each with its bar. Give them all in one call."),
-  bpm: z.number().int().min(TEMPO_RANGE.min).max(TEMPO_RANGE.max),
+  bpm: z
+    .number()
+    .int()
+    .min(TEMPO_RANGE.min)
+    .max(TEMPO_RANGE.max)
+    .describe("The tempo they said, or music_infer_tempo's. The rhythm follows the singer's own drift around it."),
   meter: meterSchema.optional().describe("Default: the score's meter."),
   key: keySignatureSchema
     .optional()

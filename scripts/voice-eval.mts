@@ -2,13 +2,22 @@
 // Usage: yarn eval:voice                     synthetic suite with metrics
 //        yarn eval:voice --file take.m4a [--from 22 --to 32.5] [--bpm 90] [--meter 3/4]   your own recording (macOS)
 //                        [--key D] [--chords "Em A Dsus2 G"] (one per bar) [--start 0.5] [--snap]
-//        yarn eval:voice --corpus [.takes]   ear score on every kept take that has a truth.json
+//        yarn eval:voice --corpus [.takes] [--yin]   ear score on every kept take that has a truth.json
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { keyName, parseChordSymbol, pitchName, rankKeysForChords, type Meter } from "@/modules/score";
-import { createTake, decodeWav, spanSignal, transcribeMelody, type ChordContext, type Signal } from "@/modules/voice";
+import {
+  createTake,
+  decodeWav,
+  spanFrames,
+  spanSignal,
+  transcribeMelody,
+  type ChordContext,
+  type Signal,
+} from "@/modules/voice";
+import { createSwiftF0Tracker } from "@/modules/voice/server";
 import { midi, singMelody, type SingerOptions, type SungNoteSpec } from "../tests/support/synthetic-voice";
 import {
   chordsByBar,
@@ -218,16 +227,20 @@ function runFile(path: string) {
 
 /**
  * The ear alone on every take with a truth.json, given the options a good agent would choose
- * (key, chords, start, snapping from the truth). Free: no model or speech calls.
+ * (key, chords, start, snapping and bar count from the truth). Free: no model or speech calls.
+ * Pitch comes from SwiftF0, as in the app; --yin uses the built-in tracker instead.
  */
-function runCorpus(root: string) {
+async function runCorpus(root: string) {
+  const yin = process.argv.includes("--yin");
+  const tracker = createSwiftF0Tracker();
   const folders = corpusFolders(root);
   if (!folders.length) return console.log(`No takes with a truth.json in ${root}.`);
   let right = 0;
   let total = 0;
   for (const folder of folders) {
     const truth = readTruth(folder)!;
-    const take = createTake(decodeWav(loadTakeWav(folder)), readHeardSpeech(folder));
+    const audio = decodeWav(loadTakeWav(folder));
+    const take = createTake(audio, readHeardSpeech(folder), yin ? undefined : await tracker.track(audio));
     const span = [...take.sung].sort((a, b) => b.end - b.start - (a.end - a.start))[0];
     const signal = span && spanSignal(take, span.id);
     if (!signal) {
@@ -235,11 +248,13 @@ function runCorpus(root: string) {
       continue;
     }
     const result = transcribeMelody(signal, {
+      frames: spanFrames(take, span.id)!,
       bpm: truth.bpm,
       key: truth.key ? keyFromName(truth.key) : undefined,
       chords: chordsByBar(truth.chords),
       startBeat: truth.startBeat,
       snapToChordTones: truth.snap,
+      bars: process.argv.includes("--no-bars") ? undefined : truth.bars.split(" | ").length,
     });
     const score = compareBars(truth.bars, written(result.bars));
     right += score.right;
@@ -252,6 +267,6 @@ function runCorpus(root: string) {
 
 const file = argument("--file");
 if (process.argv.includes("--corpus"))
-  runCorpus(argument("--corpus")?.startsWith("--") ? ".takes" : (argument("--corpus") ?? ".takes"));
+  await runCorpus(argument("--corpus")?.startsWith("--") ? ".takes" : (argument("--corpus") ?? ".takes"));
 else if (file) runFile(file);
 else runSuite();

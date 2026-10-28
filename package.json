@@ -18,10 +18,12 @@
     "eval:voice": "tsx scripts/voice-eval.mts",
     "test:integration": "tsx --test tests/integration/*.integration-test.ts",
     "smoke:voice": "tsx --env-file=.env.local scripts/voice-smoke.mts",
+    "eval:rhythm": "tsx scripts/rhythm-oracle.mts",
     "experiment:readings": "tsx --env-file=.env.local scripts/reading-choice-experiment.mts"
   },
   "dependencies": {
     "next": "16.4.3",
+    "onnxruntime-node": "1.31.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "zod": "^4.6.7"

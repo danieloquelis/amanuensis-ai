@@ -66,8 +66,9 @@ export function rankTempi(notes: SungNote[], range: { min: number; max: number }
 export const estimateTempo = (notes: SungNote[]) => rankTempi(notes)[0].bpm;
 
 /**
- * Places sung notes on the beat grid: onsets snap to eighths (or sixteenths when clearly
- * meant), each note lasts until the next unless there is a real gap, and gaps become rests.
+ * Places sung notes on the beat grid at one steady tempo: onsets snap to eighths (or sixteenths
+ * when clearly meant), each note lasts until the next unless there is a real gap, and gaps
+ * become rests.
  */
 export function quantizeNotes(notes: SungNote[], bpm: number): PlacedNote[] {
   if (!notes.length) return [];
@@ -78,10 +79,23 @@ export function quantizeNotes(notes: SungNote[], bpm: number): PlacedNote[] {
     const onset = snap((note.start - origin) / beat);
     onsets.push(onsets.length && onset <= onsets.at(-1)! ? onsets.at(-1)! + GRID : onset);
   }
+  return placeNotes(
+    notes,
+    onsets,
+    notes.map((note) => (note.end - origin) / beat),
+  );
+}
+
+/**
+ * Writes notes whose onsets are already on the grid (beats from the first note): `ends` are
+ * where each note stopped, in beats. A note lasts until the next unless there is a real gap,
+ * gaps become rests, and a note before a rest is written to the next beat.
+ */
+export function placeNotes(notes: SungNote[], onsets: number[], ends: number[]): PlacedNote[] {
   const placed: PlacedNote[] = [];
   notes.forEach((note, i) => {
     const next = onsets[i + 1];
-    let end = Math.max(onsets[i] + GRID, snap((note.end - origin) / beat));
+    let end = Math.max(onsets[i] + GRID, snap(ends[i]));
     if (next !== undefined && next - end < MIN_REST) end = next;
     // Before a rest (or at the end), a musician writes the note to the next beat: quarter + rest,
     // not eighth + dotted rest.

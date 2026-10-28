@@ -53,17 +53,37 @@ export function splitAtRearticulations(segment: Segment): Segment[] {
 }
 
 /**
+ * A fading note read an octave off is quieter than the note it ends: below this share of its
+ * loudness. A real octave leap is sung at full voice.
+ */
+const FADING_TAIL = 0.75;
+const loudness = (segment: Segment) => median(segment.frames.map((f) => f.rms));
+
+/** Octaves (in semitones) from `a` to `b` when they are the same pitch an octave or two apart. */
+function octavesApart(a: number, b: number): number {
+  const octaves = Math.round((b - a) / 12);
+  return octaves && Math.abs(b - a - octaves * 12) <= SAME_NOTE_SEMITONES ? octaves * 12 : 0;
+}
+
+/**
  * Joins neighbouring pieces of one held pitch that were split without a gap or a re-attack,
- * and a scoop (a short slide straight into the next pitch) into the note it leads to.
+ * and a scoop (a short slide straight into the next pitch) into the note it leads to. A piece
+ * an exact octave from the note it continues, fading, with no gap or attack, is the tracker
+ * reading the same held note an octave off (common as a low voice fades); it is folded back.
  */
 export function mergeContinuations(segments: Segment[]): Segment[] {
   const merged: Segment[] = [];
   for (const segment of segments) {
     const previous = merged.at(-1);
     const touching = previous && segment.frames[0].time - previous.frames.at(-1)!.time <= 0.015;
-    const samePitch = previous && Math.abs(toNote(previous).midi - toNote(segment).midi) <= SAME_NOTE_SEMITONES;
+    const distance = previous ? toNote(segment).midi - toNote(previous).midi : 0;
+    const samePitch = previous && Math.abs(distance) <= SAME_NOTE_SEMITONES;
+    const fading = previous && loudness(segment) < loudness(previous) * FADING_TAIL;
+    const octaveOff = previous && fading ? octavesApart(toNote(previous).midi, toNote(segment).midi) : 0;
     const scoop = previous && duration(previous) < SCOOP_SECONDS;
-    if (previous && touching && (samePitch || scoop) && !segment.reattacked) append(previous, segment);
+    if (previous && touching && !segment.reattacked && (samePitch || scoop)) append(previous, segment);
+    else if (previous && touching && !segment.reattacked && octaveOff)
+      append(previous, { frames: segment.frames, midis: segment.midis.map((m) => m - octaveOff) });
     else merged.push({ ...segment, frames: [...segment.frames], midis: [...segment.midis] });
   }
   return merged;

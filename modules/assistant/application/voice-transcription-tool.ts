@@ -8,7 +8,7 @@ import {
   type Pitch,
   type Score,
 } from "@/modules/score";
-import { spanSignal, transcribeSpans, type ChordContext, type VoiceTake } from "@/modules/voice";
+import { spanFrames, spanSignal, transcribeSpans, type ChordContext, type VoiceTake } from "@/modules/voice";
 import { transcribeSchema } from "./music-tool-schemas";
 
 type ToolResult = { ok: true; [key: string]: unknown } | { ok: false; error: string };
@@ -38,10 +38,10 @@ export function transcribeIntoScore(take: VoiceTake | null, raw: unknown, access
     if (!chord) throw new Error(`"${symbol}" is not a chord symbol I know.`);
     return { beat: (bar - 1) * capacity + beat, ...chord };
   });
-  const placed = args.spans.map(({ spanId, bar, startBeat }) => {
+  const placed = args.spans.map(({ spanId, bar, startBeat, bars }) => {
     const signal = take && spanSignal(take, spanId);
     if (!signal) throw new Error(`There is no sung span ${spanId}${take ? "" : " (no voice take this turn)"}.`);
-    return { signal, bar, startBeat };
+    return { signal, bar, startBeat, bars, frames: spanFrames(take, spanId)! };
   });
   const { bpm, key, snapToChordTones } = args;
   const results = transcribeSpans(placed, { bpm, meter, key, chords, snapToChordTones });
@@ -58,6 +58,7 @@ export function transcribeIntoScore(take: VoiceTake | null, raw: unknown, access
       ...(kept[i].length < result.bars.length ? { trimmedBars: result.bars.length - kept[i].length } : {}),
       startBeat: result.startBeat,
       ...(result.startBeatSure ? {} : { startBeatGuessed: true }),
+      tempo: `${result.tempoDrift[0]}–${result.tempoDrift[1]} BPM, following the singing`,
       evidence: result.evidence.map((e) => {
         const similar = e.similarRhythm.length ? `, rhythm like bar ${e.similarRhythm.map(at)}` : "";
         return `bar ${at(e.bar)}: ${e.confidence}, ${e.offCents} cents off, ${e.corrected} corrected${similar}`;

@@ -1,6 +1,13 @@
 // Public API of the voice module (framework-free).
 export { frequencyToMidi, segmentNotes, type SungNote } from "./domain/notes";
-export { trackPitch, VOICE_RANGE_HZ, type PitchFrame, type Signal } from "./domain/pitch-tracker";
+export {
+  trackPitch,
+  withPitchTrack,
+  VOICE_RANGE_HZ,
+  type PitchFrame,
+  type PitchTrack,
+  type Signal,
+} from "./domain/pitch-tracker";
 export {
   estimateTempo,
   quantizeNotes,
@@ -16,6 +23,7 @@ export {
   createTake,
   describeTake,
   findSungSpans,
+  spanFrames,
   spanSignal,
   type SpeechTurn,
   type SungSpan,
@@ -32,6 +40,15 @@ export {
   type ResolvedNote,
 } from "./domain/musical-priors";
 export type { SpeechRecognizer } from "./application/speech-port";
+export type { PitchTracker } from "./application/pitch-port";
 export { decodeWav, encodeWav } from "./domain/wav";
 export { barEvidence, type BarEvidence } from "./domain/evidence";
+export {
+  readRhythm,
+  DEFAULT_WEIGHTS,
+  type RhythmOptions,
+  type RhythmReading,
+  type RhythmWeights,
+} from "./domain/tempo-map";
+export { reportTempo, type TempoAlternative, type TempoReport } from "./domain/tempo-report";
 export { transcribeSpans, type PlacedSpan, type SpansOptions } from "./domain/transcribe-spans";

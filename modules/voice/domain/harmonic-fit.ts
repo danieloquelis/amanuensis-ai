@@ -83,20 +83,21 @@ function chordFit(notes: SungNote[], onsets: number[], chords: ChordContext[], s
  * semitone) is tried, scored by how closely the notes sit on the key's scale and, when known,
  * on the chords under them. Drift within the take is then followed against the key. With chords, the bar position of the first
  * note is found the same way (a phrase starting after an eighth rest fits its chords only when
- * placed there). `onsets` are the notes' quantized starts in beats from the first note.
+ * placed there). `onsets` are the notes' quantized starts in beats from the first note; `starts`
+ * limits the positions tried (the rhythm may already know whether the phrase starts off the beat).
  */
 export function fitHarmony(
   notes: SungNote[],
   onsets: number[],
   key: KeySignature,
-  options: { meter: Meter; chords?: ChordContext[]; startBeat?: number; shift?: number },
+  options: { meter: Meter; chords?: ChordContext[]; startBeat?: number; starts?: number[]; shift?: number },
 ): HarmonicFit {
   const chords = options.chords ?? [];
   const capacity = measureCapacity(options.meter);
   const starts =
     options.startBeat !== undefined || !chords.length
       ? [options.startBeat ?? 0]
-      : Array.from({ length: Math.round(capacity / START_STEP) }, (_, i) => i * START_STEP);
+      : (options.starts ?? Array.from({ length: Math.round(capacity / START_STEP) }, (_, i) => i * START_STEP));
   let best = { score: -Infinity, shift: 0, startBeat: starts[0] };
   const bestPerStart = new Map<number, number>();
   for (const shift of options.shift === undefined ? SHIFTS : [options.shift]) {

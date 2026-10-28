@@ -1,10 +1,11 @@
-import { trackPitch, type PitchFrame, type Signal } from "./pitch-tracker";
+import { trackPitch, withPitchTrack, type PitchFrame, type PitchTrack, type Signal } from "./pitch-tracker";
 
 /** Words the speech recognizer heard, with their time in the take (seconds). */
 export type SpeechTurn = { start: number; end: number; text: string };
 /** A stretch of singing, addressed by the agent's tools as `id`. */
 export type SungSpan = { id: string; start: number; end: number };
-export type VoiceTake = { signal: Signal; speech: SpeechTurn[]; sung: SungSpan[] };
+/** `track` is a learned tracker's pitch over the whole take, when one ran (YIN is used otherwise). */
+export type VoiceTake = { signal: Signal; speech: SpeechTurn[]; sung: SungSpan[]; track?: PitchTrack };
 
 /**
  * Singing holds pitch most of the time; speech is voiced in short bursts. Measured on a real
@@ -70,8 +71,9 @@ function reachBack(start: number, frames: PitchFrame[]): number {
 
 const round = (seconds: number) => Math.round(seconds * 100) / 100;
 
-export function createTake(signal: Signal, speech: SpeechTurn[]): VoiceTake {
-  return { signal, speech, sung: findSungSpans(trackPitch(signal), speech) };
+/** Sung spans are found from YIN's voicing, which their thresholds were measured with. */
+export function createTake(signal: Signal, speech: SpeechTurn[], track?: PitchTrack): VoiceTake {
+  return { signal, speech, sung: findSungSpans(trackPitch(signal), speech), ...(track ? { track } : {}) };
 }
 
 /** The audio of one sung span, or null if the take has no such span. */
@@ -83,6 +85,14 @@ export function spanSignal(take: VoiceTake, spanId: string): Signal | null {
     ...take.signal,
     samples: take.signal.samples.slice(Math.floor(span.start * rate), Math.ceil(span.end * rate)),
   };
+}
+
+/** Pitch frames of one sung span: the learned tracker's pitch when the take has it, else YIN's. */
+export function spanFrames(take: VoiceTake, spanId: string): PitchFrame[] | null {
+  const signal = spanSignal(take, spanId);
+  if (!signal) return null;
+  const start = take.sung.find((s) => s.id === spanId)!.start;
+  return take.track ? withPitchTrack(trackPitch(signal), take.track, start) : trackPitch(signal);
 }
 
 /**

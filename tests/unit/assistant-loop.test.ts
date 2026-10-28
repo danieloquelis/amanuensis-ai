@@ -179,3 +179,13 @@ test("progress is reported as the agent thinks and uses each tool, never with it
     { stage: "thinking" },
   ]);
 });
+
+test("each model call and each tool run is timed, so a slow turn shows where its time went", async () => {
+  const { model } = scriptedModel([
+    { content: null, toolCalls: [call("score_get_context", { selectedIds: [] })] },
+    { content: "Ok.", toolCalls: [] },
+  ]);
+  const result = await runAssistant(model, request("hi"));
+  assert.equal(result.thinkingMs.length, 2);
+  assert.ok(result.trace.every((entry) => typeof entry.ms === "number"));
+});

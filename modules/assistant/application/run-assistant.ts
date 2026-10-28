@@ -33,9 +33,12 @@ export type AssistantResult = {
   usage: TokenUsage;
   /** What the agent did, step by step: each tool call and whether it worked. For review. */
   trace: TraceEntry[];
+  /** How long each model call took (ms), in order: where the turn's time went. */
+  thinkingMs: number[];
 };
 
-export type TraceEntry = { tool: string; arguments: string; ok: boolean; error?: string };
+/** `ms` is how long the tool itself ran. */
+export type TraceEntry = { tool: string; arguments: string; ok: boolean; error?: string; ms?: number };
 
 /** What the assistant is doing right now, for a live progress line (never the model's text). */
 export type ProgressEvent = { stage: "hearing" } | { stage: "thinking" } | { stage: "tool"; tool: string };
@@ -80,6 +83,7 @@ export async function runAssistant(
   const toolList = [...assistantTools, ...musicToolSpecs(Boolean(request.take))];
   const usage: TokenUsage = { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 };
   const trace: TraceEntry[] = [];
+  const thinkingMs: number[] = [];
   const messages: ChatMessage[] = [
     { role: "system", content: SYSTEM_PROMPT },
     ...historyMessages(request),
@@ -93,11 +97,14 @@ export async function runAssistant(
     steps,
     usage,
     trace,
+    thinkingMs,
   });
 
   for (let step = 1; step <= MAX_TOOL_STEPS; step++) {
     onProgress({ stage: "thinking" });
+    const asked = Date.now();
     const reply = await model.complete(messages, toolList);
+    thinkingMs.push(Date.now() - asked);
     usage.inputTokens += reply.usage?.inputTokens ?? 0;
     usage.outputTokens += reply.usage?.outputTokens ?? 0;
     usage.cachedInputTokens! += reply.usage?.cachedInputTokens ?? 0;
@@ -105,15 +112,17 @@ export async function runAssistant(
     if (!reply.toolCalls.length) return finish(reply.content?.trim() || "Done.", null, step);
     for (const call of reply.toolCalls) {
       onProgress({ stage: "tool", tool: call.name });
-      const entry = { tool: call.name, arguments: call.arguments.slice(0, TRACE_ARGUMENT_ROOM), ok: true };
+      const entry: TraceEntry = { tool: call.name, arguments: call.arguments.slice(0, TRACE_ARGUMENT_ROOM), ok: true };
       trace.push(entry);
       if (call.name === ASK_TOOL) {
         const ask = askSchema.safeParse(parseArguments(call));
         if (ask.success) return finish(ask.data.question, { text: ask.data.question, choices: ask.data.choices }, step);
       }
+      const started = Date.now();
       const result = isMusicTool(call.name)
         ? music(call.name, parseArguments(call))
         : runTool(call, tools, commands, turnId);
+      entry.ms = Date.now() - started;
       if (!result.ok) Object.assign(entry, { ok: false, error: "error" in result ? result.error : undefined });
       messages.push({ role: "tool", toolCallId: call.id, content: JSON.stringify(result) });
     }

@@ -55,10 +55,11 @@ test("a key is inferred from the chords the musician named", () => {
 });
 
 test("the tempo word said settles a sung tempo that could be read several ways", () => {
-  // Even quarters at 66 fit 66, 99 and 132 equally; "Allegro" means the 132 reading.
+  // Even quarters at 66 fit 66, 99 and 132 equally; "Allegro" means the 132 reading. The beat is
+  // read in 2% steps, so within one step of 132 is that reading.
   const take = createTake(singMelody(phrase, { bpm: 66 }), []);
   const result = createMusicTools(take)("music_infer_tempo", { marking: "Allegro", spanIds: ["sung-1"] });
-  assert.equal(result.ok && result.bpm, 132);
+  assert.ok(result.ok && Math.abs(Number(result.bpm) - 132) <= 132 * 0.02, `read ${result.ok && result.bpm}`);
 });
 
 test("a sung span is written into the score from the bar it was meant for", () => {
@@ -90,4 +91,15 @@ test("singing the recognizer still counted as speech is recovered for the sung s
     { start: 0, end: talkingEnds + 1, text: "this is how it goes" },
   ]);
   assert.ok(Math.abs(take.sung[0].start - talkingEnds) < 0.3, `span starts at ${take.sung[0].start}`);
+});
+
+test("the notes heard in a span are listed as sung, in order, for the agent to check", () => {
+  const take = createTake(singMelody(phrase, { bpm: 90 }), []);
+  const result = createMusicTools(take)("voice_hear_notes", { spanId: "sung-1" });
+  assert.ok(result.ok);
+  assert.equal(result.count, phrase.length);
+  const names = String(result.notes)
+    .split(" · ")
+    .map((note) => note.split(" ")[1].replace("?", ""));
+  assert.deepEqual(names, ["C4", "E4", "G4", "E4", "D4", "F4", "A4"]);
 });

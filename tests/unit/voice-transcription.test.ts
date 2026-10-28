@@ -3,11 +3,14 @@ import assert from "node:assert/strict";
 import { pitchName } from "@/modules/score";
 import {
   estimateTempo,
+  frequencyToMidi,
   quantizeNotes,
   segmentNotes,
   toBars,
   trackPitch,
   transcribeMelody,
+  withPitchTrack,
+  type PitchFrame,
   type Signal,
 } from "@/modules/voice";
 import { midi, singMelody, type SungNoteSpec } from "../support/synthetic-voice";
@@ -158,4 +161,39 @@ test("sung notes are spelled in the key", () => {
     result.bars[0].map((e) => pitchName(e.pitch)),
     ["D4", "F♯4", "A4", "C♯5"],
   );
+});
+
+/** Pitch frames every 10 ms: `[hz, seconds, rms]` pieces, back to back. */
+const frames = (...pieces: [number, number, number][]): PitchFrame[] => {
+  const result: PitchFrame[] = [];
+  for (const [frequency, seconds, rms] of pieces) {
+    for (let i = 0; i < Math.round(seconds / 0.01); i++) {
+      result.push({ time: result.length * 0.01, frequency, clarity: 0.95, rms });
+    }
+  }
+  return result;
+};
+
+test("a fading note the tracker reads an octave low stays one note", () => {
+  const notes = segmentNotes(frames([156, 0.3, 0.3], [78, 0.15, 0.12]));
+  assert.deepEqual(
+    notes.map((n) => Math.round(n.midi)),
+    [Math.round(frequencyToMidi(156))],
+  );
+});
+
+test("an octave leap sung at full voice stays two notes", () => {
+  const notes = segmentNotes(frames([130.8, 0.4, 0.3], [261.6, 0.4, 0.3]));
+  assert.deepEqual(
+    notes.map((n) => Math.round(n.midi)),
+    [midi("C3"), midi("C4")],
+  );
+});
+
+test("a learned tracker's pitch and voicing replace YIN's, matched by time in the take", () => {
+  const yin = frames([200, 0.1, 0.2]);
+  // The span starts 1 s into the take; the track says 220 Hz there, and unvoiced after 1.05 s.
+  const track = { hop: 0.016, pitch: Array(100).fill(220), confidence: Array(100).fill(0.9).fill(0.1, 66) };
+  const merged = withPitchTrack(yin, track, 1);
+  assert.deepEqual([merged[0].frequency, merged[9].frequency, merged[0].rms], [220, null, 0.2]);
 });

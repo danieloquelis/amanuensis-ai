@@ -2,12 +2,15 @@ import { measureCapacity, type KeySignature, type Meter } from "@/modules/score"
 import { fitHarmony } from "./harmonic-fit";
 import type { ChordContext } from "./musical-priors";
 import { segmentNotes } from "./notes";
-import { trackPitch, type Signal } from "./pitch-tracker";
+import { trackPitch, type PitchFrame, type Signal } from "./pitch-tracker";
 import { quantizeNotes } from "./rhythm";
 import { transcribeMelody, type MelodyTranscription } from "./transcribe-melody";
 
-/** One sung stretch and the bar it was meant for. `startBeat` is where it begins in that bar. */
-export type PlacedSpan = { signal: Signal; bar: number; startBeat?: number };
+/**
+ * One sung stretch and the bar it was meant for. `startBeat` is where it begins in that bar,
+ * `bars` how many bars it fills (when said), `frames` its pitch from a better tracker.
+ */
+export type PlacedSpan = { signal: Signal; bar: number; startBeat?: number; bars?: number; frames?: PitchFrame[] };
 
 export type SpansOptions = {
   bpm: number;
@@ -46,7 +49,7 @@ export function transcribeSpans(spans: PlacedSpan[], options: SpansOptions): Mel
   const capacity = measureCapacity(options.meter);
   const beatSeconds = 60 / options.bpm;
   const heard = spans.map((span) => {
-    const notes = segmentNotes(trackPitch(span.signal));
+    const notes = segmentNotes(span.frames ?? trackPitch(span.signal));
     const length = notes.length ? (notes.at(-1)!.end - notes[0].start) / beatSeconds : 0;
     const startBeat = span.startBeat ?? fillingStart(length, capacity);
     const offset = (span.bar - 1) * capacity + (startBeat ?? 0);
@@ -73,6 +76,8 @@ export function transcribeSpans(spans: PlacedSpan[], options: SpansOptions): Mel
       startBeat: heard[i].startBeat,
       snapToChordTones: options.snapToChordTones,
       shift,
+      bars: span.bars,
+      frames: span.frames,
     });
   });
 }
