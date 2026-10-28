@@ -4,11 +4,10 @@ import { useRef, useState } from "react";
 import { AssistantPanel, CanvasAssistant, useAssistant, type RequestContext } from "@/modules/assistant/ui";
 import { useScoreEditor } from "@/modules/editor/ui";
 import { usePlayback } from "@/modules/playback/ui";
-import { downloadScoreFile, localProjectRepository, readScoreFile } from "@/modules/projects";
+import { localProjectRepository } from "@/modules/projects";
 import { useAnchorRect } from "@/shared/ui/hooks/use-anchor-rect";
 import { useWorkspaceShortcuts } from "../hooks/use-workspace-shortcuts";
 import { AppHeader } from "./AppHeader";
-import { DocumentBar } from "./DocumentBar";
 import { ErrorBanner } from "./ErrorBanner";
 import { ScoreCanvas } from "./ScoreCanvas";
 import { StatusBar } from "./StatusBar";
@@ -40,14 +39,6 @@ export function WorkspaceScreen() {
   });
   const undo = () => editor.undoRedo("undo");
 
-  const openFile = async (file: File) => {
-    try {
-      editor.openScore(await readScoreFile(file));
-    } catch (error) {
-      editor.setError(error instanceof Error ? error.message : "That score could not be opened.");
-    }
-  };
-
   return (
     <div className={styles.app}>
       <AppHeader title={editor.score.title} chatOpen={chatOpen} onToggleChat={() => setChatOpen((open) => !open)} />
@@ -62,12 +53,6 @@ export function WorkspaceScreen() {
           />
         )}
         <section className={styles.studio} aria-label="Score workspace">
-          <DocumentBar
-            ready={editor.ready}
-            onOpenFile={openFile}
-            onDownload={() => downloadScoreFile(editor.score)}
-            onPrint={() => window.print()}
-          />
           <TransportBar
             editor={editor}
             playing={playback.playing}
@@ -94,6 +79,7 @@ export function WorkspaceScreen() {
             selection={editor.selection}
             pickedName={editor.picked.length > 1 ? editor.pickedName : null}
             playing={playback.playing}
+            saveStatus={editor.saveStatus}
           />
         </section>
       </main>

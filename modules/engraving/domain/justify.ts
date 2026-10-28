@@ -38,3 +38,13 @@ export function lineStretch(bars: AnalyzedBar[], available: number): number {
   if (flexible) return solveStretch((s) => lineWidth(bars, s), available);
   return lineWidth(bars, 1) <= available ? 1 : 0;
 }
+
+/**
+ * How full a line of only fixed-width bars is: its width over `available` (1 = full). Null when
+ * the line has a flexible bar to stretch, or when it overflows.
+ */
+export function fixedLineFill(bars: AnalyzedBar[], available: number): number | null {
+  if (bars.some((bar, index) => fixedWidth(bar, index === 0) === null)) return null;
+  const width = lineWidth(bars, 1);
+  return width <= available ? width / available : null;
+}

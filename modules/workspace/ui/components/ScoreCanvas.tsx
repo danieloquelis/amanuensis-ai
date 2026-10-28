@@ -15,17 +15,7 @@ export function ScoreCanvas({
   const barCount = score.measures.length;
   return (
     <div className={styles.canvas}>
-      <div className={styles.canvasTop}>
-        <span>
-          <span className={styles.statusDot} /> {editor.saveStatus}
-        </span>
-        <span>{barCount} measures · Reference tone</span>
-      </div>
       <article className={styles.paper} style={{ width: `${zoom}%` }} aria-label="Music sheet">
-        <div className={styles.paperTop}>
-          <span>AMANUENSIS / NO. 001</span>
-          <span>FOR SOLO MELODY</span>
-        </div>
         <div className={styles.scoreHeading}>
           <input
             key={`${score.id}-${score.title}`}

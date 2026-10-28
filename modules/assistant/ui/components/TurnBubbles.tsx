@@ -1,4 +1,5 @@
-import type { Turn } from "../hooks/use-assistant";
+import type { TakePart } from "@/modules/voice";
+import { sungLength, type Turn } from "../hooks/use-assistant";
 import { useActivityLine } from "../hooks/use-activity-line";
 import { MicIcon } from "./icons";
 import styles from "./assistant.module.css";
@@ -22,7 +23,7 @@ export function TurnBubbles({ turn, canUndo, busy, onUndo, onChoose }: TurnBubbl
             <MicIcon size={12} />
           </span>
         )}
-        {turn.instruction}
+        {turn.heard?.length ? <HeardParts parts={turn.heard} /> : turn.instruction}
       </div>
       {turn.status === "working" ? (
         <Thinking turn={turn} />
@@ -30,6 +31,19 @@ export function TurnBubbles({ turn, canUndo, busy, onUndo, onChoose }: TurnBubbl
         <Answer turn={turn} canUndo={canUndo} busy={busy} onUndo={onUndo} onChoose={onChoose} />
       )}
     </li>
+  );
+}
+
+/** A take in order: what was said, with a ♪ chip where they sang. */
+function HeardParts({ parts }: { parts: TakePart[] }) {
+  return parts.map((part, i) =>
+    part.kind === "said" ? (
+      <span key={i}>{part.text} </span>
+    ) : (
+      <span key={i} className={styles.sungChip} aria-label={`sang ${sungLength(part.seconds)}`}>
+        ♪ {sungLength(part.seconds)}
+      </span>
+    ),
   );
 }
 

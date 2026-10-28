@@ -59,6 +59,17 @@ test("line breaking balances lines and leaves a short final phrase ragged", () =
   assert.ok(short.bars[0].final);
 });
 
+test("a bar given a fixed width never sits alone on a half-empty line", () => {
+  let score = fixture("long");
+  const fifth = score.measures[4].id;
+  score = edit(score, { type: "setMeasureWidth", measureId: fifth, width: 400 });
+  const { systems } = layoutScore(score);
+  systems.slice(0, -1).forEach((system, index) => {
+    assert.ok(Math.abs(system.endX - LINE_END) < EPSILON, `line ${index + 1} ends at ${system.endX}`);
+  });
+  assert.ok(systems.every((system) => system.bars.length > 1));
+});
+
 test("time signatures appear at the start and where the meter changes, not on every line", () => {
   const long = layoutScore(fixture("long"));
   assert.notEqual(long.systems[0].bars[0].meterX, null);

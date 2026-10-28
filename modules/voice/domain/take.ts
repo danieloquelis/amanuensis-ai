@@ -1,4 +1,5 @@
 import { segmentNotes } from "./notes";
+import { cleanTurnsBeforeSinging } from "./sung-syllables";
 import { trackPitch, withPitchTrack, type PitchFrame, type PitchTrack, type Signal } from "./pitch-tracker";
 
 /** Words the speech recognizer heard, with their time in the take (seconds). */
@@ -88,7 +89,9 @@ const round = (seconds: number) => Math.round(seconds * 100) / 100;
 export function createTake(signal: Signal, speech: SpeechTurn[], track?: PitchTrack): VoiceTake {
   const frames = trackPitch(signal);
   const turns = endTurnsBeforeSinging(speech, frames);
-  return { signal, speech: turns, sung: findSungSpans(frames, turns), ...(track ? { track } : {}) };
+  const sung = findSungSpans(frames, turns);
+  // The recognizer writes sung syllables down as words ("ping ping ping"); they are singing.
+  return { signal, speech: cleanTurnsBeforeSinging(speech, turns, sung), sung, ...(track ? { track } : {}) };
 }
 
 /**
@@ -179,17 +182,3 @@ export function spanFrames(take: VoiceTake, spanId: string): PitchFrame[] | null
   const start = take.sung.find((s) => s.id === spanId)!.start;
   return take.track ? withPitchTrack(trackPitch(signal), take.track, start) : trackPitch(signal);
 }
-
-/**
- * The take as the agent reads it: what was said and where singing happened, in time order.
- * `"…"` marks words; sung spans carry the ID the voice tools take.
- */
-export function describeTake(take: VoiceTake): string {
-  const said = take.speech.map((t) => ({ at: t.start, line: `${time(t)} said: "${t.text}"` }));
-  const sang = take.sung.map((s) => ({ at: s.start, line: `${time(s)} sang: ${s.id} (${round(s.end - s.start)} s)` }));
-  const lines = [...said, ...sang].sort((a, b) => a.at - b.at).map((e) => e.line);
-  const length = round(take.signal.samples.length / take.signal.sampleRate);
-  return [`[Voice take, ${length} s]`, ...(lines.length ? lines : ["(nothing heard)"])].join("\n");
-}
-
-const time = (span: { start: number; end: number }) => `${span.start.toFixed(1)}–${span.end.toFixed(1)} s`;

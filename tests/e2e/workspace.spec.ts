@@ -1,5 +1,4 @@
 import { test, expect } from "@playwright/test";
-import { readFile } from "node:fs/promises";
 
 test("edit, undo, redo and reload preserve the musical document", async ({ page }) => {
   const errors: string[] = [];
@@ -79,22 +78,11 @@ test("corrupt local data is preserved and the mobile editor remains usable", asy
   await page.screenshot({ path: "test-results/workspace-mobile.png", fullPage: true });
 });
 
-test("native export reopens losslessly and print hides editing controls", async ({ page }) => {
+test("printing shows the sheet with its title and hides editing controls", async ({ page }) => {
   await page.goto("/");
-  const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Save a copy" }).click();
-  const download = await downloadPromise;
-  const score = JSON.parse(await readFile((await download.path())!, "utf8"));
-  expect(score.measures).toHaveLength(4);
-  score.title = "A second idea";
-  await page.getByLabel("Open score file").setInputFiles({
-    name: "melody.amanuensis.json",
-    mimeType: "application/json",
-    buffer: Buffer.from(JSON.stringify(score)),
-  });
-  await expect(page.getByRole("textbox", { name: "Score title" })).toHaveValue("A second idea");
+  await expect(page.getByRole("button", { name: "Change time signature" })).toBeEnabled();
   await page.emulateMedia({ media: "print" });
-  await expect(page.getByRole("heading", { name: "A second idea", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "First light", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Play score" })).toBeHidden();
   await expect(page.getByRole("region", { name: "Note inspector" })).toBeHidden();
 });

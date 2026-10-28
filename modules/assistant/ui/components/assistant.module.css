@@ -52,6 +52,20 @@
   color: #f3f7ee;
 }
 
+/* Where they sang, inside their words: "…be like ♪ 8 s". */
+.sungChip {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 4px 0 0;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 20%);
+  color: #f3f7ee;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .panelContext {
   margin: 0;
   padding: 6px 16px 0;

@@ -127,7 +127,7 @@ test("what was said and sung is reported before the agent starts thinking", asyn
   await handleVoiceRequest({ audio, payload }, { model, recognizer }, (event) => events.push(event));
   const heard = events.findIndex((event) => event.stage === "heard");
   assert.ok(heard !== -1 && heard < events.findIndex((event) => event.stage === "thinking"));
-  const event = events[heard] as Extract<ProgressEvent, { stage: "heard" }>;
-  assert.equal(event.said, "a rhythm like");
-  assert.ok(event.sungSeconds > 2, `sang ${event.sungSeconds} s`);
+  const { parts } = events[heard] as Extract<ProgressEvent, { stage: "heard" }>;
+  assert.deepEqual(parts[0], { kind: "said", text: "a rhythm like" });
+  assert.ok(parts[1].kind === "sang" && parts[1].seconds > 2, JSON.stringify(parts));
 });

@@ -14,17 +14,20 @@ export function StatusBar({
   selection,
   pickedName,
   playing,
+  saveStatus,
 }: {
   score: Score;
   selection: Selection | null;
   /** The name of a multiple selection ("Bars 3–6"); null for one item or none. */
   pickedName: string | null;
   playing: boolean;
+  /** Whether the score is saved on this device ("Saved on this device", "Not saved…"). */
+  saveStatus: string;
 }) {
   return (
     <footer className={styles.statusBar}>
       <span>
-        <span className={styles.statusDot} /> LOCAL WORKSPACE
+        <span className={styles.statusDot} /> {saveStatus}
       </span>
       <span aria-live="polite">{statusMessage(playing, selection, pickedName)}</span>
       <span>REV {String(score.revision).padStart(3, "0")}</span>

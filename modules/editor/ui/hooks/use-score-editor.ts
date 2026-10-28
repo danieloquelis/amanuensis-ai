@@ -6,7 +6,6 @@ import {
   execute,
   executeAll,
   locateEvent,
-  parseScore,
   scoreKey,
   travel,
   type Command,
@@ -35,8 +34,7 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
   const latest = useRef(session);
   const latestScore = useCallback(() => latest.current.score, []);
   const sheetSelection = useSheetSelection(session.score, latestScore);
-  const { selectedId, setSelectedId, selectedBarId, selectedItem, select, selectBar, selectItem, clear } =
-    sheetSelection;
+  const { selectedId, setSelectedId, selectedBarId, selectedItem, select, selectBar, selectItem } = sheetSelection;
   const [ready, setReady] = useState(false);
   const [saveStatus, setSaveStatus] = useState("Opening local score…");
   const [error, setError] = useState<string | null>(null);
@@ -82,7 +80,7 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
         repository.save(score);
         setSaveStatus("Saved on this device");
       } catch {
-        setSaveStatus("Not saved · download a copy");
+        setSaveStatus("Not saved on this device");
       }
     },
     [repository],
@@ -147,18 +145,6 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
     [addReceipt, onBeforeEdit, persist, ready, replaceSession],
   );
 
-  /** Replaces the whole session with a validated score file. Throws if the file is invalid. */
-  const openScore = (value: unknown) => {
-    const score = parseScore(value);
-    onBeforeEdit();
-    replaceSession(createSession(score));
-    clear();
-    setError(null);
-    canSave.current = true;
-    persist(score);
-    setReceipts(["Opened score from file"]);
-  };
-
   /** A–G typed on a selected note or rest. */
   const enterLetter = (eventId: string, step: Step) => {
     const edit = letterNoteEdit(latest.current.score, eventId, step);
@@ -219,7 +205,6 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
     enterLetter,
     toggleRest,
     undoRedo,
-    openScore,
     canUndo: session.past.length > 0,
     canRedo: session.future.length > 0,
   };

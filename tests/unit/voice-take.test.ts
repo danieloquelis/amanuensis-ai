@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createMusicTools } from "@/modules/assistant";
 import { createExample, createSession, describeScore, execute } from "@/modules/score";
-import { createTake, describeTake, type Signal } from "@/modules/voice";
+import { createTake, describeTake, takeParts, type Signal } from "@/modules/voice";
 import { midi, singMelody, type SungNoteSpec } from "../support/synthetic-voice";
 
 const melody = (...notes: [string | null, number][]): SungNoteSpec[] =>
@@ -204,4 +204,38 @@ test("singing with no bar named continues the piece after its last notes, each s
   // The example's notes end in bar 4: the singing goes to bars 5–6, then 7–8.
   assert.deepEqual(firstBars, ["bar 5", "bar 7"]);
   assert.equal(describeScore(session.score).bars[0].events[0].pitch, "C4");
+});
+
+test("syllables the recognizer wrote down for the singing are not shown as words", () => {
+  const speech = talking(4);
+  const pause = singMelody([{ midi: null, beats: 1 }], { bpm: 120 });
+  const signal = join(speech, pause, singMelody(phrase, { bpm: 120 }));
+  const end = signal.samples.length / signal.sampleRate;
+  const take = createTake(signal, [{ start: 0, end, text: "it's going to be like ping ping ping ping ping" }]);
+  assert.deepEqual(takeParts(take.speech, take.sung), [
+    { kind: "said", text: "it's going to be like" },
+    { kind: "sang", seconds: take.sung[0].end - take.sung[0].start },
+  ]);
+});
+
+test("words far from any singing are kept as said, even repeated ones", () => {
+  const take = createTake(talking(3), [{ start: 0, end: 2.5, text: "no, no, no, not that bar" }]);
+  assert.equal(take.speech[0].text, "no, no, no, not that bar");
+});
+
+test("talking and singing in turns reads in the order it happened", () => {
+  const parts = takeParts(
+    [
+      { start: 0, end: 2, text: "first bar like" },
+      { start: 6, end: 7, text: "then" },
+    ],
+    [
+      { id: "sung-1", start: 2.5, end: 5.5 },
+      { id: "sung-2", start: 7.5, end: 9 },
+    ],
+  );
+  assert.deepEqual(
+    parts.map((part) => (part.kind === "said" ? part.text : `♪${part.seconds}`)),
+    ["first bar like", "♪3", "then", "♪1.5"],
+  );
 });

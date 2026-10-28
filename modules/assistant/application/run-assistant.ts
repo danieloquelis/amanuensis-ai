@@ -7,7 +7,7 @@ import {
   type Score,
   type Session,
 } from "@/modules/score";
-import { describeTake, type VoiceTake } from "@/modules/voice";
+import { describeTake, type TakePart, type VoiceTake } from "@/modules/voice";
 import { ASK_TOOL, askSchema, assistantTools } from "./assistant-tools";
 import { createMusicTools, isMusicTool, musicToolSpecs } from "./music-tools";
 import type { ChatMessage, ModelPort, TokenUsage, ToolCall } from "./model-port";
@@ -55,8 +55,8 @@ export type TraceEntry = { tool: string; arguments: string; ok: boolean; error?:
 /** What the assistant is doing right now, for a live progress line (never the model's text). */
 export type ProgressEvent =
   | { stage: "hearing" }
-  /** The take was heard: what was said, and how many seconds were sung. Sent before the agent starts. */
-  | { stage: "heard"; said: string; sungSeconds: number }
+  /** The take was heard: what was said and sung, in order. Sent before the agent starts. */
+  | { stage: "heard"; parts: TakePart[] }
   | { stage: "thinking" }
   | { stage: "tool"; tool: string };
 export type ProgressListener = (event: ProgressEvent) => void;

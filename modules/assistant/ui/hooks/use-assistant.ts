@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Command, Score } from "@/modules/score";
+import { takeParts, type TakePart } from "@/modules/voice";
 import type { HeardTake } from "../../application/handle-voice-request";
 import type { AssistantResult, AssistantTurn, ProgressEvent, ProgressListener } from "../../application/run-assistant";
 import { requestAssistant, requestVoiceAssistant, type AssistantPayload } from "../../infrastructure/assistant-client";
@@ -25,6 +26,8 @@ export type Turn = {
   activity?: ProgressEvent;
   /** Whether the turn came from a recorded take. */
   spoken?: boolean;
+  /** For a take: what was said and sung, in order, as soon as it is known. */
+  heard?: TakePart[];
   /** The selection the request was about ("Bars 3–6"), shown with it in the chat. */
   context?: string;
   /** Where it was asked: in the chat panel or from the selection on the sheet. */
@@ -41,17 +44,16 @@ type Options = {
   applyCommands: (commands: Command[], receipt: string) => boolean;
 };
 
-/** A take as the musician would describe it: their words as they said them, and that they sang. */
-export function describeHeard(said: string, sungSeconds: number): string {
-  const sang = sungSeconds ? `♪ sang ${Math.max(1, Math.round(sungSeconds))} s` : "";
-  return [said.trim(), sang].filter(Boolean).join(" · ") || "(nothing heard)";
+/** How long a sung stretch is, as the chat shows it. */
+export const sungLength = (seconds: number) => `${Math.max(1, Math.round(seconds))} s`;
+
+/** A take as text, in order: their words, and "♪ sang 3 s" where they sang (for history). */
+export function describeHeard(parts: TakePart[]): string {
+  const text = parts.map((part) => (part.kind === "said" ? part.text : `♪ sang ${sungLength(part.seconds)}`));
+  return text.join(" ") || "(nothing heard)";
 }
 
-const heardLabel = ({ speech, sung }: HeardTake) =>
-  describeHeard(
-    speech.map((turn) => turn.text).join(" "),
-    sung.reduce((sum, span) => sum + span.end - span.start, 0),
-  );
+const heardOf = ({ speech, sung }: HeardTake) => takeParts(speech, sung);
 
 /**
  * One conversation with the score assistant, shared by the chat panel and the composer on the
@@ -83,11 +85,12 @@ export function useAssistant({ getScore, applyCommands }: Options) {
         update(
           id,
           activity.stage === "heard"
-            ? { activity, instruction: describeHeard(activity.said, activity.sungSeconds) }
+            ? { activity, heard: activity.parts, instruction: describeHeard(activity.parts) }
             : { activity },
         ),
       );
-      const heard = result.heard ? { instruction: heardLabel(result.heard) } : {};
+      const parts = result.heard && heardOf(result.heard);
+      const heard = parts ? { heard: parts, instruction: describeHeard(parts) } : {};
       if (result.commands.length && !applyCommands(result.commands, result.reply)) {
         update(id, { ...heard, status: "failed", reply: "The score changed while I was working. Ask again." });
         return;

@@ -45,7 +45,7 @@ Select anything on the sheet and act on it; press Delete to remove it, Escape to
 - **Toolbar:** time signature, key, Chord, ƒ, Text, Marks and + Bar act on the selected note or bar. In Chord, type a symbol and press Enter: the cursor moves to the next bar, so `C ⏎ Am7 ⏎ Dm7 ⏎ G7 ⏎` writes a progression.
 - **Chords, text, marks, sections, repeat signs:** click to select, Delete to remove, double-click a chord, text or section to edit it, drag text to move it.
 
-Cmd/Ctrl+Z undoes, Cmd/Ctrl+Shift+Z redoes. Local edits save on this device; **Save a copy** downloads the native file and **Open** loads one.
+Cmd/Ctrl+Z undoes, Cmd/Ctrl+Shift+Z redoes. Local edits save on this device.
 
 ## Architecture
 

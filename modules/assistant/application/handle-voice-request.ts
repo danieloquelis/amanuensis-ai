@@ -3,6 +3,7 @@ import { parseScore } from "@/modules/score";
 import {
   createTake,
   decodeWav,
+  takeParts,
   type PitchTracker,
   type PitchTrack,
   type SpeechRecognizer,
@@ -80,8 +81,7 @@ export async function handleVoiceRequest(
   const speechMs = Date.now() - started;
   const take = createTake(signal, speech, await tracking);
   const heard = { speech: take.speech, sung: take.sung, ms: { speech: speechMs, pitch: pitchMs } };
-  const sungSeconds = take.sung.reduce((sum, span) => sum + span.end - span.start, 0);
-  onProgress({ stage: "heard", said: take.speech.map((turn) => turn.text).join(" "), sungSeconds });
+  onProgress({ stage: "heard", parts: takeParts(take.speech, take.sung) });
   if (!take.speech.length && !take.sung.length && !parsed.data.instruction) {
     const reply = "I didn't hear anything. Try again a little closer to the microphone.";
     return {

@@ -21,7 +21,6 @@ export {
 } from "./domain/rhythm";
 export {
   createTake,
-  describeTake,
   findSungSpans,
   spanFrames,
   spanSignal,
@@ -51,4 +50,5 @@ export {
   type RhythmWeights,
 } from "./domain/tempo-map";
 export { reportTempo, type TempoAlternative, type TempoReport } from "./domain/tempo-report";
+export { describeTake, takeParts, type TakePart } from "./domain/timeline";
 export { transcribeSpans, type PlacedSpan, type SpansOptions } from "./domain/transcribe-spans";

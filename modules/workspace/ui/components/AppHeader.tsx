@@ -28,12 +28,6 @@ export function AppHeader({ title, chatOpen, onToggleChat }: AppHeaderProps) {
       <div className={styles.breadcrumb}>
         Workspace <span>/</span> <strong>{title}</strong>
       </div>
-      <div className={styles.headerRight}>
-        <span className={styles.edition}>EARLY STUDIO</span>
-        <span className={styles.avatar} title="Local workspace">
-          a.
-        </span>
-      </div>
     </header>
   );
 }
