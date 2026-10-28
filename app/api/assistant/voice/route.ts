@@ -1,5 +1,5 @@
 import { handleVoiceRequest, MAX_AUDIO_BYTES } from "@/modules/assistant";
-import { createMetaModel } from "@/modules/assistant/server";
+import { createMetaModel, progressResponse } from "@/modules/assistant/server";
 import { archiveTake, cachedRecognizer, createMuseTranscriber } from "@/modules/voice/server";
 
 /** Transcription plus several model steps can take a while. */
@@ -11,7 +11,7 @@ const MAX_BODY_BYTES = MAX_AUDIO_BYTES + 1_000_000;
 
 /**
  * Transport only: multipart in (`audio` WAV, `request` JSON), services from server-side env,
- * then the voice use case. In development, transcriptions are cached and takes are kept locally.
+ * then the voice use case, streamed as progress lines and a result. In development, transcriptions are cached and takes are kept locally.
  */
 export async function POST(request: Request) {
   if (Number(request.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) {
@@ -26,11 +26,13 @@ export async function POST(request: Request) {
   const transcriber = createMuseTranscriber(apiKey);
   const recognizer = DEVELOPMENT ? cachedRecognizer(transcriber, ".cache/transcripts") : transcriber;
   const model = createMetaModel(apiKey, process.env.META_AI_MODEL);
-  const { status, body } = await handleVoiceRequest({ audio, payload }, { model, recognizer });
-  if (DEVELOPMENT && audio && status === 200 && process.env.VOICE_KEEP_TAKES !== "0") {
-    await archiveTake(".takes", audio, body).catch(() => undefined);
-  }
-  return Response.json(body, { status });
+  return progressResponse(async (onProgress) => {
+    const response = await handleVoiceRequest({ audio, payload }, { model, recognizer }, onProgress);
+    if (DEVELOPMENT && audio && response.status === 200 && process.env.VOICE_KEEP_TAKES !== "0") {
+      await archiveTake(".takes", audio, response.body).catch(() => undefined);
+    }
+    return response;
+  });
 }
 
 function parseJson(value: FormDataEntryValue | null | undefined): unknown {

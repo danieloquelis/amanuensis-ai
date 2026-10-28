@@ -16,6 +16,11 @@ const HOP_SECONDS = 0.5;
 /** Recognizer timestamps are loose at the edges of words. */
 const SPEECH_MARGIN_SECONDS = 0.15;
 const MIN_SPAN_SECONDS = 1;
+/** How far back a span may reach into a speech turn, and how sung that stretch must be. */
+const MAX_REACH_SECONDS = 2;
+const REACH_STEP_SECONDS = 0.1;
+const REACH_WINDOW_SECONDS = 0.5;
+const REACH_VOICED_SHARE = 0.6;
 /** Singing windows closer than this belong to one span (a breath, a held rest). */
 const JOIN_GAP_SECONDS = 1.5;
 
@@ -43,7 +48,24 @@ export function findSungSpans(frames: PitchFrame[], speech: SpeechTurn[]): SungS
   }
   return spans
     .filter((s) => s.end - s.start >= MIN_SPAN_SECONDS)
+    .map((s) => ({ ...s, start: reachBack(s.start, frames) }))
     .map((s, i) => ({ id: `sung-${i + 1}`, start: round(s.start), end: round(s.end) }));
+}
+
+/**
+ * The recognizer often counts the first notes after talking as speech. Singing that started
+ * earlier, inside the end of a speech turn, is recovered: the span reaches back while the voice
+ * keeps holding pitch the way singing does, up to a couple of seconds.
+ */
+function reachBack(start: number, frames: PitchFrame[]): number {
+  let earliest = start;
+  for (let t = start - REACH_STEP_SECONDS; t >= start - MAX_REACH_SECONDS; t -= REACH_STEP_SECONDS) {
+    const window = frames.filter((f) => f.time >= t - REACH_WINDOW_SECONDS && f.time < t);
+    const voiced = window.filter((f) => f.frequency !== null).length;
+    if (!window.length || voiced / window.length < REACH_VOICED_SHARE) break;
+    earliest = t - REACH_WINDOW_SECONDS;
+  }
+  return frames.find((f) => f.time >= earliest && f.frequency !== null)?.time ?? start;
 }
 
 const round = (seconds: number) => Math.round(seconds * 100) / 100;

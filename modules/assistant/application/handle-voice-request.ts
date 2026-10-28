@@ -2,7 +2,7 @@ import { z } from "zod";
 import { parseScore } from "@/modules/score";
 import { createTake, decodeWav, type SpeechRecognizer, type SpeechTurn, type SungSpan } from "@/modules/voice";
 import type { ModelPort } from "./model-port";
-import { runAssistant, type AssistantResult } from "./run-assistant";
+import { runAssistant, type AssistantResult, type ProgressListener } from "./run-assistant";
 
 /** Two minutes of 16 kHz mono 16-bit audio, with room for the WAV header. */
 export const MAX_AUDIO_BYTES = 16_000 * 2 * 120 + 1024;
@@ -35,6 +35,7 @@ const NOTHING_USED = { inputTokens: 0, outputTokens: 0 };
 export async function handleVoiceRequest(
   input: { audio: Uint8Array | null; payload: unknown },
   services: { model: ModelPort; recognizer: SpeechRecognizer },
+  onProgress: ProgressListener = () => {},
 ): Promise<VoiceResponse> {
   if (!input.audio?.length) return failure(400, "Record a take first.");
   if (input.audio.length > MAX_AUDIO_BYTES) return failure(413, "Takes can be up to two minutes long.");
@@ -52,6 +53,7 @@ export async function handleVoiceRequest(
     return failure(413, "Takes can be up to two minutes long.");
   }
   let speech: SpeechTurn[];
+  onProgress({ stage: "hearing" });
   try {
     speech = await services.recognizer.transcribe(input.audio);
   } catch (error) {
@@ -67,7 +69,7 @@ export async function handleVoiceRequest(
     };
   }
   try {
-    const result = await runAssistant(services.model, { ...parsed.data, score, take });
+    const result = await runAssistant(services.model, { ...parsed.data, score, take }, undefined, onProgress);
     return { status: 200, body: { ...result, heard } };
   } catch (error) {
     return failure(502, error instanceof Error ? error.message : "The assistant is unavailable.");

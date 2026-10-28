@@ -81,3 +81,13 @@ test("a voice tool without a take explains what is missing", () => {
   const result = createMusicTools(null)("music_infer_tempo", { spanIds: ["sung-1"] });
   assert.deepEqual(result, { ok: false, error: "There is no sung span sung-1 (no voice take this turn)." });
 });
+
+test("singing the recognizer still counted as speech is recovered for the sung span", () => {
+  const speech = talking(3);
+  const talkingEnds = speech.samples.length / speech.sampleRate;
+  // The recognizer's turn runs a second into the singing, as it often does.
+  const take = createTake(join(speech, singMelody(phrase, { bpm: 120 })), [
+    { start: 0, end: talkingEnds + 1, text: "this is how it goes" },
+  ]);
+  assert.ok(Math.abs(take.sung[0].start - talkingEnds) < 0.3, `span starts at ${take.sung[0].start}`);
+});

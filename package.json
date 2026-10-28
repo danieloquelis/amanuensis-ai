@@ -17,7 +17,8 @@
     "spike:voice": "tsx --env-file=.env.local scripts/voice-spike.mts",
     "eval:voice": "tsx scripts/voice-eval.mts",
     "test:integration": "tsx --test tests/integration/*.integration-test.ts",
-    "smoke:voice": "tsx --env-file=.env.local scripts/voice-smoke.mts"
+    "smoke:voice": "tsx --env-file=.env.local scripts/voice-smoke.mts",
+    "experiment:readings": "tsx --env-file=.env.local scripts/reading-choice-experiment.mts"
   },
   "dependencies": {
     "next": "16.4.3",

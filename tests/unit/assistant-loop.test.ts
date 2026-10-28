@@ -165,3 +165,17 @@ test("a text turn offers music analysis but not the voice tools", async () => {
   assert.ok(!offered[0].includes("voice_transcribe_melody"));
   assert.match((seen[1].at(-1) as { content: string }).content, /D major/);
 });
+
+test("progress is reported as the agent thinks and uses each tool, never with its wording", async () => {
+  const { model } = scriptedModel([
+    { content: null, toolCalls: [call("score_get_context", { selectedIds: [] })] },
+    { content: "Ok.", toolCalls: [] },
+  ]);
+  const events: unknown[] = [];
+  await runAssistant(model, request("hi"), "t9", (event) => events.push(event));
+  assert.deepEqual(events, [
+    { stage: "thinking" },
+    { stage: "tool", tool: "score_get_context" },
+    { stage: "thinking" },
+  ]);
+});

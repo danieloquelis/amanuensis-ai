@@ -32,3 +32,23 @@ export async function recordingToWav(recording: Blob): Promise<Uint8Array> {
     await context.close();
   }
 }
+
+/** Speech and singing sit around 0.02–0.3 RMS; this spreads that range over the meter. */
+const LEVEL_GAIN = 4;
+
+/** How loud the microphone is right now (0–1), for a live level meter. Call `close` when done. */
+export function listenToLevel(stream: MediaStream): { level: () => number; close: () => void } {
+  const context = new AudioContext();
+  const analyser = context.createAnalyser();
+  analyser.fftSize = 1024;
+  context.createMediaStreamSource(stream).connect(analyser);
+  const samples = new Float32Array(analyser.fftSize);
+  return {
+    level() {
+      analyser.getFloatTimeDomainData(samples);
+      const rms = Math.sqrt(samples.reduce((sum, s) => sum + s * s, 0) / samples.length);
+      return Math.min(1, rms * LEVEL_GAIN);
+    },
+    close: () => void context.close(),
+  };
+}

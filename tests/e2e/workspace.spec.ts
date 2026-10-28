@@ -268,12 +268,18 @@ test("several marks can be added and any one deleted by selecting it", async ({ 
   await expect(page.locator("svg").getByRole("button", { name: "Segno", exact: true })).toBeVisible();
 });
 
+/** The assistant routes stream progress lines and end with the result. */
+const streamed = (body: unknown) => ({
+  contentType: "application/x-ndjson",
+  body: `${JSON.stringify({ type: "progress", event: { stage: "thinking" } })}\n${JSON.stringify({ type: "result", status: 200, body })}\n`,
+});
+
 test("the assistant applies an instruction as one undoable step", async ({ page }) => {
   // The model is mocked: browser tests never call the real API.
   await page.route("/api/assistant", async (route) => {
     const { score } = route.request().postDataJSON();
-    await route.fulfill({
-      json: {
+    await route.fulfill(
+      streamed({
         reply: "Added Am7 on beat 3 of bar 2.",
         question: null,
         commands: [
@@ -285,8 +291,8 @@ test("the assistant applies an instruction as one undoable step", async ({ page 
         ],
         changes: ["Bar 2: changed"],
         steps: 3,
-      },
-    });
+      }),
+    );
   });
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Change time signature" })).toBeEnabled();
@@ -314,7 +320,7 @@ test("the assistant's question becomes buttons that answer it", async ({ page })
             steps: 1,
           }
         : { reply: "Repeated bar 2.", question: null, commands: [], changes: [], steps: 1 };
-    await route.fulfill({ json: body });
+    await route.fulfill(streamed(body));
   });
   await page.goto("/");
   const instruction = page.getByLabel("Instruction for the assistant");

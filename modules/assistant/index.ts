@@ -15,6 +15,8 @@ export {
   type AssistantRequest,
   type AssistantResult,
   type AssistantTurn,
+  type ProgressEvent,
+  type ProgressListener,
   type TraceEntry,
 } from "./application/run-assistant";
 export { createMusicTools, MUSIC_TOOL_NAMES, musicToolSpecs, type MusicToolName } from "./application/music-tools";

@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { MICROPHONE_CONSTRAINTS, recordingToWav } from "../../infrastructure/browser-audio";
+import { listenToLevel, MICROPHONE_CONSTRAINTS, recordingToWav } from "../../infrastructure/browser-audio";
 
 /** Longest take the server accepts. */
 export const MAX_TAKE_SECONDS = 120;
-const TICK_MS = 250;
+/** The timer and level meter refresh this often. */
+const TICK_MS = 100;
 
 export type RecorderStatus = "idle" | "recording" | "processing";
 
@@ -15,6 +16,8 @@ export function useVoiceRecorder(onTake: (wav: Uint8Array) => void) {
   const [status, setStatus] = useState<RecorderStatus>("idle");
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  /** Live microphone level, 0–1, while recording. */
+  const [level, setLevel] = useState(0);
   const recorder = useRef<MediaRecorder | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const latestOnTake = useRef(onTake);
@@ -44,8 +47,11 @@ export function useVoiceRecorder(onTake: (wav: Uint8Array) => void) {
   const record = (stream: MediaStream) => {
     const chunks: Blob[] = [];
     const media = new MediaRecorder(stream);
+    const meter = listenToLevel(stream);
     media.ondataavailable = (event) => chunks.push(event.data);
     media.onstop = async () => {
+      meter.close();
+      setLevel(0);
       stream.getTracks().forEach((track) => track.stop());
       setStatus("processing");
       try {
@@ -64,9 +70,10 @@ export function useVoiceRecorder(onTake: (wav: Uint8Array) => void) {
     timer.current = setInterval(() => {
       const elapsed = (Date.now() - started) / 1000;
       setSeconds(Math.floor(elapsed));
+      setLevel(meter.level());
       if (elapsed >= MAX_TAKE_SECONDS) stop();
     }, TICK_MS);
   };
 
-  return { status, seconds, error, start, stop };
+  return { status, seconds, level, error, start, stop };
 }

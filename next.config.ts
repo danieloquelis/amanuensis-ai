@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   experimental: {
     agentFeedback: true,
   },
+  // Keep the development badge away from the assistant's composer (bottom left).
+  devIndicators: { position: "top-right" },
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

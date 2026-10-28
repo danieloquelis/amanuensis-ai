@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { parseScore } from "@/modules/score";
 import type { ModelPort } from "./model-port";
-import { runAssistant, type AssistantResult } from "./run-assistant";
+import { runAssistant, type AssistantResult, type ProgressListener } from "./run-assistant";
 
 export const MAX_REQUEST_BYTES = 1_000_000;
 const HISTORY_LIMIT = 6;
@@ -19,7 +19,11 @@ const requestSchema = z.strictObject({
 export type AssistantResponse = { status: number; body: AssistantResult | { error: string } };
 
 /** Validates an HTTP request body and runs the assistant. Never throws; failures become statuses. */
-export async function handleAssistantRequest(body: unknown, model: ModelPort): Promise<AssistantResponse> {
+export async function handleAssistantRequest(
+  body: unknown,
+  model: ModelPort,
+  onProgress?: ProgressListener,
+): Promise<AssistantResponse> {
   const parsed = requestSchema.safeParse(body);
   if (!parsed.success) return { status: 400, body: { error: "Send an instruction and the current score." } };
   let score;
@@ -29,7 +33,7 @@ export async function handleAssistantRequest(body: unknown, model: ModelPort): P
     return { status: 400, body: { error: error instanceof Error ? error.message : "Invalid score." } };
   }
   try {
-    const result = await runAssistant(model, { ...parsed.data, score });
+    const result = await runAssistant(model, { ...parsed.data, score }, undefined, onProgress);
     return { status: 200, body: result };
   } catch (error) {
     const message = error instanceof Error ? error.message : "The assistant is unavailable.";

@@ -36,6 +36,10 @@ export type AssistantResult = {
 };
 
 export type TraceEntry = { tool: string; arguments: string; ok: boolean; error?: string };
+
+/** What the assistant is doing right now, for a live progress line (never the model's text). */
+export type ProgressEvent = { stage: "hearing" } | { stage: "thinking" } | { stage: "tool"; tool: string };
+export type ProgressListener = (event: ProgressEvent) => void;
 /** Trace arguments are cut to this length: enough to judge a decision, small enough to keep. */
 const TRACE_ARGUMENT_ROOM = 400;
 
@@ -48,6 +52,7 @@ export async function runAssistant(
   model: ModelPort,
   request: AssistantRequest,
   turnId: string = crypto.randomUUID().slice(0, 8),
+  onProgress: ProgressListener = () => {},
 ): Promise<AssistantResult> {
   let session: Session = createSession(request.score);
   const tools = createScoreToolGateway(
@@ -91,6 +96,7 @@ export async function runAssistant(
   });
 
   for (let step = 1; step <= MAX_TOOL_STEPS; step++) {
+    onProgress({ stage: "thinking" });
     const reply = await model.complete(messages, toolList);
     usage.inputTokens += reply.usage?.inputTokens ?? 0;
     usage.outputTokens += reply.usage?.outputTokens ?? 0;
@@ -98,6 +104,7 @@ export async function runAssistant(
     messages.push({ role: "assistant", content: reply.content, toolCalls: reply.toolCalls });
     if (!reply.toolCalls.length) return finish(reply.content?.trim() || "Done.", null, step);
     for (const call of reply.toolCalls) {
+      onProgress({ stage: "tool", tool: call.name });
       const entry = { tool: call.name, arguments: call.arguments.slice(0, TRACE_ARGUMENT_ROOM), ok: true };
       trace.push(entry);
       if (call.name === ASK_TOOL) {

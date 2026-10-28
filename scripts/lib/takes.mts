@@ -6,7 +6,7 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, statSync } from "no
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createExample, describeScore, parseChordSymbol, rankKeysForChords, type Score } from "@/modules/score";
-import type { SpeechTurn } from "@/modules/voice";
+import { decodeWav, encodeWav, type SpeechTurn } from "@/modules/voice";
 
 /** What the musician meant. `bars` uses the eval notation: "r/0.5 E4/0.5 … | C♯4/0.5 …". */
 export type Truth = {
@@ -18,13 +18,16 @@ export type Truth = {
   bars: string;
 };
 
-/** The take's audio as WAV bytes; other formats are converted with macOS `afconvert`. */
+/**
+ * The take's audio as plain 16-bit PCM WAV bytes (the format the app records and the speech
+ * service accepts); other formats are converted with macOS `afconvert`.
+ */
 export function loadTakeWav(path: string): Uint8Array {
   const file = statSync(path).isDirectory() ? join(path, "take.wav") : path;
-  if (file.endsWith(".wav")) return new Uint8Array(readFileSync(file));
+  if (file.endsWith(".wav")) return encodeWav(decodeWav(new Uint8Array(readFileSync(file))));
   const wav = join(mkdtempSync(join(tmpdir(), "amanuensis-take-")), "take.wav");
   execFileSync("afconvert", ["-f", "WAVE", "-d", "LEI16@16000", "-c", "1", file, wav]);
-  return new Uint8Array(readFileSync(wav));
+  return encodeWav(decodeWav(new Uint8Array(readFileSync(wav))));
 }
 
 export const readTruth = (folder: string): Truth | null =>
