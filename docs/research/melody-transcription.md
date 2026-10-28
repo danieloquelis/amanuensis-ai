@@ -74,6 +74,20 @@ The take is multimodal input; the agent reasons over it with tools, as a musicia
 
 Every analysis tool is local and deterministic. The model spends tokens on reasoning, not on listening. `music_*` tools are offered on every turn ("what key is Em A D G?"); `voice_*` tools only when there is a take.
 
+## Testing with real takes
+
+- **In the app** (development): tap Sing, talk and sing, tap Stop. Each take is kept in `.takes/<time>/` (audio + what the app made of it; never committed), and its transcription is cached in `.cache/transcripts/`, so it is paid once.
+- **Truth**: add `truth.json` to a take folder (key, chords, start, whether it is an arpeggio, and the meant bars in eval notation).
+- **Ear score** (free): `yarn eval:voice --corpus [--verbose]` transcribes every take with a truth, using the options a good agent would choose.
+- **Agent score** (paid, on demand): `yarn smoke:voice --confirm .takes/<take>` runs the real agent, prints each tool call, the written bars, the agent score and token use.
+- The gap between the two scores is what the agent's musicianship adds. Baseline, El Muelle memo: ear 14/32 (the four bass roots were not sung; the agent has to add them from the chords).
+
+## For the cloud architecture review
+
+- **Realtime speech**: Muse Voice Transcribe also streams (`wss://api.meta.ai/v1/asr/realtime`, raw 16/24 kHz PCM frames, partial transcripts, `ENDPOINTING` turn detection). It would give live captions while the musician talks and auto-stop at the end of a take. It needs a server-side WebSocket relay (the key cannot reach the browser) or a short-lived token; Next.js route handlers do not relay WebSockets by themselves.
+- **Cost**: speech is $0.18 per hour of audio (streaming or not), about $0.002 per take. Nearly all cost is model tokens, so the agent loop (steps, tool schema size, context) is what to optimise.
+- Upload limits: 32 MB, 10 minutes per request; 256 concurrent streams shared across both endpoints.
+
 ## Known limits and next steps
 
 - **Real voices**: synthetic singing is easier (clean harmonics, steady vowels). Next gate: a small consented corpus of real takes; `yarn eval:voice --file take.m4a [--bpm 90]` analyses one locally.

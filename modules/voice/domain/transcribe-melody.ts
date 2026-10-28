@@ -1,4 +1,5 @@
 import { measureCapacity, spellMidi, type KeySignature, type Meter, type Pitch } from "@/modules/score";
+import { barEvidence, type BarEvidence } from "./evidence";
 import { fitHarmony, fitToChords, snapToChordTones } from "./harmonic-fit";
 import { estimateKey, resolvePitches, tuneToScale, type ChordContext, type ResolvedNote } from "./musical-priors";
 import { segmentNotes, type SungNote } from "./notes";
@@ -15,6 +16,8 @@ export type MelodyOptions = {
   startBeat?: number;
   /** The tune is built from chord tones (arpeggios, riffs): notes within a semitone snap to one. */
   snapToChordTones?: boolean;
+  /** A transposition already fitted across the whole take (see `transcribeSpans`). */
+  shift?: number;
 };
 
 export type MelodyTranscription = {
@@ -38,6 +41,8 @@ export type MelodyTranscription = {
   bars: { pitch: Pitch | null; duration: number }[][];
   /** Notes sung between two pitches: where they are (bar from 1, beat from 0) and the other reading. */
   uncertain: { bar: number; beat: number; written: Pitch; alternative: Pitch }[];
+  /** Per bar: how sure the ear is, and which bars share a rhythm (a repeated figure). */
+  evidence: BarEvidence[];
   warnings: string[];
 };
 
@@ -74,9 +79,15 @@ export function transcribeMelody(signal: Signal, options: MelodyOptions = {}): M
   const placed = quantizeNotes(raw, bpm);
   const sungOnsets = placed.filter((p) => p.midi !== null).map((p) => p.start);
   const fit = options.key
-    ? fitHarmony(raw, sungOnsets, options.key, { meter, chords: options.chords, startBeat: options.startBeat })
+    ? fitHarmony(raw, sungOnsets, options.key, {
+        meter,
+        chords: options.chords,
+        startBeat: options.startBeat,
+        shift: options.shift,
+      })
     : {
         transposedBy: 0,
+        shift: 0,
         startBeat: options.startBeat ?? 0,
         startBeatSure: options.startBeat !== undefined,
         notes: tuneToScale(raw),
@@ -130,6 +141,7 @@ export function transcribeMelody(signal: Signal, options: MelodyOptions = {}): M
       const beat = onsets[i] - (bar - 1) * capacity;
       return [{ bar, beat, written: spellMidi(note.pitch, key), alternative: spellMidi(note.alternative, key) }];
     }),
+    evidence: barEvidence(notes, onsets, bars, capacity),
     warnings: notes.length ? warnings : ["No sung notes were found."],
   };
 }

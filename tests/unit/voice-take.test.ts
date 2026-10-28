@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createMusicTools } from "@/modules/assistant";
+import { createExample, createSession, describeScore, execute } from "@/modules/score";
 import { createTake, describeTake, type Signal } from "@/modules/voice";
 import { midi, singMelody, type SungNoteSpec } from "../support/synthetic-voice";
 
@@ -56,22 +57,27 @@ test("a key is inferred from the chords the musician named", () => {
 test("the tempo word said settles a sung tempo that could be read several ways", () => {
   // Even quarters at 66 fit 66, 99 and 132 equally; "Allegro" means the 132 reading.
   const take = createTake(singMelody(phrase, { bpm: 66 }), []);
-  const result = createMusicTools(take)("music_infer_tempo", { marking: "Allegro", spanId: "sung-1" });
+  const result = createMusicTools(take)("music_infer_tempo", { marking: "Allegro", spanIds: ["sung-1"] });
   assert.equal(result.ok && result.bpm, 132);
 });
 
-test("a sung span becomes bars the score can take as they are", () => {
+test("a sung span is written into the score from the bar it was meant for", () => {
   const take = createTake(singMelody(phrase, { bpm: 90 }), []);
-  const result = createMusicTools(take)("voice_transcribe_melody", { spanId: "sung-1", bpm: 90 });
-  assert.ok(result.ok);
-  const bars = result.bars as { duration: number }[][];
-  assert.deepEqual(
-    bars.map((bar) => bar.reduce((sum, e) => sum + e.duration, 0)),
-    [4, 4],
-  );
+  let session = createSession(createExample());
+  const tools = createMusicTools(take, {
+    getScore: () => session.score,
+    commit: (operation) => {
+      session = execute(session, { requestId: "take", expectedRevision: session.score.revision, operation });
+      return { ok: true };
+    },
+  });
+  const result = tools("voice_transcribe_melody", { spans: [{ spanId: "sung-1", bar: 2 }], bpm: 90 });
+  assert.equal(result.ok && result.written, true);
+  const bars = describeScore(session.score).bars.map((bar) => bar.events.map((e) => e.pitch).join(" "));
+  assert.deepEqual(bars.slice(1, 3), ["C4 E4 G4 E4", "D4 F4 A4"]);
 });
 
 test("a voice tool without a take explains what is missing", () => {
-  const result = createMusicTools(null)("music_infer_tempo", { spanId: "sung-1" });
+  const result = createMusicTools(null)("music_infer_tempo", { spanIds: ["sung-1"] });
   assert.deepEqual(result, { ok: false, error: "There is no sung span sung-1 (no voice take this turn)." });
 });

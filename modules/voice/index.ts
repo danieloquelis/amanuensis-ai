@@ -4,7 +4,9 @@ export { trackPitch, VOICE_RANGE_HZ, type PitchFrame, type Signal } from "./doma
 export {
   estimateTempo,
   quantizeNotes,
+  distinctTempi,
   rankTempi,
+  tempoCosts,
   toBars,
   type BarEvent,
   type PlacedNote,
@@ -29,3 +31,7 @@ export {
   type ChordContext,
   type ResolvedNote,
 } from "./domain/musical-priors";
+export type { SpeechRecognizer } from "./application/speech-port";
+export { decodeWav, encodeWav } from "./domain/wav";
+export { barEvidence, type BarEvidence } from "./domain/evidence";
+export { transcribeSpans, type PlacedSpan, type SpansOptions } from "./domain/transcribe-spans";

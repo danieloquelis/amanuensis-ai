@@ -2,7 +2,7 @@ import { commandSchema, createSession, summarizeChange, type Command, type Score
 import { describeTake, type VoiceTake } from "@/modules/voice";
 import { ASK_TOOL, askSchema, assistantTools } from "./assistant-tools";
 import { createMusicTools, isMusicTool, musicToolSpecs } from "./music-tools";
-import type { ChatMessage, ModelPort, ToolCall } from "./model-port";
+import type { ChatMessage, ModelPort, TokenUsage, ToolCall } from "./model-port";
 import { createScoreToolGateway } from "./score-tool-gateway";
 import { SYSTEM_PROMPT } from "./system-prompt";
 
@@ -29,7 +29,15 @@ export type AssistantResult = {
   commands: Command[];
   changes: string[];
   steps: number;
+  /** Tokens used across the turn's model calls, when the provider reports them. */
+  usage: TokenUsage;
+  /** What the agent did, step by step: each tool call and whether it worked. For review. */
+  trace: TraceEntry[];
 };
+
+export type TraceEntry = { tool: string; arguments: string; ok: boolean; error?: string };
+/** Trace arguments are cut to this length: enough to judge a decision, small enough to keep. */
+const TRACE_ARGUMENT_ROOM = 400;
 
 /**
  * Runs one instruction: the model reads and edits a server-side copy of the score through the
@@ -48,9 +56,25 @@ export async function runAssistant(
       session = next;
     },
   );
-  const music = createMusicTools(request.take ?? null);
-  const toolList = [...assistantTools, ...musicToolSpecs(Boolean(request.take))];
   const commands: Command[] = [];
+  let toolWrites = 0;
+  // Tools that write (a transcription) commit through the same gateway as score_edit.
+  const music = createMusicTools(request.take ?? null, {
+    getScore: () => session.score,
+    commit: (operation) => {
+      const command = {
+        requestId: `${turnId}-tool-${++toolWrites}`,
+        expectedRevision: session.score.revision,
+        operation,
+      };
+      const result = tools("score_edit", command);
+      if (result.ok) commands.push(commandSchema.parse(command));
+      return result;
+    },
+  });
+  const toolList = [...assistantTools, ...musicToolSpecs(Boolean(request.take))];
+  const usage: TokenUsage = { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 };
+  const trace: TraceEntry[] = [];
   const messages: ChatMessage[] = [
     { role: "system", content: SYSTEM_PROMPT },
     ...historyMessages(request),
@@ -62,13 +86,20 @@ export async function runAssistant(
     commands,
     changes: commands.length ? summarizeChange(request.score, session.score) : [],
     steps,
+    usage,
+    trace,
   });
 
   for (let step = 1; step <= MAX_TOOL_STEPS; step++) {
     const reply = await model.complete(messages, toolList);
+    usage.inputTokens += reply.usage?.inputTokens ?? 0;
+    usage.outputTokens += reply.usage?.outputTokens ?? 0;
+    usage.cachedInputTokens! += reply.usage?.cachedInputTokens ?? 0;
     messages.push({ role: "assistant", content: reply.content, toolCalls: reply.toolCalls });
     if (!reply.toolCalls.length) return finish(reply.content?.trim() || "Done.", null, step);
     for (const call of reply.toolCalls) {
+      const entry = { tool: call.name, arguments: call.arguments.slice(0, TRACE_ARGUMENT_ROOM), ok: true };
+      trace.push(entry);
       if (call.name === ASK_TOOL) {
         const ask = askSchema.safeParse(parseArguments(call));
         if (ask.success) return finish(ask.data.question, { text: ask.data.question, choices: ask.data.choices }, step);
@@ -76,6 +107,7 @@ export async function runAssistant(
       const result = isMusicTool(call.name)
         ? music(call.name, parseArguments(call))
         : runTool(call, tools, commands, turnId);
+      if (!result.ok) Object.assign(entry, { ok: false, error: "error" in result ? result.error : undefined });
       messages.push({ role: "tool", toolCallId: call.id, content: JSON.stringify(result) });
     }
   }
@@ -131,8 +163,11 @@ function historyMessages(request: AssistantRequest): ChatMessage[] {
   ]);
 }
 
+/** A take's words are the request itself: the agent is told so, not left to infer it. */
+const TAKE_INTRO = "The musician recorded this take. What they said is their request; carry it out.";
+
 function userMessage(request: AssistantRequest): ChatMessage {
-  const take = request.take ? `\n\n${describeTake(request.take)}` : "";
+  const take = request.take ? `\n\n${TAKE_INTRO}\n${describeTake(request.take)}` : "";
   const selection = request.selectedIds.length ? `\n\n[Selected IDs: ${request.selectedIds.join(", ")}]` : "";
   return { role: "user", content: `${request.instruction}${take}${selection}`.trim() };
 }

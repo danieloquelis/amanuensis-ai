@@ -2,13 +2,23 @@
 // Usage: yarn eval:voice                     synthetic suite with metrics
 //        yarn eval:voice --file take.m4a [--from 22 --to 32.5] [--bpm 90] [--meter 3/4]   your own recording (macOS)
 //                        [--key D] [--chords "Em A Dsus2 G"] (one per bar) [--start 0.5] [--snap]
+//        yarn eval:voice --corpus [.takes]   ear score on every kept take that has a truth.json
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { keyName, parseChordSymbol, pitchName, rankKeysForChords, type Meter } from "@/modules/score";
-import { transcribeMelody, type ChordContext, type Signal } from "@/modules/voice";
+import { createTake, decodeWav, spanSignal, transcribeMelody, type ChordContext, type Signal } from "@/modules/voice";
 import { midi, singMelody, type SingerOptions, type SungNoteSpec } from "../tests/support/synthetic-voice";
+import {
+  chordsByBar,
+  compareBars,
+  corpusFolders,
+  keyFromName,
+  loadTakeWav,
+  readHeardSpeech,
+  readTruth,
+} from "./lib/takes.mjs";
 
 const argument = (name: string) => {
   const index = process.argv.indexOf(name);
@@ -199,9 +209,49 @@ function runFile(path: string) {
       .join("  "),
   );
   console.log("Written:\n " + written(result.bars).split(" | ").join("\n "));
+  for (const e of result.evidence) {
+    const similar = e.similarRhythm.length ? `, rhythm like bar ${e.similarRhythm.join(", ")}` : "";
+    console.log(`Bar ${e.bar}: ${e.confidence}, ${e.offCents} cents off, ${e.corrected} corrected${similar}`);
+  }
   for (const warning of result.warnings) console.log("Warning:", warning);
 }
 
+/**
+ * The ear alone on every take with a truth.json, given the options a good agent would choose
+ * (key, chords, start, snapping from the truth). Free: no model or speech calls.
+ */
+function runCorpus(root: string) {
+  const folders = corpusFolders(root);
+  if (!folders.length) return console.log(`No takes with a truth.json in ${root}.`);
+  let right = 0;
+  let total = 0;
+  for (const folder of folders) {
+    const truth = readTruth(folder)!;
+    const take = createTake(decodeWav(loadTakeWav(folder)), readHeardSpeech(folder));
+    const span = [...take.sung].sort((a, b) => b.end - b.start - (a.end - a.start))[0];
+    const signal = span && spanSignal(take, span.id);
+    if (!signal) {
+      console.log(`${folder}: no singing found`);
+      continue;
+    }
+    const result = transcribeMelody(signal, {
+      bpm: truth.bpm,
+      key: truth.key ? keyFromName(truth.key) : undefined,
+      chords: chordsByBar(truth.chords),
+      startBeat: truth.startBeat,
+      snapToChordTones: truth.snap,
+    });
+    const score = compareBars(truth.bars, written(result.bars));
+    right += score.right;
+    total += score.total;
+    console.log(`${folder}: ear ${score.right}/${score.total}`);
+    if (process.argv.includes("--verbose")) console.log(`  want ${truth.bars}\n  got  ${written(result.bars)}`);
+  }
+  console.log(`\nEar score: ${right}/${total} meant notes right (${Math.round((right / total) * 100)}%)`);
+}
+
 const file = argument("--file");
-if (file) runFile(file);
+if (process.argv.includes("--corpus"))
+  runCorpus(argument("--corpus")?.startsWith("--") ? ".takes" : (argument("--corpus") ?? ".takes"));
+else if (file) runFile(file);
 else runSuite();

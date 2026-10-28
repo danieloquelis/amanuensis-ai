@@ -1,7 +1,5 @@
 import {
   findTempoMarking,
-  keyName,
-  measureCapacity,
   parseChordSymbol,
   rankKeysForChords,
   TEMPO_MARKINGS,
@@ -11,16 +9,17 @@ import {
   type KeyCandidate,
 } from "@/modules/score";
 import {
+  distinctTempi,
   rankKeysForMelody,
-  rankTempi,
   segmentNotes,
   spanSignal,
+  tempoCosts,
   trackPitch,
-  transcribeMelody,
   type VoiceTake,
 } from "@/modules/voice";
 import type { ToolSpec } from "./model-port";
 import { inferKeySchema, inferTempoSchema, transcribeSchema } from "./music-tool-schemas";
+import { transcribeIntoScore, type ScoreAccess } from "./voice-transcription-tool";
 import { toolError } from "./score-tool-gateway";
 import { toolParameters } from "./tool-definitions";
 
@@ -44,13 +43,13 @@ const specs: Record<MusicToolName, ToolSpec> = {
   music_infer_tempo: {
     name: "music_infer_tempo",
     description:
-      "Quarter-note BPM from a tempo word (Allegro…) and/or the timing of a sung span; with both, the singing picks a tempo within the word's range. A spoken number needs no tool: use it.",
+      "Quarter-note BPM from a tempo word (Allegro…) and/or the timing of the sung spans; with both, the singing picks a tempo within the word's range. A spoken number needs no tool: use it.",
     parameters: toolParameters(inferTempoSchema),
   },
   voice_transcribe_melody: {
     name: "voice_transcribe_melody",
     description:
-      "Turn a sung span into bars of notes and rests, ready for replaceMeasure events. Settle bpm, key and chords first; say what the tune is (snapToChordTones for arpeggios). Returns doubtful notes with their other reading.",
+      "Hear the sung spans and write them into the score, each from its bar, in one call. Settle bpm, key and chords first; say what the tune is (snapToChordTones for arpeggios). Returns the bars written, doubtful notes, and per-bar evidence (confidence, corrections, bars with a similar rhythm) for your review.",
     parameters: toolParameters(transcribeSchema),
   },
 };
@@ -70,8 +69,11 @@ function parseChords(symbols: string[]): ChordSymbol[] {
   });
 }
 
-/** Read-only music analysis for one turn. Every call is local and deterministic. */
-export function createMusicTools(take: VoiceTake | null) {
+/**
+ * Music analysis for one turn, local and deterministic. With score access, transcription also
+ * writes what it heard into the score.
+ */
+export function createMusicTools(take: VoiceTake | null, access: ScoreAccess | null = null) {
   const sungNotes = (id: string) => {
     const signal = take && spanSignal(take, id);
     if (!signal) throw new Error(`There is no sung span ${id}${take ? "" : " (no voice take this turn)"}.`);
@@ -103,11 +105,18 @@ export function createMusicTools(take: VoiceTake | null) {
       if (args.marking && !marking) {
         throw new Error(`Unknown tempo word. Known: ${TEMPO_MARKINGS.map((m) => m.name).join(", ")}.`);
       }
-      if (!args.spanId) {
-        if (!marking) throw new Error("Give a tempo word, a sung span, or both.");
+      if (!args.spanIds?.length) {
+        if (!marking) throw new Error("Give a tempo word, sung spans, or both.");
         return { ok: true, bpm: typicalTempo(marking), range: [marking.min, marking.max], source: "marking" };
       }
-      const [best, ...others] = rankTempi(sungNotes(args.spanId), marking ?? undefined);
+      // Each span is timed on its own (speech sits between them); their misfits add up per tempo.
+      const total = new Map<number, number>();
+      for (const id of args.spanIds) {
+        for (const { bpm, cost } of tempoCosts(sungNotes(id), marking ?? undefined)) {
+          total.set(bpm, (total.get(bpm) ?? 0) + cost);
+        }
+      }
+      const [best, ...others] = distinctTempi([...total].map(([bpm, cost]) => ({ bpm, cost })));
       return {
         ok: true,
         bpm: best.bpm,
@@ -118,28 +127,7 @@ export function createMusicTools(take: VoiceTake | null) {
     },
 
     voice_transcribe_melody(raw) {
-      const args = transcribeSchema.parse(raw);
-      const signal = take && spanSignal(take, args.spanId);
-      if (!signal) throw new Error(`There is no sung span ${args.spanId}.`);
-      const capacity = measureCapacity(args.meter ?? { numerator: 4, denominator: 4 });
-      const chords = args.chords?.map(({ bar, beat, symbol }) => ({
-        beat: (bar - 1) * capacity + beat,
-        ...parseChords([symbol])[0],
-      }));
-      const { bpm, meter, key, startBeat, snapToChordTones } = args;
-      const result = transcribeMelody(signal, { bpm, meter, key, chords, startBeat, snapToChordTones });
-      return {
-        ok: true,
-        bars: result.bars,
-        key: keyName(result.key),
-        keyWasGiven: result.keyWasGiven,
-        ...(result.transposedBy ? { transposedBySemitones: result.transposedBy } : {}),
-        startBeat: result.startBeat,
-        startBeatSure: result.startBeatSure,
-        uncertain: result.uncertain,
-        ...(result.octaveShift ? { writtenOctavesHigher: result.octaveShift } : {}),
-        warnings: result.warnings,
-      };
+      return transcribeIntoScore(take, raw, access);
     },
   };
 

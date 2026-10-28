@@ -31,25 +31,35 @@ export type TempoCandidate = { bpm: number; cost: number };
 const DISTINCT_TEMPI = 8;
 
 /**
- * Tempi (BPM) under which the sung onsets land closest to an eighth/sixteenth grid, best first,
- * preferring moderate tempi so a phrase isn't read at double or half speed. `range` limits the
- * search, e.g. to a spoken marking ("Allegro" → 120–156).
+ * How badly each tempo (BPM) fits the sung onsets: distance from an eighth/sixteenth grid, with
+ * a mild preference for moderate tempi so a phrase isn't read at double or half speed.
+ * `range` limits the search, e.g. to a spoken marking ("Allegro" → 120–156).
  */
-export function rankTempi(notes: SungNote[], range: { min: number; max: number } = TEMPO_RANGE): TempoCandidate[] {
-  if (notes.length < 2) return [{ bpm: Math.round((range.min + range.max) / 2), cost: Infinity }];
-  const onsets = notes.map((n) => n.start - notes[0].start);
-  const all: TempoCandidate[] = [];
+export function tempoCosts(notes: SungNote[], range: { min: number; max: number } = TEMPO_RANGE): TempoCandidate[] {
+  const onsets = notes.map((n) => n.start - (notes[0]?.start ?? 0));
+  const costs: TempoCandidate[] = [];
   for (let bpm = Math.ceil(range.min); bpm <= range.max; bpm++) {
     const beat = 60 / bpm;
     const error = onsets.reduce((sum, t) => sum + (t / beat - Math.round(t / beat / GRID) * GRID) ** 2, 0);
     const fineness = onsets.filter((t) => Math.abs(t / beat - Math.round(t / beat / EIGHTH) * EIGHTH) > 0.08).length;
-    all.push({ bpm, cost: error * 40 + fineness * 0.3 + Math.abs(Math.log2(bpm / 96)) * 0.5 });
+    costs.push({ bpm, cost: error * 40 + fineness * 0.3 + Math.abs(Math.log2(bpm / 96)) * 0.5 });
   }
+  return costs;
+}
+
+/** Candidate tempi best first, keeping only readings at least a few BPM apart. */
+export function distinctTempi(costs: TempoCandidate[]): TempoCandidate[] {
   const ranked: TempoCandidate[] = [];
-  for (const candidate of all.sort((a, b) => a.cost - b.cost)) {
+  for (const candidate of [...costs].sort((a, b) => a.cost - b.cost)) {
     if (ranked.every((r) => Math.abs(r.bpm - candidate.bpm) >= DISTINCT_TEMPI)) ranked.push(candidate);
   }
   return ranked;
+}
+
+/** Tempi (BPM) for a sung phrase, best first. */
+export function rankTempi(notes: SungNote[], range: { min: number; max: number } = TEMPO_RANGE): TempoCandidate[] {
+  if (notes.length < 2) return [{ bpm: Math.round((range.min + range.max) / 2), cost: Infinity }];
+  return distinctTempi(tempoCosts(notes, range));
 }
 
 /** The most likely tempo (BPM) of a sung phrase. */

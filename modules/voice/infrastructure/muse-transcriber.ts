@@ -1,0 +1,52 @@
+import { z } from "zod";
+import type { SpeechRecognizer } from "../application/speech-port";
+import type { SpeechTurn } from "../domain/take";
+
+export const META_API_URL = "https://api.meta.ai/v1";
+const MODEL = "muse-voice-transcribe-1.0";
+const TIMEOUT_MS = 30_000;
+const MS_PER_SECOND = 1000;
+/** Words the recognizer should expect in a musician's instructions. */
+const MUSIC_WORDS = ["beats per minute", "BPM", "Allegro", "Andante", "Adagio", "major", "minor", "sharp", "flat"];
+
+const replySchema = z.object({
+  turns: z
+    .array(z.object({ startMs: z.number().min(0), endMs: z.number().min(0), transcript: z.string() }))
+    .default([]),
+});
+
+/**
+ * Muse Voice Transcribe adapter (server-only: it holds the API key). Speech comes back as
+ * turns with millisecond times; singing yields no words, which is how sung spans stay clear.
+ */
+export function createMuseTranscriber(apiKey: string, baseUrl = META_API_URL): SpeechRecognizer {
+  return {
+    async transcribe(wav: Uint8Array, hints: string[] = []): Promise<SpeechTurn[]> {
+      const form = new FormData();
+      const settings = {
+        mode: "ENDPOINTING",
+        model: MODEL,
+        audioEncoding: "WAV",
+        keywords: [...MUSIC_WORDS, ...hints],
+      };
+      form.append("request", new Blob([JSON.stringify(settings)], { type: "application/json" }));
+      form.append("audio", new Blob([new Uint8Array(wav)], { type: "audio/wav" }), "take.wav");
+      const response = await fetch(`${baseUrl}/asr/transcribe`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}` },
+        body: form,
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+      if (!response.ok) throw new Error(`Speech recognition failed (${response.status}).`);
+      const reply = replySchema.safeParse(await response.json().catch(() => null));
+      if (!reply.success) throw new Error("Speech recognition returned an unexpected reply.");
+      return reply.data.turns
+        .filter((turn) => turn.transcript.trim())
+        .map((turn) => ({
+          start: turn.startMs / MS_PER_SECOND,
+          end: turn.endMs / MS_PER_SECOND,
+          text: turn.transcript.trim(),
+        }));
+    },
+  };
+}

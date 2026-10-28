@@ -52,7 +52,14 @@ export function createMetaModel(apiKey: string, model = DEFAULT_META_MODEL): Mod
         name: call.function.name,
         arguments: call.function.arguments,
       }));
-      return { content: message.content ?? null, toolCalls };
+      const usage = body?.usage
+        ? {
+            inputTokens: Number(body.usage.prompt_tokens ?? 0),
+            outputTokens: Number(body.usage.completion_tokens ?? 0),
+            cachedInputTokens: Number(body.usage.prompt_tokens_details?.cached_tokens ?? 0),
+          }
+        : undefined;
+      return { content: message.content ?? null, toolCalls, usage };
     },
   };
 }

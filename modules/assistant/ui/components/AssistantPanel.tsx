@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Command, Score } from "@/modules/score";
+import { useVoiceRecorder } from "@/modules/voice/ui";
 import { useAssistant, type Turn } from "../hooks/use-assistant";
 import styles from "./assistant.module.css";
 
@@ -13,9 +14,14 @@ type AssistantPanelProps = {
   onUndo: () => void;
 };
 
-/** Text instructions in, short result cards out. Edits land in the score directly; each card can undo its turn. */
+/**
+ * Typed or spoken instructions in (a take can mix talking and singing), short result cards out.
+ * Edits land in the score directly; each card can undo its turn.
+ */
 export function AssistantPanel({ getScore, revision, selectedIds, applyCommands, onUndo }: AssistantPanelProps) {
-  const { turns, busy, send } = useAssistant({ getScore, selectedIds, applyCommands });
+  const { turns, busy, send, sendTake } = useAssistant({ getScore, selectedIds, applyCommands });
+  const recorder = useVoiceRecorder((wav) => void sendTake(wav));
+  const recording = recorder.status === "recording";
   const [draft, setDraft] = useState("");
   const listRef = useRef<HTMLOListElement>(null);
   useEffect(() => {
@@ -64,25 +70,44 @@ export function AssistantPanel({ getScore, revision, selectedIds, applyCommands,
           submit(draft);
         }}
       >
-        <textarea
-          aria-label="Instruction for the assistant"
-          placeholder="e.g. Add Am7 on beat 3 of bar 2"
-          value={draft}
-          rows={2}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key !== "Enter" || e.shiftKey) return;
-            e.preventDefault();
-            submit(draft);
-          }}
-        />
-        <button className={styles.send} disabled={busy || !draft.trim()}>
-          Send
+        {recording ? (
+          <p className={styles.listening} role="status">
+            Listening… {formatSeconds(recorder.seconds)}
+          </p>
+        ) : (
+          <textarea
+            aria-label="Instruction for the assistant"
+            placeholder="Type, or tap Sing to talk and sing"
+            value={draft}
+            rows={2}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter" || e.shiftKey) return;
+              e.preventDefault();
+              submit(draft);
+            }}
+          />
+        )}
+        <button
+          type="button"
+          className={recording ? `${styles.sing} ${styles.recording}` : styles.sing}
+          disabled={busy || recorder.status === "processing"}
+          onClick={() => (recording ? recorder.stop() : void recorder.start())}
+        >
+          {recording ? "Stop" : "Sing"}
         </button>
+        {!recording && (
+          <button className={styles.send} disabled={busy || !draft.trim()}>
+            Send
+          </button>
+        )}
       </form>
+      {recorder.error && <p className={styles.recorderError}>{recorder.error}</p>}
     </aside>
   );
 }
+
+const formatSeconds = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 
 type TurnResultProps = {
   turn: Turn;

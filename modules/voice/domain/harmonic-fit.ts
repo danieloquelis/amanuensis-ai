@@ -5,6 +5,8 @@ import type { SungNote } from "./notes";
 export type HarmonicFit = {
   /** Semitones the take was moved to sit in the key (singers rarely start on the written pitch). */
   transposedBy: number;
+  /** The exact shift used (fractional: it includes the singer's own tuning). */
+  shift: number;
   /** Where the first sung note falls in the first bar, in quarter beats. */
   startBeat: number;
   /** False when `startBeat` was inferred and other positions fit nearly as well. */
@@ -87,7 +89,7 @@ export function fitHarmony(
   notes: SungNote[],
   onsets: number[],
   key: KeySignature,
-  options: { meter: Meter; chords?: ChordContext[]; startBeat?: number },
+  options: { meter: Meter; chords?: ChordContext[]; startBeat?: number; shift?: number },
 ): HarmonicFit {
   const chords = options.chords ?? [];
   const capacity = measureCapacity(options.meter);
@@ -97,7 +99,7 @@ export function fitHarmony(
       : Array.from({ length: Math.round(capacity / START_STEP) }, (_, i) => i * START_STEP);
   let best = { score: -Infinity, shift: 0, startBeat: starts[0] };
   const bestPerStart = new Map<number, number>();
-  for (const shift of SHIFTS) {
+  for (const shift of options.shift === undefined ? SHIFTS : [options.shift]) {
     const shifted = notes.map((n) => ({ ...n, midi: n.midi + shift }));
     const profile = rankKeysForMelody(shifted).find((c) => sameKey(c.key, key))?.score ?? -1;
     const inKey = scaleFit(shifted, key) + PROFILE_WEIGHT * profile - SHIFT_COST * Math.abs(shift);
@@ -112,6 +114,7 @@ export function fitHarmony(
   const shifted = notes.map((n) => ({ ...n, midi: n.midi + best.shift }));
   return {
     transposedBy: Math.round(best.shift),
+    shift: best.shift,
     startBeat: best.startBeat,
     startBeatSure: options.startBeat !== undefined || best.score - runnerUp >= START_MARGIN,
     notes: tuneToScale(shifted, key),

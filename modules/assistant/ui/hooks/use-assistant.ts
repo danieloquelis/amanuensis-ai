@@ -1,9 +1,13 @@
 import { useState } from "react";
 import type { Command, Score } from "@/modules/score";
-import type { AssistantTurn } from "../../application/run-assistant";
-import { requestAssistant } from "../../infrastructure/assistant-client";
+import type { HeardTake } from "../../application/handle-voice-request";
+import type { AssistantResult, AssistantTurn } from "../../application/run-assistant";
+import { requestAssistant, requestVoiceAssistant, type AssistantPayload } from "../../infrastructure/assistant-client";
 
 const HISTORY_TURNS = 6;
+const VOICE_LABEL = "Voice take";
+
+type Request = (payload: AssistantPayload) => Promise<AssistantResult & { heard?: HeardTake }>;
 
 export type Turn = {
   id: string;
@@ -22,9 +26,16 @@ type Options = {
   applyCommands: (commands: Command[], receipt: string) => boolean;
 };
 
+/** A take as the musician would describe it: what they said, and that they sang. */
+export function describeHeard({ speech, sung }: HeardTake): string {
+  const said = speech.map((turn) => turn.text).join(" ");
+  const sang = sung.length ? `♪ sang ${Math.round(sung.reduce((sum, s) => sum + s.end - s.start, 0))} s` : "";
+  return [said && `“${said}”`, sang].filter(Boolean).join(" · ") || "(nothing heard)";
+}
+
 /**
- * One conversation with the score assistant. Each instruction is sent with the current score
- * and selection; returned commands are applied as one undoable step.
+ * One conversation with the score assistant. Each instruction (typed or a recorded take) is sent
+ * with the current score and selection; returned commands are applied as one undoable step.
  */
 export function useAssistant({ getScore, selectedIds, applyCommands }: Options) {
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -32,22 +43,23 @@ export function useAssistant({ getScore, selectedIds, applyCommands }: Options) 
   const update = (id: string, patch: Partial<Turn>) =>
     setTurns((all) => all.map((turn) => (turn.id === id ? { ...turn, ...patch } : turn)));
 
-  const send = async (instruction: string) => {
-    const text = instruction.trim();
-    if (!text || busy) return;
+  /** `label` is shown until the server says what it heard; `instruction` is what it is sent. */
+  const run = async (label: string, instruction: string, request: Request) => {
     const id = crypto.randomUUID();
     const history: AssistantTurn[] = turns
       .filter((turn) => turn.status === "done" && turn.reply)
       .slice(-HISTORY_TURNS)
       .map((turn) => ({ instruction: turn.instruction, reply: turn.reply! }));
-    setTurns((all) => [...all, { id, instruction: text, status: "working" }]);
+    setTurns((all) => [...all, { id, instruction: label, status: "working" }]);
     try {
-      const result = await requestAssistant({ instruction: text, score: getScore(), selectedIds, history });
+      const result = await request({ instruction, score: getScore(), selectedIds, history });
+      const heard = result.heard ? { instruction: describeHeard(result.heard) } : {};
       if (result.commands.length && !applyCommands(result.commands, result.reply)) {
-        update(id, { status: "failed", reply: "The score changed while I was working. Ask again." });
+        update(id, { ...heard, status: "failed", reply: "The score changed while I was working. Ask again." });
         return;
       }
       update(id, {
+        ...heard,
         status: "done",
         reply: result.reply,
         question: result.question ?? undefined,
@@ -59,5 +71,14 @@ export function useAssistant({ getScore, selectedIds, applyCommands }: Options) 
     }
   };
 
-  return { turns, busy, send };
+  const send = async (instruction: string) => {
+    const text = instruction.trim();
+    if (text && !busy) await run(text, text, requestAssistant);
+  };
+
+  const sendTake = async (wav: Uint8Array) => {
+    if (!busy) await run(VOICE_LABEL, "", (payload) => requestVoiceAssistant(wav, payload));
+  };
+
+  return { turns, busy, send, sendTake };
 }

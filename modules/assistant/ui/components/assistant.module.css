@@ -142,6 +142,43 @@
   font-size: 12px;
 }
 
+.send:disabled,
+.sing:disabled {
+  opacity: 0.5;
+}
+
+.sing {
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #48694f;
+  border-radius: 8px;
+  background: white;
+  color: #48694f;
+  font-size: 12px;
+}
+
+.sing.recording {
+  border-color: #b4452f;
+  background: #b4452f;
+  color: white;
+}
+
+.listening {
+  flex: 1;
+  margin: 0;
+  padding: 10px 11px;
+  border: 1px solid #e5b8ae;
+  border-radius: 8px;
+  color: #8a3423;
+  font-size: 13px;
+}
+
+.recorderError {
+  margin: -6px 14px 12px;
+  color: #8a3423;
+  font-size: 12px;
+}
+
 @media print {
   .panel {
     display: none !important;

@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createMusicTools } from "@/modules/assistant";
-import { pitchName, type Pitch } from "@/modules/score";
-import { createTake, transcribeMelody } from "@/modules/voice";
+import { parseChordSymbol, pitchName } from "@/modules/score";
+import { createTake, transcribeMelody, transcribeSpans } from "@/modules/voice";
 import { midi, singMelody, type SungNoteSpec } from "../support/synthetic-voice";
 
 const melody = (...notes: [string | null, number][]): SungNoteSpec[] =>
@@ -31,17 +31,44 @@ test("in an arpeggio, a note sung nearly a semitone off lands on the chord tone"
   sung[2] = { ...sung[2], midi: sung[2].midi! - 0.9 };
   const tools = createMusicTools(createTake(singMelody(sung, { bpm: 90 }), []));
   const result = tools("voice_transcribe_melody", {
-    spanId: "sung-1",
+    spans: [{ spanId: "sung-1", bar: 1, startBeat: 0 }],
     bpm: 90,
     key: D_MAJOR,
     chords: [
       { bar: 1, beat: 0, symbol: "Em" },
       { bar: 2, beat: 0, symbol: "A" },
     ],
-    startBeat: 0,
     snapToChordTones: true,
   });
   assert.ok(result.ok);
-  const bars = result.bars as { pitch: Pitch | null }[][];
-  assert.equal(pitchName(bars[0][2].pitch!), "B4");
+  const [span] = result.spans as { bars: Record<string, string> }[];
+  assert.equal(span.bars["bar 1"], "E4/1 G4/1 B4/1 G4/1");
+});
+
+test("sung bits of one take, with talking between, are moved into the key by the same amount", () => {
+  // Meant as D F♯ A F♯ | A C♯ E C♯ in D; sung a fourth lower, 30 cents sharp, a pause between.
+  const sing = (...notes: [string, number][]) => singMelody(melody(...notes), { bpm: 90, tuningCents: 30 });
+  const first = sing(["A3", 1], ["C#4", 1], ["E4", 1], ["C#4", 1]);
+  const second = sing(["E3", 1], ["G#3", 1], ["B3", 1], ["G#3", 1]);
+  const chords = [
+    { beat: 0, ...parseChordSymbol("D")! },
+    { beat: 4, ...parseChordSymbol("A")! },
+  ];
+  const results = transcribeSpans(
+    [
+      { signal: first, bar: 1, startBeat: 0 },
+      { signal: second, bar: 2, startBeat: 0 },
+    ],
+    { bpm: 90, meter: { numerator: 4, denominator: 4 }, key: D_MAJOR, chords },
+  );
+  const steps = (signal: (typeof results)[number]) =>
+    signal.bars[0].map((e) => e.pitch && pitchName(e.pitch).slice(0, -1));
+  assert.deepEqual(
+    results.map((r) => r.transposedBy),
+    [5, 5],
+  );
+  assert.deepEqual(results.map(steps), [
+    ["D", "F♯", "A", "F♯"],
+    ["A", "C♯", "E", "C♯"],
+  ]);
 });

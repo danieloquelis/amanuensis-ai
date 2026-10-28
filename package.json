@@ -12,10 +12,12 @@
     "format:check": "prettier --check .",
     "test": "tsx --test tests/unit/*.test.ts",
     "test:e2e": "playwright test",
-    "check": "yarn format:check && yarn lint && yarn typecheck && yarn test",
+    "check": "yarn format:check && yarn lint && yarn typecheck && yarn test && yarn test:integration",
     "smoke:assistant": "tsx --env-file=.env.local scripts/assistant-smoke.mts",
     "spike:voice": "tsx --env-file=.env.local scripts/voice-spike.mts",
-    "eval:voice": "tsx scripts/voice-eval.mts"
+    "eval:voice": "tsx scripts/voice-eval.mts",
+    "test:integration": "tsx --test tests/integration/*.integration-test.ts",
+    "smoke:voice": "tsx --env-file=.env.local scripts/voice-smoke.mts"
   },
   "dependencies": {
     "next": "16.4.3",
