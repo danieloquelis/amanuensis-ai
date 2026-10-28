@@ -6,7 +6,7 @@ import { MEASURE_WIDTH, meterName } from "@/modules/score";
 import { clampMeasureWidth, MEASURE_WIDTH_STEP } from "../../../application/bar-spacing";
 import styles from "./score-surface.module.css";
 import { BarMarks } from "./BarMarks";
-import { isMenuKey, selectableItem, type SheetInteractions } from "./sheet-interactions";
+import { isMenuKey, pickModeOf, selectableItem, type SheetInteractions } from "./sheet-interactions";
 
 const repeatClasses = { selected: styles.itemSelected, base: styles.annotation };
 
@@ -60,7 +60,11 @@ export function SheetBar({ bar, system, isFirstInSystem, isLastInSystem, interac
         tabIndex={0}
         aria-label={`Select bar ${bar.number}`}
         onContextMenu={openBarMenu}
-        onClick={selectBar}
+        onClick={(e) => {
+          const mode = pickModeOf(e);
+          if (mode) interactions.pick({ kind: "bar", id: bar.id }, mode);
+          else selectBar();
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter") selectBar();
           if (e.key === "Delete" || e.key === "Backspace") onBarKey(e);

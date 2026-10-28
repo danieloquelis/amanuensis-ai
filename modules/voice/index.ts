@@ -42,7 +42,7 @@ export {
 export type { SpeechRecognizer } from "./application/speech-port";
 export type { PitchTracker } from "./application/pitch-port";
 export { decodeWav, encodeWav } from "./domain/wav";
-export { barEvidence, type BarEvidence } from "./domain/evidence";
+export { barEvidence, hearingOf, type BarEvidence, type Hearing } from "./domain/evidence";
 export {
   readRhythm,
   DEFAULT_WEIGHTS,

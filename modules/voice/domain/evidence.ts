@@ -60,3 +60,22 @@ export function barEvidence(
     return { bar: index + 1, confidence, offCents, corrected, similarRhythm };
   });
 }
+
+/** How well a sung stretch was heard, for the agent: whether to trust it or ask for another take. */
+export type Hearing = { quality: "clear" | "rough" | "hard to hear"; unclear: number; notes: number };
+
+/** A note the tracker heard with less certainty than this counts as unclear. */
+const CLEAR_NOTE = 0.8;
+/**
+ * Shares of unclear notes, measured on 17 sung spans: good takes 0–17 %; a take sung on "san,
+ * sin" with octave slips 48 % (the one the agent then rewrote by guesswork); a rough one 25 %.
+ */
+const ROUGH_SHARE = 0.2;
+const HARD_SHARE = 0.35;
+
+export function hearingOf(notes: { clarity: number }[]): Hearing {
+  const unclear = notes.filter((note) => note.clarity < CLEAR_NOTE).length;
+  const share = notes.length ? unclear / notes.length : 1;
+  const quality = share >= HARD_SHARE ? "hard to hear" : share >= ROUGH_SHARE ? "rough" : "clear";
+  return { quality, unclear, notes: notes.length };
+}

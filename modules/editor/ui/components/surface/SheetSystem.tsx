@@ -26,7 +26,8 @@ export function SheetSystem({
   interactions,
 }: SheetSystemProps) {
   const events = [...system.events].sort((a, b) => eventOrder.get(a.event.id)! - eventOrder.get(b.event.id)!);
-  const selectedItem = showQuickActions ? system.events.find((item) => item.event.id === selectedId) : undefined;
+  const selectedItem =
+    showQuickActions && !interactions.multiple ? system.events.find((item) => item.event.id === selectedId) : undefined;
 
   return (
     <g>
@@ -51,7 +52,7 @@ export function SheetSystem({
           key={item.event.id}
           item={item}
           system={system}
-          selected={selectedId === item.event.id}
+          selected={interactions.isPicked({ kind: "event", id: item.event.id })}
           playBeat={playBeat}
           interactions={interactions}
         />

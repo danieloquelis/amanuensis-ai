@@ -3,7 +3,7 @@ import { EventGlyph } from "@/modules/engraving/ui";
 import { beats, pitchName } from "@/modules/score";
 import { classNames } from "@/shared/ui/class-names";
 import styles from "./score-surface.module.css";
-import { isMenuKey, noteLetterOf, type SheetInteractions } from "./sheet-interactions";
+import { isMenuKey, noteLetterOf, pickModeOf, sheetRefAttribute, type SheetInteractions } from "./sheet-interactions";
 
 type SheetEventProps = {
   item: EngravedEvent;
@@ -14,23 +14,28 @@ type SheetEventProps = {
 };
 
 /**
- * A selectable, draggable note or rest. Keyboard: ↑/↓ step the pitch, A–G enter a note,
+ * A selectable, draggable note or rest; Shift/⌘-click adds it to the selection. Keyboard: ↑/↓ step the pitch, A–G enter a note,
  * Delete turns a note into a rest, Enter opens its menu.
  */
 export function SheetEvent({ item, system, selected, playBeat, interactions }: SheetEventProps) {
-  const { select, stepPitch, removeEvent, enterLetter, openMenu, gestures } = interactions;
+  const { select, stepPitch, removeEvent, enterLetter, openMenu, gestures, pick, focusEvent } = interactions;
   const { event, x, y } = item;
   const length = beats(event.duration);
   const sounding = playBeat !== null && playBeat >= item.beat && playBeat < item.beat + length;
 
   return (
     <g
+      {...sheetRefAttribute({ kind: "event", id: event.id })}
       className={classNames(styles.event, selected && styles.selected, sounding && styles.sounding)}
       role="button"
       tabIndex={0}
       aria-label={`Bar ${item.measure + 1}, beat ${item.localBeat + 1}, ${pitchName(event.pitch)}, ${length} beats`}
       aria-pressed={selected}
-      onFocus={() => select(event.id)}
+      onFocus={() => focusEvent(event.id)}
+      // A Shift/⌘ click adds to the selection without moving focus (which would select only this).
+      onMouseDown={(e) => {
+        if (pickModeOf(e)) e.preventDefault();
+      }}
       onContextMenu={(e) => {
         e.preventDefault();
         select(event.id);
@@ -65,7 +70,12 @@ export function SheetEvent({ item, system, selected, playBeat, interactions }: S
           gestures.cancelGesture();
         }
       }}
-      onPointerDown={(e) => gestures.startNoteDrag(e, item, system)}
+      onPointerDown={(e) => {
+        const mode = pickModeOf(e);
+        if (!mode) return gestures.startNoteDrag(e, item, system);
+        e.preventDefault();
+        pick({ kind: "event", id: event.id }, mode);
+      }}
       onPointerMove={(e) => gestures.moveNoteDrag(e, event.id)}
       onPointerUp={gestures.finishGesture}
       onPointerCancel={gestures.cancelGesture}

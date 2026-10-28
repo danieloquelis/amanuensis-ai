@@ -33,7 +33,7 @@ const ROTATE_MS = 2200;
  */
 export function useActivityLine(activity: ProgressEvent | undefined): string {
   const [tick, setTick] = useState(() => Math.floor(Math.random() * THINKING_LINES.length));
-  const thinking = !activity || activity.stage === "thinking";
+  const thinking = !activity || activity.stage === "thinking" || activity.stage === "heard";
   useEffect(() => {
     if (!thinking) return;
     const timer = setInterval(() => setTick((t) => t + 1), ROTATE_MS);

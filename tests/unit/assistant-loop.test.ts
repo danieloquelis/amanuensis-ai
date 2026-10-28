@@ -9,7 +9,8 @@ import {
   type ModelReply,
 } from "@/modules/assistant";
 import { createExample, createSession, executeAll } from "@/modules/score";
-import type { VoiceTake } from "@/modules/voice";
+import { createTake, type VoiceTake } from "@/modules/voice";
+import { midi, singMelody } from "../support/synthetic-voice";
 
 /** A model that plays back scripted replies and records what it was shown. */
 function scriptedModel(replies: ModelReply[]) {
@@ -116,11 +117,29 @@ test("the selection and recent turns reach the model", async () => {
   await runAssistant(model, {
     ...request("make it softer"),
     selectedIds: ["note-0-1"],
+    selectionName: "E4 · bar 1",
     history: [{ instruction: "add a dynamic", reply: "Added mf." }],
   });
   const roles = seen[0].map((m) => m.role);
   assert.deepEqual(roles, ["system", "user", "assistant", "user"]);
-  assert.match((seen[0].at(-1) as { content: string }).content, /Selected IDs: note-0-1/);
+  assert.match((seen[0].at(-1) as { content: string }).content, /Selected: E4 · bar 1 · IDs note-0-1/);
+});
+
+test("text and repeats can be the selection the agent reads", async () => {
+  const score = executeAll(createSession(createExample()), [
+    {
+      requestId: "t",
+      expectedRevision: 0,
+      operation: { type: "putAnnotation", targetId: "bar-2", kind: "text", text: "Fine" },
+    },
+  ]).score;
+  const textId = score.annotations[0].id;
+  const { model, seen } = scriptedModel([
+    { content: null, toolCalls: [call("score_get_context", { selectedIds: [textId] })] },
+    { content: "Ok.", toolCalls: [] },
+  ]);
+  await runAssistant(model, { ...request("make this bigger"), score, selectedIds: [textId] });
+  assert.match((seen[1].at(-1) as { content: string }).content, /"ok":true/);
 });
 
 test("an invalid request is rejected without calling the model", async () => {
@@ -188,4 +207,68 @@ test("each model call and each tool run is timed, so a slow turn shows where its
   const result = await runAssistant(model, request("hi"));
   assert.equal(result.thinkingMs.length, 2);
   assert.ok(result.trace.every((entry) => typeof entry.ms === "number"));
+});
+
+test("the request carries the score, so the agent can act in its first step", async () => {
+  const { model, seen } = scriptedModel([{ content: "Ok.", toolCalls: [] }]);
+  await runAssistant(model, { ...request("make bar 2 louder"), selectedIds: ["bar-2"] });
+  const message = (seen[0].at(-1) as { content: string }).content;
+  assert.match(message, /\[Score context, as score_get_context returns it\]/);
+  assert.match(message, /"selectedIds":\["bar-2"\]/);
+  assert.match(message, /"bars":\[/);
+});
+
+test("what was just sung stays as heard: the agent cannot rewrite those notes in the same turn", async () => {
+  const sung = singMelody(
+    ["C4", "E4", "G4", "E4", "D4", "F4", "A4"].map((name) => ({ midi: midi(name), beats: 1 })),
+    { bpm: 120 },
+  );
+  const take = createTake(sung, []);
+  const rewrite = { type: "replaceMeasure", measureId: "bar-1", events: [{ duration: 4, pitch: null }] };
+  const chord = { type: "putChord", measureId: "bar-1", beat: 0, symbol: "C" };
+  const { model, seen } = scriptedModel([
+    {
+      content: null,
+      toolCalls: [call("voice_transcribe_melody", { spans: [{ spanId: "sung-1", bar: 1 }], bpm: 120 })],
+    },
+    { content: null, toolCalls: [call("score_edit", { requestId: "x", expectedRevision: 1, operation: rewrite })] },
+    { content: null, toolCalls: [call("score_edit", { requestId: "y", expectedRevision: 1, operation: chord })] },
+    { content: "Done.", toolCalls: [] },
+  ]);
+  const result = await runAssistant(model, { ...request(""), take });
+  const refusal = (seen[2].at(-1) as { content: string }).content;
+  assert.match(refusal, /hold what the musician just sang/);
+  assert.deepEqual(
+    result.trace.map((entry) => [entry.tool, entry.ok]),
+    [
+      ["voice_transcribe_melody", true],
+      ["score_edit", false],
+      ["score_edit", true],
+    ],
+  );
+});
+
+test("the musician can still ask for changes to what they just sang, quoted from their words", async () => {
+  const sung = singMelody(
+    ["C4", "E4", "G4", "E4"].map((name) => ({ midi: midi(name), beats: 1 })),
+    { bpm: 120 },
+  );
+  const take = createTake(sung, []);
+  const lastNoteUp = { type: "replaceMeasure", measureId: "bar-1", events: [{ duration: 4, pitch: null }] };
+  const edit = (asked: string) =>
+    call("score_edit", { requestId: asked, expectedRevision: 1, operation: lastNoteUp, asked });
+  const { model } = scriptedModel([
+    {
+      content: null,
+      toolCalls: [call("voice_transcribe_melody", { spans: [{ spanId: "sung-1", bar: 1 }], bpm: 120 })],
+    },
+    { content: null, toolCalls: [edit("the melody should be smoother")] },
+    { content: null, toolCalls: [edit("Make the last note an octave higher")] },
+    { content: "Done.", toolCalls: [] },
+  ]);
+  const result = await runAssistant(model, { ...request("and make the last note an octave higher, please"), take });
+  assert.deepEqual(
+    result.trace.map((entry) => entry.ok),
+    [true, false, true],
+  );
 });

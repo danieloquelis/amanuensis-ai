@@ -33,8 +33,10 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
   const [session, setSession] = useState(() => createSession(createExample()));
   // Mirrors `session` so rapid successive edits read the latest revision, not a stale render.
   const latest = useRef(session);
+  const latestScore = useCallback(() => latest.current.score, []);
+  const sheetSelection = useSheetSelection(session.score, latestScore);
   const { selectedId, setSelectedId, selectedBarId, selectedItem, select, selectBar, selectItem, clear } =
-    useSheetSelection();
+    sheetSelection;
   const [ready, setReady] = useState(false);
   const [saveStatus, setSaveStatus] = useState("Opening local score…");
   const [error, setError] = useState<string | null>(null);
@@ -193,6 +195,11 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
     selection,
     selectedId: selection?.event.id ?? null,
     select,
+    /** Everything picked on the sheet, in pick order; the last is the primary selection. */
+    picked: sheetSelection.picked,
+    pickedName: sheetSelection.pickedName,
+    pick: sheetSelection.pick,
+    focusEvent: sheetSelection.focusEvent,
     selectedBarId: selectedBar,
     selectBar,
     deleteBar,
@@ -207,7 +214,7 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
     commit,
     applyCommands,
     /** The latest score, including edits not yet rendered. */
-    getScore: () => latest.current.score,
+    getScore: latestScore,
     stepPitch,
     enterLetter,
     toggleRest,

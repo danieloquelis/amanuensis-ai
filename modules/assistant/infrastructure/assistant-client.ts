@@ -3,7 +3,14 @@ import type { AssistantResult, AssistantTurn, ProgressListener } from "../applic
 import type { StreamLine } from "./progress-stream";
 import type { Score } from "@/modules/score";
 
-export type AssistantPayload = { instruction: string; score: Score; selectedIds: string[]; history: AssistantTurn[] };
+export type AssistantPayload = {
+  instruction: string;
+  score: Score;
+  selectedIds: string[];
+  /** What the selection is called ("Bars 3–6"); the musician may refer to it by name. */
+  selectionName?: string;
+  history: AssistantTurn[];
+};
 
 const UNAVAILABLE = "The assistant is unavailable right now.";
 

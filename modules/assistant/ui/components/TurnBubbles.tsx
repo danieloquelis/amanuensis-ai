@@ -16,6 +16,7 @@ export function TurnBubbles({ turn, canUndo, busy, onUndo, onChoose }: TurnBubbl
   return (
     <li className={styles.exchange}>
       <div className={styles.mine}>
+        {turn.context && <span className={styles.contextChip}>{turn.context}</span>}
         {turn.spoken && (
           <span className={styles.spoken} aria-label="Spoken">
             <MicIcon size={12} />

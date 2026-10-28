@@ -3,6 +3,7 @@ import { layoutScore } from "@/modules/engraving";
 import { keyName, meterName, scoreKey, type Score, type Step } from "@/modules/score";
 import { applyGesturePreview } from "../../../application/gesture-preview";
 import type { SheetItem } from "../../../application/notation-edits";
+import { sameRef, type PickMode, type SheetRef } from "../../../application/sheet-selection";
 import type { CommitEdit } from "../../hooks/use-score-editor";
 import { useSheetGestures } from "../../hooks/use-sheet-gestures";
 import { SheetContextMenu } from "../sheet-menu/SheetContextMenu";
@@ -27,6 +28,10 @@ type ScoreSurfaceProps = {
   onDelete: (id: string) => void;
   onEnterLetter: (id: string, step: Step) => void;
   onToggleRest: (id: string) => void;
+  /** Everything picked, for highlighting; `onPick` handles Shift/⌘ clicks. */
+  picked: SheetRef[];
+  onPick: (ref: SheetRef, mode: PickMode) => void;
+  onFocusEvent: (id: string) => void;
 };
 
 /** The editable sheet: engraved score plus selection, drag gestures and context menus. */
@@ -47,6 +52,9 @@ export function ScoreSurface({
   onDelete,
   onEnterLetter,
   onToggleRest,
+  picked,
+  onPick,
+  onFocusEvent,
 }: ScoreSurfaceProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [menu, setMenu] = useState<SheetMenuTarget | null>(null);
@@ -74,6 +82,10 @@ export function ScoreSurface({
     removeEvent: onDelete,
     enterLetter: onEnterLetter,
     toggleRest: onToggleRest,
+    isPicked: (ref) => picked.some((p) => sameRef(p, ref)),
+    multiple: picked.length > 1,
+    pick: onPick,
+    focusEvent: onFocusEvent,
     gestures,
     openMenu: (kind, id, x, y) => {
       if (!interactive) return;

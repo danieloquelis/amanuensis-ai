@@ -5,7 +5,9 @@ export const readContextSchema = z.strictObject({
   selectedIds: z
     .array(z.string())
     .max(64)
-    .describe("IDs the user has selected (notes, bars or marks); resolves words like 'this' or 'here'."),
+    .describe(
+      "IDs the user has selected (notes, bars, chords, text, marks, repeats); resolves 'this', 'here', 'these'.",
+    ),
   includeRaw: z.boolean().optional().describe("Also return the raw score document. Rarely needed."),
 });
 export const applyPreviewSchema = z.strictObject({
@@ -33,8 +35,16 @@ const definitions: { name: ScoreToolName; description: string; schema: z.ZodType
   {
     name: "score_edit",
     description:
-      'Apply one operation or a batch directly as a single undoable edit, for explicit, small requests ("make bar 3 a slash bar", "add Am7 on beat 3 of bar 2"). Returns the new revision and a short list of what changed. Rejected without changes if the revision moved on.',
-    schema: commandSchema,
+      'Apply one operation or a batch directly as a single undoable edit, for explicit, small requests ("make bar 3 a slash bar", "add Am7 on beat 3 of bar 2"). Returns the new revision and a short list of what changed. Rejected without changes if the revision moved on. Changing the notes of bars just transcribed from singing needs `asked`.',
+    schema: commandSchema.extend({
+      asked: z
+        .string()
+        .max(300)
+        .optional()
+        .describe(
+          'The musician\'s own words asking for this change, quoted exactly ("make the last note an octave higher"). Required to change notes of bars just transcribed from their singing.',
+        ),
+    }),
   },
   {
     name: "score_preview",

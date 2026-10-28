@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { handleVoiceRequest, type ModelPort, type VoiceResult } from "@/modules/assistant";
+import { handleVoiceRequest, type ModelPort, type ProgressEvent, type VoiceResult } from "@/modules/assistant";
 import { createExample } from "@/modules/score";
 import { decodeWav, encodeWav, type PitchTracker, type SpeechRecognizer, type SpeechTurn } from "@/modules/voice";
 import { singMelody } from "../support/synthetic-voice";
@@ -116,4 +116,18 @@ test("when the learned pitch tracker fails, the take is still heard with the bui
   assert.equal(response.status, 200);
   assert.equal((response.body as VoiceResult).heard.sung.length, 1);
   assert.match(seen[0], /sang: sung-1/);
+});
+
+test("what was said and sung is reported before the agent starts thinking", async () => {
+  const speech = [{ start: 0, end: 0.15, text: "a rhythm like" }];
+  const { recognizer } = fakeRecognizer(speech);
+  const { model } = fakeModel();
+  const events: ProgressEvent[] = [];
+  const audio = encodeWav(singMelody(phrase, { bpm: 120, sampleRate: RATE }));
+  await handleVoiceRequest({ audio, payload }, { model, recognizer }, (event) => events.push(event));
+  const heard = events.findIndex((event) => event.stage === "heard");
+  assert.ok(heard !== -1 && heard < events.findIndex((event) => event.stage === "thinking"));
+  const event = events[heard] as Extract<ProgressEvent, { stage: "heard" }>;
+  assert.equal(event.said, "a rhythm like");
+  assert.ok(event.sungSeconds > 2, `sang ${event.sungSeconds} s`);
 });

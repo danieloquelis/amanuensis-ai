@@ -69,6 +69,9 @@ export function ScoreCanvas({
           onDelete={(id) => commit({ type: "removeEvent", eventId: id }, "Removed note")}
           onEnterLetter={editor.enterLetter}
           onToggleRest={editor.toggleRest}
+          picked={editor.picked}
+          onPick={editor.pick}
+          onFocusEvent={editor.focusEvent}
         />
         <div className={styles.paperFooter}>
           <span>{barCount} measures · Treble clef</span>

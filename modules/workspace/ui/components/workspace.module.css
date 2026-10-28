@@ -99,6 +99,49 @@
   min-height: 0;
 }
 
+.main.chatClosed {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* The sheet and what floats over it (the assistant pinned to the selection). */
+.canvasArea {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.chatToggle {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-right: -25px;
+  border: 1px solid #d8dfcf;
+  border-radius: 12px;
+  background: white;
+  color: #5d7354;
+  cursor: pointer;
+  transition:
+    background 150ms,
+    color 150ms;
+}
+
+.chatToggle:hover {
+  background: #eef3e8;
+}
+
+.chatToggleOn {
+  background: #48694f;
+  border-color: #48694f;
+  color: #f8faf4;
+}
+
+.chatToggleOn:hover {
+  background: #3f5f46;
+}
+
 .studio {
   display: flex;
   flex-direction: column;
@@ -463,6 +506,10 @@
   .main {
     grid-template-columns: 270px minmax(0, 1fr);
   }
+
+  .main.chatClosed {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /*
@@ -470,6 +517,7 @@
  * so printing also matches the max-width query and its layout rules must win.
  */
 @media print {
+  .chatToggle,
   .header,
   .toolbar,
   .transport,

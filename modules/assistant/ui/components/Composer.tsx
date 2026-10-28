@@ -7,6 +7,10 @@ type ComposerProps = {
   busy: boolean;
   onSend: (text: string) => void;
   onTake: (wav: Uint8Array) => void;
+  /** Accessible name of the text field; each composer has its own. */
+  label?: string;
+  placeholder?: string;
+  autoFocus?: boolean;
 };
 
 const formatSeconds = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
@@ -14,7 +18,14 @@ const formatSeconds = (seconds: number) => `${Math.floor(seconds / 60)}:${String
 const LEVEL_SHAPE = [0.6, 0.85, 1.1, 0.85, 0.6];
 
 /** Type and send, or tap the microphone to talk and sing; tap again to stop. */
-export function Composer({ busy, onSend, onTake }: ComposerProps) {
+export function Composer({
+  busy,
+  onSend,
+  onTake,
+  label = "Instruction for the assistant",
+  placeholder = "Ask, or tap the mic to talk and sing",
+  autoFocus = false,
+}: ComposerProps) {
   const [draft, setDraft] = useState("");
   const recorder = useVoiceRecorder(onTake);
   const recording = recorder.status === "recording";
@@ -45,8 +56,9 @@ export function Composer({ busy, onSend, onTake }: ComposerProps) {
           </div>
         ) : (
           <textarea
-            aria-label="Instruction for the assistant"
-            placeholder="Ask, or tap the mic to talk and sing"
+            aria-label={label}
+            placeholder={placeholder}
+            autoFocus={autoFocus}
             value={draft}
             rows={1}
             onChange={(e) => setDraft(e.target.value)}

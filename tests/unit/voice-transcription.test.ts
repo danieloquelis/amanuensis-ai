@@ -4,6 +4,7 @@ import { pitchName } from "@/modules/score";
 import {
   estimateTempo,
   frequencyToMidi,
+  hearingOf,
   quantizeNotes,
   segmentNotes,
   toBars,
@@ -196,4 +197,28 @@ test("a learned tracker's pitch and voicing replace YIN's, matched by time in th
   const track = { hop: 0.016, pitch: Array(100).fill(220), confidence: Array(100).fill(0.9).fill(0.1, 66) };
   const merged = withPitchTrack(yin, track, 1);
   assert.deepEqual([merged[0].frequency, merged[9].frequency, merged[0].rms], [220, null, 0.2]);
+});
+
+test("a held note read an octave or a twelfth low for a moment stays one note", () => {
+  const C4 = 261.6;
+  for (const [interval, ratio] of [
+    ["octave", 2],
+    ["twelfth", 3],
+  ] as const) {
+    const notes = segmentNotes(frames([C4, 0.3, 0.3], [C4 / ratio, 0.15, 0.3], [C4, 0.3, 0.3]));
+    assert.deepEqual(
+      notes.map((n) => Math.round(n.midi)),
+      [midi("C4")],
+      `${interval} dip`,
+    );
+  }
+});
+
+test("how well a take was heard: clear, rough, or hard to hear", () => {
+  const notes = (unclear: number, total: number) =>
+    Array.from({ length: total }, (_, i) => ({ clarity: i < unclear ? 0.6 : 0.95 }));
+  assert.deepEqual(
+    [hearingOf(notes(1, 20)).quality, hearingOf(notes(5, 20)).quality, hearingOf(notes(10, 21)).quality],
+    ["clear", "rough", "hard to hear"],
+  );
 });

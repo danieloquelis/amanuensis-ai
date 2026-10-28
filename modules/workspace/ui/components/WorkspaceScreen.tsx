@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { AssistantPanel } from "@/modules/assistant/ui";
+import { useRef, useState } from "react";
+import { AssistantPanel, CanvasAssistant, useAssistant, type RequestContext } from "@/modules/assistant/ui";
 import { useScoreEditor } from "@/modules/editor/ui";
 import { usePlayback } from "@/modules/playback/ui";
 import { downloadScoreFile, localProjectRepository, readScoreFile } from "@/modules/projects";
+import { useAnchorRect } from "@/shared/ui/hooks/use-anchor-rect";
 import { useWorkspaceShortcuts } from "../hooks/use-workspace-shortcuts";
 import { AppHeader } from "./AppHeader";
 import { DocumentBar } from "./DocumentBar";
@@ -14,12 +15,30 @@ import { StatusBar } from "./StatusBar";
 import { TransportBar } from "./TransportBar";
 import styles from "./workspace.module.css";
 
-/** Route-level screen: composes editor, playback and project persistence. Holds no rules itself. */
+/**
+ * Route-level screen: composes editor, playback, project persistence and the assistant (on the
+ * sheet, and in the chat panel that opens beside it). Holds no rules itself.
+ */
 export function WorkspaceScreen() {
   const [zoom, setZoom] = useState(100);
+  const [chatOpen, setChatOpen] = useState(false);
   const playback = usePlayback();
   const editor = useScoreEditor(playback.stop, localProjectRepository);
+  const assistant = useAssistant({ getScore: editor.getScore, applyCommands: editor.applyCommands });
+  const canvasArea = useRef<HTMLDivElement>(null);
+  const { anchor, area } = useAnchorRect(
+    canvasArea,
+    "data-sheet-ref",
+    editor.picked.map((ref) => `${ref.kind}:${ref.id}`),
+    `${editor.score.revision}:${zoom}`,
+  );
   useWorkspaceShortcuts(playback.stop, editor.undoRedo);
+  const about = (origin: RequestContext["origin"]): RequestContext => ({
+    ids: editor.picked.map((ref) => ref.id),
+    name: editor.pickedName,
+    origin,
+  });
+  const undo = () => editor.undoRedo("undo");
 
   const openFile = async (file: File) => {
     try {
@@ -31,17 +50,17 @@ export function WorkspaceScreen() {
 
   return (
     <div className={styles.app}>
-      <AppHeader title={editor.score.title} />
-      <main className={styles.main}>
-        <AssistantPanel
-          getScore={editor.getScore}
-          revision={editor.score.revision}
-          selectedIds={[editor.selectedId, editor.selectedBarId, editor.selectedItem?.id].filter(
-            (id): id is string => !!id,
-          )}
-          applyCommands={editor.applyCommands}
-          onUndo={() => editor.undoRedo("undo")}
-        />
+      <AppHeader title={editor.score.title} chatOpen={chatOpen} onToggleChat={() => setChatOpen((open) => !open)} />
+      <main className={chatOpen ? styles.main : `${styles.main} ${styles.chatClosed}`}>
+        {chatOpen && (
+          <AssistantPanel
+            assistant={assistant}
+            context={about("chat")}
+            revision={editor.score.revision}
+            onUndo={undo}
+            onClose={() => setChatOpen(false)}
+          />
+        )}
         <section className={styles.studio} aria-label="Score workspace">
           <DocumentBar
             ready={editor.ready}
@@ -57,8 +76,25 @@ export function WorkspaceScreen() {
             onZoom={setZoom}
           />
           {editor.error && <ErrorBanner message={editor.error} onDismiss={() => editor.setError(null)} />}
-          <ScoreCanvas editor={editor} playBeat={playback.playBeat} zoom={zoom} />
-          <StatusBar score={editor.score} selection={editor.selection} playing={playback.playing} />
+          <div ref={canvasArea} className={styles.canvasArea}>
+            <ScoreCanvas editor={editor} playBeat={playback.playBeat} zoom={zoom} />
+            {editor.ready && (
+              <CanvasAssistant
+                assistant={assistant}
+                context={about("canvas")}
+                anchor={anchor}
+                area={area}
+                revision={editor.score.revision}
+                onUndo={undo}
+              />
+            )}
+          </div>
+          <StatusBar
+            score={editor.score}
+            selection={editor.selection}
+            pickedName={editor.picked.length > 1 ? editor.pickedName : null}
+            playing={playback.playing}
+          />
         </section>
       </main>
     </div>

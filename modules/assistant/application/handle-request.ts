@@ -10,6 +10,7 @@ const requestSchema = z.strictObject({
   instruction: z.string().trim().min(1).max(2000),
   score: z.unknown(),
   selectedIds: z.array(z.string().max(100)).max(64).default([]),
+  selectionName: z.string().trim().max(120).optional(),
   history: z
     .array(z.strictObject({ instruction: z.string().max(2000), reply: z.string().max(2000) }))
     .max(HISTORY_LIMIT)

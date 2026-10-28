@@ -296,6 +296,7 @@ test("the assistant applies an instruction as one undoable step", async ({ page 
   });
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Change time signature" })).toBeEnabled();
+  await page.getByRole("button", { name: "Open chat" }).click();
   const instruction = page.getByLabel("Instruction for the assistant");
   await instruction.fill("Add Am7 on beat 3 of bar 2");
   await instruction.press("Enter");
@@ -323,10 +324,79 @@ test("the assistant's question becomes buttons that answer it", async ({ page })
     await route.fulfill(streamed(body));
   });
   await page.goto("/");
+  await page.getByRole("button", { name: "Open chat" }).click();
   const instruction = page.getByLabel("Instruction for the assistant");
   await instruction.fill("repeat that");
   await instruction.press("Enter");
   const assistant = page.getByRole("complementary", { name: "Assistant" });
   await assistant.getByRole("button", { name: "Bar 2", exact: true }).click();
   await expect(assistant.getByText("Repeated bar 2.")).toBeVisible();
+});
+
+/** A bar's empty staff, clicked near its corner so the click lands on the bar, not a note. */
+const barCorner = { position: { x: 6, y: 6 } };
+
+test("shift-click picks a range of bars, and the assistant on the sheet asks about just those", async ({ page }) => {
+  const asked: { selectedIds: string[]; selectionName?: string }[] = [];
+  await page.route("/api/assistant", async (route) => {
+    asked.push(route.request().postDataJSON());
+    await route.fulfill(streamed({ reply: "Made bars 2–4 slash bars.", question: null, commands: [], changes: [] }));
+  });
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Change time signature" })).toBeEnabled();
+  await page.getByRole("button", { name: "Bar 2", exact: true }).click(barCorner);
+  await page.getByRole("button", { name: "Bar 4", exact: true }).click({ ...barCorner, modifiers: ["Shift"] });
+  for (const bar of ["Bar 2", "Bar 3", "Bar 4"]) {
+    await expect(page.getByRole("button", { name: bar, exact: true })).toHaveAttribute("aria-pressed", "true");
+  }
+  await page.getByRole("button", { name: "Ask the assistant about Bars 2–4" }).click();
+  const composer = page.getByRole("dialog", { name: "Ask the assistant" });
+  await composer.getByLabel("Ask about the selection").fill("make these slash bars");
+  await composer.getByLabel("Ask about the selection").press("Enter");
+  await expect(composer.getByText("Made bars 2–4 slash bars.")).toBeVisible();
+  expect(asked).toEqual([
+    expect.objectContaining({ selectedIds: ["bar-2", "bar-3", "bar-4"], selectionName: "Bars 2–4" }),
+  ]);
+  // The exchange is part of the one conversation: the chat shows it with what it was about.
+  await page.getByRole("button", { name: "Open chat" }).click();
+  const chat = page.getByRole("complementary", { name: "Assistant" });
+  await expect(chat.getByText("Made bars 2–4 slash bars.")).toBeVisible();
+  await expect(chat.getByText("Bars 2–4", { exact: true })).toBeVisible();
+});
+
+test("cmd-click adds a note to the selection, and cmd-clicking it again removes it", async ({ page }) => {
+  await page.goto("/");
+  const first = page.getByRole("button", { name: "Bar 1, beat 2, E4, 1 beats", exact: true });
+  const second = page.getByRole("button", { name: "Bar 3, beat 1, G4, 1 beats", exact: true });
+  await first.click();
+  await second.click({ modifiers: ["ControlOrMeta"] });
+  await expect(first).toHaveAttribute("aria-pressed", "true");
+  await expect(second).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("2 notes · bars 1, 3 selected")).toBeVisible();
+  await second.click({ modifiers: ["ControlOrMeta"] });
+  await expect(second).toHaveAttribute("aria-pressed", "false");
+  await expect(first).toHaveAttribute("aria-pressed", "true");
+});
+
+test("the chat is closed at first and opens and closes from the header", async ({ page }) => {
+  await page.goto("/");
+  const chat = page.getByRole("complementary", { name: "Assistant" });
+  await expect(chat).toHaveCount(0);
+  await page.getByRole("button", { name: "Open chat" }).click();
+  await expect(chat).toBeVisible();
+  await chat.getByRole("button", { name: "Close chat" }).click();
+  await expect(chat).toHaveCount(0);
+});
+
+test("with nothing selected, the assistant waits in the corner and ⌘K opens it for the whole score", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Ask the assistant", exact: true })).toBeVisible();
+  await page.keyboard.press("ControlOrMeta+k");
+  const composer = page.getByRole("dialog", { name: "Ask the assistant" });
+  await expect(composer.getByText("Whole score")).toBeVisible();
+  await expect(composer.getByLabel("Ask about the selection")).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(composer).toHaveCount(0);
 });

@@ -11,7 +11,14 @@ import {
 } from "@/modules/score";
 import { rankKeysForMelody, reportTempo, segmentNotes, spanFrames, type VoiceTake } from "@/modules/voice";
 import type { ToolSpec } from "./model-port";
-import { hearNotesSchema, inferKeySchema, inferTempoSchema, transcribeSchema } from "./music-tool-schemas";
+import { suggestChordsForScore } from "./harmony-tool";
+import {
+  hearNotesSchema,
+  inferKeySchema,
+  inferTempoSchema,
+  suggestChordsSchema,
+  transcribeSchema,
+} from "./music-tool-schemas";
 import { hearNotes } from "./voice-listen-tool";
 import { transcribeIntoScore, type ScoreAccess } from "./voice-transcription-tool";
 import { toolError } from "./score-tool-gateway";
@@ -20,6 +27,7 @@ import { toolParameters } from "./tool-definitions";
 export const MUSIC_TOOL_NAMES = [
   "music_infer_key",
   "music_infer_tempo",
+  "music_suggest_chords",
   "voice_hear_notes",
   "voice_transcribe_melody",
 ] as const;
@@ -46,6 +54,12 @@ const specs: Record<MusicToolName, ToolSpec> = {
     description:
       "Quarter-note BPM from a tempo word (Allegro…) and/or the timing of the sung spans, read with a beat that follows the singer's drift; with both, the singing picks a tempo within the word's range. Also says how the same singing fits double and half time: only their words or the style settle that. A spoken number needs no tool: use it.",
     parameters: toolParameters(inferTempoSchema),
+  },
+  music_suggest_chords: {
+    name: "music_suggest_chords",
+    description:
+      "Chords that fit the melody already in the score, bar by bar, the way a musician harmonizes a lead sheet (strong-beat and long notes, embellishments, progressions that start and end home). Writes the progression (replacing those bars' chords; the musician can undo) and returns it with each bar's closest alternatives and how much of the melody they fit. Use it whenever chords must fit the notes.",
+    parameters: toolParameters(suggestChordsSchema),
   },
   voice_hear_notes: {
     name: "voice_hear_notes",
@@ -135,6 +149,10 @@ export function createMusicTools(take: VoiceTake | null, access: ScoreAccess | n
         alternatives: report.alternatives.map((a) => `${a.bpm} BPM: ${a.fit} from the timing alone`),
         source: marking ? "singing, within the marking" : "singing",
       };
+    },
+
+    music_suggest_chords(raw) {
+      return suggestChordsForScore(raw, access);
     },
 
     voice_hear_notes(raw) {

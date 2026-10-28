@@ -24,7 +24,15 @@ export const transcribeSchema = z.strictObject({
     .array(
       z.strictObject({
         spanId,
-        bar: z.number().int().min(1).max(512).describe("Score bar this span starts in, from their words or in order."),
+        bar: z
+          .number()
+          .int()
+          .min(1)
+          .max(512)
+          .optional()
+          .describe(
+            "Score bar it starts in, when they named one or a bar is selected. Omit to continue the piece: the first span goes after the last bar with notes, later ones follow the previous span.",
+          ),
         startBeat: z
           .number()
           .min(0)
@@ -36,18 +44,23 @@ export const transcribeSchema = z.strictObject({
           .min(1)
           .max(64)
           .optional()
-          .describe('How many bars it fills ("in the first bar" = 1). Default: up to the next span\'s bar.'),
+          .describe(
+            'Only when they said how many bars ("in the first bar" = 1). Default: worked out from its length at the tempo.',
+          ),
       }),
     )
     .min(1)
     .max(16)
-    .describe("Every sung span to write, each with its bar. Give them all in one call."),
+    .describe("Every sung span to write, in order. Give them all in one call."),
   bpm: z
     .number()
     .int()
     .min(TEMPO_RANGE.min)
     .max(TEMPO_RANGE.max)
-    .describe("The tempo they said, or music_infer_tempo's. The rhythm follows the singer's own drift around it."),
+    .optional()
+    .describe(
+      "The tempo they said, or music_infer_tempo's for a tempo word. Leave it out to read it from the singing (give bars). Either way the rhythm follows the singer's own drift.",
+    ),
   meter: meterSchema.optional().describe("Default: the score's meter."),
   key: keySignatureSchema
     .optional()
@@ -68,4 +81,20 @@ export const transcribeSchema = z.strictObject({
     .optional()
     .describe("The tune is built from chord tones (arpeggio, riff, guitar figure): notes near a chord tone become it."),
   write: z.boolean().default(true).describe("Write the bars into the score (default). False only listens."),
+});
+
+export const suggestChordsSchema = z.strictObject({
+  fromBar: z.number().int().min(1).optional().describe("First bar to harmonize (default 1)."),
+  toBar: z.number().int().min(1).optional().describe("Last bar (default the last bar of the score)."),
+  key: keySignatureSchema.optional().describe("The key to harmonize in. Default: the score's key signature."),
+  chordsPerBar: z
+    .union([z.literal(1), z.literal(2)])
+    .default(1)
+    .describe("1 = one chord per bar (lead-sheet default); 2 = a chord every half bar."),
+  write: z
+    .boolean()
+    .default(true)
+    .describe(
+      "Write the chords, replacing those in these bars (default). False only lists them without changing anything.",
+    ),
 });

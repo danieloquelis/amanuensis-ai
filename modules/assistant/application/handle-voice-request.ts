@@ -21,6 +21,7 @@ const payloadSchema = z.strictObject({
   instruction: z.string().trim().max(2000).default(""),
   score: z.unknown(),
   selectedIds: z.array(z.string().max(100)).max(64).default([]),
+  selectionName: z.string().trim().max(120).optional(),
   history: z
     .array(z.strictObject({ instruction: z.string().max(2000), reply: z.string().max(2000) }))
     .max(HISTORY_LIMIT)
@@ -79,6 +80,8 @@ export async function handleVoiceRequest(
   const speechMs = Date.now() - started;
   const take = createTake(signal, speech, await tracking);
   const heard = { speech: take.speech, sung: take.sung, ms: { speech: speechMs, pitch: pitchMs } };
+  const sungSeconds = take.sung.reduce((sum, span) => sum + span.end - span.start, 0);
+  onProgress({ stage: "heard", said: take.speech.map((turn) => turn.text).join(" "), sungSeconds });
   if (!take.speech.length && !take.sung.length && !parsed.data.instruction) {
     const reply = "I didn't hear anything. Try again a little closer to the microphone.";
     return {

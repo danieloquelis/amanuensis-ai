@@ -50,6 +50,8 @@ export function createScoreToolGateway(getSession: () => Session, setSession: (s
         ...anchorIds(score.measures),
         ...score.chords.map((c) => c.id),
         ...score.marks.map((m) => m.id),
+        ...score.annotations.map((a) => a.id),
+        ...score.repeats.map((r) => r.id),
       ]);
       if (selectedIds.some((id) => !valid.has(id))) throw new Error("Selection contains a missing target.");
       return {

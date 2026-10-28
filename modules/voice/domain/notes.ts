@@ -11,6 +11,7 @@ import {
   type SungNote,
 } from "./note-pieces";
 import type { PitchFrame } from "./pitch-tracker";
+import { foldPitchDips } from "./pitch-excursions";
 
 export type { SungNote } from "./note-pieces";
 
@@ -44,7 +45,7 @@ export function segmentNotes(frames: PitchFrame[]): SungNote[] {
     if (current) segments.push(current);
     current = null;
   };
-  const midis = foldOctaveErrors(frames);
+  const midis = foldPitchDips(foldOctaveErrors(frames));
   frames.forEach((frame, index) => {
     const midi = midis[index];
     if (midi === null) {

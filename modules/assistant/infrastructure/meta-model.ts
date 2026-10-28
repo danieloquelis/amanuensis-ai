@@ -2,7 +2,12 @@ import type { ChatMessage, ModelPort, ModelReply, ToolSpec } from "../applicatio
 
 const BASE_URL = "https://api.meta.ai/v1";
 export const DEFAULT_META_MODEL = "muse-spark-1.3";
-const TIMEOUT_MS = 45_000;
+/**
+ * Only for a connection that has stopped answering: a model reasoning through a sung take can
+ * think for most of a minute in one step, which is normal and must not be cut off.
+ */
+const TIMEOUT_MS = 180_000;
+const TIMEOUT_MESSAGE = "The assistant took longer than three minutes to answer. Please try again.";
 
 type MetaToolCall = { id: string; type: "function"; function: { name: string; arguments: string } };
 
@@ -22,9 +27,10 @@ function toMetaMessage(message: ChatMessage) {
 
 /**
  * Meta Model API adapter (server-only: it holds the API key). One tool call per turn keeps the
- * loop easy to follow and every edit validated against the latest revision.
+ * loop easy to follow and every edit validated against the latest revision. `reasoningEffort`
+ * (minimal … max) trades thinking time for depth; the model's default is used when it is unset.
  */
-export function createMetaModel(apiKey: string, model = DEFAULT_META_MODEL): ModelPort {
+export function createMetaModel(apiKey: string, model = DEFAULT_META_MODEL, reasoningEffort?: string): ModelPort {
   return {
     async complete(messages: ChatMessage[], tools: ToolSpec[]): Promise<ModelReply> {
       const response = await fetch(`${BASE_URL}/chat/completions`, {
@@ -38,8 +44,12 @@ export function createMetaModel(apiKey: string, model = DEFAULT_META_MODEL): Mod
             function: { name, description, parameters },
           })),
           parallel_tool_calls: false,
+          ...(reasoningEffort ? { reasoning_effort: reasoningEffort } : {}),
         }),
         signal: AbortSignal.timeout(TIMEOUT_MS),
+      }).catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "TimeoutError") throw new Error(TIMEOUT_MESSAGE);
+        throw error;
       });
       const body = await response.json().catch(() => null);
       if (!response.ok) {

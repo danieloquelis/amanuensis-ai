@@ -1,13 +1,14 @@
 import { STAFF_LEFT, type EngravedEvent, type System } from "@/modules/engraving";
 import { DurationButtons } from "../sheet-menu/DurationButtons";
 import styles from "./score-surface.module.css";
-import type { SheetInteractions } from "./sheet-interactions";
+import { sheetRefAttribute, type SheetInteractions } from "./sheet-interactions";
 
 const TOOLBAR = { width: 262, height: 44, maxX: 620, offsetX: 98, minOffsetY: 78, gapBelowNote: 23 };
 
 /**
  * Floating strip under the selected note or rest: durations, a note/rest toggle, and "···" for
- * the full menu.
+ * the full menu. It carries the note's sheet reference, so overlays pinned to the selection
+ * (the assistant) treat it as part of the note and stay clear of it.
  */
 export function SelectedNoteToolbar({
   item,
@@ -21,7 +22,14 @@ export function SelectedNoteToolbar({
   const x = Math.max(STAFF_LEFT, Math.min(TOOLBAR.maxX, item.x - TOOLBAR.offsetX));
   const y = Math.max(system.top + TOOLBAR.minOffsetY, item.y + TOOLBAR.gapBelowNote);
   return (
-    <foreignObject x={x} y={y} width={TOOLBAR.width} height={TOOLBAR.height} className={styles.quickActions}>
+    <foreignObject
+      {...sheetRefAttribute({ kind: "event", id: item.event.id })}
+      x={x}
+      y={y}
+      width={TOOLBAR.width}
+      height={TOOLBAR.height}
+      className={styles.quickActions}
+    >
       <div
         className={styles.quickBar}
         role="toolbar"

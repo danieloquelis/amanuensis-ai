@@ -25,44 +25,69 @@ export type Turn = {
   activity?: ProgressEvent;
   /** Whether the turn came from a recorded take. */
   spoken?: boolean;
+  /** The selection the request was about ("Bars 3–6"), shown with it in the chat. */
+  context?: string;
+  /** Where it was asked: in the chat panel or from the selection on the sheet. */
+  origin: TurnOrigin;
 };
+
+export type TurnOrigin = "chat" | "canvas";
+/** What a request is about: the picked IDs and their name. Empty IDs mean the whole score. */
+export type RequestContext = { ids: string[]; name: string | null; origin: TurnOrigin };
+export type Assistant = ReturnType<typeof useAssistant>;
 
 type Options = {
   getScore: () => Score;
-  selectedIds: string[];
   applyCommands: (commands: Command[], receipt: string) => boolean;
 };
 
-/** A take as the musician would describe it: what they said, and that they sang. */
-export function describeHeard({ speech, sung }: HeardTake): string {
-  const said = speech.map((turn) => turn.text).join(" ");
-  const sang = sung.length ? `♪ sang ${Math.round(sung.reduce((sum, s) => sum + s.end - s.start, 0))} s` : "";
-  return [said && `“${said}”`, sang].filter(Boolean).join(" · ") || "(nothing heard)";
+/** A take as the musician would describe it: their words as they said them, and that they sang. */
+export function describeHeard(said: string, sungSeconds: number): string {
+  const sang = sungSeconds ? `♪ sang ${Math.max(1, Math.round(sungSeconds))} s` : "";
+  return [said.trim(), sang].filter(Boolean).join(" · ") || "(nothing heard)";
 }
 
+const heardLabel = ({ speech, sung }: HeardTake) =>
+  describeHeard(
+    speech.map((turn) => turn.text).join(" "),
+    sung.reduce((sum, span) => sum + span.end - span.start, 0),
+  );
+
 /**
- * One conversation with the score assistant. Each instruction (typed or a recorded take) is sent
- * with the current score and selection; returned commands are applied as one undoable step.
+ * One conversation with the score assistant, shared by the chat panel and the composer on the
+ * sheet. Each instruction (typed or a recorded take) is sent with the current score and what it
+ * is about; returned commands are applied as one undoable step.
  */
-export function useAssistant({ getScore, selectedIds, applyCommands }: Options) {
+export function useAssistant({ getScore, applyCommands }: Options) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const busy = turns.some((turn) => turn.status === "working");
   const update = (id: string, patch: Partial<Turn>) =>
     setTurns((all) => all.map((turn) => (turn.id === id ? { ...turn, ...patch } : turn)));
 
   /** `label` is shown until the server says what it heard; `instruction` is what it is sent. */
-  const run = async (label: string, instruction: string, request: Request, spoken = false) => {
+  const run = async (label: string, instruction: string, request: Request, context: RequestContext, spoken = false) => {
     const id = crypto.randomUUID();
     const history: AssistantTurn[] = turns
       .filter((turn) => turn.status === "done" && turn.reply)
       .slice(-HISTORY_TURNS)
-      .map((turn) => ({ instruction: turn.instruction, reply: turn.reply! }));
-    setTurns((all) => [...all, { id, instruction: label, status: "working", spoken }]);
+      .map((turn) => ({
+        instruction: turn.context ? `[${turn.context}] ${turn.instruction}` : turn.instruction,
+        reply: turn.reply!,
+      }));
+    const about = { context: context.name ?? undefined, origin: context.origin };
+    setTurns((all) => [...all, { id, instruction: label, status: "working", spoken, ...about }]);
+    const selection = { selectedIds: context.ids, ...(context.name ? { selectionName: context.name } : {}) };
     try {
-      const result = await request({ instruction, score: getScore(), selectedIds, history }, (activity) =>
-        update(id, { activity }),
+      const result = await request({ instruction, score: getScore(), ...selection, history }, (activity) =>
+        // What was heard replaces "Voice take" as soon as it is known, before the agent answers.
+        update(
+          id,
+          activity.stage === "heard"
+            ? { activity, instruction: describeHeard(activity.said, activity.sungSeconds) }
+            : { activity },
+        ),
       );
-      const heard = result.heard ? { instruction: describeHeard(result.heard) } : {};
+      const heard = result.heard ? { instruction: heardLabel(result.heard) } : {};
       if (result.commands.length && !applyCommands(result.commands, result.reply)) {
         update(id, { ...heard, status: "failed", reply: "The score changed while I was working. Ask again." });
         return;
@@ -85,14 +110,14 @@ export function useAssistant({ getScore, selectedIds, applyCommands }: Options) 
     }
   };
 
-  const send = async (instruction: string) => {
+  const send = async (instruction: string, context: RequestContext) => {
     const text = instruction.trim();
-    if (text && !busy) await run(text, text, requestAssistant);
+    if (text && !busy) await run(text, text, requestAssistant, context);
   };
 
-  const sendTake = async (wav: Uint8Array) => {
-    if (!busy)
-      await run(VOICE_LABEL, "", (payload, onProgress) => requestVoiceAssistant(wav, payload, onProgress), true);
+  const sendTake = async (wav: Uint8Array, context: RequestContext) => {
+    if (busy) return;
+    await run(VOICE_LABEL, "", (payload, progress) => requestVoiceAssistant(wav, payload, progress), context, true);
   };
 
   return { turns, busy, send, sendTake };

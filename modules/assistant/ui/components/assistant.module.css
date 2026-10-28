@@ -7,11 +7,56 @@
 }
 
 .header {
-  padding: 16px 18px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 12px 8px 18px;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.02em;
   color: #4b5e44;
+}
+
+.closePanel {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #7c8873;
+  cursor: pointer;
+}
+
+.closePanel:hover {
+  background: #e8eee1;
+  color: #3f5a42;
+}
+
+/* What a message is about: "Bars 3–6". In your bubble it sits on the dark green. */
+.contextChip {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #e3ebdc;
+  color: #3f5a42;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mine .contextChip {
+  background: rgb(255 255 255 / 18%);
+  color: #f3f7ee;
+}
+
+.panelContext {
+  margin: 0;
+  padding: 6px 16px 0;
+  font-size: 11px;
+  color: var(--muted);
 }
 
 /* Conversation */
@@ -307,6 +352,83 @@
   font-size: 12px;
 }
 
+/* On the sheet: the assistant pinned to the selection, and its composer */
+
+.canvasButton {
+  position: absolute;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, #6c9473 0%, #3f5f46 70%);
+  color: #fffdf2;
+  box-shadow:
+    0 6px 16px rgb(40 70 45 / 28%),
+    0 1px 2px rgb(40 70 45 / 30%);
+  cursor: pointer;
+  animation: pop 240ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  transition:
+    left 180ms ease,
+    top 180ms ease,
+    transform 150ms ease;
+}
+
+.canvasButton:hover {
+  transform: scale(1.08);
+}
+
+.canvasButton:active {
+  transform: scale(0.94);
+}
+
+.canvasButton.docked,
+.canvasComposer.docked {
+  right: 22px;
+  bottom: 18px;
+}
+
+.canvasComposer {
+  position: absolute;
+  z-index: 21;
+  width: 360px;
+  max-width: calc(100% - 24px);
+  border: 1px solid #d6decf;
+  border-radius: 18px;
+  background: #fbfcf8;
+  box-shadow: 0 18px 40px rgb(40 60 40 / 22%);
+  animation: rise 200ms ease-out both;
+}
+
+.canvasComposer .composerArea {
+  border-top: 0;
+  padding: 4px 10px 10px;
+}
+
+.canvasHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 8px 4px 12px;
+}
+
+.canvasTurn {
+  max-height: 220px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px 12px 8px;
+  list-style: none;
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
 @keyframes rise {
   from {
     opacity: 0;
@@ -348,13 +470,18 @@
   .welcome,
   .activity,
   .dots i,
-  .stop {
+  .stop,
+  .canvasButton,
+  .canvasComposer {
     animation: none;
+    transition: none;
   }
 }
 
 @media print {
-  .panel {
+  .panel,
+  .canvasButton,
+  .canvasComposer {
     display: none !important;
   }
 }

@@ -1,6 +1,7 @@
 import type { KeyboardEvent, MouseEvent } from "react";
 import type { Step } from "@/modules/score";
 import type { SheetItem } from "../../../application/notation-edits";
+import type { PickMode, SheetRef } from "../../../application/sheet-selection";
 import type { CommitEdit } from "../../hooks/use-score-editor";
 import type { useSheetGestures } from "../../hooks/use-sheet-gestures";
 
@@ -26,9 +27,23 @@ export type SheetInteractions = {
   removeEvent: (eventId: string) => void;
   enterLetter: (eventId: string, step: Step) => void;
   toggleRest: (eventId: string) => void;
+  /** Whether an item is part of the selection (one of several, or the only one). */
+  isPicked: (ref: SheetRef) => boolean;
+  /** Several things are picked: single-item quick actions stay out of the way. */
+  multiple: boolean;
+  pick: (ref: SheetRef, mode: PickMode) => void;
+  /** Focus moved to a note: it is selected unless it is already part of the selection. */
+  focusEvent: (eventId: string) => void;
   openMenu: (kind: SheetMenuTarget["kind"], id: string, x: number, y: number) => void;
   gestures: ReturnType<typeof useSheetGestures>;
 };
+
+/** Shift-click extends a range; ⌘-click (Ctrl on Windows) adds or removes one item. */
+export const pickModeOf = (event: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }): PickMode | null =>
+  event.shiftKey ? "range" : event.metaKey || event.ctrlKey ? "toggle" : null;
+
+/** Marks a sheet element with what it shows, so overlays can find it on screen. */
+export const sheetRefAttribute = (ref: SheetRef) => ({ "data-sheet-ref": `${ref.kind}:${ref.id}` });
 
 /** A–G (either case, no modifiers) enters that note. */
 export const noteLetterOf = (event: { key: string; metaKey: boolean; ctrlKey: boolean; altKey: boolean }) =>
@@ -41,8 +56,8 @@ export const isMenuKey = (event: { key: string; shiftKey: boolean }) =>
   event.key === "Enter" || event.key === "ContextMenu" || (event.shiftKey && event.key === "F10");
 
 /**
- * Props that make any sheet item selectable: click selects it, Delete/Backspace removes it,
- * Escape deselects. Spread onto the item's root SVG element.
+ * Props that make any sheet item selectable: click selects it (Shift/⌘ adds it to the selection),
+ * Delete/Backspace removes it, Escape deselects. Spread onto the item's root SVG element.
  */
 export function selectableItem(
   interactions: SheetInteractions,
@@ -50,14 +65,17 @@ export function selectableItem(
   label: string,
   classes: { selected: string; base?: string },
 ) {
-  const selected = interactions.selectedItem?.kind === item.kind && interactions.selectedItem.id === item.id;
+  const selected = interactions.isPicked(item);
   return {
+    ...sheetRefAttribute(item),
     role: "button",
     tabIndex: 0,
     "aria-label": label,
     "aria-pressed": selected,
     className: [classes.base, selected && classes.selected].filter(Boolean).join(" ") || undefined,
     onClick: (e: MouseEvent<SVGElement>) => {
+      const mode = pickModeOf(e);
+      if (mode) return interactions.pick(item, mode);
       interactions.selectItem(item);
       e.currentTarget.focus();
     },

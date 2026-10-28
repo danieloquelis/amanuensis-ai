@@ -1,3 +1,4 @@
+import { segmentNotes } from "./notes";
 import { trackPitch, withPitchTrack, type PitchFrame, type PitchTrack, type Signal } from "./pitch-tracker";
 
 /** Words the speech recognizer heard, with their time in the take (seconds). */
@@ -24,6 +25,18 @@ const REACH_WINDOW_SECONDS = 0.5;
 const REACH_VOICED_SHARE = 0.6;
 /** Singing windows closer than this belong to one span (a breath, a held rest). */
 const JOIN_GAP_SECONDS = 1.5;
+/** A pause inside a speech turn: unvoiced and this quiet (normalized RMS) for this long. */
+const PAUSE_RMS = 0.03;
+const PAUSE_SECONDS = 0.25;
+const FRAME_SECONDS = 0.01;
+/** Words before the pause: at least this much voice, so a quiet start of the turn is not one. */
+const WORDS_SECONDS = 0.3;
+/**
+ * Singing holds steady pitches; speech slides. Measured on six takes: speech spends 9–44 % of
+ * its time in notes held at least 0.15 s, singing 47–77 %.
+ */
+const HELD_NOTE_SECONDS = 0.15;
+const SINGING_HELD_SHARE = 0.5;
 
 /**
  * Finds the sung stretches of a take: windows that hold pitch like singing does, outside the
@@ -73,7 +86,79 @@ const round = (seconds: number) => Math.round(seconds * 100) / 100;
 
 /** Sung spans are found from YIN's voicing, which their thresholds were measured with. */
 export function createTake(signal: Signal, speech: SpeechTurn[], track?: PitchTrack): VoiceTake {
-  return { signal, speech, sung: findSungSpans(trackPitch(signal), speech), ...(track ? { track } : {}) };
+  const frames = trackPitch(signal);
+  const turns = endTurnsBeforeSinging(speech, frames);
+  return { signal, speech: turns, sung: findSungSpans(frames, turns), ...(track ? { track } : {}) };
+}
+
+/**
+ * "…a rhythm like" — pause — sung notes: the recognizer often stretches the speech turn over
+ * the singing that follows. A turn whose words end in a pause followed by a stretch held like
+ * singing (at least a second, mostly voiced, mostly steady notes) ends at that pause, leaving
+ * the singing to be found.
+ */
+export function endTurnsBeforeSinging(speech: SpeechTurn[], frames: PitchFrame[]): SpeechTurn[] {
+  return speech.map((turn) => {
+    const end = sungUntil(frames, turn.end);
+    const pauses = pausesAfterWords(frames.filter((f) => f.time >= turn.start && f.time <= turn.end));
+    // Walk back from the end: breaths between sung phrases are pauses too, so the cut moves to
+    // an earlier pause while the stretch after it still sounds sung, and stops where talk begins.
+    let cut: { start: number; end: number } | null = null;
+    for (let i = pauses.length - 1; i >= 0; i--) {
+      const until = i + 1 < pauses.length ? pauses[i + 1].start : end;
+      if (!holdsNotes(frames.filter((f) => f.time >= pauses[i].end && f.time < until))) break;
+      cut = pauses[i];
+    }
+    if (!cut) return turn;
+    const after = frames.filter((f) => f.time >= cut.end && f.time <= end);
+    return soundsSung(after) ? { ...turn, end: round(cut.start) } : turn;
+  });
+}
+
+/** Pauses inside a turn that come after some words, in order. */
+function pausesAfterWords(inTurn: PitchFrame[]): { start: number; end: number }[] {
+  const quiet = (f: PitchFrame) => f.frequency === null && f.rms < PAUSE_RMS;
+  const pauses: { start: number; end: number }[] = [];
+  let pauseStart = -1;
+  let voicedBefore = 0;
+  inTurn.forEach((frame, i) => {
+    if (quiet(frame) && pauseStart === -1) pauseStart = i;
+    if (!quiet(frame) && pauseStart !== -1) {
+      const long = (i - pauseStart) * FRAME_SECONDS >= PAUSE_SECONDS;
+      if (long && voicedBefore * FRAME_SECONDS >= WORDS_SECONDS) {
+        pauses.push({ start: inTurn[pauseStart].time, end: frame.time });
+      }
+      pauseStart = -1;
+    }
+    if (frame.frequency !== null) voicedBefore++;
+  });
+  return pauses;
+}
+
+/** At least a second, mostly voiced, and mostly in held notes: singing rather than talk. */
+function soundsSung(stretch: PitchFrame[]): boolean {
+  return stretch.length * FRAME_SECONDS >= MIN_SPAN_SECONDS && holdsNotes(stretch);
+}
+
+/** Mostly voiced and mostly in held notes, however short: a sung phrase, not words. */
+function holdsNotes(stretch: PitchFrame[]): boolean {
+  if (!stretch.length) return false;
+  const seconds = stretch.length * FRAME_SECONDS;
+  const voiced = stretch.filter((f) => f.frequency !== null).length / stretch.length;
+  const held = segmentNotes(stretch)
+    .filter((note) => note.end - note.start >= HELD_NOTE_SECONDS)
+    .reduce((sum, note) => sum + note.end - note.start, 0);
+  return voiced >= REACH_VOICED_SHARE && held / seconds >= SINGING_HELD_SHARE;
+}
+
+/** Where the voice falls silent after `from`: the end of the stretch that continues past it. */
+function sungUntil(frames: PitchFrame[], from: number): number {
+  const silence = frames.find((f, i) => {
+    if (f.time < from) return false;
+    const next = frames.slice(i, i + PAUSE_SECONDS / FRAME_SECONDS);
+    return next.length > 0 && next.every((g) => g.frequency === null && g.rms < PAUSE_RMS);
+  });
+  return silence?.time ?? frames.at(-1)?.time ?? from;
 }
 
 /** The audio of one sung span, or null if the take has no such span. */

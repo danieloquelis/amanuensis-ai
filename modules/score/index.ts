@@ -12,6 +12,7 @@ export {
 } from "./domain/chords";
 export { createExample } from "./domain/example";
 export { rankKeysForChords, type ChordSymbol, type KeyCandidate } from "./domain/harmony";
+export { suggestChords, type ChordCandidate, type ChordSlot, type Harmonization } from "./domain/harmonize";
 export {
   findTempoMarking,
   TEMPO_MARKINGS,
