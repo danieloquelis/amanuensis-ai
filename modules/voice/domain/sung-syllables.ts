@@ -10,14 +10,9 @@ const NEAR_SINGING = 1;
 const wordOf = (token: string) => token.toLowerCase().replace(/[^\p{L}]/gu, "");
 const isSyllable = (word: string) => word.length > 0 && word.length <= SYLLABLE_LETTERS;
 
-/**
- * Text with the sung syllables taken out: runs of a short syllable repeated ("la la la") or two
- * alternating ("pam pim pam pim"), which the recognizer writes down as if they were words.
- */
-export function withoutSungSyllables(text: string): string {
-  const tokens = text.split(/\s+/).filter(Boolean);
-  const words = tokens.map(wordOf);
-  const drop = new Array(tokens.length).fill(false);
+/** Which words are sung syllables: runs of a short syllable repeated, or two alternating. */
+function syllableMask(words: string[]): boolean[] {
+  const drop = new Array(words.length).fill(false);
   // A run continues while each syllable repeats the one a period back (1: "la la", 2: "pam pim").
   for (const period of [1, 2]) {
     let start = 0;
@@ -28,11 +23,37 @@ export function withoutSungSyllables(text: string): string {
       start = i;
     }
   }
+  return drop;
+}
+
+/**
+ * Text with the sung syllables taken out: runs of a short syllable repeated ("la la la") or two
+ * alternating ("pam pim pam pim"), which the recognizer writes down as if they were words.
+ */
+export function withoutSungSyllables(text: string): string {
+  const tokens = text.split(/\s+/).filter(Boolean);
+  const drop = syllableMask(tokens.map(wordOf));
   return tokens
     .filter((_, i) => !drop[i])
     .join(" ")
     .replace(/\s+([,.!?])/g, "$1")
     .trim();
+}
+
+/**
+ * A text that ends in sung syllables ("…gonna add da da da da da"): how many syllables the
+ * closing run has, and how much of the text, by letters, it takes up (1 when the whole text is
+ * syllables). Null when it ends in words.
+ */
+export function closingSyllables(text: string): { count: number; share: number } | null {
+  const words = text.split(/\s+/).filter(Boolean).map(wordOf);
+  const sung = syllableMask(words);
+  let start = words.length;
+  // Punctuation on its own ("da da da .") belongs with the run.
+  while (start > 0 && (sung[start - 1] || !words[start - 1])) start--;
+  if (!sung.slice(start).some(Boolean)) return null;
+  const letters = (list: string[]) => list.reduce((sum, word) => sum + word.length + 1, 0);
+  return { count: sung.filter(Boolean).length, share: letters(words.slice(start)) / letters(words) };
 }
 
 /** Speech turns that run into singing, with the sung syllables removed from their text. */

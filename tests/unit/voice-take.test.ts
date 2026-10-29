@@ -239,3 +239,54 @@ test("talking and singing in turns reads in the order it happened", () => {
     ["first bar like", "♪3", "then", "♪1.5"],
   );
 });
+
+/** Sung syllables on one pitch each, detached: "ting · ting · ting", as short as words are. */
+const syllables = (count: number) =>
+  singMelody(
+    Array.from({ length: count }, (_, i) => [
+      { midi: midi("G3") + (i % 2) * 2, beats: 0.25 },
+      { midi: null, beats: 0.25 },
+    ]).flat(),
+    { bpm: 100 },
+  );
+
+test("detached sung syllables the recognizer wrote as a turn of their own are singing", () => {
+  const speech = talking(3);
+  const pause = singMelody([{ midi: null, beats: 1 }], { bpm: 120 });
+  const sung = syllables(5);
+  const signal = join(speech, pause, sung);
+  const singingStarts = (speech.samples.length + pause.samples.length) / speech.sampleRate;
+  const end = signal.samples.length / signal.sampleRate;
+  const take = createTake(signal, [
+    { start: 0, end: speech.samples.length / speech.sampleRate, text: "make it like this" },
+    { start: singingStarts, end, text: "ting ting ting ting ting" },
+  ]);
+  assert.equal(take.sung.length, 1);
+  assert.ok(Math.abs(take.sung[0].start - singingStarts) < 0.3, `span starts at ${take.sung[0].start}`);
+  assert.deepEqual(
+    takeParts(take.speech, take.sung).map((part) => (part.kind === "said" ? part.text : "♪")),
+    ["make it like this", "♪"],
+  );
+});
+
+test("sung syllables at the end of a spoken turn, with no pause before them, are singing", () => {
+  const speech = talking(3);
+  const signal = join(speech, syllables(5));
+  const singingStarts = speech.samples.length / speech.sampleRate;
+  const end = signal.samples.length / signal.sampleRate;
+  const take = createTake(signal, [{ start: 0, end, text: "so if you're gonna add da da da da da" }]);
+  assert.equal(take.sung.length, 1);
+  assert.ok(Math.abs(take.sung[0].start - singingStarts) < 0.45, `span starts at ${take.sung[0].start}`);
+  assert.equal(take.speech[0].text, "so if you're gonna add");
+});
+
+test("syllables written into the turn before the singing they stand for are not sung twice", () => {
+  const speech = talking(4);
+  const pause = singMelody([{ midi: null, beats: 3 }], { bpm: 120 });
+  const talkingEnds = speech.samples.length / speech.sampleRate;
+  const take = createTake(join(speech, pause, singMelody(phrase, { bpm: 120 })), [
+    { start: 0, end: talkingEnds, text: `it's going to be like ${"ping ".repeat(16)}` },
+  ]);
+  assert.equal(take.sung.length, 1);
+  assert.ok(take.sung[0].start >= talkingEnds, `span starts at ${take.sung[0].start}`);
+});

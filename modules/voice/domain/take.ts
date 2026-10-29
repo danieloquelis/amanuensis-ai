@@ -1,6 +1,7 @@
 import { segmentNotes } from "./notes";
 import { cleanTurnsBeforeSinging } from "./sung-syllables";
 import { trackPitch, withPitchTrack, type PitchFrame, type PitchTrack, type Signal } from "./pitch-tracker";
+import { numberSpans, splitSungSyllables } from "./syllable-spans";
 
 /** Words the speech recognizer heard, with their time in the take (seconds). */
 export type SpeechTurn = { start: number; end: number; text: string };
@@ -85,13 +86,20 @@ function reachBack(start: number, frames: PitchFrame[]): number {
 
 const round = (seconds: number) => Math.round(seconds * 100) / 100;
 
-/** Sung spans are found from YIN's voicing, which their thresholds were measured with. */
+/**
+ * Sung spans are found from YIN's voicing, which their thresholds were measured with, and from
+ * syllables the recognizer wrote down as words at the end of a turn ("…add da da da da da").
+ */
 export function createTake(signal: Signal, speech: SpeechTurn[], track?: PitchTrack): VoiceTake {
   const frames = trackPitch(signal);
   const turns = endTurnsBeforeSinging(speech, frames);
-  const sung = findSungSpans(frames, turns);
+  const found = findSungSpans(frames, turns);
+  // Short, detached syllables sound like talk; the recognizer's words say they were sung.
+  const syllables = splitSungSyllables(turns, frames, found);
+  const sung = numberSpans([...found, ...syllables.sung]);
   // The recognizer writes sung syllables down as words ("ping ping ping"); they are singing.
-  return { signal, speech: cleanTurnsBeforeSinging(speech, turns, sung), sung, ...(track ? { track } : {}) };
+  const said = cleanTurnsBeforeSinging(speech, syllables.turns, sung).filter((turn) => turn.text);
+  return { signal, speech: said, sung, ...(track ? { track } : {}) };
 }
 
 /**
