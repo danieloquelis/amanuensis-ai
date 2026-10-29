@@ -11,7 +11,7 @@ export const NEW_SCORE_DEFAULTS = {
 };
 
 /**
- * Replaces the whole score with a blank one: empty bars, no chords, marks, repeats or
+ * Replaces the whole score with a blank one: empty bars, no chords, marks, repeats, slurs or
  * indications. It gets a new identity, since it is a different piece.
  */
 export function newScore(draft: Draft, op: OperationOf<"newScore">, { idPrefix }: OperationContext) {
@@ -30,4 +30,5 @@ export function newScore(draft: Draft, op: OperationOf<"newScore">, { idPrefix }
   draft.repeats = [];
   draft.chords = [];
   draft.marks = [];
+  draft.slurs = [];
 }

@@ -26,6 +26,25 @@ export type EngravedEvent = {
 /** A beam segment. `y1`/`y2` are the stem tips (outer edge); thickness grows toward the noteheads. */
 export type Beam = { x1: number; y1: number; x2: number; y2: number; level: number; down: boolean };
 
+/** One tie arc between two noteheads at `y`, or one half of a tie broken by a line break. */
+export type TieArc = { id: string; x1: number; x2: number; y: number; above: boolean };
+
+/**
+ * One slur on one line (a slur across a line break has one per line): a cubic from (x1, y1) to
+ * (x2, y2) with both control points `bulge` away from that line, negative upward. `bars` are the
+ * whole slur's first and last bar numbers.
+ */
+export type SlurArc = {
+  id: string;
+  slurId: string;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  bulge: number;
+  bars: [number, number];
+};
+
 /** Beat-to-x anchor inside a bar, for the playhead. */
 export type BeatColumn = { beat: number; x: number };
 
@@ -91,6 +110,8 @@ export type System = {
   events: EngravedEvent[];
   beams: Beam[];
   beamedIds: string[];
+  ties: TieArc[];
+  slurs: SlurArc[];
   labels: SceneLabel[];
   chords: SceneChord[];
   /** Baselines of the rows above the staff. */

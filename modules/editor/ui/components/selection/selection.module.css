@@ -1,3 +1,10 @@
+/* A note's tools stack in two rows: rhythm, then the note itself. */
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 /* A row of edit tools in the selection card; groups are split by hairlines. */
 .actions {
   display: flex;
@@ -17,6 +24,12 @@
   margin-right: 3px;
   border: 0;
   border-right: 1px solid var(--line-strong);
+}
+
+.actions > [role="group"]:last-child {
+  padding-right: 0;
+  margin-right: 0;
+  border-right: 0;
 }
 
 .actions > [role="group"] button,

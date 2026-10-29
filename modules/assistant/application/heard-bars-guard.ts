@@ -9,6 +9,8 @@ const NOTE_EDITS = new Set<Operation["type"]>([
   "removeEvent",
   "setDuration",
   "setPitch",
+  "setTie",
+  "transpose",
   "setMeter",
 ]);
 
@@ -28,11 +30,11 @@ function editedMeasures(score: Score, operation: Operation): string[] {
     .flatMap((op) => {
       if ("measureIds" in op) return op.measureIds as string[];
       if ("measureId" in op) return [op.measureId as string];
-      if ("eventId" in op) {
-        const found = findEvent(score, op.eventId as string);
+      const eventIds = "eventIds" in op ? (op.eventIds as string[]) : "eventId" in op ? [op.eventId as string] : [];
+      return eventIds.flatMap((id) => {
+        const found = findEvent(score, id);
         return found ? [found.measure.id] : [];
-      }
-      return [];
+      });
     });
 }
 

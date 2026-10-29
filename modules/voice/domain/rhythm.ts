@@ -3,7 +3,8 @@ import type { SungNote } from "./notes";
 
 /** A note (MIDI) or rest (null) placed on the beat grid, in quarter-note beats from the first note. */
 export type PlacedNote = { midi: number | null; start: number; beats: number };
-export type BarEvent = { midi: number | null; beats: number };
+/** `tie`: held into the next event, the same sung note written past a barline or a value. */
+export type BarEvent = { midi: number | null; beats: number; tie?: boolean };
 
 const GRID = 0.25;
 const EIGHTH = 0.5;
@@ -122,17 +123,15 @@ function writableParts(beats: number): number[] {
 
 /**
  * Lays placed notes into bars of `meter`. A note crossing a barline, or with an unwritable
- * length, is split into re-struck notes (ties are not supported yet) and reported in `warnings`.
- * The last bar is completed with rests.
+ * length, is written as tied notes. The last bar is completed with rests.
  */
-export function toBars(placed: PlacedNote[], meter: Meter): { bars: BarEvent[][]; warnings: string[] } {
+export function toBars(placed: PlacedNote[], meter: Meter): BarEvent[][] {
   const capacity = measureCapacity(meter);
   const bars: BarEvent[][] = [[]];
   let used = 0;
-  let split = 0;
   for (const item of placed) {
     let remaining = item.beats;
-    let pieces = 0;
+    let previous: BarEvent | null = null;
     while (remaining > 1e-9) {
       if (used >= capacity - 1e-9) {
         bars.push([]);
@@ -140,18 +139,16 @@ export function toBars(placed: PlacedNote[], meter: Meter): { bars: BarEvent[][]
       }
       const portion = Math.min(remaining, capacity - used);
       for (const part of writableParts(portion)) {
-        bars[bars.length - 1].push({ midi: item.midi, beats: part });
-        pieces++;
+        // Each written part continues the same sung note; rests are simply consecutive.
+        if (previous && item.midi !== null) previous.tie = true;
+        previous = { midi: item.midi, beats: part };
+        bars[bars.length - 1].push(previous);
       }
       used += portion;
       remaining -= portion;
     }
-    if (item.midi !== null && pieces > 1) split++;
   }
   if (used < capacity)
     for (const part of writableParts(capacity - used)) bars[bars.length - 1].push({ midi: null, beats: part });
-  const warnings = split
-    ? [`${split} note${split > 1 ? "s were" : " was"} split into shorter notes; ties are not supported yet.`]
-    : [];
-  return { bars, warnings };
+  return bars;
 }

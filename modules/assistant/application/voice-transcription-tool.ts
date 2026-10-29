@@ -28,10 +28,11 @@ type ToolResult = { ok: true; [key: string]: unknown } | { ok: false; error: str
 export type ScoreAccess = { getScore: () => Score; commit: (operation: Operation) => ToolResult };
 
 const FOUR_FOUR: Meter = { numerator: 4, denominator: 4 };
-type WrittenBar = { pitch: Pitch | null; duration: number }[];
+type WrittenBar = { pitch: Pitch | null; duration: number; tie?: boolean }[];
 
-/** "r/0.5 E4/0.5 G4/1": a bar as compact text, cheap for the model to read. */
-const barText = (bar: WrittenBar) => bar.map((e) => `${e.pitch ? pitchName(e.pitch) : "r"}/${e.duration}`).join(" ");
+/** "r/0.5 E4/0.5 G4/1~": a bar as compact text, cheap for the model to read; ~ ties into the next note. */
+const barText = (bar: WrittenBar) =>
+  bar.map((e) => `${e.pitch ? pitchName(e.pitch) : "r"}/${e.duration}${e.tie ? "~" : ""}`).join(" ");
 
 /**
  * Hears each sung span and writes it into the score from the bar it was meant for (the musician
@@ -149,7 +150,9 @@ function keptBars(bars: WrittenBar[], span: { bar: number; bars?: number }, next
   const kept = bars.slice(0, Math.max(1, limit));
   const noteBeats = (bar: WrittenBar) => bar.reduce((sum, e) => sum + (e.pitch ? e.duration : 0), 0);
   while (kept.length > 1 && noteBeats(kept.at(-1)!) < TAIL_BEATS) kept.pop();
-  return kept;
+  // The sound ends with the kept bars: a tie must not reach into whatever the score holds next.
+  const last = kept.at(-1)!.map((e, i, bar) => (i === bar.length - 1 ? { pitch: e.pitch, duration: e.duration } : e));
+  return [...kept.slice(0, -1), last];
 }
 
 /** Appends bars the take needs, then replaces each target bar with what was heard. */

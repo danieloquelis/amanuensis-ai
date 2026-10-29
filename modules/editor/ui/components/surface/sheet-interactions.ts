@@ -4,6 +4,7 @@ import type { SheetItem } from "../../../application/notation-edits";
 import type { PickMode, SheetRef } from "../../../application/sheet-selection";
 import type { CommitEdit } from "../../hooks/use-score-editor";
 import type { useSheetGestures } from "../../hooks/use-sheet-gestures";
+import type { useSlurDrag } from "../../hooks/use-slur-drag";
 
 export type SheetMenuTarget = {
   kind: "note" | "bar" | "meter" | "annotation" | "chord" | "section";
@@ -27,6 +28,8 @@ export type SheetInteractions = {
   removeEvent: (eventId: string) => void;
   enterLetter: (eventId: string, step: Step) => void;
   toggleRest: (eventId: string) => void;
+  /** S: slurs the picked phrase, or this note to the next. */
+  slur: (eventId: string) => void;
   /** Whether an item is part of the selection (one of several, or the only one). */
   isPicked: (ref: SheetRef) => boolean;
   /** Several things are picked: single-item quick actions stay out of the way. */
@@ -36,6 +39,7 @@ export type SheetInteractions = {
   focusEvent: (eventId: string) => void;
   openMenu: (kind: SheetMenuTarget["kind"], id: string, x: number, y: number) => void;
   gestures: ReturnType<typeof useSheetGestures>;
+  slurGestures: ReturnType<typeof useSlurDrag>;
 };
 
 /** Shift-click extends a range; ⌘-click (Ctrl on Windows) adds or removes one item. */
@@ -50,6 +54,10 @@ export const noteLetterOf = (event: { key: string; metaKey: boolean; ctrlKey: bo
   /^[a-g]$/i.test(event.key) && !event.metaKey && !event.ctrlKey && !event.altKey
     ? (event.key.toUpperCase() as Step)
     : null;
+
+/** S (no modifiers) slurs, as in notation editors. */
+export const isSlurKey = (event: { key: string; metaKey: boolean; ctrlKey: boolean; altKey: boolean }) =>
+  /^s$/i.test(event.key) && !event.metaKey && !event.ctrlKey && !event.altKey;
 
 /** Keys that open an element's menu from the keyboard. */
 export const isMenuKey = (event: { key: string; shiftKey: boolean }) =>

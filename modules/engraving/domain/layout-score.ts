@@ -5,6 +5,8 @@ import { DYNAMIC_ROW_HEIGHT } from "./labels";
 import { layoutSystem, type SystemContext } from "./layout-system";
 import { breakLines } from "./line-breaking";
 import { analyzeScore } from "./measure-analysis";
+import { placeSlurs } from "./slurs";
+import { placeTies } from "./ties";
 import { LINE_END, SCENE_WIDTH, SYSTEM_HEIGHT, type Scene, type System } from "./scene";
 
 const FIRST_SYSTEM_TOP = 90;
@@ -15,7 +17,7 @@ const HEADROOM = 82;
 /**
  * Derives the engraved scene from a score revision. Pure and deterministic, in stages:
  * analyze bars → break into lines → per line: justify and place, beam, stack the rows above the
- * staff, place labels. A line whose content reaches too high is laid out again lower down.
+ * staff, place labels. Ties and slurs are placed last, as they may span lines. A line whose content reaches too high is laid out again lower down.
  */
 export function layoutScore(score: Score): Scene {
   const key = scoreKey(score);
@@ -37,5 +39,7 @@ export function layoutScore(score: Score): Scene {
     systems.push(laid.system);
     nextTop = laid.system.top + SYSTEM_HEIGHT + laid.dynamicRows * DYNAMIC_ROW_HEIGHT;
   });
+  placeTies(score, systems);
+  placeSlurs(score, systems);
   return { width: SCENE_WIDTH, height: nextTop - SCENE_BOTTOM_TRIM, systems };
 }

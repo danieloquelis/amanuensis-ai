@@ -115,7 +115,8 @@ g:hover > .hoverOnly,
   opacity: 0.7;
 }
 
-.chord {
+.chord,
+.slur {
   cursor: pointer;
 }
 

@@ -4,6 +4,8 @@ import { validateBarMarks, validateChords } from "./lead-sheet-validation";
 import { anchorIds } from "./queries";
 import { add, beats, fraction, isSupportedDuration, measureCapacity, meterName, METERS } from "./rhythm";
 import { eventSchema, idSchema, scoreSchema, type Measure, type Score } from "./schema";
+import { validateSlurs } from "./slurs";
+import { validateTies } from "./ties";
 
 const legacyScoreSchema = z.strictObject({
   schemaVersion: z.literal(1),
@@ -14,7 +16,7 @@ const legacyScoreSchema = z.strictObject({
   measures: z.array(
     z.strictObject({
       id: idSchema,
-      events: z.array(eventSchema.omit({ articulation: true, measureRest: true })),
+      events: z.array(eventSchema.omit({ articulation: true, measureRest: true, tie: true })),
     }),
   ),
 });
@@ -34,6 +36,8 @@ export function parseScore(value: unknown): Score {
   validateRepeats(score, ids);
   validateChords(score, ids);
   validateBarMarks(score, ids);
+  validateTies(score);
+  validateSlurs(score, ids);
   return score;
 }
 

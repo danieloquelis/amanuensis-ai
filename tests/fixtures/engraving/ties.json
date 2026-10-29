@@ -1,0 +1,434 @@
+{
+  "schemaVersion": 2,
+  "id": "ties",
+  "revision": 0,
+  "title": "Held notes",
+  "tempo": 88,
+  "measures": [
+    {
+      "id": "bar-1",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "t1-0-n0",
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "G",
+            "alter": 0,
+            "octave": 4
+          }
+        },
+        {
+          "id": "t1-0-n1",
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "C",
+            "alter": 0,
+            "octave": 5
+          },
+          "tie": true
+        },
+        {
+          "id": "t1-0-n2",
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "C",
+            "alter": 0,
+            "octave": 5
+          }
+        },
+        {
+          "id": "t1-0-n3",
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "E",
+            "alter": 0,
+            "octave": 4
+          },
+          "tie": true
+        }
+      ]
+    },
+    {
+      "id": "bar-2",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "t1-1-n0",
+          "duration": {
+            "numerator": 2,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "E",
+            "alter": 0,
+            "octave": 4
+          }
+        },
+        {
+          "id": "t1-1-n1",
+          "duration": {
+            "numerator": 3,
+            "denominator": 2
+          },
+          "pitch": {
+            "step": "D",
+            "alter": 0,
+            "octave": 4
+          },
+          "tie": true
+        },
+        {
+          "id": "t1-1-n2",
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          },
+          "pitch": {
+            "step": "D",
+            "alter": 0,
+            "octave": 4
+          }
+        }
+      ]
+    },
+    {
+      "id": "bar-3",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "t1-2-n0",
+          "duration": {
+            "numerator": 2,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "F",
+            "alter": 0,
+            "octave": 5
+          },
+          "tie": true
+        },
+        {
+          "id": "t1-2-n1",
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "F",
+            "alter": 0,
+            "octave": 5
+          }
+        },
+        {
+          "id": "t1-2-n2",
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "A",
+            "alter": 0,
+            "octave": 5
+          },
+          "tie": true
+        }
+      ]
+    },
+    {
+      "id": "bar-4",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "t1-3-n0",
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          },
+          "pitch": {
+            "step": "A",
+            "alter": 0,
+            "octave": 5
+          }
+        },
+        {
+          "id": "t1-3-n1",
+          "duration": {
+            "numerator": 1,
+            "denominator": 2
+          },
+          "pitch": {
+            "step": "G",
+            "alter": 0,
+            "octave": 5
+          }
+        },
+        {
+          "id": "t1-3-n2",
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "E",
+            "alter": 0,
+            "octave": 5
+          }
+        },
+        {
+          "id": "t1-3-n3",
+          "duration": {
+            "numerator": 2,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "C",
+            "alter": 0,
+            "octave": 5
+          },
+          "tie": true
+        }
+      ]
+    },
+    {
+      "id": "t0-0-bar",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "t1-4-n0",
+          "duration": {
+            "numerator": 4,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "C",
+            "alter": 0,
+            "octave": 5
+          },
+          "tie": true
+        }
+      ]
+    },
+    {
+      "id": "t0-1-bar",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "t1-5-n0",
+          "duration": {
+            "numerator": 2,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "C",
+            "alter": 0,
+            "octave": 5
+          }
+        },
+        {
+          "id": "t1-5-n1",
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "B",
+            "alter": 0,
+            "octave": 4
+          }
+        },
+        {
+          "id": "t1-5-n2",
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "G",
+            "alter": 0,
+            "octave": 4
+          },
+          "tie": true
+        }
+      ]
+    },
+    {
+      "id": "t0-2-bar",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "t1-6-n0",
+          "duration": {
+            "numerator": 3,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "G",
+            "alter": 0,
+            "octave": 4
+          },
+          "tie": true
+        },
+        {
+          "id": "t1-6-n1",
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "G",
+            "alter": 0,
+            "octave": 4
+          }
+        }
+      ]
+    },
+    {
+      "id": "t0-3-bar",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "t1-7-n0",
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "A",
+            "alter": 0,
+            "octave": 4
+          }
+        },
+        {
+          "id": "t1-7-n1",
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "F",
+            "alter": 0,
+            "octave": 4
+          }
+        },
+        {
+          "id": "t1-7-n2",
+          "duration": {
+            "numerator": 2,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "E",
+            "alter": 0,
+            "octave": 4
+          },
+          "tie": true
+        }
+      ]
+    },
+    {
+      "id": "t0-4-bar",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "t1-8-n0",
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "E",
+            "alter": 0,
+            "octave": 4
+          }
+        },
+        {
+          "id": "t1-8-n1",
+          "duration": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "D",
+            "alter": 0,
+            "octave": 4
+          }
+        },
+        {
+          "id": "t1-8-n2",
+          "duration": {
+            "numerator": 2,
+            "denominator": 1
+          },
+          "pitch": {
+            "step": "C",
+            "alter": 0,
+            "octave": 4
+          }
+        }
+      ]
+    },
+    {
+      "id": "t0-5-bar",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "events": [
+        {
+          "id": "t0-5-r0",
+          "duration": {
+            "numerator": 4,
+            "denominator": 1
+          },
+          "pitch": null,
+          "measureRest": true
+        }
+      ]
+    }
+  ],
+  "annotations": [],
+  "repeats": [],
+  "chords": [],
+  "marks": []
+}

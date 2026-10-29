@@ -53,6 +53,8 @@ export function refExists(score: Score, ref: SheetRef): boolean {
       return score.marks.some((m) => m.id === ref.id);
     case "repeat":
       return score.repeats.some((r) => r.id === ref.id);
+    case "slur":
+      return score.slurs.some((s) => s.id === ref.id);
   }
 }
 
@@ -85,6 +87,12 @@ export function refName(score: Score, ref: SheetRef): string {
       if (!repeat) return "Repeat";
       return `Repeat · bars ${barNumber(score, repeat.startMeasureId)}–${barNumber(score, repeat.endMeasureId)}`;
     }
+    case "slur": {
+      const slur = score.slurs.find((s) => s.id === ref.id);
+      if (!slur) return "Slur";
+      const bars = [slur.startEventId, slur.endEventId].map((id) => (findEvent(score, id)?.measureIndex ?? 0) + 1);
+      return bars[0] === bars[1] ? `Slur · bar ${bars[0]}` : `Slur · bars ${bars[0]}–${bars[1]}`;
+    }
   }
 }
 
@@ -115,7 +123,21 @@ export function selectionName(score: Score, refs: SheetRef[]): string | null {
   return `${refs.length} items`;
 }
 
-/** Index of the bar a picked item is in (a repeat: the bar it starts at), or null if it is gone. */
+/**
+ * What the selection covers on the sheet, as `kind:id` keys: the picked items plus any slur over
+ * picked notes, so tools placed beside the selection leave the slur free to grab.
+ */
+export function selectionAnchors(score: Score, refs: SheetRef[]): string[] {
+  const order = score.measures.flatMap((m) => m.events.map((e) => e.id));
+  const picked = new Set(refs.filter((r) => r.kind === "event").map((r) => order.indexOf(r.id)));
+  const slurs = score.slurs.filter((slur) => {
+    const [start, end] = [order.indexOf(slur.startEventId), order.indexOf(slur.endEventId)];
+    return [...picked].some((index) => index >= start && index <= end);
+  });
+  return [...refs, ...slurs.map((s) => ({ kind: "slur", id: s.id }))].map((ref) => `${ref.kind}:${ref.id}`);
+}
+
+/** Index of the bar a picked item is in (a repeat or slur: the bar it starts at), or null if it is gone. */
 function barIndexOf(score: Score, ref: SheetRef): number | null {
   const indexOf = (measureId: string | undefined) => {
     const index = score.measures.findIndex((m) => m.id === measureId);
@@ -135,6 +157,8 @@ function barIndexOf(score: Score, ref: SheetRef): number | null {
       return indexOf(score.marks.find((m) => m.id === ref.id)?.measureId);
     case "repeat":
       return indexOf(score.repeats.find((r) => r.id === ref.id)?.startMeasureId);
+    case "slur":
+      return eventBar(score.slurs.find((s) => s.id === ref.id)?.startEventId);
     case "annotation": {
       const target = score.annotations.find((a) => a.id === ref.id)?.targetId;
       return indexOf(target) ?? eventBar(target);

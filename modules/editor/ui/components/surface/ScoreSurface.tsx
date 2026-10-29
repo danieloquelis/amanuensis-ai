@@ -2,10 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { layoutScore } from "@/modules/engraving";
 import { keyName, meterName, scoreKey, type Pitch, type Score, type Step } from "@/modules/score";
 import { applyGesturePreview } from "../../../application/gesture-preview";
+import { slurKeyEdit } from "../../../application/range-edits";
 import type { SheetItem } from "../../../application/notation-edits";
 import { sameRef, type PickMode, type SheetRef } from "../../../application/sheet-selection";
 import type { CommitEdit } from "../../hooks/use-score-editor";
 import { useSheetGestures } from "../../hooks/use-sheet-gestures";
+import { useSlurDrag } from "../../hooks/use-slur-drag";
 import { SheetContextMenu } from "../sheet-menu/SheetContextMenu";
 import styles from "./score-surface.module.css";
 import type { SheetInteractions, SheetMenuTarget } from "./sheet-interactions";
@@ -75,6 +77,8 @@ export function ScoreSurface({
     onAudition,
   });
 
+  const slurGestures = useSlurDrag(svgRef, score, onCommand);
+
   const interactions: SheetInteractions = {
     interactive,
     select: onSelect,
@@ -89,11 +93,16 @@ export function ScoreSurface({
     removeEvent: onDelete,
     enterLetter: onEnterLetter,
     toggleRest: onToggleRest,
+    slur: (eventId) => {
+      const edit = slurKeyEdit(score, picked, eventId);
+      if (edit) onCommand(edit.operation, edit.receipt);
+    },
     isPicked: (ref) => picked.some((p) => sameRef(p, ref)),
     multiple: picked.length > 1,
     pick: onPick,
     focusEvent: onFocusEvent,
     gestures,
+    slurGestures,
     openMenu: (kind, id, x, y) => {
       if (!interactive) return;
       gestures.cancelGesture();
@@ -101,7 +110,7 @@ export function ScoreSurface({
     },
   };
 
-  const scene = layoutScore(applyGesturePreview(score, gestures.preview));
+  const scene = layoutScore(applyGesturePreview(score, slurGestures.preview ?? gestures.preview));
   // Keep DOM nodes in score order while a drag previews new positions, so pointer capture holds.
   const eventOrder = new Map(score.measures.flatMap((m) => m.events).map((event, index) => [event.id, index]));
   const meters = score.measures.map((m) => meterName(m.meter)).join(", ");

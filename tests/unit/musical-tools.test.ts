@@ -143,6 +143,7 @@ test("v1 files migrate without losing identity or edits", () => {
   delete legacy.repeats;
   delete legacy.chords;
   delete legacy.marks;
+  delete legacy.slurs;
   assert.deepEqual(parseScore(legacy), original);
 });
 

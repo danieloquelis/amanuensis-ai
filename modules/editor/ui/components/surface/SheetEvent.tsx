@@ -3,7 +3,14 @@ import { EventGlyph } from "@/modules/engraving/ui";
 import { beats, pitchName } from "@/modules/score";
 import { classNames } from "@/shared/ui/class-names";
 import styles from "./score-surface.module.css";
-import { isMenuKey, noteLetterOf, pickModeOf, sheetRefAttribute, type SheetInteractions } from "./sheet-interactions";
+import {
+  isMenuKey,
+  isSlurKey,
+  noteLetterOf,
+  pickModeOf,
+  sheetRefAttribute,
+  type SheetInteractions,
+} from "./sheet-interactions";
 
 type SheetEventProps = {
   item: EngravedEvent;
@@ -15,7 +22,7 @@ type SheetEventProps = {
 
 /**
  * A selectable, draggable note or rest; Shift/⌘-click adds it to the selection. Keyboard: ↑/↓ step the pitch, A–G enter a note,
- * Delete turns a note into a rest, Enter opens its menu.
+ * Delete turns a note into a rest, S slurs, Enter opens its menu.
  */
 export function SheetEvent({ item, system, selected, playBeat, interactions }: SheetEventProps) {
   const { select, stepPitch, removeEvent, enterLetter, openMenu, gestures, pick, focusEvent } = interactions;
@@ -54,6 +61,10 @@ export function SheetEvent({ item, system, selected, playBeat, interactions }: S
         if (e.key === "Delete" || e.key === "Backspace") {
           e.preventDefault();
           removeEvent(event.id);
+        }
+        if (isSlurKey(e)) {
+          e.preventDefault();
+          interactions.slur(event.id);
         }
         if (isMenuKey(e)) {
           e.preventDefault();

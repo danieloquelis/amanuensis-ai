@@ -15,7 +15,10 @@ export const SCORE_LIMITS = {
   repeats: 16,
   chords: 256,
   marks: 64,
+  slurs: 64,
 };
+/** How far a slur's middle may be raised (rounder) or lowered (flatter) from its automatic shape, in scene units. */
+export const SLUR_LIFT = { min: -30, max: 80 } as const;
 /** How far an indication may be dragged from its anchor, in scene units. */
 export const LABEL_OFFSET_LIMIT = { x: 600, y: 300 } as const;
 
@@ -46,6 +49,8 @@ export const eventSchema = z.strictObject({
   pitch: pitchSchema.nullable(),
   measureRest: z.literal(true).optional(),
   articulation: z.enum(ARTICULATIONS).optional(),
+  /** Tied to the next note in score order (same pitch), across a barline too. */
+  tie: z.literal(true).optional(),
 });
 
 const measureSchema = z.strictObject({
@@ -100,6 +105,15 @@ export const markSchema = z.strictObject({
   kind: z.enum(MARK_KINDS),
 });
 
+/** A slur: the notes from the start to the end note, in score order, are one legato phrase. */
+export const slurSchema = z.strictObject({
+  id: idSchema,
+  startEventId: idSchema,
+  endEventId: idSchema,
+  /** Layout only: the arc's middle this much further from the notes (negative: flatter). */
+  lift: z.number().min(SLUR_LIFT.min).max(SLUR_LIFT.max).optional(),
+});
+
 export const repeatSchema = z.strictObject({
   id: idSchema,
   startMeasureId: idSchema,
@@ -128,6 +142,7 @@ export const scoreSchema = z.strictObject({
   /** Optional in files written before chord symbols existed. */
   chords: z.array(chordSchema).max(SCORE_LIMITS.chords).default([]),
   marks: z.array(markSchema).max(SCORE_LIMITS.marks).default([]),
+  slurs: z.array(slurSchema).max(SCORE_LIMITS.slurs).default([]),
 });
 
 export type Pitch = z.infer<typeof pitchSchema>;
@@ -139,5 +154,6 @@ export type Annotation = z.infer<typeof annotationSchema>;
 export type Repeat = z.infer<typeof repeatSchema>;
 export type Chord = z.infer<typeof chordSchema>;
 export type Mark = z.infer<typeof markSchema>;
+export type Slur = z.infer<typeof slurSchema>;
 export type LabelOffset = z.infer<typeof labelOffsetSchema>;
 export type Score = z.infer<typeof scoreSchema>;

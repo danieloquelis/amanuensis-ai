@@ -14,5 +14,7 @@ export {
   type KeyAccidentalMark,
   type Scene,
   type SceneLabel,
+  type SlurArc,
   type System,
+  type TieArc,
 } from "./domain/scene";

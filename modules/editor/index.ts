@@ -3,11 +3,21 @@ export { checkOperation } from "./application/operation-check";
 export { findSelection, selectionAfterEdit, type Selection } from "./application/selection";
 export { letterNoteEdit, toggleRestOperation, type Edit } from "./application/note-edits";
 export {
+  allHave,
+  octaveEdit,
+  phraseArticulationEdit,
+  pickedEvents,
+  slurEdit,
+  slurKeyEdit,
+  slurOver,
+} from "./application/range-edits";
+export {
   playbackStart,
   rangeOfRefs,
   refExists,
   refName,
   sameRef,
+  selectionAnchors,
   selectionName,
   toggleRef,
   type PickMode,

@@ -86,7 +86,7 @@ export function endRepeatEdit(score: Score, barIndex: number): Edit | null {
 }
 
 /** Something on the sheet other than a note or bar that can be selected and deleted. */
-export type SheetItem = { kind: "chord" | "annotation" | "mark" | "repeat" | "section"; id: string };
+export type SheetItem = { kind: "chord" | "annotation" | "mark" | "repeat" | "section" | "slur"; id: string };
 
 /** The operation that removes a selected item; a section's `id` is its bar. */
 export function removeItemOperation(item: SheetItem): Operation {

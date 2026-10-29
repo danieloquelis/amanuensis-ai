@@ -70,6 +70,7 @@ export function replaceMeasure(draft: Draft, op: OperationOf<"replaceMeasure">, 
     id: `${idPrefix}-n${index}`,
     pitch: event.pitch,
     duration: durationFromBeats(event.duration),
+    ...(event.tie && event.pitch ? { tie: true as const } : {}),
   }));
 }
 

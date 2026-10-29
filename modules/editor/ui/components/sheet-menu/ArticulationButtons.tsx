@@ -1,7 +1,7 @@
 import { ARTICULATIONS, type Articulation, type Operation, type ScoreEvent } from "@/modules/score";
 import styles from "./sheet-menu.module.css";
 
-const ARTICULATION_SYMBOLS: Record<Articulation, string> = {
+export const ARTICULATION_SYMBOLS: Record<Articulation, string> = {
   staccato: "•",
   accent: ">",
   tenuto: "—",

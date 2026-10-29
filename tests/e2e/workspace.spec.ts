@@ -32,7 +32,7 @@ test("shortening a note leaves a rest that becomes a note by typing its letter",
   await page.keyboard.press("e");
   const newNote = page.getByRole("button", { name: "Bar 1, beat 1.5, E4, 0.5 beats", exact: true });
   await expect(newNote).toBeVisible();
-  await quickBar.getByRole("button", { name: "Make rest", exact: true }).click();
+  await newNote.press("Delete");
   await expect(rest).toBeVisible();
   await quickBar.getByRole("button", { name: "Add note", exact: true }).click();
   await expect(page.getByRole("button", { name: "Bar 1, beat 1.5, C4, 0.5 beats", exact: true })).toBeVisible();
@@ -148,6 +148,39 @@ test("sheet context actions replace the old note inspector", async ({ page }) =>
   await card.getByRole("button", { name: "staccato", exact: true }).click();
   await expect(card.getByRole("button", { name: "staccato", exact: true })).toHaveAttribute("aria-pressed", "true");
   await page.screenshot({ path: "test-results/direct-sheet-editing.png", fullPage: true });
+});
+
+test("a note tied over the barline holds into the next bar", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Bar 1, beat 4, E4, 1 beats", exact: true }).click();
+  const tie = page
+    .getByRole("toolbar", { name: "Selected note actions" })
+    .getByRole("button", { name: "Tie to next note", exact: true });
+  await tie.click();
+  await expect(tie).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Bar 2, beat 1, E4, 1 beats", exact: true })).toBeVisible();
+});
+
+test("a run of notes gets a slur, an articulation and an octave from its card", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true }).click();
+  await page.getByRole("button", { name: "Bar 1, beat 3, G4, 1 beats", exact: true }).click({ modifiers: ["Shift"] });
+  const card = page.getByRole("toolbar", { name: "Selected notes actions" });
+  await card.getByRole("button", { name: "Slur", exact: true }).click();
+  await expect(card.getByRole("button", { name: "Slur", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await card.getByRole("button", { name: "staccato", exact: true }).click();
+  await expect(card.getByRole("button", { name: "staccato", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await card.getByRole("button", { name: "Up an octave", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Bar 1, beat 3, G5, 1 beats", exact: true })).toBeVisible();
+  const slur = page.getByRole("button", { name: "Slur, bar 1", exact: true });
+  await slur.click();
+  // ↑/↓ reshape the selected slur; the drawn curve changes.
+  const curve = slur.locator("path").last();
+  const shape = (await curve.getAttribute("d"))!;
+  await slur.press("ArrowUp");
+  await expect(curve).not.toHaveAttribute("d", shape);
+  await slur.press("Delete");
+  await expect(slur).toHaveCount(0);
 });
 
 test("drag a bar divider, undo it, and restore persisted spacing", async ({ page }) => {

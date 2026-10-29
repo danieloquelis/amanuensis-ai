@@ -55,12 +55,13 @@ export function putRepeat(draft: Draft, op: OperationOf<"putRepeat">, { idPrefix
   draft.repeats = [...draft.repeats.filter((r) => r.id !== repeat.id), repeat];
 }
 
-/** Removes an indication, repeat, chord symbol or mark by ID. */
+/** Removes an indication, repeat, chord symbol, mark or slur by ID. */
 export function removeNotation(draft: Draft, op: OperationOf<"removeNotation">) {
-  const lists = [draft.annotations, draft.repeats, draft.chords, draft.marks];
+  const lists = [draft.annotations, draft.repeats, draft.chords, draft.marks, draft.slurs];
   if (!lists.some((items) => items.some((i) => i.id === op.id))) throw new Error("Indication not found.");
   draft.annotations = draft.annotations.filter((a) => a.id !== op.id);
   draft.repeats = draft.repeats.filter((r) => r.id !== op.id);
   draft.chords = draft.chords.filter((c) => c.id !== op.id);
   draft.marks = draft.marks.filter((m) => m.id !== op.id);
+  draft.slurs = draft.slurs.filter((s) => s.id !== op.id);
 }

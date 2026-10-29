@@ -51,6 +51,7 @@ export function describeScore(score: Score) {
             duration: durationName(event),
             beats: beats(event.duration),
             ...(event.articulation ? { articulation: event.articulation } : {}),
+            ...(event.tie ? { tiedToNext: true } : {}),
           };
           beat += beats(event.duration);
           return entry;
@@ -69,6 +70,12 @@ export function describeScore(score: Score) {
       passes: r.count,
     })),
     indications: score.annotations.map((a) => ({ id: a.id, kind: a.kind, text: a.text, at: anchorOf(a.targetId) })),
+    slurs: score.slurs.map((s) => ({
+      id: s.id,
+      from: anchorOf(s.startEventId),
+      to: anchorOf(s.endEventId),
+      ...(s.lift ? { lift: s.lift } : {}),
+    })),
   };
 }
 
@@ -79,6 +86,9 @@ export const SCORE_VOCABULARY = {
   durations: DURATIONS.map((d) => ({ name: d.label.toLowerCase(), beats: d.value })),
   pitch: "{ step: C–B, alter: -1 flat | 0 | 1 sharp, octave: 3–6 }; C4 is middle C.",
   articulations: ARTICULATIONS,
+  slurs:
+    "A slur joins a phrase of notes into one legato line (one breath, or one syllable over several notes). Use putSlur.",
+  ties: "tiedToNext: the note is held into the next note (same pitch), across a barline too; they sound as one. Use setTie, or tie in replaceMeasure.",
   dynamics: DYNAMICS,
   chordQualities: CHORD_QUALITY_NAMES.map((q) => q || "(major triad)"),
   chordExamples: ["C", "Am7", "F#m7b5", "Bbmaj7/D", "G7#9", "Dsus4", "Eø", "C6/9"],
@@ -119,5 +129,6 @@ export function summarizeChange(before: Score, after: Score): string[] {
   if (JSON.stringify(before.key) !== JSON.stringify(after.key)) lines.push(`Key: ${keyName(scoreKey(after))}`);
   if (JSON.stringify(before.repeats) !== JSON.stringify(after.repeats)) lines.push("Repeats changed");
   if (JSON.stringify(before.annotations) !== JSON.stringify(after.annotations)) lines.push("Indications changed");
+  if (JSON.stringify(before.slurs) !== JSON.stringify(after.slurs)) lines.push("Slurs changed");
   return lines.length ? lines : ["No visible change"];
 }

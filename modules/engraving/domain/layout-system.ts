@@ -37,6 +37,8 @@ export function layoutSystem(
     events: [],
     beams: [],
     beamedIds: [],
+    ties: [],
+    slurs: [],
     labels: [],
     chords: [],
     chordY: top,

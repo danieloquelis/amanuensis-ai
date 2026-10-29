@@ -13,6 +13,7 @@ import {
 import { durationSchema, eventId, measureId } from "./fields";
 import { NEW_SCORE_DEFAULTS } from "./new-score";
 import { notationOperationSchemas } from "./notation-schemas";
+import { phraseOperationSchemas } from "./phrase-schemas";
 
 export const OPERATION_BATCH_LIMIT = 64;
 export type { DurationValue } from "./fields";
@@ -26,7 +27,9 @@ export const operationSchema = z.discriminatedUnion("type", [
       eventId,
       pitch: pitchSchema.nullable().describe("null makes a rest."),
     })
-    .describe("Give a note or rest a pitch, or turn it into a rest. A whole-bar rest keeps its length."),
+    .describe(
+      "Give a note or rest a pitch, or turn it into a rest. A whole-bar rest keeps its length. Tied notes change together.",
+    ),
   z
     .strictObject({ type: z.literal("setDuration"), eventId, duration: durationSchema.describe("Quarter-note beats.") })
     .describe("Change a note's written value. Growing uses only the rests after it; shrinking leaves rests."),
@@ -47,15 +50,37 @@ export const operationSchema = z.discriminatedUnion("type", [
     .describe("Set or clear a note's articulation."),
   z
     .strictObject({
+      type: z.literal("setTie"),
+      eventId,
+      tied: z.boolean().describe("false removes the tie."),
+    })
+    .describe(
+      "Tie a note to the next note, also across a barline, so they sound as one held note. The next note or rest takes this note's pitch.",
+    ),
+  z
+    .strictObject({
       type: z.literal("replaceMeasure"),
       measureId,
       events: z
-        .array(z.strictObject({ pitch: pitchSchema.nullable(), duration: durationSchema }))
+        .array(
+          z.strictObject({
+            pitch: pitchSchema.nullable(),
+            duration: durationSchema,
+            tie: z
+              .boolean()
+              .optional()
+              .describe(
+                "Tie into the next note, which must have the same pitch; the last note ties into the next bar.",
+              ),
+          }),
+        )
         .min(1)
         .max(SCORE_LIMITS.eventsPerMeasure)
         .describe("New notes and rests; their beats must add up exactly to the bar's length."),
     })
-    .describe("Write a whole bar of new music, e.g. a sung phrase. Indications on the old notes are removed."),
+    .describe(
+      "Write a whole bar of new music, e.g. a sung phrase. A note held over the barline is written as tied notes. Indications on the old notes are removed.",
+    ),
   z
     .strictObject({
       type: z.literal("appendMeasure"),
@@ -118,6 +143,7 @@ export const operationSchema = z.discriminatedUnion("type", [
       "Start a new song: replace the whole score with empty bars and nothing else. Only when the musician asks to start over or begin a new piece. One undoable edit.",
     ),
   ...notationOperationSchemas,
+  ...phraseOperationSchemas,
   z
     .strictObject({
       type: z.literal("setMeasureWidth"),

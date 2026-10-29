@@ -5,7 +5,8 @@ export type GesturePreview =
   | { kind: "pitch"; id: string; delta: number }
   | { kind: "order"; id: string; measureId: string; beforeId: string | null }
   | { kind: "width"; id: string; width: number }
-  | { kind: "label"; id: string; offset: { x: number; y: number } };
+  | { kind: "label"; id: string; offset: { x: number; y: number } }
+  | { kind: "slur"; id: string; lift: number };
 
 /** Returns a copy of the score showing the preview; the input score is never modified. */
 export function applyGesturePreview(score: Score, preview: GesturePreview | null): Score {
@@ -17,6 +18,9 @@ export function applyGesturePreview(score: Score, preview: GesturePreview | null
   } else if (preview.kind === "label") {
     const annotation = draft.annotations.find((a) => a.id === preview.id);
     if (annotation) annotation.offset = preview.offset;
+  } else if (preview.kind === "slur") {
+    const slur = draft.slurs.find((s) => s.id === preview.id);
+    if (slur) slur.lift = preview.lift;
   } else if (preview.kind === "width") {
     const measure = draft.measures.find((m) => m.id === preview.id);
     if (measure) measure.width = preview.width;

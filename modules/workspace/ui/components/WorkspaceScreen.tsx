@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { localChatRepository } from "@/modules/assistant";
 import { ComposeDock, useAssistant, useComposeDock } from "@/modules/assistant/ui";
-import { playbackStart } from "@/modules/editor";
+import { playbackStart, selectionAnchors } from "@/modules/editor";
 import { ScoreToolMenus, useScoreEditor } from "@/modules/editor/ui";
 import { usePlayback } from "@/modules/playback/ui";
 import { localProjectRepository } from "@/modules/projects";
@@ -41,7 +41,7 @@ export function WorkspaceScreen() {
   const { anchor, area } = useAnchorRect(
     studio,
     "data-sheet-ref",
-    editor.picked.map((ref) => `${ref.kind}:${ref.id}`),
+    selectionAnchors(editor.score, editor.picked),
     `${editor.score.revision}:${zoom}`,
   );
   const selectionOpen = editor.ready && !menuOpen && editor.picked.length > 0 && anchor !== null;

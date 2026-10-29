@@ -1,4 +1,13 @@
-import { beats, measureStarts, midiPitch, type Pitch, type Score, type ScoreEvent } from "@/modules/score";
+import {
+  beats,
+  legatoIds,
+  measureStarts,
+  midiPitch,
+  nextEvent,
+  type Pitch,
+  type Score,
+  type ScoreEvent,
+} from "@/modules/score";
 import { CHORD_VOICE_GAIN, voiceChord, writtenChordSegments } from "./chord-track";
 import { performanceOrder, soundingSource } from "./performance-order";
 
@@ -19,9 +28,13 @@ export type PlaybackEvent = {
   /** Seconds from the start of playback. */
   start: number;
   duration: number;
+  /** null is silence: a rest, or a tied note held over from the event before. */
   frequency: number | null;
   gain: number;
+  /** Fraction of `duration` that sounds; above 1 when a tie holds the note into the next events. */
   gate: number;
+  /** The event this note is tied into, when it is tied. */
+  tiedTo?: string;
 };
 
 /** A soft chord under the melody. */
@@ -39,9 +52,10 @@ export const pitchFrequency = (pitch: Pitch) => 440 * 2 ** ((midiPitch(pitch) - 
 
 const frequencyOf = (event: ScoreEvent) => (event.pitch ? pitchFrequency(event.pitch) : null);
 
-function gateOf(event: ScoreEvent) {
+/** A slurred note runs into the next, like tenuto; staccato under a slur stays short. */
+function gateOf(event: ScoreEvent, slurred: boolean) {
   if (event.articulation === "staccato") return GATE.staccato;
-  if (event.articulation === "tenuto") return GATE.tenuto;
+  if (event.articulation === "tenuto" || slurred) return GATE.tenuto;
   return GATE.normal;
 }
 
@@ -82,7 +96,27 @@ export function createPlaybackPlan(score: Score, fromMeasureId?: string): Playba
     });
   }
   const plan = { events, chords, duration: time, secondsPerBeat: 60 / score.tempo };
-  return offset ? startingAt(plan, offset) : plan;
+  // Ties are joined after the start is cut, so starting on a held note still sounds it.
+  return joinTies(offset ? startingAt(plan, offset) : plan);
+}
+
+/**
+ * A tied note sounds once, for its whole held length: it keeps sounding through each event it is
+ * tied into (when that event is performed next), and those events fall silent.
+ */
+function joinTies(plan: PlaybackPlan): PlaybackPlan {
+  const events = plan.events.map((event) => ({ ...event }));
+  let head: PlaybackEvent | null = null;
+  events.forEach((event, i) => {
+    const previous = events[i - 1];
+    if (head && previous?.tiedTo === event.id) {
+      head.gate = (event.start + event.duration * event.gate - head.start) / head.duration;
+      event.frequency = null;
+    } else {
+      head = event;
+    }
+  });
+  return { ...plan, events };
 }
 
 /** The plan from `offset` seconds on, re-timed to start at 0. Chords never cross a bar line. */
@@ -107,11 +141,12 @@ function secondsInto(barEvents: Omit<PlaybackEvent, "start">[], localBeat: numbe
   return seconds;
 }
 
-/** Events per measure with tempo, dynamics and articulation applied; times not yet placed. */
+/** Events per measure with tempo, dynamics, articulation and slurs applied; times not yet placed. */
 function resolveWrittenEvents(score: Score): Omit<PlaybackEvent, "start">[][] {
   const starts = measureStarts(score);
   const dynamicAt = (targetId: string) =>
     score.annotations.find((a) => a.targetId === targetId && a.kind === "dynamic");
+  const legato = legatoIds(score);
   let tempo = score.tempo;
   let gain = DEFAULT_GAIN;
   return score.measures.map((measure, measureIndex) => {
@@ -133,7 +168,8 @@ function resolveWrittenEvents(score: Score): Omit<PlaybackEvent, "start">[][] {
         duration: ((length * 60) / tempo) * stretch,
         frequency: frequencyOf(event),
         gain: gain * (event.articulation === "accent" ? ACCENT_GAIN : 1),
-        gate: gateOf(event),
+        gate: gateOf(event, legato.has(event.id)),
+        ...(event.tie ? { tiedTo: nextEvent(score, event.id)?.id } : {}),
       };
       localBeat += length;
       return entry;

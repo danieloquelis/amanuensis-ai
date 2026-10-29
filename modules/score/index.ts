@@ -73,6 +73,7 @@ export {
   keySignatureSchema,
   meterSchema,
   SCORE_LIMITS,
+  SLUR_LIFT,
   TEMPO_RANGE,
   type Annotation,
   type Chord,
@@ -85,5 +86,8 @@ export {
   type Repeat,
   type Score,
   type ScoreEvent,
+  type Slur,
 } from "./domain/schema";
+export { legatoIds, slurEnds } from "./domain/slurs";
+export { nextEvent, samePitch, tieChain, tiePairs } from "./domain/ties";
 export { parseScore } from "./domain/validation";

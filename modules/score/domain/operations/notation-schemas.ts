@@ -73,6 +73,9 @@ export const notationOperationSchemas = [
     })
     .describe("Move an indication freely on the page."),
   z
-    .strictObject({ type: z.literal("removeNotation"), id: idSchema.describe("Indication, chord, mark or repeat ID.") })
-    .describe("Remove an indication, chord symbol, navigation mark or repeat."),
+    .strictObject({
+      type: z.literal("removeNotation"),
+      id: idSchema.describe("Indication, chord, mark, repeat or slur ID."),
+    })
+    .describe("Remove an indication, chord symbol, navigation mark, repeat or slur."),
 ] as const;

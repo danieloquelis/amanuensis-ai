@@ -17,7 +17,6 @@ const PREVIEW_LIMIT = 128;
 const UNSUPPORTED_NOTATION = [
   "polyphony and chords in the melody staff",
   "tuplets",
-  "ties and slurs",
   "hairpins",
   "nested repeats and alternate endings",
   "mid-score key or clef changes",
@@ -52,6 +51,7 @@ export function createScoreToolGateway(getSession: () => Session, setSession: (s
         ...score.marks.map((m) => m.id),
         ...score.annotations.map((a) => a.id),
         ...score.repeats.map((r) => r.id),
+        ...score.slurs.map((s) => s.id),
       ]);
       if (selectedIds.some((id) => !valid.has(id))) throw new Error("Selection contains a missing target.");
       return {

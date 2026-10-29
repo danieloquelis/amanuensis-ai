@@ -44,8 +44,8 @@ export type MelodyTranscription = {
   tempoDrift: [number, number];
   tempoWasGiven: boolean;
   meter: Meter;
-  /** Bars ready for `replaceMeasure`: written pitch (null = rest) and duration in beats. */
-  bars: { pitch: Pitch | null; duration: number }[][];
+  /** Bars ready for `replaceMeasure`: written pitch (null = rest), duration in beats, tie. */
+  bars: { pitch: Pitch | null; duration: number; tie?: boolean }[][];
   /** Notes sung between two pitches: where they are (bar from 1, beat from 0) and the other reading. */
   uncertain: { bar: number; beat: number; written: Pitch; alternative: Pitch }[];
   /** Per bar: how sure the ear is, and which bars share a rhythm (a repeated figure). */
@@ -144,7 +144,7 @@ export function transcribeMelody(signal: Signal, options: MelodyOptions = {}): M
       : fitToChords(resolved, onsets, chords);
   let next = 0;
   const lead = fit.startBeat ? [{ midi: null, start: 0, beats: fit.startBeat }] : [];
-  const { bars, warnings } = toBars(
+  const bars = toBars(
     [
       ...lead,
       ...placed.map((p) => ({
@@ -169,7 +169,11 @@ export function transcribeMelody(signal: Signal, options: MelodyOptions = {}): M
     tempoWasGiven: options.bpm !== undefined,
     meter,
     bars: bars.map((bar) =>
-      bar.map((e) => ({ pitch: e.midi === null ? null : spellMidi(e.midi, key), duration: e.beats })),
+      bar.map((e) => ({
+        pitch: e.midi === null ? null : spellMidi(e.midi, key),
+        duration: e.beats,
+        ...(e.tie ? { tie: true } : {}),
+      })),
     ),
     uncertain: notes.flatMap((note, i) => {
       if (note.alternative === null) return [];
@@ -178,6 +182,6 @@ export function transcribeMelody(signal: Signal, options: MelodyOptions = {}): M
       return [{ bar, beat, written: spellMidi(note.pitch, key), alternative: spellMidi(note.alternative, key) }];
     }),
     evidence: barEvidence(notes, onsets, bars, capacity),
-    warnings: notes.length ? warnings : ["No sung notes were found."],
+    warnings: notes.length ? [] : ["No sung notes were found."],
   };
 }

@@ -132,8 +132,8 @@ test("a real gap becomes a rest; a breath between legato notes does not", () => 
   );
 });
 
-test("bars always add up, and a note across a barline is split with a warning", () => {
-  const { bars, warnings } = toBars(
+test("bars always add up, and a note across a barline is written as tied notes", () => {
+  const bars = toBars(
     [
       { midi: 60, start: 0, beats: 3 },
       { midi: 62, start: 3, beats: 2 },
@@ -144,7 +144,9 @@ test("bars always add up, and a note across a barline is split with a warning", 
     bars.map((bar) => bar.reduce((sum, e) => sum + e.beats, 0)),
     [4, 4],
   );
-  assert.equal(warnings.length, 1);
+  assert.deepEqual(bars[0][1], { midi: 62, beats: 1, tie: true });
+  assert.deepEqual(bars[1][0], { midi: 62, beats: 1 });
+  assert.equal(bars[0][0].tie, undefined);
 });
 
 test("a sung phrase at a spoken tempo becomes written bars", () => {

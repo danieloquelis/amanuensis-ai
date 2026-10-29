@@ -1,9 +1,18 @@
 import { beatX, type System } from "@/modules/engraving";
-import { BeamLines, ChordSymbol, IndicationText, KeySignature, StaffLines, TrebleClef } from "@/modules/engraving/ui";
+import {
+  BeamLines,
+  ChordSymbol,
+  IndicationText,
+  KeySignature,
+  StaffLines,
+  TieArcs,
+  TrebleClef,
+} from "@/modules/engraving/ui";
 import styles from "./score-surface.module.css";
 import { BarArea } from "./BarArea";
 import { SheetBar } from "./SheetBar";
 import { SheetEvent } from "./SheetEvent";
+import { SheetSlur } from "./SheetSlur";
 import { selectableItem, type SheetInteractions } from "./sheet-interactions";
 
 type SheetSystemProps = {
@@ -13,7 +22,7 @@ type SheetSystemProps = {
   interactions: SheetInteractions;
 };
 
-/** One line of music. Children are drawn in paint order: staff, bars, notes, beams, overlays. */
+/** One line of music. Children are drawn in paint order: staff, bars, notes, beams, ties and slurs, overlays. */
 export function SheetSystem({ system, eventOrder, playBeat, interactions }: SheetSystemProps) {
   const events = [...system.events].sort((a, b) => eventOrder.get(a.event.id)! - eventOrder.get(b.event.id)!);
 
@@ -46,6 +55,10 @@ export function SheetSystem({ system, eventOrder, playBeat, interactions }: Shee
         />
       ))}
       <BeamLines beams={system.beams} />
+      <TieArcs ties={system.ties} />
+      {system.slurs.map((slur) => (
+        <SheetSlur key={slur.id} slur={slur} interactions={interactions} />
+      ))}
       {system.labels.map((label) => (
         <IndicationText
           key={label.id}
