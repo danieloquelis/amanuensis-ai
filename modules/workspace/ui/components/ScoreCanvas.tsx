@@ -1,4 +1,5 @@
 import { ScoreSurface, type ScoreEditor } from "@/modules/editor/ui";
+import type { Pitch } from "@/modules/score";
 import styles from "./workspace.module.css";
 
 /** The paper: title, tempo marking, the editable sheet and footer. */
@@ -7,11 +8,13 @@ export function ScoreCanvas({
   playBeat,
   zoom,
   onMenuOpenChange,
+  onAudition,
 }: {
   editor: ScoreEditor;
   playBeat: number | null;
   zoom: number;
   onMenuOpenChange: (open: boolean) => void;
+  onAudition: (eventId: string, pitch: Pitch) => void;
 }) {
   const { score, ready, commit } = editor;
   const barCount = score.measures.length;
@@ -64,6 +67,7 @@ export function ScoreCanvas({
           onPick={editor.pick}
           onFocusEvent={editor.focusEvent}
           onMenuOpenChange={onMenuOpenChange}
+          onAudition={onAudition}
         />
         <div className={styles.paperFooter}>
           <span>{barCount} measures · Treble clef</span>

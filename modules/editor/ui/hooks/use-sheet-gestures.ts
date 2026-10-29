@@ -45,6 +45,8 @@ type Options = {
   onCommand: CommitEdit;
   onSelect: (id: string | null) => void;
   closeContextMenu: () => void;
+  /** Sounds a note: when it is pressed, and at each new pitch while it is dragged. */
+  onAudition?: (eventId: string, pitch: Pitch) => void;
 };
 
 /**
@@ -52,7 +54,8 @@ type Options = {
  * within the bar, and the internal barline adjusts spacing. While dragging only a preview
  * changes; releasing commits exactly one revision-checked edit. Escape or window blur cancels.
  */
-export function useSheetGestures({ svgRef, score, interactive, onCommand, onSelect, closeContextMenu }: Options) {
+export function useSheetGestures(options: Options) {
+  const { svgRef, score, interactive, onCommand, onSelect, closeContextMenu, onAudition } = options;
   const drag = useRef<NoteDrag | BarDrag | LabelDrag | null>(null);
   const [preview, setPreview] = useState<GesturePreview | null>(null);
 
@@ -93,6 +96,7 @@ export function useSheetGestures({ svgRef, score, interactive, onCommand, onSele
     const id = item.event.id;
     capturePointer(event);
     onSelect(id);
+    if (item.event.pitch) onAudition?.(id, item.event.pitch);
     const point = scenePoint(event.clientX, event.clientY);
     const measure = score.measures[item.measure];
     const beforeId = measure.events[measure.events.findIndex((e) => e.id === id) + 1]?.id ?? null;
@@ -125,7 +129,9 @@ export function useSheetGestures({ svgRef, score, interactive, onCommand, onSele
     }
     if (gesture.axis === "y" && gesture.pitch) {
       const delta = Math.round(-dy / PITCH_DRAG_STEP);
-      if (!isWithinOctaveRange(movePitch(gesture.pitch, delta, scoreKey(score)))) return;
+      const pitch = movePitch(gesture.pitch, delta, scoreKey(score));
+      if (!isWithinOctaveRange(pitch)) return;
+      if (delta !== gesture.delta) onAudition?.(eventId, pitch);
       gesture.delta = delta;
       setPreview({ kind: "pitch", id: eventId, delta });
     } else if (gesture.axis === "x") {

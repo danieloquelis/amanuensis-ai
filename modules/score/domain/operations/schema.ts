@@ -11,6 +11,7 @@ import {
 } from "../schema";
 
 import { durationSchema, eventId, measureId } from "./fields";
+import { NEW_SCORE_DEFAULTS } from "./new-score";
 import { notationOperationSchemas } from "./notation-schemas";
 
 export const OPERATION_BATCH_LIMIT = 64;
@@ -98,6 +99,24 @@ export const operationSchema = z.discriminatedUnion("type", [
     .strictObject({ type: z.literal("setKey"), key: keySignatureSchema })
     .describe("Set the key signature for the whole score. Written pitches keep their spelling."),
   z.strictObject({ type: z.literal("rename"), title: z.string().trim().min(1).max(100) }).describe("Rename the score."),
+  z
+    .strictObject({
+      type: z.literal("newScore"),
+      title: z.string().trim().min(1).max(100).optional().describe(`Default: "${NEW_SCORE_DEFAULTS.title}".`),
+      meter: meterSchema.optional().describe("Default: 4/4."),
+      bars: z
+        .number()
+        .int()
+        .min(1)
+        .max(SCORE_LIMITS.measures)
+        .optional()
+        .describe(`Empty bars. Default: ${NEW_SCORE_DEFAULTS.bars}.`),
+      tempo: tempoSchema.optional().describe(`Quarter-note BPM. Default: ${NEW_SCORE_DEFAULTS.tempo}.`),
+      key: keySignatureSchema.optional().describe("Default: C major."),
+    })
+    .describe(
+      "Start a new song: replace the whole score with empty bars and nothing else. Only when the musician asks to start over or begin a new piece. One undoable edit.",
+    ),
   ...notationOperationSchemas,
   z
     .strictObject({

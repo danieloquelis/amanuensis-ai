@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Score } from "@/modules/score";
+import type { Pitch, Score } from "@/modules/score";
+import { pitchFrequency } from "../../domain/plan";
 import { AudioPlayer } from "../../infrastructure/audio-player";
 
 /**
@@ -30,23 +31,35 @@ export function usePlayback() {
     };
   }, [stop]);
 
-  /** Starts playback, or stops it if already playing. */
-  const toggle = async (score: Score, onError: (message: string) => void) => {
+  /** Starts playback (from a bar, if given), or stops it if already playing. */
+  const toggle = async (score: Score, onError: (message: string) => void, fromMeasureId?: string) => {
     if (playing) {
       stop();
       return;
     }
     try {
       setPlaying(true);
-      await player.current?.play(score, (beat) => {
-        setPlayBeat(beat);
-        if (beat === null) setPlaying(false);
-      });
+      await player.current?.play(
+        score,
+        (beat) => {
+          setPlayBeat(beat);
+          if (beat === null) setPlaying(false);
+        },
+        fromMeasureId,
+      );
     } catch {
       stop();
       onError("Playback could not start. Check this browser's audio permissions and try again.");
     }
   };
 
-  return { playing, playBeat, toggle, stop };
+  /** Sounds a single note, e.g. one just clicked; silent while the score is playing. */
+  const audition = useCallback(
+    (pitch: Pitch) => {
+      if (!playing) player.current?.audition(pitchFrequency(pitch));
+    },
+    [playing],
+  );
+
+  return { playing, playBeat, toggle, stop, audition };
 }

@@ -24,7 +24,7 @@ type ComposeDockProps = {
  * becomes a sidebar on the left with the bar at its foot, until it is closed again.
  */
 export function ComposeDock({ assistant, dock, context, revision, onUndo }: ComposeDockProps) {
-  const { turns, busy, send, sendTake } = assistant;
+  const { turns, busy, send, sendTake, canRetry, retry } = assistant;
   const undoable = [...turns].reverse().find((turn) => turn.revision !== undefined);
   const canUndo = (turnId: string) => turnId === undoable?.id && undoable.revision === revision;
   const sidebar = dock.chatMode === "sidebar";
@@ -47,7 +47,9 @@ export function ComposeDock({ assistant, dock, context, revision, onUndo }: Comp
       turns={turns}
       busy={busy}
       canUndo={canUndo}
+      canRetry={canRetry}
       onUndo={onUndo}
+      onRetry={retry}
       onChoose={sendText}
       actions={actions}
       empty={sidebar && <li className={styles.sidebarEmpty}>{suggestions}</li>}

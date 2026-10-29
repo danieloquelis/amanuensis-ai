@@ -1,4 +1,4 @@
-import { ArrowCounterClockwise, Check, Microphone, WarningCircle } from "@phosphor-icons/react";
+import { ArrowClockwise, ArrowCounterClockwise, Check, Microphone, WarningCircle } from "@phosphor-icons/react";
 import type { TakePart } from "@/modules/voice";
 import { sungLength, type Turn } from "../hooks/use-assistant";
 import { useActivityLine } from "../hooks/use-activity-line";
@@ -7,17 +7,20 @@ import styles from "./assistant.module.css";
 type TurnBubblesProps = {
   turn: Turn;
   canUndo: boolean;
+  /** A failed turn from this session can be sent again as it was (a take without singing again). */
+  canRetry: boolean;
   busy: boolean;
   onUndo: () => void;
+  onRetry: () => void;
   onChoose: (text: string) => void;
 };
 
 /**
  * One exchange: the musician's message as a bubble on the right (what it was about on top, a ♪
  * where they sang), then the AI's answer on the left, with what changed as quiet receipts, any
- * choices to tap, and Undo.
+ * choices to tap, and Undo, or Retry when it failed.
  */
-export function TurnBubbles({ turn, canUndo, busy, onUndo, onChoose }: TurnBubblesProps) {
+export function TurnBubbles({ turn, ...actions }: TurnBubblesProps) {
   return (
     <li className={styles.exchange}>
       <div className={styles.mine}>
@@ -30,11 +33,7 @@ export function TurnBubbles({ turn, canUndo, busy, onUndo, onChoose }: TurnBubbl
         <span>{turn.heard?.length ? <HeardParts parts={turn.heard} /> : turn.instruction}</span>
       </div>
       <div className={styles.theirs} data-failed={turn.status === "failed"}>
-        {turn.status === "working" ? (
-          <Thinking turn={turn} />
-        ) : (
-          <Answer turn={turn} canUndo={canUndo} busy={busy} onUndo={onUndo} onChoose={onChoose} />
-        )}
+        {turn.status === "working" ? <Thinking turn={turn} /> : <Answer turn={turn} {...actions} />}
       </div>
     </li>
   );
@@ -64,7 +63,7 @@ function Thinking({ turn }: { turn: Turn }) {
   );
 }
 
-function Answer({ turn, canUndo, busy, onUndo, onChoose }: Omit<TurnBubblesProps, "turn"> & { turn: Turn }) {
+function Answer({ turn, canUndo, canRetry, busy, onUndo, onRetry, onChoose }: TurnBubblesProps) {
   const changes = turn.changes ?? [];
   return (
     <div className={styles.answer}>
@@ -81,7 +80,7 @@ function Answer({ turn, canUndo, busy, onUndo, onChoose }: Omit<TurnBubblesProps
           ))}
         </div>
       )}
-      {(changes.length > 0 || canUndo) && (
+      {(changes.length > 0 || canUndo || canRetry) && (
         <div className={styles.receipts}>
           {changes.length > 0 && (
             <ul aria-label="Changes">
@@ -94,9 +93,15 @@ function Answer({ turn, canUndo, busy, onUndo, onChoose }: Omit<TurnBubblesProps
             </ul>
           )}
           {canUndo && (
-            <button className={styles.undo} onClick={onUndo}>
+            <button className={styles.turnAction} onClick={onUndo}>
               <ArrowCounterClockwise size={13} weight="bold" />
               Undo
+            </button>
+          )}
+          {canRetry && (
+            <button className={styles.turnAction} disabled={busy} onClick={onRetry}>
+              <ArrowClockwise size={13} weight="bold" />
+              Retry
             </button>
           )}
         </div>

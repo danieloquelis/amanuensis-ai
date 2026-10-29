@@ -6,11 +6,14 @@ import styles from "./workspace.module.css";
 type PlaybackControlsProps = {
   editor: ScoreEditor;
   playing: boolean;
+  /** The bar playback starts from when something is selected; null plays from the beginning. */
+  startBar: number | null;
   onTogglePlay: () => void;
 };
 
 /** Play/stop and the global tempo, first in the toolbar: listen, then edit. */
-export function PlaybackControls({ editor, playing, onTogglePlay }: PlaybackControlsProps) {
+export function PlaybackControls({ editor, playing, startBar, onTogglePlay }: PlaybackControlsProps) {
+  const fromBar = !playing && startBar !== null;
   return (
     <div className={styles.transport} role="group" aria-label="Playback">
       <button
@@ -19,7 +22,7 @@ export function PlaybackControls({ editor, playing, onTogglePlay }: PlaybackCont
         data-playing={playing}
         disabled={!editor.ready}
         onClick={onTogglePlay}
-        aria-label={playing ? "Stop playback" : "Play score"}
+        aria-label={playing ? "Stop playback" : fromBar ? `Play from bar ${startBar}` : "Play score"}
       >
         {playing ? <Stop size={18} weight="fill" /> : <Play size={18} weight="fill" />}
       </button>

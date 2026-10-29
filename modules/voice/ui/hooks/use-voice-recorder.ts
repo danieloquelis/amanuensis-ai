@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { listenToLevel, MICROPHONE_CONSTRAINTS, recordingToWav } from "../../infrastructure/browser-audio";
 
 /** Longest take the server accepts. */
@@ -10,7 +10,8 @@ export type RecorderStatus = "idle" | "recording" | "processing";
 
 /**
  * Records one take from the microphone and hands it over as WAV. Stops by itself at the length
- * limit; the microphone is released as soon as recording stops.
+ * limit; the microphone is released as soon as recording stops. `cancel` (or Escape while
+ * recording) throws the take away instead of handing it over.
  */
 export function useVoiceRecorder(onTake: (wav: Uint8Array) => void) {
   const [status, setStatus] = useState<RecorderStatus>("idle");
@@ -20,16 +21,32 @@ export function useVoiceRecorder(onTake: (wav: Uint8Array) => void) {
   const [level, setLevel] = useState(0);
   const recorder = useRef<MediaRecorder | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const discarded = useRef(false);
   const latestOnTake = useRef(onTake);
   useEffect(() => {
     latestOnTake.current = onTake;
   }, [onTake]);
   useEffect(() => () => recorder.current?.stream.getTracks().forEach((track) => track.stop()), []);
 
-  const stop = () => {
+  const stop = useCallback(() => {
     if (timer.current) clearInterval(timer.current);
     if (recorder.current?.state === "recording") recorder.current.stop();
-  };
+  }, []);
+
+  const cancel = useCallback(() => {
+    discarded.current = true;
+    stop();
+  }, [stop]);
+
+  const recording = status === "recording";
+  useEffect(() => {
+    if (!recording) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") cancel();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [cancel, recording]);
 
   const start = async () => {
     if (status !== "idle") return;
@@ -53,6 +70,10 @@ export function useVoiceRecorder(onTake: (wav: Uint8Array) => void) {
       meter.close();
       setLevel(0);
       stream.getTracks().forEach((track) => track.stop());
+      if (discarded.current) {
+        setStatus("idle");
+        return;
+      }
       setStatus("processing");
       try {
         latestOnTake.current(await recordingToWav(new Blob(chunks, { type: media.mimeType })));
@@ -63,6 +84,7 @@ export function useVoiceRecorder(onTake: (wav: Uint8Array) => void) {
       }
     };
     recorder.current = media;
+    discarded.current = false;
     media.start();
     setStatus("recording");
     setSeconds(0);
@@ -75,5 +97,5 @@ export function useVoiceRecorder(onTake: (wav: Uint8Array) => void) {
     }, TICK_MS);
   };
 
-  return { status, seconds, level, error, start, stop };
+  return { status, seconds, level, error, start, stop, cancel };
 }

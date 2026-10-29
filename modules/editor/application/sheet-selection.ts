@@ -114,3 +114,38 @@ export function selectionName(score: Score, refs: SheetRef[]): string | null {
   }
   return `${refs.length} items`;
 }
+
+/** Index of the bar a picked item is in (a repeat: the bar it starts at), or null if it is gone. */
+function barIndexOf(score: Score, ref: SheetRef): number | null {
+  const indexOf = (measureId: string | undefined) => {
+    const index = score.measures.findIndex((m) => m.id === measureId);
+    return index === -1 ? null : index;
+  };
+  const eventBar = (eventId: string | undefined) =>
+    eventId ? (findEvent(score, eventId)?.measureIndex ?? null) : null;
+  switch (ref.kind) {
+    case "event":
+      return eventBar(ref.id);
+    case "bar":
+    case "section":
+      return indexOf(ref.id);
+    case "chord":
+      return indexOf(score.chords.find((c) => c.id === ref.id)?.measureId);
+    case "mark":
+      return indexOf(score.marks.find((m) => m.id === ref.id)?.measureId);
+    case "repeat":
+      return indexOf(score.repeats.find((r) => r.id === ref.id)?.startMeasureId);
+    case "annotation": {
+      const target = score.annotations.find((a) => a.id === ref.id)?.targetId;
+      return indexOf(target) ?? eventBar(target);
+    }
+  }
+}
+
+/** Where playback starts for a selection: the earliest bar anything picked is in, or null. */
+export function playbackStart(score: Score, refs: SheetRef[]): { measureId: string; bar: number } | null {
+  const indexes = refs.map((ref) => barIndexOf(score, ref)).filter((index) => index !== null);
+  if (!indexes.length) return null;
+  const index = Math.min(...indexes);
+  return { measureId: score.measures[index].id, bar: index + 1 };
+}

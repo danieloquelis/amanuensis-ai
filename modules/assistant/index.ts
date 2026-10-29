@@ -1,5 +1,6 @@
 // Public API of the assistant module (framework-free). Provider adapters live in "./server".
 export { ASK_TOOL, assistantTools } from "./application/assistant-tools";
+export { restoreTurns, turnsToSave, type ChatRepository, type Turn } from "./application/chat-history";
 export { handleAssistantRequest, MAX_REQUEST_BYTES, type AssistantResponse } from "./application/handle-request";
 export {
   handleVoiceRequest,
@@ -22,3 +23,4 @@ export {
 export { createMusicTools, MUSIC_TOOL_NAMES, musicToolSpecs, type MusicToolName } from "./application/music-tools";
 export { createScoreToolGateway } from "./application/score-tool-gateway";
 export { SCORE_TOOL_NAMES, scoreTools, type ScoreToolName } from "./application/tool-definitions";
+export { localChatRepository } from "./infrastructure/local-chat";

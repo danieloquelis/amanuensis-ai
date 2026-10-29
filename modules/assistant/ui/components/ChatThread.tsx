@@ -7,7 +7,9 @@ type ChatThreadProps = {
   turns: Turn[];
   busy: boolean;
   canUndo: (turnId: string) => boolean;
+  canRetry: (turn: Turn) => boolean;
   onUndo: () => void;
+  onRetry: (turnId: string) => void;
   onChoose: (text: string) => void;
   /** Buttons on the right of the header: expand, collapse or close, depending on where it is. */
   actions: ReactNode;
@@ -19,7 +21,8 @@ type ChatThreadProps = {
  * The conversation: each request with what it was about, then the answer or live progress,
  * newest at the bottom. Edits land in the score directly; the latest one can be undone here.
  */
-export function ChatThread({ turns, busy, canUndo, onUndo, onChoose, actions, empty }: ChatThreadProps) {
+export function ChatThread(props: ChatThreadProps) {
+  const { turns, busy, canUndo, canRetry, onUndo, onRetry, onChoose, actions, empty } = props;
   const listRef = useRef<HTMLOListElement>(null);
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
@@ -37,8 +40,10 @@ export function ChatThread({ turns, busy, canUndo, onUndo, onChoose, actions, em
             key={turn.id}
             turn={turn}
             canUndo={canUndo(turn.id)}
+            canRetry={canRetry(turn)}
             busy={busy}
             onUndo={onUndo}
+            onRetry={() => void onRetry(turn.id)}
             onChoose={onChoose}
           />
         ))}

@@ -184,3 +184,36 @@ test("accidental state repeats only when changed and resets at each bar", () => 
   assert.equal(events[3].accidental, null);
   assert.equal(events[4].accidental, -1);
 });
+
+test("a new score is blank, with sensible defaults, and the old song is one undo away", () => {
+  const session = createSession(edit(createExample(), { type: "putChord", measureId: "bar-1", beat: 0, symbol: "C" }));
+  const started = execute(session, {
+    requestId: "fresh",
+    expectedRevision: session.score.revision,
+    operation: { type: "newScore" },
+  });
+  const blank = started.score;
+  assert.equal(blank.title, "Untitled");
+  assert.equal(blank.tempo, 100);
+  assert.notEqual(blank.id, session.score.id);
+  assert.equal(blank.measures.length, 4);
+  assert.ok(blank.measures.every((measure) => measure.events.length === 1 && measure.events[0].measureRest));
+  assert.deepEqual([blank.chords, blank.annotations, blank.marks, blank.repeats], [[], [], [], []]);
+  assert.deepEqual(travel(started, "undo").score.chords, session.score.chords);
+});
+
+test("a new score can start in the musician's meter, key, tempo and length", () => {
+  const blank = edit(createExample(), {
+    type: "newScore",
+    title: "Waltz for June",
+    meter: { numerator: 3, denominator: 4 },
+    bars: 8,
+    tempo: 132,
+    key: { fifths: 1, mode: "major" },
+  });
+  assert.equal(blank.title, "Waltz for June");
+  assert.equal(blank.measures.length, 8);
+  assert.equal(beats(blank.measures[0].events[0].duration), 3);
+  assert.deepEqual(blank.key, { fifths: 1, mode: "major" });
+  assert.equal(blank.tempo, 132);
+});

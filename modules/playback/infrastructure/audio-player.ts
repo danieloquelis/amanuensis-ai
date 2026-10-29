@@ -7,6 +7,10 @@ const ATTACK = 0.012;
 const RELEASE = 0.01;
 const CHORD_ATTACK = 0.04;
 const CHORD_RELEASE = 0.08;
+/** A clicked or moved note: short enough to keep up with a drag, long enough to hear the pitch. */
+const AUDITION = { duration: 0.45, gate: 1, gain: 0.14 };
+
+type Tone = Pick<PlaybackEvent, "duration" | "gate" | "gain">;
 
 /**
  * Web Audio reference-tone player. Notes are scheduled on the audio clock; animation frames
@@ -18,6 +22,8 @@ export class AudioPlayer {
   private frame = 0;
   /** Incremented on every stop so late callbacks from an older run are ignored. */
   private generation = 0;
+  /** The note being auditioned, cut off when the next one sounds. */
+  private auditioned: OscillatorNode | null = null;
 
   stop() {
     this.generation++;
@@ -33,15 +39,18 @@ export class AudioPlayer {
     this.nodes.clear();
   }
 
-  /** Plays the score and reports the playhead beat each frame, then `null` when finished. */
-  async play(score: Score, onBeat: (beat: number | null) => void) {
+  /**
+   * Plays the score, from a bar if given, and reports the playhead beat each frame, then `null`
+   * when finished.
+   */
+  async play(score: Score, onBeat: (beat: number | null) => void, fromMeasureId?: string) {
     this.stop();
     const generation = this.generation;
     this.context ??= new AudioContext();
     await this.context.resume();
     if (generation !== this.generation) return;
     const context = this.context;
-    const plan = createPlaybackPlan(score);
+    const plan = createPlaybackPlan(score, fromMeasureId);
     const origin = context.currentTime + START_DELAY;
     // Bounded to 32 short measures, so the whole score is scheduled up front.
     for (const event of plan.events) {
@@ -62,6 +71,19 @@ export class AudioPlayer {
       this.frame = requestAnimationFrame(tick);
     };
     tick();
+  }
+
+  /** Sounds one note now, cutting off the previous audition so a fast drag never piles up. */
+  audition(frequency: number) {
+    this.context ??= new AudioContext();
+    const context = this.context;
+    void context.resume();
+    try {
+      this.auditioned?.stop();
+    } catch {
+      // Already ended.
+    }
+    this.auditioned = this.scheduleTone(context, AUDITION, frequency, context.currentTime + ATTACK);
   }
 
   dispose() {
@@ -86,7 +108,7 @@ export class AudioPlayer {
     }
   }
 
-  private scheduleTone(context: AudioContext, event: PlaybackEvent, frequency: number, start: number) {
+  private scheduleTone(context: AudioContext, event: Tone, frequency: number, start: number) {
     const oscillator = context.createOscillator();
     const envelope = context.createGain();
     oscillator.type = "triangle";
@@ -98,6 +120,7 @@ export class AudioPlayer {
     envelope.gain.exponentialRampToValueAtTime(event.gain * 0.4, start + sounding * 0.65);
     envelope.gain.linearRampToValueAtTime(0, end - RELEASE);
     this.connect(context, oscillator, envelope, start, end);
+    return oscillator;
   }
 
   private connect(context: AudioContext, oscillator: OscillatorNode, envelope: GainNode, start: number, end: number) {

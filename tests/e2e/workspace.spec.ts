@@ -322,6 +322,30 @@ test("the AI's question becomes buttons that answer it", async ({ page }) => {
   await expect(reply.getByText("Repeated bar 2.")).toBeVisible();
 });
 
+test("a failed request can be retried as it was, in place", async ({ page }) => {
+  const sent: string[] = [];
+  await page.route("/api/assistant", async (route) => {
+    sent.push(route.request().postDataJSON().instruction);
+    if (sent.length === 1) {
+      const error = { error: "The model request failed (503): Authentication service unavailable" };
+      await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify(error) });
+    } else {
+      await route.fulfill(streamed({ reply: "Done this time.", question: null, commands: [], changes: [], steps: 1 }));
+    }
+  });
+  await page.goto("/");
+  const instruction = page.getByLabel("Describe the music");
+  await instruction.fill("make it swing");
+  await instruction.press("Enter");
+  const chat = page.getByRole("region", { name: "Chat" });
+  await expect(chat.getByText("Authentication service unavailable", { exact: false })).toBeVisible();
+  await chat.getByRole("button", { name: "Retry", exact: true }).click();
+  await expect(chat.getByText("Done this time.")).toBeVisible();
+  await expect(chat.getByRole("button", { name: "Retry", exact: true })).toHaveCount(0);
+  await expect(chat.getByText("make it swing")).toHaveCount(1);
+  expect(sent).toEqual(["make it swing", "make it swing"]);
+});
+
 /** A bar's empty staff, clicked near its corner so the click lands on the bar, not a note. */
 const barCorner = { position: { x: 6, y: 6 } };
 
@@ -405,4 +429,73 @@ test("the chat expands into a sidebar that holds the compose bar, and closing it
   await sidebar.getByRole("button", { name: "Close chat" }).click();
   await expect(sidebar).toHaveCount(0);
   await expect(page.getByLabel("Describe the music")).toHaveValue("a half-typed idea");
+});
+
+test("a new song clears the score and the chat, once confirmed", async ({ page }) => {
+  const turn = { id: "t1", instruction: "Add chords", status: "done", reply: "Added C and G." };
+  // Saved before the app first loads (once per tab, so the reload below does not bring it back).
+  await page.addInitScript(
+    (saved) => {
+      if (sessionStorage.getItem("seeded")) return;
+      sessionStorage.setItem("seeded", "yes");
+      localStorage.setItem("amanuensis.chat.v1", JSON.stringify(saved));
+    },
+    [turn],
+  );
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Show chat" })).toBeVisible();
+  await page.getByRole("button", { name: "New song" }).click();
+  await page.getByRole("alertdialog", { name: "Start a new song?" }).getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "New song" }).click();
+  await page.getByRole("alertdialog", { name: "Start a new song?" }).getByRole("button", { name: "New song" }).click();
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true })).toBeHidden();
+  await expect(page.getByRole("button", { name: "Bar 4, beat 1, Rest, 4 beats", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Show chat" })).toBeHidden();
+  await expect(page.getByRole("button", { name: "Undo", exact: true })).toBeDisabled();
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Bar 4, beat 1, Rest, 4 beats", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Show chat" })).toBeHidden();
+});
+
+test("with a bar selected, Play starts from that bar", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Play score" })).toBeEnabled();
+  await page.getByRole("button", { name: "Select bar 3", exact: true }).click();
+  await page.getByRole("button", { name: "Play from bar 3" }).click();
+  await expect(page.getByRole("button", { name: "Stop playback" })).toBeVisible();
+  await page.getByRole("button", { name: "Stop playback" }).click();
+  await expect(page.getByRole("button", { name: "Play from bar 3" })).toBeVisible();
+});
+
+test("a note sounds when pressed, at each pitch while dragged, and when changed from the keyboard", async ({
+  page,
+}) => {
+  // Headless browsers cannot listen: record the frequency of every tone that starts instead.
+  await page.addInitScript(() => {
+    const heard: number[] = [];
+    Object.assign(window, { heard });
+    const start = OscillatorNode.prototype.start;
+    OscillatorNode.prototype.start = function (when?: number) {
+      heard.push(Math.round(this.frequency.value));
+      return start.call(this, when);
+    };
+  });
+  const heard = () => page.evaluate(() => (window as unknown as { heard: number[] }).heard);
+  await page.goto("/");
+  const note = page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true });
+  await expect(note).toBeEnabled();
+  const box = (await note.locator("rect").boundingBox())!;
+  const svg = (await page.locator("svg[aria-label*='treble clef']").boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await expect.poll(heard).toEqual([262]);
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - (12 * svg.width) / 900, { steps: 8 });
+  await page.mouse.up();
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, E4, 1 beats", exact: true })).toBeVisible();
+  // C4, then D4 and E4 while dragging; releasing on E4 does not sound it again.
+  await expect.poll(heard).toEqual([262, 294, 330]);
+  await page.getByRole("button", { name: "Bar 1, beat 1, E4, 1 beats", exact: true }).focus();
+  await page.keyboard.press("ArrowUp");
+  await expect.poll(heard).toEqual([262, 294, 330, 349]);
 });

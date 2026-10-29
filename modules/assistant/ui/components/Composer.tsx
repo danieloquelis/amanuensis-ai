@@ -1,4 +1,4 @@
-import { ArrowUp, Paperclip } from "@phosphor-icons/react";
+import { ArrowUp, Paperclip, X } from "@phosphor-icons/react";
 import type { ReactNode, RefObject } from "react";
 import { useVoiceRecorder } from "@/modules/voice/ui";
 import { IconButton } from "@/shared/ui/IconButton";
@@ -30,8 +30,8 @@ const WAVE_SHAPE = [
 ];
 
 /**
- * The compose bar: tap the orb and sing, hum or talk (tap again to stop), or type and press
- * Enter. What a request is about (the selection, or the whole score) shows as a chip before the
+ * The compose bar: tap the orb and sing, hum or talk (tap again to send it, or ✕ or Escape to
+ * throw it away), or type and press Enter. What a request is about (the selection, or the whole score) shows as a chip before the
  * text. While a take is recorded or read, the bar draws in to a compact pill around the orb, a
  * live waveform and the time, and opens out again after.
  */
@@ -65,7 +65,7 @@ export function Composer({ busy, subject, inputRef, draft, onDraft, onSend, onTa
           onClick={() => (recording ? recorder.stop() : void recorder.start())}
         />
         {capturing ? (
-          <CaptureStatus recording={recording} level={recorder.level} seconds={recorder.seconds} />
+          <CaptureStatus recorder={recorder} />
         ) : (
           <div className={styles.field}>
             <span key={subject} className={styles.subject}>
@@ -115,8 +115,13 @@ export function Composer({ busy, subject, inputRef, draft, onDraft, onSend, onTa
   );
 }
 
-/** The compact pill's content: a live waveform and the time, or a note that the take is being read. */
-function CaptureStatus({ recording, level, seconds }: { recording: boolean; level: number; seconds: number }) {
+/**
+ * The compact pill's content: a live waveform, the time and a button to discard the take, or a
+ * note that the take is being read.
+ */
+function CaptureStatus({ recorder }: { recorder: ReturnType<typeof useVoiceRecorder> }) {
+  const { level, seconds } = recorder;
+  const recording = recorder.status === "recording";
   return (
     <div
       className={styles.capture}
@@ -129,6 +134,18 @@ function CaptureStatus({ recording, level, seconds }: { recording: boolean; leve
         ))}
       </span>
       <span className={styles.captureText}>{recording ? formatSeconds(seconds) : "Reading…"}</span>
+      {recording && (
+        <IconButton
+          label="Discard take"
+          tooltip="Discard"
+          shortcut="Esc"
+          tooltipSide="top"
+          className={styles.discard}
+          onClick={recorder.cancel}
+        >
+          <X size={16} weight="bold" />
+        </IconButton>
+      )}
     </div>
   );
 }

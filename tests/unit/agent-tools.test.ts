@@ -69,11 +69,20 @@ test("invalid arguments name the field that is wrong", () => {
 test("every operation reaches the model with its own description", () => {
   const edit = scoreTools.find((tool) => tool.name === "score_edit")!;
   const schema = JSON.stringify(edit.parameters);
-  for (const operation of ["putChord", "setMeasureStyle", "putMark", "setSection", "moveAnnotation", "setKey"]) {
+  for (const operation of [
+    "putChord",
+    "setMeasureStyle",
+    "putMark",
+    "setSection",
+    "moveAnnotation",
+    "setKey",
+    "newScore",
+  ]) {
     assert.ok(schema.includes(`"${operation}"`), `${operation} is in the tool schema`);
   }
   assert.ok(schema.includes("Add a chord symbol"));
   assert.ok(schema.includes("Any number allowed"));
+  assert.ok(schema.includes("Start a new song"));
 });
 
 test("an agent can write a whole lead sheet through the tools alone", () => {

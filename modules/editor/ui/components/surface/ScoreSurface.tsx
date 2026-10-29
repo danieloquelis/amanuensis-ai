@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { layoutScore } from "@/modules/engraving";
-import { keyName, meterName, scoreKey, type Score, type Step } from "@/modules/score";
+import { keyName, meterName, scoreKey, type Pitch, type Score, type Step } from "@/modules/score";
 import { applyGesturePreview } from "../../../application/gesture-preview";
 import type { SheetItem } from "../../../application/notation-edits";
 import { sameRef, type PickMode, type SheetRef } from "../../../application/sheet-selection";
@@ -33,6 +33,8 @@ type ScoreSurfaceProps = {
   onFocusEvent: (id: string) => void;
   /** Told when a context menu opens or closes, so other floating panels can step aside. */
   onMenuOpenChange?: (open: boolean) => void;
+  /** Sounds a note that is pressed or dragged to a new pitch. */
+  onAudition?: (eventId: string, pitch: Pitch) => void;
 };
 
 /** The editable sheet: engraved score plus selection, drag gestures and context menus. */
@@ -56,6 +58,7 @@ export function ScoreSurface({
   onPick,
   onFocusEvent,
   onMenuOpenChange,
+  onAudition,
 }: ScoreSurfaceProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [menu, setMenu] = useState<SheetMenuTarget | null>(null);
@@ -69,6 +72,7 @@ export function ScoreSurface({
     onCommand,
     onSelect,
     closeContextMenu: closeMenu,
+    onAudition,
   });
 
   const interactions: SheetInteractions = {

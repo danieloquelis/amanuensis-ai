@@ -269,6 +269,12 @@
   white-space: nowrap;
 }
 
+/* Throws the take away; the orb sends it. */
+.discard {
+  margin-right: -8px;
+  color: #8a3423;
+}
+
 .bar:has(.wave[data-active="false"]) .captureText {
   color: var(--muted);
   font-weight: 500;
@@ -639,7 +645,8 @@
   color: #3f8a55;
 }
 
-.undo {
+/* Undo or Retry, beside an answer. */
+.turnAction {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -653,8 +660,12 @@
   transition: background var(--fast) var(--ease-out);
 }
 
-.undo:hover {
+.turnAction:hover:not(:disabled) {
   background: var(--accent-soft);
+}
+
+.turnAction:disabled {
+  opacity: 0.5;
 }
 
 @keyframes rise {

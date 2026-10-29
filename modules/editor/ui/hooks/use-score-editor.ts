@@ -34,7 +34,8 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
   const latest = useRef(session);
   const latestScore = useCallback(() => latest.current.score, []);
   const sheetSelection = useSheetSelection(session.score, latestScore);
-  const { selectedId, setSelectedId, selectedBarId, selectedItem, select, selectBar, selectItem } = sheetSelection;
+  const { selectedId, setSelectedId, selectedBarId, selectedItem, select, selectBar, selectItem, clear } =
+    sheetSelection;
   const [ready, setReady] = useState(false);
   const [saveStatus, setSaveStatus] = useState("Opening local score…");
   const [error, setError] = useState<string | null>(null);
@@ -145,6 +146,26 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
     [addReceipt, onBeforeEdit, persist, ready, replaceSession],
   );
 
+  /**
+   * Starts a new, blank song. The old one is gone for good: undo history and receipts start
+   * afresh, so this is for a deliberate "start over", not an edit.
+   */
+  const startOver = useCallback(() => {
+    if (!ready) return;
+    const current = latest.current;
+    const { score } = execute(current, {
+      requestId: crypto.randomUUID(),
+      expectedRevision: current.score.revision,
+      operation: { type: "newScore" },
+    });
+    onBeforeEdit();
+    replaceSession(createSession(score));
+    clear();
+    setReceipts([]);
+    setError(null);
+    persist(score);
+  }, [clear, onBeforeEdit, persist, ready, replaceSession]);
+
   /** A–G typed on a selected note or rest. */
   const enterLetter = (eventId: string, step: Step) => {
     const edit = letterNoteEdit(latest.current.score, eventId, step);
@@ -205,6 +226,7 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
     enterLetter,
     toggleRest,
     undoRedo,
+    startOver,
     canUndo: session.past.length > 0,
     canRedo: session.future.length > 0,
   };

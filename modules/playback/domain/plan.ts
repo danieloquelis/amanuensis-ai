@@ -1,4 +1,4 @@
-import { beats, measureStarts, midiPitch, type Score, type ScoreEvent } from "@/modules/score";
+import { beats, measureStarts, midiPitch, type Pitch, type Score, type ScoreEvent } from "@/modules/score";
 import { CHORD_VOICE_GAIN, voiceChord, writtenChordSegments } from "./chord-track";
 import { performanceOrder, soundingSource } from "./performance-order";
 
@@ -34,7 +34,10 @@ export type PlaybackPlan = {
   secondsPerBeat: number;
 };
 
-const frequencyOf = (event: ScoreEvent) => (event.pitch ? 440 * 2 ** ((midiPitch(event.pitch) - 69) / 12) : null);
+/** Equal-tempered frequency of a written pitch, A4 = 440 Hz. */
+export const pitchFrequency = (pitch: Pitch) => 440 * 2 ** ((midiPitch(pitch) - 69) / 12);
+
+const frequencyOf = (event: ScoreEvent) => (event.pitch ? pitchFrequency(event.pitch) : null);
 
 function gateOf(event: ScoreEvent) {
   if (event.articulation === "staccato") return GATE.staccato;
@@ -46,16 +49,22 @@ function gateOf(event: ScoreEvent) {
  * Compiles a score revision into timed sound. Written tempo and dynamics are resolved in score
  * order first; then bars are laid out in performance order (repeats, D.C./D.S., coda), so every
  * pass replays its written context. Chords sound from their beat until the next chord.
+ *
+ * With `fromMeasureId`, playback begins where that bar is first performed, with the tempo and
+ * dynamic in force there; a bar that is never performed plays the whole score.
  */
-export function createPlaybackPlan(score: Score): PlaybackPlan {
+export function createPlaybackPlan(score: Score, fromMeasureId?: string): PlaybackPlan {
   const written = resolveWrittenEvents(score);
   const harmony = writtenChordSegments(score);
+  const startIndex = fromMeasureId ? score.measures.findIndex((m) => m.id === fromMeasureId) : 0;
   const events: PlaybackEvent[] = [];
   const chords: ChordSound[] = [];
   let time = 0;
+  let offset: number | null = null;
   for (const measureIndex of performanceOrder(score)) {
     const barEvents = written[measureIndex];
     const barStart = time;
+    if (offset === null && measureIndex === startIndex) offset = barStart;
     for (const event of barEvents) {
       events.push({ ...event, start: time });
       time += event.duration;
@@ -72,7 +81,18 @@ export function createPlaybackPlan(score: Score): PlaybackPlan {
       });
     });
   }
-  return { events, chords, duration: time, secondsPerBeat: 60 / score.tempo };
+  const plan = { events, chords, duration: time, secondsPerBeat: 60 / score.tempo };
+  return offset ? startingAt(plan, offset) : plan;
+}
+
+/** The plan from `offset` seconds on, re-timed to start at 0. Chords never cross a bar line. */
+function startingAt(plan: PlaybackPlan, offset: number): PlaybackPlan {
+  return {
+    ...plan,
+    events: plan.events.filter((e) => e.start >= offset).map((e) => ({ ...e, start: e.start - offset })),
+    chords: plan.chords.filter((c) => c.start >= offset).map((c) => ({ ...c, start: c.start - offset })),
+    duration: plan.duration - offset,
+  };
 }
 
 /** Seconds from the bar's start to a beat inside it, following the bar's actual event timing. */

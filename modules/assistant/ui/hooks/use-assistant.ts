@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Command, Score } from "@/modules/score";
 import { takeParts, type TakePart } from "@/modules/voice";
+import type { ChatRepository, Turn } from "../../application/chat-history";
 import type { HeardTake } from "../../application/handle-voice-request";
-import type { AssistantResult, AssistantTurn, ProgressEvent, ProgressListener } from "../../application/run-assistant";
+import type { AssistantResult, AssistantTurn, ProgressListener } from "../../application/run-assistant";
 import { requestAssistant, requestVoiceAssistant, type AssistantPayload } from "../../infrastructure/assistant-client";
 
 const HISTORY_TURNS = 6;
@@ -13,32 +14,20 @@ type Request = (
   onProgress: ProgressListener,
 ) => Promise<AssistantResult & { heard?: HeardTake }>;
 
-export type Turn = {
-  id: string;
-  instruction: string;
-  status: "working" | "done" | "failed";
-  reply?: string;
-  question?: { text: string; choices: string[] };
-  changes?: string[];
-  /** Score revision right after this turn's edits; Undo is offered while it is still current. */
-  revision?: number;
-  /** What the assistant is doing right now, while the turn is working. */
-  activity?: ProgressEvent;
-  /** Whether the turn came from a recorded take. */
-  spoken?: boolean;
-  /** For a take: what was said and sung, in order, as soon as it is known. */
-  heard?: TakePart[];
-  /** The selection the request was about ("Bars 3–6"), shown with it in the chat. */
-  context?: string;
-};
+/** What a turn sent, kept for this session so a failed turn can be sent again as it was. */
+type Attempt = { instruction: string; request: Request; context: RequestContext };
 
 /** What a request is about: the picked IDs and their name. Empty IDs mean the whole score. */
 export type RequestContext = { ids: string[]; name: string | null };
 export type Assistant = ReturnType<typeof useAssistant>;
 
+export type { Turn };
+
 type Options = {
   getScore: () => Score;
   applyCommands: (commands: Command[], receipt: string) => boolean;
+  /** Where the conversation is kept, so it survives a reload. */
+  chats: ChatRepository;
 };
 
 /** How long a sung stretch is, as the history shows it. */
@@ -55,17 +44,47 @@ const heardOf = ({ speech, sung }: HeardTake) => takeParts(speech, sung);
 /**
  * One conversation with the score AI, driven from the compose bar. Each instruction (typed
  * or a recorded take) is sent with the current score and what it is about; returned commands
- * are applied as one undoable step.
+ * are applied as one undoable step. The conversation is saved whenever no turn is running.
  */
-export function useAssistant({ getScore, applyCommands }: Options) {
+export function useAssistant({ getScore, applyCommands, chats }: Options) {
   const [turns, setTurns] = useState<Turn[]>([]);
+  // Nothing is saved until the earlier conversation has been read, so it is never overwritten.
+  const [restored, setRestored] = useState(false);
+  // Holds a take's audio too, so retrying never asks the musician to sing again.
+  const attempts = useRef(new Map<string, Attempt>());
   const busy = turns.some((turn) => turn.status === "working");
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      try {
+        setTurns(chats.load());
+      } catch {
+        // An unreadable conversation starts empty; the song itself is unaffected.
+      }
+      setRestored(true);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [chats]);
+
+  useEffect(() => {
+    if (!restored || busy) return;
+    try {
+      chats.save(turns);
+    } catch {
+      // Storage full or blocked: the chat still works, it just won't survive a reload.
+    }
+  }, [busy, chats, restored, turns]);
+
   const update = (id: string, patch: Partial<Turn>) =>
     setTurns((all) => all.map((turn) => (turn.id === id ? { ...turn, ...patch } : turn)));
 
-  /** `label` is shown until the server says what it heard; `instruction` is what it is sent. */
-  const run = async (label: string, instruction: string, request: Request, context: RequestContext, spoken = false) => {
-    const id = crypto.randomUUID();
+  /**
+   * Sends a request as a new turn, or again in place of a failed one (`retryId`). `label` is
+   * shown until the server says what it heard; `instruction` is what it is sent.
+   */
+  const run = async (label: string, { instruction, request, context }: Attempt, spoken: boolean, retryId?: string) => {
+    const id = retryId ?? crypto.randomUUID();
+    attempts.current.set(id, { instruction, request, context });
     const history: AssistantTurn[] = turns
       .filter((turn) => turn.status === "done" && turn.reply)
       .slice(-HISTORY_TURNS)
@@ -74,7 +93,8 @@ export function useAssistant({ getScore, applyCommands }: Options) {
         reply: turn.reply!,
       }));
     const about = { context: context.name ?? undefined };
-    setTurns((all) => [...all, { id, instruction: label, status: "working", spoken, ...about }]);
+    if (retryId) update(id, { status: "working", reply: undefined, question: undefined, changes: undefined });
+    else setTurns((all) => [...all, { id, instruction: label, status: "working", spoken, ...about }]);
     const selection = { selectedIds: context.ids, ...(context.name ? { selectionName: context.name } : {}) };
     try {
       const result = await request({ instruction, score: getScore(), ...selection, history }, (activity) =>
@@ -92,6 +112,7 @@ export function useAssistant({ getScore, applyCommands }: Options) {
         update(id, { ...heard, status: "failed", reply: "The score changed while I was working. Try again." });
         return;
       }
+      attempts.current.delete(id);
       update(id, {
         ...heard,
         status: "done",
@@ -113,13 +134,31 @@ export function useAssistant({ getScore, applyCommands }: Options) {
   /** Sends a typed instruction; resolves once it is answered. Ignored while another is running. */
   const send = async (instruction: string, context: RequestContext) => {
     const text = instruction.trim();
-    if (text && !busy) await run(text, text, requestAssistant, context);
+    if (text && !busy) await run(text, { instruction: text, request: requestAssistant, context }, false);
   };
 
   const sendTake = async (wav: Uint8Array, context: RequestContext) => {
     if (busy) return;
-    await run(VOICE_LABEL, "", (payload, progress) => requestVoiceAssistant(wav, payload, progress), context, true);
+    const request: Request = (payload, progress) => requestVoiceAssistant(wav, payload, progress);
+    await run(VOICE_LABEL, { instruction: "", request, context }, true);
   };
 
-  return { turns, busy, send, sendTake };
+  /** Whether a failed turn can be sent again: only in the session that sent it. */
+  const canRetry = (turn: Turn) => turn.status === "failed" && attempts.current.has(turn.id);
+
+  /** Sends a failed turn again, as it was, against the current score. */
+  const retry = async (turnId: string) => {
+    const attempt = attempts.current.get(turnId);
+    const turn = turns.find((t) => t.id === turnId);
+    if (!attempt || !turn || busy) return;
+    await run(turn.instruction, attempt, turn.spoken ?? false, turnId);
+  };
+
+  /** Forgets the whole conversation, e.g. for a new song. A reply still on its way is dropped. */
+  const clear = () => {
+    attempts.current.clear();
+    setTurns([]);
+  };
+
+  return { turns, busy, send, sendTake, canRetry, retry, clear };
 }
