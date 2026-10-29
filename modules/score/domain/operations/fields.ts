@@ -18,8 +18,10 @@ export type DurationValue = z.infer<typeof durationSchema>;
 
 // Each variant and non-obvious field carries a description: these schemas are also the AI tool
 // schema, so the descriptions are the agent's documentation.
-export const eventId = idSchema.describe("ID of a note or rest (from the score context).");
-export const measureId = idSchema.describe("ID of a bar (from the score context).");
+export const eventId = idSchema.describe(
+  'A note or rest: "2#5" (the 5th note or rest of bar 2) or "2:3" (bar 2, beat 3). IDs work too.',
+);
+export const measureId = idSchema.describe('A bar by number, e.g. "2". IDs work too.');
 export const beatSchema = z
   .number()
   .min(0)

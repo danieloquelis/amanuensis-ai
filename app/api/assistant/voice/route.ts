@@ -1,5 +1,5 @@
 import { handleVoiceRequest, MAX_AUDIO_BYTES } from "@/modules/assistant";
-import { createMetaModel, progressResponse } from "@/modules/assistant/server";
+import { createMetaModel, logTurn, progressResponse } from "@/modules/assistant/server";
 import { archiveTake, cachedRecognizer, createMuseTranscriber, createSwiftF0Tracker } from "@/modules/voice/server";
 
 /** Hearing the take plus several model steps, each of which may think for most of a minute. */
@@ -29,6 +29,10 @@ export async function POST(request: Request) {
   return progressResponse(async (onProgress) => {
     const services = { model, recognizer, pitchTracker: createSwiftF0Tracker() };
     const response = await handleVoiceRequest({ audio, payload }, services, onProgress);
+    if (DEVELOPMENT) {
+      const selection = (payload as { selectionName?: string } | null)?.selectionName;
+      logTurn("(voice take)", selection, response.body);
+    }
     if (DEVELOPMENT && audio && response.status === 200 && process.env.VOICE_KEEP_TAKES !== "0") {
       await archiveTake(".takes", audio, response.body).catch(() => undefined);
     }

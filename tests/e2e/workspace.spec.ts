@@ -442,6 +442,89 @@ test("the compose bar follows the selection, and ⌘K focuses it from anywhere",
   await expect(compose.getByLabel("Describe the music")).toBeFocused();
 });
 
+test("a press on the score folds the chat away; while hidden, its button shows the AI is working", async ({ page }) => {
+  let calls = 0;
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => (release = resolve));
+  await page.route("/api/assistant", async (route) => {
+    if (calls++ > 0) await held;
+    await route.fulfill(streamed({ reply: "Done.", question: null, commands: [], changes: [] }));
+  });
+  await page.goto("/");
+  const instruction = page.getByLabel("Describe the music");
+  await instruction.fill("make it brighter");
+  await instruction.press("Enter");
+  const chat = page.getByRole("region", { name: "Chat" });
+  await expect(chat.getByText("Done.")).toBeVisible();
+  // Selecting on the sheet folds the chat away, and the selection's card stays clear of the compose bar.
+  await page.getByRole("button", { name: "Bar 4, beat 1, C4, 4 beats", exact: true }).click();
+  await expect(chat).toHaveCount(0);
+  const card = (await page.getByRole("region", { name: "Selection" }).boundingBox())!;
+  const compose = (await page.getByRole("form", { name: "Compose" }).boundingBox())!;
+  expect(card.y + card.height <= compose.y || compose.y + compose.height <= card.y).toBe(true);
+  // A request still running while the chat is hidden shows on the chat button.
+  await page.keyboard.press("Escape");
+  await instruction.fill("and softer");
+  await instruction.press("Enter");
+  await page.getByRole("button", { name: "Hide chat", exact: true }).first().click();
+  const working = page.getByRole("button", { name: "Show chat, the assistant is working", exact: true });
+  await expect(working).toBeVisible();
+  release();
+  await expect(page.getByRole("button", { name: "Show chat", exact: true })).toBeVisible();
+});
+
+test("opening the chat folds the selection card away; a press on a note brings it back", async ({ page }) => {
+  await page.route("/api/assistant", (route) =>
+    route.fulfill(streamed({ reply: "Done.", question: null, commands: [], changes: [] })),
+  );
+  await page.goto("/");
+  const note = page.getByRole("button", { name: "Bar 1, beat 4, E4, 1 beats", exact: true });
+  const card = page.getByRole("region", { name: "Selection" });
+  const chat = page.getByRole("region", { name: "Chat" });
+  const instruction = page.getByLabel("Describe the music");
+  await note.click();
+  await instruction.fill("make it brighter");
+  await instruction.press("Enter");
+  await expect(chat.getByText("Done.")).toBeVisible();
+  await expect(card).toHaveCount(0);
+  await note.click();
+  await expect(card).toBeVisible();
+  await expect(chat).toHaveCount(0);
+  // Opened from its button, the chat folds the card away again; the note stays selected for it.
+  await page.getByRole("button", { name: "Show chat", exact: true }).click();
+  await expect(chat).toBeVisible();
+  await expect(card).toHaveCount(0);
+  await expect(page.getByRole("form", { name: "Compose" }).getByText("E4 · bar 1", { exact: true })).toBeVisible();
+});
+
+test("the chat opens at its newest message, without scrolling there", async ({ page }) => {
+  await page.route("/api/assistant", (route) =>
+    route.fulfill(
+      streamed({
+        reply: "Done, and here is a longer answer to fill the chat.",
+        question: null,
+        commands: [],
+        changes: [],
+      }),
+    ),
+  );
+  await page.goto("/");
+  const instruction = page.getByLabel("Describe the music");
+  const replies = page.getByRole("region", { name: "Chat" }).getByText("Done, and here is a longer answer");
+  for (const [index, request] of ["one", "two", "three", "four", "five"].entries()) {
+    await instruction.fill(`request ${request}`);
+    await instruction.press("Enter");
+    // Wait for each answer: a request sent while the last one is still running is not taken.
+    await expect(replies).toHaveCount(index + 1);
+  }
+  await page.getByRole("button", { name: "Hide chat", exact: true }).first().click();
+  await page.getByRole("button", { name: "Show chat", exact: true }).click();
+  const list = page.getByRole("region", { name: "Chat" }).getByRole("list").first();
+  // Read in the same frame the chat appears: already at the bottom, not on its way there.
+  const gap = await list.evaluate((el) => el.scrollHeight - el.clientHeight - el.scrollTop);
+  expect(gap).toBeLessThan(2);
+});
+
 test("the chat expands into a sidebar that holds the compose bar, and closing it puts the bar back", async ({
   page,
 }) => {

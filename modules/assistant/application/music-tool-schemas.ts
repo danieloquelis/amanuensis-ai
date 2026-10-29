@@ -3,7 +3,11 @@ import { keySignatureSchema, meterSchema, TEMPO_RANGE } from "@/modules/score";
 
 // Argument schemas of the music tools; their descriptions are the agent's documentation.
 
-const spanId = z.string().describe("A sung span ID from the voice take, e.g. sung-1.");
+const spanId = z
+  .string()
+  .describe(
+    "A sung span ID from the voice take, e.g. sung-1, or a voice-N stretch the musician's words say they sang.",
+  );
 const chordList = z.array(z.string().max(16)).max(64).describe('Chord symbols in order, e.g. ["Em", "A", "D", "G"].');
 
 export const inferKeySchema = z.strictObject({ chords: chordList.optional(), spanId: spanId.optional() });

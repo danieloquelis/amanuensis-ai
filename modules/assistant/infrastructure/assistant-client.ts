@@ -2,6 +2,7 @@ import type { VoiceResult } from "../application/handle-voice-request";
 import type { AssistantResult, AssistantTurn, ProgressListener } from "../application/run-assistant";
 import type { StreamLine } from "./progress-stream";
 import type { Score } from "@/modules/score";
+import type { SpeechTurn } from "@/modules/voice";
 
 export type AssistantPayload = {
   instruction: string;
@@ -10,6 +11,8 @@ export type AssistantPayload = {
   /** What the selection is called ("Bars 3–6"); the musician may refer to it by name. */
   selectionName?: string;
   history: AssistantTurn[];
+  /** With a take sent again: the words already heard in it, so they are not recognized twice. */
+  speech?: SpeechTurn[];
 };
 
 const UNAVAILABLE = "The assistant is unavailable right now.";

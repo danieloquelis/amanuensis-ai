@@ -10,7 +10,7 @@ export const notationOperationSchemas = [
   z
     .strictObject({
       type: z.literal("putChord"),
-      id: idSchema.optional().describe("Give an existing chord's ID to change or move it."),
+      id: idSchema.optional().describe('An existing chord to change or move, e.g. "chord 2:3".'),
       measureId,
       beat: beatSchema,
       symbol: z.string().trim().min(1).max(24).describe('Chord symbol such as "C", "Am7", "F#m7b5", "Bb7/D", "Cø".'),
@@ -35,7 +35,7 @@ export const notationOperationSchemas = [
   z
     .strictObject({
       type: z.literal("putMark"),
-      id: idSchema.optional().describe("Give an existing mark's ID to move or change it."),
+      id: idSchema.optional().describe('An existing mark to move or change, e.g. "mark 4 fine".'),
       measureId,
       kind: z
         .enum(MARK_KINDS)
@@ -45,7 +45,7 @@ export const notationOperationSchemas = [
   z
     .strictObject({
       type: z.literal("putRepeat"),
-      id: idSchema.optional().describe("Give an existing repeat's ID to change it."),
+      id: idSchema.optional().describe('An existing repeat to change, e.g. "repeat 1" (the one starting at bar 1).'),
       startMeasureId: measureId,
       endMeasureId: measureId,
       count: z
@@ -59,8 +59,8 @@ export const notationOperationSchemas = [
   z
     .strictObject({
       type: z.literal("putAnnotation"),
-      id: idSchema.optional().describe("Give an existing indication's ID to change its text."),
-      targetId: idSchema.describe("Note, rest or bar ID it is attached to."),
+      id: idSchema.optional().describe('An existing indication to change, e.g. "text 2:1" or "dynamic 2:3".'),
+      targetId: idSchema.describe('The note or rest ("2#3") or bar ("2") it is attached to.'),
       kind: z.enum(["text", "dynamic"]),
       text: z.string().trim().min(1).max(120).describe("Free text (performance direction) or a dynamic pp–ff."),
     })
@@ -68,14 +68,16 @@ export const notationOperationSchemas = [
   z
     .strictObject({
       type: z.literal("moveAnnotation"),
-      id: idSchema,
+      id: idSchema.describe('The indication, e.g. "text 2:1".'),
       offset: labelOffsetSchema.nullable().describe("Scene units from its default spot; null resets."),
     })
     .describe("Move an indication freely on the page."),
   z
     .strictObject({
       type: z.literal("removeNotation"),
-      id: idSchema.describe("Indication, chord, mark, repeat or slur ID."),
+      id: idSchema.describe(
+        'What to remove: "chord 2:3", "slur 2#1", "mark 4 fine", "repeat 1", "dynamic 2:1", "text 2:1".',
+      ),
     })
     .describe("Remove an indication, chord symbol, navigation mark, repeat or slur."),
 ] as const;

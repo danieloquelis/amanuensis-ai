@@ -17,6 +17,7 @@ import { runAssistant, type AssistantResult, type ProgressListener } from "./run
 export const MAX_AUDIO_BYTES = 16_000 * 2 * 120 + 1024;
 const MAX_TAKE_SECONDS = 120;
 const HISTORY_LIMIT = 6;
+const MAX_TURNS = 200;
 
 const payloadSchema = z.strictObject({
   instruction: z.string().trim().max(2000).default(""),
@@ -27,10 +28,23 @@ const payloadSchema = z.strictObject({
     .array(z.strictObject({ instruction: z.string().max(2000), reply: z.string().max(2000) }))
     .max(HISTORY_LIMIT)
     .default([]),
+  /** What the speech service heard in this take before (it is being sent again with an answer). */
+  speech: z
+    .array(z.strictObject({ start: z.number(), end: z.number(), text: z.string().max(2000) }))
+    .max(MAX_TURNS)
+    .optional(),
 });
 
-/** What the take contained, so the musician can see what was heard; `ms` is how long hearing took. */
-export type HeardTake = { speech: SpeechTurn[]; sung: SungSpan[]; ms?: { speech: number; pitch: number } };
+/**
+ * What the take contained, so the musician can see what was heard; `recognized` is what the
+ * speech service itself wrote, for sending the take again; `ms` is how long hearing took.
+ */
+export type HeardTake = {
+  speech: SpeechTurn[];
+  sung: SungSpan[];
+  recognized?: SpeechTurn[];
+  ms?: { speech: number; pitch: number };
+};
 export type VoiceResult = AssistantResult & { heard: HeardTake };
 export type VoiceResponse = { status: number; body: VoiceResult | { error: string } };
 
@@ -63,6 +77,7 @@ export async function handleVoiceRequest(
     return failure(413, "Takes can be up to two minutes long.");
   }
   let speech: SpeechTurn[];
+  const { speech: heardBefore, ...request } = parsed.data;
   onProgress({ stage: "hearing" });
   // The learned pitch tracker runs while the words are recognized; without it the ear uses YIN.
   const started = Date.now();
@@ -74,15 +89,16 @@ export async function handleVoiceRequest(
         .finally(() => (pitchMs = Date.now() - started))
     : Promise.resolve(undefined);
   try {
-    speech = await services.recognizer.transcribe(input.audio);
+    // A take sent again with an answer was heard already: it is not paid for twice.
+    speech = heardBefore ?? (await services.recognizer.transcribe(input.audio));
   } catch (error) {
     return failure(502, error instanceof Error ? error.message : "Speech recognition failed.");
   }
   const speechMs = Date.now() - started;
   const take = createTake(signal, speech, await tracking);
-  const heard = { speech: take.speech, sung: take.sung, ms: { speech: speechMs, pitch: pitchMs } };
+  const heard = { speech: take.speech, sung: take.sung, recognized: speech, ms: { speech: speechMs, pitch: pitchMs } };
   onProgress({ stage: "heard", parts: takeParts(take.speech, take.sung) });
-  if (!take.speech.length && !take.sung.length && !parsed.data.instruction) {
+  if (!take.speech.length && !take.sung.length && !take.voice.length && !parsed.data.instruction) {
     const reply = "I didn't hear anything. Try again a little closer to the microphone.";
     return {
       status: 200,
@@ -100,7 +116,7 @@ export async function handleVoiceRequest(
     };
   }
   try {
-    const result = await runAssistant(services.model, { ...parsed.data, score, take }, undefined, onProgress);
+    const result = await runAssistant(services.model, { ...request, score, take }, undefined, onProgress);
     return { status: 200, body: { ...result, heard } };
   } catch (error) {
     return failure(502, error instanceof Error ? error.message : "The assistant is unavailable.");

@@ -18,6 +18,8 @@ type SelectionCardProps = {
   /** Where the selection is in the workspace, or null when it is off screen. */
   anchor: AnchorRect | null;
   area: AnchorArea;
+  /** Px at the bottom of the area taken by the compose bar and its chat; the card stays clear of them. */
+  reserved: number;
 };
 
 /**
@@ -25,7 +27,7 @@ type SelectionCardProps = {
  * a run of notes' slur, articulation and octave; a bar's insert, duplicate, clear and delete. (The compose bar picks up the selection too, so
  * the AI can be told what to do with it straight away.) Nothing to show for other selections.
  */
-export function SelectionCard({ editor, anchor, area }: SelectionCardProps) {
+export function SelectionCard({ editor, anchor, area, reserved }: SelectionCardProps) {
   const { picked, pickedName, score } = editor;
   if (!anchor || !area.width || !picked.length || !pickedName) return null;
   const single = picked.length === 1 ? picked[0] : null;
@@ -38,7 +40,7 @@ export function SelectionCard({ editor, anchor, area }: SelectionCardProps) {
   return (
     <section
       className={`${surface.glass} ${styles.selectionCard}`}
-      style={placeAround(anchor, area, size)}
+      style={placeAround(anchor, area, size, reserved)}
       aria-label="Selection"
     >
       <header className={styles.selectionName}>{pickedName}</header>

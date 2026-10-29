@@ -1,7 +1,9 @@
 import {
   measureCapacity,
   parseChordSymbol,
+  durationCode,
   pitchName,
+  pitchText,
   type BasicOperation,
   type Meter,
   type Operation,
@@ -30,9 +32,9 @@ export type ScoreAccess = { getScore: () => Score; commit: (operation: Operation
 const FOUR_FOUR: Meter = { numerator: 4, denominator: 4 };
 type WrittenBar = { pitch: Pitch | null; duration: number; tie?: boolean }[];
 
-/** "r/0.5 E4/0.5 G4/1~": a bar as compact text, cheap for the model to read; ~ ties into the next note. */
+/** "re E4e G4q~": a bar in score text, as the agent reads and writes the score. */
 const barText = (bar: WrittenBar) =>
-  bar.map((e) => `${e.pitch ? pitchName(e.pitch) : "r"}/${e.duration}${e.tie ? "~" : ""}`).join(" ");
+  bar.map((e) => `${e.pitch ? pitchText(e.pitch) : "r"}${durationCode(e.duration)}${e.tie ? "~" : ""}`).join(" ");
 
 /**
  * Hears each sung span and writes it into the score from the bar it was meant for (the musician

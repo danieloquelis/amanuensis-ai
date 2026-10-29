@@ -155,7 +155,7 @@ test("AI tool previews do not mutate; stale applies fail; duplicate apply is saf
       session = next;
     },
   );
-  assert.equal(scoreTools.length, 5);
+  assert.equal(scoreTools.length, 6);
   const command = {
     requestId: "ai",
     expectedRevision: 0,

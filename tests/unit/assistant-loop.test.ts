@@ -122,7 +122,7 @@ test("the selection and recent turns reach the model", async () => {
   });
   const roles = seen[0].map((m) => m.role);
   assert.deepEqual(roles, ["system", "user", "assistant", "user"]);
-  assert.match((seen[0].at(-1) as { content: string }).content, /Selected: E4 · bar 1 · IDs note-0-1/);
+  assert.match((seen[0].at(-1) as { content: string }).content, /\[Selected: E4 · bar 1: 1#2\]/);
 });
 
 test("text and repeats can be the selection the agent reads", async () => {
@@ -165,6 +165,7 @@ test("a voice turn shows the take as a timeline and offers the voice tools", asy
     signal: { samples: new Float32Array(24_000 * 6), sampleRate: 24_000 },
     speech: [{ start: 0, end: 2, text: "Allegro, over Em A D G" }],
     sung: [{ id: "sung-1", start: 2.5, end: 6 }],
+    voice: [],
   };
   const { model, seen, offered } = scriptedModel([{ content: "Ok.", toolCalls: [] }]);
   await runAssistant(model, { ...request(""), take });
@@ -214,8 +215,8 @@ test("the request carries the score, so the agent can act in its first step", as
   await runAssistant(model, { ...request("make bar 2 louder"), selectedIds: ["bar-2"] });
   const message = (seen[0].at(-1) as { content: string }).content;
   assert.match(message, /\[Score context, as score_get_context returns it\]/);
-  assert.match(message, /"selectedIds":\["bar-2"\]/);
-  assert.match(message, /"bars":\[/);
+  assert.match(message, /\[Selected: 2\]/);
+  assert.match(message, /^bar 2: D4q F4e G4e A4h$/m);
 });
 
 test("what was just sung stays as heard: the agent cannot rewrite those notes in the same turn", async () => {

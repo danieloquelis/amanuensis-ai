@@ -21,7 +21,7 @@ export const phraseOperationSchemas = [
   z
     .strictObject({
       type: z.literal("shapeSlur"),
-      id: idSchema.describe("Slur ID."),
+      id: idSchema.describe('The slur, by its first note: "slur 2#1".'),
       lift: z
         .number()
         .min(SLUR_LIFT.min)
@@ -41,7 +41,7 @@ export const phraseOperationSchemas = [
         .array(idSchema)
         .min(1)
         .max(SCORE_LIMITS.measures * SCORE_LIMITS.eventsPerMeasure)
-        .describe("Notes to move; rests among them are skipped."),
+        .describe('Notes to move, e.g. ["5#1", "5#2"]; rests among them are skipped.'),
       steps: z
         .number()
         .int()

@@ -15,7 +15,8 @@ import { NEW_SCORE_DEFAULTS } from "./new-score";
 import { notationOperationSchemas } from "./notation-schemas";
 import { phraseOperationSchemas } from "./phrase-schemas";
 
-export const OPERATION_BATCH_LIMIT = 64;
+/** Room for a whole score written at once: 32 bars, each added, written, with chords and a section. */
+export const OPERATION_BATCH_LIMIT = 256;
 export type { DurationValue } from "./fields";
 
 const measureIdsSchema = z.array(idSchema).min(1).max(SCORE_LIMITS.measures);
@@ -38,7 +39,9 @@ export const operationSchema = z.discriminatedUnion("type", [
     .strictObject({
       type: z.literal("moveEvent"),
       eventId,
-      beforeEventId: idSchema.nullable().describe("Event to move before, in the same bar; null moves to the end."),
+      beforeEventId: idSchema
+        .nullable()
+        .describe('The note or rest to move before ("2#3"), in the same bar; null moves to the end.'),
     })
     .describe("Reorder a note within its bar."),
   z

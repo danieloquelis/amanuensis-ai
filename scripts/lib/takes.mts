@@ -2,6 +2,7 @@
 // A take folder holds take.wav, result.json (what the app made of it) and, once written by hand,
 // truth.json: what the musician meant.
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -38,6 +39,17 @@ export function readHeardSpeech(folder: string): SpeechTurn[] {
   const file = join(folder, "result.json");
   if (!existsSync(file)) return [];
   return JSON.parse(readFileSync(file, "utf8")).heard?.speech ?? [];
+}
+
+/**
+ * What the speech service itself wrote for this take, before the app sorted singing from talk:
+ * the development cache keeps it by the recording's hash. Falls back to the kept result.
+ */
+export function readRawSpeech(folder: string): SpeechTurn[] {
+  const wav = readFileSync(join(folder, "take.wav"));
+  const key = createHash("sha256").update(wav).update("").digest("hex").slice(0, 24);
+  const cached = join(".cache/transcripts", `${key}.json`);
+  return existsSync(cached) ? JSON.parse(readFileSync(cached, "utf8")) : readHeardSpeech(folder);
 }
 
 /** Take folders that have a truth.json, oldest first. */

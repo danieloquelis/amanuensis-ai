@@ -3,15 +3,18 @@ import {
   anchorIds,
   applyCommand,
   commandSchema,
-  describeScore,
   execute,
+  positionOf,
+  resolvePositions,
   SCORE_VOCABULARY,
+  scoreText,
   summarizeChange,
   travel,
+  writeBars,
   type Command,
   type Session,
 } from "@/modules/score";
-import { applyPreviewSchema, readContextSchema, undoSchema, type ScoreToolName } from "./tool-definitions";
+import { applyPreviewSchema, readContextSchema, undoSchema, writeSchema, type ScoreToolName } from "./tool-definitions";
 
 const PREVIEW_LIMIT = 128;
 const UNSUPPORTED_NOTATION = [
@@ -33,6 +36,9 @@ type ToolHandler = (raw: unknown) => ToolResult;
  */
 export function createScoreToolGateway(getSession: () => Session, setSession: (session: Session) => void) {
   const previews = new Map<string, StoredPreview>();
+
+  /** Commands from the model may name notes and bars by position; they become IDs here. */
+  const parseCommand = (raw: unknown): Command => commandSchema.parse(resolvePositions(getSession().score, raw));
 
   const commit = (command: Command): ToolResult => {
     const session = getSession();
@@ -57,8 +63,8 @@ export function createScoreToolGateway(getSession: () => Session, setSession: (s
       return {
         ok: true,
         revision: score.revision,
-        score: describeScore(score),
-        selectedIds,
+        score: scoreText(score),
+        selected: selectedIds.map((id) => positionOf(score, id)),
         vocabulary: SCORE_VOCABULARY,
         notYetSupported: UNSUPPORTED_NOTATION,
         ...(includeRaw ? { raw: structuredClone(score) } : {}),
@@ -66,11 +72,23 @@ export function createScoreToolGateway(getSession: () => Session, setSession: (s
     },
 
     score_edit(raw) {
-      return commit(commandSchema.parse(raw));
+      return commit(parseCommand(raw));
+    },
+
+    score_write(raw) {
+      const { expectedRevision, text, requestId } = writeSchema.parse(raw);
+      const session = getSession();
+      if (expectedRevision !== session.score.revision) {
+        throw new Error("The score changed. Read the latest revision before writing.");
+      }
+      const { command } = writeBars(session.score, text, requestId);
+      const next = execute(session, command);
+      setSession(next);
+      return { ok: true, revision: next.score.revision, changes: summarizeChange(session.score, next.score), command };
     },
 
     score_preview(raw) {
-      const command = commandSchema.parse(raw);
+      const command = parseCommand(raw);
       const before = getSession().score;
       const proposed = applyCommand(before, command);
       rememberPreview(command.requestId, command);
@@ -79,7 +97,7 @@ export function createScoreToolGateway(getSession: () => Session, setSession: (s
         previewId: command.requestId,
         expectedRevision: before.revision,
         changes: summarizeChange(before, proposed),
-        proposed: describeScore(proposed),
+        proposed: scoreText(proposed),
       };
     },
 
@@ -135,11 +153,29 @@ export function createScoreToolGateway(getSession: () => Session, setSession: (s
   };
 }
 
+type Issue = z.core.$ZodIssue;
+
+/**
+ * The issue that says what is actually wrong. A union only says "Invalid input"; inside it, the
+ * branch the arguments came closest to (their own type, fewest issues) names the missing or wrong field.
+ */
+function innermost(issue: Issue, path: PropertyKey[] = []): { path: PropertyKey[]; message: string } {
+  const here = [...path, ...issue.path];
+  if (issue.code === "invalid_union" && issue.errors.length) {
+    // A branch of another type is furthest of all.
+    const distance = (issues: Issue[]) => issues.length + (issues.some((i) => i.path.at(-1) === "type") ? 1000 : 0);
+    const closest = [...issue.errors].sort((a, b) => distance(a) - distance(b))[0];
+    // Unions of plain values (a duration, a pitch) are reported as the field itself.
+    if (closest.length && closest[0].path.length) return innermost(closest[0], here);
+  }
+  return { path: here, message: issue.message };
+}
+
 /** Zod errors become a readable path and message the model can act on. */
 export function toolError(error: unknown): string {
   if (error instanceof z.ZodError) {
-    const issue = error.issues[0];
-    return `Invalid tool arguments at ${issue.path.join(".") || "(root)"}: ${issue.message}`;
+    const { path, message } = innermost(error.issues[0]);
+    return `Invalid tool arguments at ${path.map(String).join(".") || "(root)"}: ${message}`;
   }
   return error instanceof Error ? error.message : "The tool failed.";
 }

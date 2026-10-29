@@ -63,6 +63,31 @@ test("talking and singing in one take reach the agent as a timeline", async () =
   assert.deepEqual(body.usage, { inputTokens: 900, outputTokens: 40, cachedInputTokens: 0 });
 });
 
+test("a take sent again with an answer is not recognized twice: its words come with it", async () => {
+  const heardBefore = [{ start: 0, end: 0.15, text: "we will do like this" }];
+  const { recognizer, calls } = fakeRecognizer([{ start: 0, end: 0.15, text: "something else" }]);
+  const { model } = fakeModel();
+  const audio = encodeWav(singMelody(phrase, { bpm: 120, sampleRate: RATE }));
+  const response = await handleVoiceRequest(
+    { audio, payload: { ...payload, instruction: "F major", speech: heardBefore } },
+    { model, recognizer },
+  );
+  assert.equal(response.status, 200);
+  assert.equal(calls.length, 0);
+  assert.deepEqual((response.body as VoiceResult).heard.recognized, heardBefore);
+});
+
+test("an answer sent with the take reaches the agent as the answer to its question, with the singing", async () => {
+  const { recognizer } = fakeRecognizer();
+  const { model, seen } = fakeModel();
+  const audio = encodeWav(singMelody(phrase, { bpm: 120, sampleRate: RATE }));
+  const speech = [{ start: 0, end: 0.15, text: "we will do like this" }];
+  await handleVoiceRequest({ audio, payload: { ...payload, instruction: "F major", speech } }, { model, recognizer });
+  assert.match(seen[0], /F major/);
+  assert.match(seen[0], /reply to your question about the take below/);
+  assert.match(seen[0], /sang: sung-1/);
+});
+
 test("a silent take is answered without calling the model", async () => {
   const { recognizer } = fakeRecognizer([]);
   const { model, seen } = fakeModel();

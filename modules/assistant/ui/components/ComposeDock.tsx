@@ -1,6 +1,7 @@
 import { CaretDown, ChatsCircle, SidebarSimple, Sparkle, X } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 import { IconButton } from "@/shared/ui/IconButton";
+import { DOCKED_PANEL } from "@/shared/ui/hooks/use-bottom-inset";
 import type { Assistant, RequestContext } from "../hooks/use-assistant";
 import type { ComposeDockState } from "../hooks/use-compose-dock";
 import { ChatThread } from "./ChatThread";
@@ -28,6 +29,8 @@ export function ComposeDock({ assistant, dock, context, revision, onUndo }: Comp
   const undoable = [...turns].reverse().find((turn) => turn.revision !== undefined);
   const canUndo = (turnId: string) => turnId === undoable?.id && undoable.revision === revision;
   const sidebar = dock.chatMode === "sidebar";
+  // The chat is hidden while the AI works: a dot on its button says so.
+  const working = busy && dock.chatMode === "closed";
   const sendText = (text: string) => {
     dock.openChat();
     void send(text, context);
@@ -71,12 +74,13 @@ export function ComposeDock({ assistant, dock, context, revision, onUndo }: Comp
         !sidebar &&
         turns.length > 0 && (
           <IconButton
-            label={dock.chatMode === "floating" ? "Hide chat" : "Show chat"}
+            label={`${dock.chatMode === "floating" ? "Hide chat" : "Show chat"}${working ? ", the assistant is working" : ""}`}
             aria-pressed={dock.chatMode === "floating"}
             className={styles.chatButton}
             onClick={dock.toggleChat}
           >
             <ChatsCircle size={21} />
+            {working && <span className={styles.activityDot} aria-hidden="true" />}
           </IconButton>
         )
       }
@@ -100,7 +104,7 @@ export function ComposeDock({ assistant, dock, context, revision, onUndo }: Comp
     <div className={styles.dock}>
       <div className={styles.above}>
         {dock.chatMode === "floating" && turns.length > 0 ? (
-          <section className={styles.chat} aria-label="Chat">
+          <section className={styles.chat} aria-label="Chat" {...{ [DOCKED_PANEL]: true }}>
             {thread(
               <>
                 <button className={styles.dismiss} aria-label="Expand chat" onClick={dock.expandChat}>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useLayoutEffect, useRef, type ReactNode } from "react";
 import type { Turn } from "../hooks/use-assistant";
 import { TurnBubbles } from "./TurnBubbles";
 import styles from "./assistant.module.css";
@@ -24,8 +24,12 @@ type ChatThreadProps = {
 export function ChatThread(props: ChatThreadProps) {
   const { turns, busy, canUndo, canRetry, onUndo, onRetry, onChoose, actions, empty } = props;
   const listRef = useRef<HTMLOListElement>(null);
-  useEffect(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+  const opened = useRef(false);
+  // The chat opens already at its newest message; while it is open, new messages scroll into view.
+  useLayoutEffect(() => {
+    const behavior = opened.current ? "smooth" : "instant";
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior });
+    opened.current = true;
   }, [turns]);
 
   return (

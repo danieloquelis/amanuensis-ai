@@ -19,7 +19,9 @@
     "test:integration": "tsx --test tests/integration/*.integration-test.ts",
     "smoke:voice": "tsx --env-file=.env.local scripts/voice-smoke.mts",
     "eval:rhythm": "tsx scripts/rhythm-oracle.mts",
-    "experiment:readings": "tsx --env-file=.env.local scripts/reading-choice-experiment.mts"
+    "experiment:readings": "tsx --env-file=.env.local scripts/reading-choice-experiment.mts",
+    "experiment:score-format": "tsx --env-file=.env.local scripts/score-format-experiment.mts",
+    "fit:singing": "tsx --env-file=.env.local scripts/fit-singing-model.mts"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

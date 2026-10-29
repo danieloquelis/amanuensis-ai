@@ -14,23 +14,35 @@ function gateway() {
   return { call, current: () => session };
 }
 
-type Context = {
-  revision: number;
-  score: {
-    bars: { bar: number; id: string; events: { id: string; pitch: string; duration: string; beat: number }[] }[];
-  };
-  vocabulary: { chordExamples: string[] };
-};
+type Context = { revision: number; score: string; selected: string[]; vocabulary: { chordExamples: string[] } };
 
-test("the context reads like a lead sheet: bar numbers, beats, pitch and duration names", () => {
+test("the context reads like a lead sheet: a line per bar, pitches and durations, selection as positions", () => {
   const { call } = gateway();
-  const context = call("score_get_context", { selectedIds: [] }) as unknown as Context;
-  const [first] = context.score.bars[1].events.slice(1, 2);
-  assert.deepEqual(
-    { pitch: first.pitch, duration: first.duration, beat: first.beat },
-    { pitch: "F4", duration: "eighth", beat: 2 },
-  );
+  const context = call("score_get_context", { selectedIds: ["note-1-1", "bar-3"] }) as unknown as Context;
+  assert.match(context.score, /^bar 2: D4q F4e G4e A4h$/m);
+  assert.deepEqual(context.selected, ["2#2", "3"]);
   assert.ok(context.vocabulary.chordExamples.length > 0);
+});
+
+test("score_edit names notes by position, and score_write writes whole bars", () => {
+  const { call, current } = gateway();
+  const tied = call("score_edit", {
+    requestId: "agent-1",
+    expectedRevision: 0,
+    operation: { type: "setTie", eventId: "1#4", tied: true },
+  });
+  assert.equal(tied.ok, true);
+  assert.equal(current().score.measures[0].events[3].tie, true);
+  const written = call("score_write", { requestId: "agent-2", expectedRevision: 1, text: "bar 5: (C5q B4q A4q G4q)" });
+  assert.equal(written.ok, true);
+  assert.equal(current().score.measures.length, 5);
+  assert.equal(current().score.slurs.length, 1);
+  const missing = call("score_edit", {
+    requestId: "agent-3",
+    expectedRevision: 2,
+    operation: { type: "removeNotation", id: "chord 2:3" },
+  });
+  assert.deepEqual(missing, { ok: false, error: "There is no chord 2:3 in the score." });
 });
 
 test("score_edit applies an explicit edit directly and says what changed", () => {
@@ -63,7 +75,18 @@ test("invalid arguments name the field that is wrong", () => {
     operation: { type: "setTempo", tempo: 900 },
   });
   assert.equal(result.ok, false);
-  assert.match((result as { error: string }).error, /operation/);
+  assert.match((result as { error: string }).error, /at operation\.tempo:/);
+});
+
+test("a missing field is named even inside a batch, not just reported as invalid input", () => {
+  const { call } = gateway();
+  const errorOf = (operation: unknown) =>
+    (call("score_edit", { requestId: "agent-4", expectedRevision: 0, operation }) as { error: string }).error;
+  assert.match(errorOf({ type: "moveEvent", eventId: "note-0-1" }), /at operation\.beforeEventId:/);
+  assert.match(
+    errorOf({ type: "batch", operations: [{ type: "setDuration", eventId: "note-0-1" }] }),
+    /at operation\.operations\.0\.duration:/,
+  );
 });
 
 test("every operation reaches the model with its own description", () => {

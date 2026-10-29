@@ -1,38 +1,46 @@
 import type { SpeechTurn, SungSpan } from "./take";
 
-/** Sung syllables are short: at most this many letters ("la", "pam", "ping"). */
+/** Sung syllables are short: at most this many letters ("la", "pam", "ting"). */
 const SYLLABLE_LETTERS = 4;
-/** A syllable repeated this many times, or two alternating, is singing ("ping ping ping"). */
+/** Sung syllables come in runs this long or longer ("da da da"); two in a row is a stutter. */
 const MIN_RUN = 3;
+/** A syllable said twice or more in one word, as recognizers write quick singing: "baba", "Ba-ba-ba". */
+const DOUBLED = /^(\p{L}{1,3})\1+$/u;
+/** A sung syllable's shape: consonants, a vowel, and at most a hum to end ("da", "pam", "ting"; not "add"). */
+const SYLLABLE = /^[^aeiouyáéíóúàèìòùäëïöü]*([aeiouyáéíóúàèìòùäëïöü]+)(?:n|m|ng)?$/u;
 /** A turn this close (seconds) before a sung span may carry its syllables in its text. */
 const NEAR_SINGING = 1;
 
-const wordOf = (token: string) => token.toLowerCase().replace(/[^\p{L}]/gu, "");
-const isSyllable = (word: string) => word.length > 0 && word.length <= SYLLABLE_LETTERS;
+const round = (seconds: number) => Math.round(seconds * 100) / 100;
 
-/** Which words are sung syllables: runs of a short syllable repeated, or two alternating. */
-function syllableMask(words: string[]): boolean[] {
-  const drop = new Array(words.length).fill(false);
-  // A run continues while each syllable repeats the one a period back (1: "la la", 2: "pam pim").
-  for (const period of [1, 2]) {
-    let start = 0;
-    for (let i = 1; i <= words.length; i++) {
-      const repeats = i - start < period || words[i] === words[i - period];
-      if (i < words.length && isSyllable(words[i]) && repeats) continue;
-      if (i - start >= MIN_RUN && isSyllable(words[start])) drop.fill(true, start, i);
-      start = i;
-    }
-  }
-  return drop;
-}
+/** A word as compared: lower case, letters only ("Ba-ba!" is "baba"). */
+export const wordOf = (token: string) => token.toLowerCase().replace(/[^\p{L}]/gu, "");
+
+/** The vowel at a sung syllable's heart ("da" and "ta" share "a"), or null for other words. */
+const nucleus = (word: string) => (word.length <= SYLLABLE_LETTERS ? (SYLLABLE.exec(word)?.[1] ?? null) : null);
 
 /**
- * Text with the sung syllables taken out: runs of a short syllable repeated ("la la la") or two
- * alternating ("pam pim pam pim"), which the recognizer writes down as if they were words.
+ * Which words are sung syllables, the way the recognizer writes singing down: runs of three or
+ * more short words in a row on one vowel ("da da da da ta ta", "pa pa pa"), or a syllable doubled
+ * inside one word ("baba", "Ba-ba-ba"). Talk's repeated words ("como una como una", "esta
+ * esta") are not.
  */
+export function vocableMask(words: string[]): boolean[] {
+  const mask = words.map((word) => DOUBLED.test(word));
+  let start = 0;
+  for (let i = 1; i <= words.length; i++) {
+    const vowel = nucleus(words[start]);
+    if (i < words.length && vowel !== null && nucleus(words[i]) === vowel) continue;
+    if (i - start >= MIN_RUN) mask.fill(true, start, i);
+    start = i;
+  }
+  return mask;
+}
+
+/** Text with the sung syllables taken out, which the recognizer wrote down as if they were words. */
 export function withoutSungSyllables(text: string): string {
   const tokens = text.split(/\s+/).filter(Boolean);
-  const drop = syllableMask(tokens.map(wordOf));
+  const drop = vocableMask(tokens.map(wordOf));
   return tokens
     .filter((_, i) => !drop[i])
     .join(" ")
@@ -41,25 +49,17 @@ export function withoutSungSyllables(text: string): string {
 }
 
 /**
- * A text that ends in sung syllables ("…gonna add da da da da da"): how many syllables the
- * closing run has, and how much of the text, by letters, it takes up (1 when the whole text is
- * syllables). Null when it ends in words.
+ * What was said around the singing: a turn that runs into a sung span ends where the singing
+ * starts, and loses the syllables the recognizer wrote for it. Turns left without words go.
  */
-export function closingSyllables(text: string): { count: number; share: number } | null {
-  const words = text.split(/\s+/).filter(Boolean).map(wordOf);
-  const sung = syllableMask(words);
-  let start = words.length;
-  // Punctuation on its own ("da da da .") belongs with the run.
-  while (start > 0 && (sung[start - 1] || !words[start - 1])) start--;
-  if (!sung.slice(start).some(Boolean)) return null;
-  const letters = (list: string[]) => list.reduce((sum, word) => sum + word.length + 1, 0);
-  return { count: sung.filter(Boolean).length, share: letters(words.slice(start)) / letters(words) };
-}
-
-/** Speech turns that run into singing, with the sung syllables removed from their text. */
-export function cleanTurnsBeforeSinging(raw: SpeechTurn[], turns: SpeechTurn[], sung: SungSpan[]): SpeechTurn[] {
-  return turns.map((turn, i) => {
-    const reaches = sung.some((span) => span.start >= turn.start && span.start <= raw[i].end + NEAR_SINGING);
-    return reaches ? { ...turn, text: withoutSungSyllables(turn.text) } : turn;
-  });
+export function speechAroundSinging(speech: SpeechTurn[], sung: SungSpan[]): SpeechTurn[] {
+  return speech
+    .map((turn) => {
+      const near = sung.filter((span) => span.start <= turn.end + NEAR_SINGING && span.end >= turn.start);
+      if (!near.length) return turn;
+      const starts = near.map((span) => span.start).filter((start) => start > turn.start);
+      const end = round(Math.min(turn.end, ...starts));
+      return { ...turn, end, text: withoutSungSyllables(turn.text) };
+    })
+    .filter((turn) => turn.text);
 }

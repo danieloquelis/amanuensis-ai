@@ -1,6 +1,10 @@
 // Public API of the score module. Other modules import from "@/modules/score" only.
 export { describeScore, SCORE_VOCABULARY, summarizeChange } from "./application/describe-score";
 export { createSession, execute, executeAll, travel, type Session } from "./application/session";
+export { positionOf } from "./application/notation-positions";
+export { resolvePositions } from "./application/positions";
+export { durationCode, pitchText, SCORE_TEXT_GUIDE, scoreText } from "./application/score-text";
+export { parseBarsText, writeBars } from "./application/score-text-write";
 export {
   CHORD_QUALITIES,
   CHORD_QUALITY_NAMES,
@@ -36,12 +40,14 @@ export {
 } from "./domain/navigation";
 export { ARTICULATIONS, DYNAMICS, REPEAT_PASSES, type Articulation, type Dynamic } from "./domain/notation";
 export { applyCommand } from "./domain/operations/apply-command";
+export { commandSchemaWithout } from "./domain/operations/command-subset";
 export {
   commandSchema,
   type BasicOperation,
   type Command,
   type DurationValue,
   type Operation,
+  type OperationType,
 } from "./domain/operations/schema";
 export {
   isWithinOctaveRange,

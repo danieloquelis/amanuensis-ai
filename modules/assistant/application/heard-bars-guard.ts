@@ -73,5 +73,5 @@ export function refuseHeardBarEdit(
   const which = `Bar${bars.length > 1 ? "s" : ""} ${bars.join(", ")}`;
   if (asked)
     return `${which}: "${asked}" is not what the musician said. Quote their words exactly, or keep the notes as heard.`;
-  return `${which} hold what the musician just sang. Change them only if they asked: call score_edit again with asked set to their words, quoted exactly. Otherwise keep the notes as heard and mention any doubt in your reply.`;
+  return `${which} hold what the musician just sang. Change them only if they asked: call the same tool again with asked set to their words, quoted exactly. Otherwise keep the notes as heard and mention any doubt in your reply.`;
 }

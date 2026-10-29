@@ -6,7 +6,7 @@ import { createExample, describeScore, executeAll, createSession } from "@/modul
 
 if (!process.argv.includes("--confirm")) {
   console.log(
-    "This calls the paid Meta API: about 6 instructions × ~3 model steps × ~5–10k input tokens.\nRe-run with --confirm to proceed.",
+    "This calls the paid Meta API: about 8 instructions × ~3 model steps × ~5–10k input tokens.\nRe-run with --confirm to proceed.",
   );
   process.exit(0);
 }
@@ -21,13 +21,22 @@ const cases = [
   { instruction: "Add a D.C. al Fine at the end and Fine after bar 2.", selectedIds: [] },
   { instruction: "Rewrite bar 4 as four quarter notes walking down from G to D.", selectedIds: [] },
   { instruction: "Repeat that, but softer.", selectedIds: [] },
+  { instruction: "Continue the tune with 4 new bars that end on C4 as a whole note.", selectedIds: [] },
+  { instruction: "Slur all of bar 2 and tie its last note into the start of bar 3.", selectedIds: [] },
 ];
 
 for (const { instruction, selectedIds } of cases) {
   const started = Date.now();
   try {
     const result = await runAssistant(model, { instruction, score: createExample(), selectedIds, history: [] });
-    const replayed = executeAll(createSession(createExample()), result.commands).score;
+    let replayed;
+    try {
+      replayed = executeAll(createSession(createExample()), result.commands).score;
+    } catch (error) {
+      for (const entry of result.trace)
+        console.log(`  trace: ${entry.tool} ${entry.ok ? "ok" : `✗ ${entry.error}`} ${entry.arguments}`);
+      throw error;
+    }
     const bars = describeScore(replayed).bars.map((b) => ({
       bar: b.bar,
       style: b.shows,
@@ -39,7 +48,11 @@ for (const { instruction, selectedIds } of cases) {
     console.log(`\n▶ ${instruction}${selectedIds.length ? ` [selected ${selectedIds}]` : ""}`);
     console.log(`  reply: ${result.reply}`);
     if (result.question) console.log(`  question choices: ${result.question.choices.join(" | ")}`);
-    console.log(`  steps ${result.steps}, commands ${result.commands.length}, ${Date.now() - started} ms`);
+    const { inputTokens, outputTokens, cachedInputTokens } = result.usage;
+    console.log(
+      `  steps ${result.steps}, commands ${result.commands.length}, ${Date.now() - started} ms, tokens in ${inputTokens} (cached ${cachedInputTokens ?? 0}) out ${outputTokens}`,
+    );
+    console.log(`  tools: ${result.trace.map((t) => `${t.tool}${t.ok ? "" : "✗"}`).join(", ")}`);
     for (const line of result.changes) console.log(`  · ${line}`);
     if (result.commands.length) console.log(JSON.stringify(bars));
   } catch (error) {

@@ -22,5 +22,6 @@ export {
 } from "./application/run-assistant";
 export { createMusicTools, MUSIC_TOOL_NAMES, musicToolSpecs, type MusicToolName } from "./application/music-tools";
 export { createScoreToolGateway } from "./application/score-tool-gateway";
-export { SCORE_TOOL_NAMES, scoreTools, type ScoreToolName } from "./application/tool-definitions";
+export { SCORE_TOOL_NAMES, scoreTools, toolParameters, type ScoreToolName } from "./application/tool-definitions";
 export { localChatRepository } from "./infrastructure/local-chat";
+export { askedAfter, withHeardWords, type AskedTake } from "./application/asked-take";

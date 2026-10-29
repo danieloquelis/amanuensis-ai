@@ -9,17 +9,20 @@ export function ScoreCanvas({
   zoom,
   onMenuOpenChange,
   onAudition,
+  onPress,
 }: {
   editor: ScoreEditor;
   playBeat: number | null;
   zoom: number;
   onMenuOpenChange: (open: boolean) => void;
   onAudition: (eventId: string, pitch: Pitch) => void;
+  /** Any press on the paper or around it, e.g. to fold the chat away. */
+  onPress: () => void;
 }) {
   const { score, ready, commit } = editor;
   const barCount = score.measures.length;
   return (
-    <div className={styles.canvas}>
+    <div className={styles.canvas} onPointerDown={onPress}>
       <article className={styles.paper} style={{ width: `${zoom}%` }} aria-label="Music sheet">
         <div className={styles.scoreHeading}>
           <input

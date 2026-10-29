@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Command, Score } from "@/modules/score";
 import { takeParts, type TakePart } from "@/modules/voice";
+import { askedAfter, withHeardWords, type AskedTake } from "../../application/asked-take";
 import type { ChatRepository, Turn } from "../../application/chat-history";
 import type { HeardTake } from "../../application/handle-voice-request";
 import type { AssistantResult, AssistantTurn, ProgressListener } from "../../application/run-assistant";
@@ -52,6 +53,7 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
   const [restored, setRestored] = useState(false);
   // Holds a take's audio too, so retrying never asks the musician to sing again.
   const attempts = useRef(new Map<string, Attempt>());
+  const asked = useRef<AskedTake | null>(null);
   const busy = turns.some((turn) => turn.status === "working");
 
   useEffect(() => {
@@ -82,7 +84,12 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
    * Sends a request as a new turn, or again in place of a failed one (`retryId`). `label` is
    * shown until the server says what it heard; `instruction` is what it is sent.
    */
-  const run = async (label: string, { instruction, request, context }: Attempt, spoken: boolean, retryId?: string) => {
+  const run = async (
+    label: string,
+    { instruction, request, context }: Attempt,
+    spoken: boolean,
+    retryId?: string,
+  ): Promise<(AssistantResult & { heard?: HeardTake }) | null> => {
     const id = retryId ?? crypto.randomUUID();
     attempts.current.set(id, { instruction, request, context });
     const history: AssistantTurn[] = turns
@@ -101,16 +108,17 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
         // What was heard replaces "Voice take" as soon as it is known, before the agent answers.
         update(
           id,
-          activity.stage === "heard"
+          activity.stage === "heard" && spoken
             ? { activity, heard: activity.parts, instruction: describeHeard(activity.parts) }
             : { activity },
         ),
       );
-      const parts = result.heard && heardOf(result.heard);
+      // A typed answer sent with an earlier take keeps its own words.
+      const parts = spoken && result.heard && heardOf(result.heard);
       const heard = parts ? { heard: parts, instruction: describeHeard(parts) } : {};
       if (result.commands.length && !applyCommands(result.commands, result.reply)) {
         update(id, { ...heard, status: "failed", reply: "The score changed while I was working. Try again." });
-        return;
+        return null;
       }
       attempts.current.delete(id);
       update(id, {
@@ -122,25 +130,35 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
         changes: result.changes,
         revision: result.commands.length ? getScore().revision : undefined,
       });
+      return result;
     } catch (error) {
       update(id, {
         status: "failed",
         activity: undefined,
         reply: error instanceof Error ? error.message : "Something went wrong.",
       });
+      return null;
     }
   };
 
   /** Sends a typed instruction; resolves once it is answered. Ignored while another is running. */
   const send = async (instruction: string, context: RequestContext) => {
     const text = instruction.trim();
-    if (text && !busy) await run(text, { instruction: text, request: requestAssistant, context }, false);
+    if (!text || busy) return;
+    const take = asked.current;
+    // An answer to a question about a take: the agent hears the take again, not just the answer.
+    const request: Request = take
+      ? (payload, progress) => requestVoiceAssistant(take.wav, withHeardWords(payload, take), progress)
+      : requestAssistant;
+    const result = await run(text, { instruction: text, request, context }, false);
+    asked.current = askedAfter(asked.current, take, result);
   };
 
   const sendTake = async (wav: Uint8Array, context: RequestContext) => {
     if (busy) return;
     const request: Request = (payload, progress) => requestVoiceAssistant(wav, payload, progress);
-    await run(VOICE_LABEL, { instruction: "", request, context }, true);
+    const result = await run(VOICE_LABEL, { instruction: "", request, context }, true);
+    asked.current = askedAfter(asked.current, { wav, speech: result?.heard?.recognized }, result);
   };
 
   /** Whether a failed turn can be sent again: only in the session that sent it. */
@@ -157,6 +175,7 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
   /** Forgets the whole conversation, e.g. for a new song. A reply still on its way is dropped. */
   const clear = () => {
     attempts.current.clear();
+    asked.current = null;
     setTurns([]);
   };
 

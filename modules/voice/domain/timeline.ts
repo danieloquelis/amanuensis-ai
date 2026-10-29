@@ -20,7 +20,8 @@ export function takeParts(speech: SpeechTurn[], sung: SungSpan[]): TakePart[] {
 
 /**
  * The take as the agent reads it: what was said and where singing happened, in time order.
- * `"…"` marks words; sung spans carry the ID the voice tools take.
+ * `"…"` marks words; sung spans carry the ID the voice tools take. The rest of the voice follows
+ * on one line, for when the words say they sang somewhere no sung span covers.
  */
 export function describeTake(take: VoiceTake): string {
   const said = take.speech
@@ -29,5 +30,10 @@ export function describeTake(take: VoiceTake): string {
   const sang = take.sung.map((s) => ({ at: s.start, line: `${time(s)} sang: ${s.id} (${round(s.end - s.start)} s)` }));
   const lines = [...said, ...sang].sort((a, b) => a.at - b.at).map((e) => e.line);
   const length = round(take.signal.samples.length / take.signal.sampleRate);
-  return [`[Voice take, ${length} s]`, ...(lines.length ? lines : ["(nothing heard)"])].join("\n");
+  const other = take.voice.map((v) => `${v.id} ${time(v)}`).join(" · ");
+  return [
+    `[Voice take, ${length} s]`,
+    ...(lines.length ? lines : ["(nothing heard)"]),
+    ...(other ? [`other voice, not heard as singing: ${other}`] : []),
+  ].join("\n");
 }

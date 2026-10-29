@@ -18,7 +18,7 @@ const replySchema = z.object({
 /**
  * Muse Voice Transcribe adapter (server-only: it holds the API key). Speech comes back as
  * turns with millisecond times. Held singing mostly yields no words, but short sung syllables
- * come back written as words ("da da da"); the take sorts those out (see `splitSungSyllables`).
+ * come back written as words ("da da da"); the take sorts those out (see `singingEvidence`).
  */
 export function createMuseTranscriber(apiKey: string, baseUrl = META_API_URL): SpeechRecognizer {
   return {

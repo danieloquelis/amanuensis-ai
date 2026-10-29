@@ -42,7 +42,7 @@ test("in an arpeggio, a note sung nearly a semitone off lands on the chord tone"
   });
   assert.ok(result.ok);
   const [span] = result.spans as { bars: Record<string, string> }[];
-  assert.equal(span.bars["bar 1"], "E4/1 G4/1 B4/1 G4/1");
+  assert.equal(span.bars["bar 1"], "E4q G4q B4q G4q");
 });
 
 test("sung bits of one take, with talking between, are moved into the key by the same amount", () => {

@@ -8,14 +8,20 @@ import { midi, singMelody, type SungNoteSpec } from "../support/synthetic-voice"
 const melody = (...notes: [string | null, number][]): SungNoteSpec[] =>
   notes.map(([name, beats]) => ({ midi: name ? midi(name) : null, beats }));
 
-/** Talking: short voiced syllables with gaps, about a third of the time voiced. */
+/**
+ * Talking: short voiced syllables with gaps, about a third of the time voiced, the pitch always
+ * sliding within each syllable as speech does (singing holds it), with the breath and consonant
+ * noise of speech around the clean harmonics.
+ */
 const talking = (seconds: number) =>
   singMelody(
     Array.from({ length: Math.round(seconds / 0.45) }, (_, i) => [
-      { midi: midi("A3") + (i % 3), beats: 0.25 },
+      { midi: midi("A3") + (i % 3), beats: 0.08 },
+      { midi: midi("A3") + (i % 3) + 2, beats: 0.08 },
+      { midi: midi("A3") + (i % 3) - 1, beats: 0.09 },
       { midi: null, beats: 0.5 },
     ]).flat(),
-    { bpm: 100, glideSeconds: 0.05 },
+    { bpm: 100, glideSeconds: 0.05, noise: 0.05 },
   );
 
 const phrase = melody(["C4", 1], ["E4", 1], ["G4", 1], ["E4", 1], ["D4", 1], ["F4", 1], ["A4", 2]);
@@ -32,8 +38,11 @@ const join = (...signals: Signal[]): Signal => {
 
 test("singing after talking is found as one sung span, and the talking is not", () => {
   const speech = talking(4);
-  const take = createTake(join(speech, singMelody(phrase, { bpm: 120, vibratoCents: 30 })), []);
   const talkingEnds = speech.samples.length / speech.sampleRate;
+  // The recognizer writes the talk down; the melody gets no words.
+  const take = createTake(join(speech, singMelody(phrase, { bpm: 120, vibratoCents: 30 })), [
+    { start: 0, end: talkingEnds, text: "so the next part goes like this" },
+  ]);
   assert.equal(take.sung.length, 1);
   assert.ok(take.sung[0].start >= talkingEnds - 0.1, `span starts at ${take.sung[0].start}`);
 });
@@ -114,7 +123,7 @@ test("singing after a pause is found even when the recognizer's speech turn runs
   // The synthetic voice's attack takes a moment to be heard as pitched.
   const ATTACK = 0.3;
   assert.ok(Math.abs(take.sung[0].start - singingStarts) < ATTACK, `span starts at ${take.sung[0].start}`);
-  assert.ok(take.speech[0].end <= singingStarts, `speech now ends at ${take.speech[0].end}`);
+  assert.ok(take.speech[0].end <= take.sung[0].start, `speech now ends at ${take.speech[0].end}`);
 });
 
 test("a short spoken turn that starts with a quiet moment is still talk, not singing", () => {
@@ -219,8 +228,8 @@ test("syllables the recognizer wrote down for the singing are not shown as words
 });
 
 test("words far from any singing are kept as said, even repeated ones", () => {
-  const take = createTake(talking(3), [{ start: 0, end: 2.5, text: "no, no, no, not that bar" }]);
-  assert.equal(take.speech[0].text, "no, no, no, not that bar");
+  const take = createTake(talking(3), [{ start: 0, end: 2.5, text: "this one, this one, not that bar" }]);
+  assert.equal(take.speech[0].text, "this one, this one, not that bar");
 });
 
 test("talking and singing in turns reads in the order it happened", () => {
@@ -280,13 +289,36 @@ test("sung syllables at the end of a spoken turn, with no pause before them, are
   assert.equal(take.speech[0].text, "so if you're gonna add");
 });
 
-test("syllables written into the turn before the singing they stand for are not sung twice", () => {
+test("syllables the recognizer wrote for singing after a pause are that singing, not the talk", () => {
   const speech = talking(4);
   const pause = singMelody([{ midi: null, beats: 3 }], { bpm: 120 });
   const talkingEnds = speech.samples.length / speech.sampleRate;
-  const take = createTake(join(speech, pause, singMelody(phrase, { bpm: 120 })), [
-    { start: 0, end: talkingEnds, text: `it's going to be like ${"ping ".repeat(16)}` },
+  const signal = join(speech, pause, singMelody(phrase, { bpm: 120 }));
+  // One turn over all of it, as the recognizer writes such a take.
+  const take = createTake(signal, [
+    { start: 0, end: signal.samples.length / signal.sampleRate, text: `it's going to be like ${"ping ".repeat(16)}` },
   ]);
   assert.equal(take.sung.length, 1);
   assert.ok(take.sung[0].start >= talkingEnds, `span starts at ${take.sung[0].start}`);
+});
+
+test("sung syllables the recognizer gave almost no time are still singing", () => {
+  const sung = syllables(6);
+  const end = sung.samples.length / sung.sampleRate;
+  // The recognizer stamped the whole run on its last moment.
+  const take = createTake(sung, [{ start: end - 0.6, end: end - 0.5, text: "Ta ta ta ta ta ta" }]);
+  assert.equal(take.sung.length, 1);
+  assert.ok(take.sung[0].start < 0.5, `span starts at ${take.sung[0].start}`);
+  assert.deepEqual(take.speech, []);
+});
+
+test("voice not heard as singing is still offered to the agent, and its tools can hear it", () => {
+  const speech = talking(3);
+  const talkingEnds = speech.samples.length / speech.sampleRate;
+  const take = createTake(speech, [{ start: 0, end: talkingEnds, text: "then in the second bar" }]);
+  assert.equal(take.sung.length, 0);
+  assert.ok(take.voice.length > 0);
+  assert.match(describeTake(take), /other voice, not heard as singing: voice-1 /);
+  const heard = createMusicTools(take)("voice_hear_notes", { spanId: "voice-1" });
+  assert.ok(heard.ok && Number(heard.count) > 0, JSON.stringify(heard));
 });

@@ -19,7 +19,7 @@ export const ASK_TOOL = "assistant_ask";
  * preview/apply pair stays out of this list; that also keeps the prompt about half as large.
  */
 export const assistantTools: ToolSpec[] = [
-  ...scoreTools.filter((tool) => ["score_get_context", "score_edit", "score_undo"].includes(tool.name)),
+  ...scoreTools.filter((tool) => ["score_get_context", "score_edit", "score_write", "score_undo"].includes(tool.name)),
   {
     name: ASK_TOOL,
     description:

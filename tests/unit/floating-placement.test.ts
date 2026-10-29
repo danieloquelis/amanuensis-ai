@@ -25,6 +25,27 @@ test("the composer opens below the selection when it fits, and never covers it",
   assert.equal(overlaps(boxOf(place, panel), panel, selection), false);
 });
 
+test("space taken by the chat at the bottom counts as full: the panel opens above instead", () => {
+  const lower = { left: 300, top: 320, right: 500, bottom: 360 };
+  const place = placeAround(lower, area, panel, 200);
+  assert.deepEqual(place, { left: 300, bottom: 600 - 320 + 8 });
+  assert.equal(overlaps(boxOf(place, panel), panel, lower), false);
+});
+
+test("with no room above or below, the panel opens beside the selection, clear of the chat", () => {
+  const place = placeAround(selection, area, panel, 200);
+  const box = boxOf(place, panel);
+  assert.deepEqual(place, { left: 508, top: 108 });
+  assert.equal(overlaps(box, panel, selection), false);
+  assert.ok(box.top + panel.height <= 600 - 200);
+});
+
+test("a selection behind the chat still gets its panel above the chat, not on it", () => {
+  const hidden = { left: 300, top: 450, right: 500, bottom: 500 };
+  const place = placeAround(hidden, area, { width: 360, height: 120 }, 200);
+  assert.deepEqual(place, { left: 300, bottom: 200 + 12 });
+});
+
 test("near the bottom, the composer opens just above the selection and grows upwards", () => {
   const low = { left: 300, top: 420, right: 500, bottom: 520 };
   const place = placeAround(low, area, panel);
