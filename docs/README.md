@@ -13,6 +13,8 @@ Start with the [product brief](product/product-brief.md), then the [architecture
 | [Code conventions](architecture/code-conventions.md) | Module layers, imports, components vs hooks, enforced checks |
 | [Score and tool contracts](architecture/score-and-tools.md) | Musical state, agent tools, edits, conflicts and undo |
 | [Delivery plan](planning/delivery-plan.md) | Research spikes, implementation order, acceptance gates, unresolved choices |
+| [Triplets plan](planning/triplets-plan.md) | Triplets (3:2): representation, phases, files, tests, what is left out |
+| [Instruments and voices plan](planning/instruments-voices-plan.md) | Sampled instruments, voices on a staff, several instruments, drums |
 | [Models and voice research](research/models-and-voice.md) | Meta capabilities, specialist gaps and source evidence |
 | [Notation research](research/notation-engine.md) | Owned engraving engine and musical correctness |
 | [Melody transcription](research/melody-transcription.md) | Sung audio → notes and rhythm: model findings, pipeline, measured accuracy |
