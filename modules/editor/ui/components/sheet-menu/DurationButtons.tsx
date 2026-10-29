@@ -11,7 +11,6 @@ export function DurationButtons({ event, onCommand }: { event: ScoreEvent; onCom
         <button
           key={value}
           aria-label={`${label} duration`}
-          title={label}
           aria-pressed={!event.measureRest && beats(event.duration) === value}
           onClick={() => onCommand({ type: "setDuration", eventId: event.id, duration: value }, `${label} duration`)}
         >
@@ -20,7 +19,6 @@ export function DurationButtons({ event, onCommand }: { event: ScoreEvent; onCom
       ))}
       <button
         aria-label="Dotted duration"
-        title="Dotted duration"
         aria-pressed={dotted && !event.measureRest}
         disabled={event.measureRest}
         onClick={() => onCommand(toggleDotOperation(event), "Changed dotted duration")}

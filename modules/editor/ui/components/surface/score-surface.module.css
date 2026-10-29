@@ -52,40 +52,6 @@
   pointer-events: none;
 }
 
-/* Quick duration toolbar under the selected note */
-
-.quickActions {
-  overflow: visible;
-}
-
-.quickBar {
-  display: flex;
-  align-items: center;
-  width: fit-content;
-  padding: 4px;
-  border: 1px solid #d6dfce;
-  border-radius: 7px;
-  background: #fcfdf9;
-  box-shadow: 0 3px 14px #304b2317;
-}
-
-.quickBar > button {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 32px;
-  border: 0;
-  border-left: 1px solid #e0e7d9;
-  border-radius: 0 4px 4px 0;
-  background: none;
-  color: #506e42;
-  font-size: 18px;
-}
-
-.quickBar > button:hover {
-  background: #e5eddf;
-}
-
 /* Bars, signatures and indications */
 
 .divider {
@@ -170,7 +136,6 @@ g:hover > .hoverOnly,
   .halo,
   .hit,
   .playhead,
-  .quickActions,
   .dividerHighlight {
     display: none;
   }

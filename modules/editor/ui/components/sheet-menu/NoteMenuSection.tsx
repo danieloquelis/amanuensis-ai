@@ -1,20 +1,9 @@
-import { ARTICULATIONS, type Articulation, type KeySignature, type ScoreEvent } from "@/modules/score";
+import type { KeySignature, ScoreEvent } from "@/modules/score";
 import { toggleRestOperation } from "../../../application/note-edits";
+import { AccidentalButtons } from "./AccidentalButtons";
+import { ArticulationButtons } from "./ArticulationButtons";
 import type { CheckedCommit } from "./SheetContextMenu";
 import styles from "./sheet-menu.module.css";
-
-const ACCIDENTALS = [
-  { alter: -1, label: "Flat", symbol: "♭" },
-  { alter: 0, label: "Natural", symbol: "♮" },
-  { alter: 1, label: "Sharp", symbol: "♯" },
-] as const;
-
-const ARTICULATION_SYMBOLS: Record<Articulation, string> = {
-  staccato: "•",
-  accent: ">",
-  tenuto: "—",
-  fermata: "𝄐",
-};
 
 /** Accidental, articulation and note/rest conversion for one event (durations live in the floating strip). */
 export function NoteMenuSection({
@@ -27,49 +16,10 @@ export function NoteMenuSection({
   commit: CheckedCommit;
 }) {
   const pitch = event.pitch;
-  // Rests only take fermatas.
-  const articulations = ARTICULATIONS.filter((a) => pitch || a === "fermata");
   return (
     <>
-      {pitch && (
-        <div className={styles.row} role="group" aria-label="Accidental">
-          {ACCIDENTALS.map(({ alter, label, symbol }) => (
-            <button
-              key={alter}
-              aria-label={label}
-              title={label}
-              aria-pressed={pitch.alter === alter}
-              onClick={() =>
-                commit({ type: "setPitch", eventId: event.id, pitch: { ...pitch, alter } }, "Changed accidental")
-              }
-            >
-              {symbol}
-            </button>
-          ))}
-        </div>
-      )}
-      <div className={styles.row} role="group" aria-label="Articulation">
-        {articulations.map((articulation) => (
-          <button
-            key={articulation}
-            aria-label={articulation}
-            title={articulation}
-            aria-pressed={event.articulation === articulation}
-            onClick={() =>
-              commit(
-                {
-                  type: "setArticulation",
-                  eventId: event.id,
-                  articulation: event.articulation === articulation ? null : articulation,
-                },
-                `Changed ${articulation}`,
-              )
-            }
-          >
-            {ARTICULATION_SYMBOLS[articulation]}
-          </button>
-        ))}
-      </div>
+      <AccidentalButtons event={event} onCommand={commit} />
+      <ArticulationButtons event={event} onCommand={commit} />
       <button
         aria-label={pitch ? "Make rest" : "Add note"}
         className={styles.action}

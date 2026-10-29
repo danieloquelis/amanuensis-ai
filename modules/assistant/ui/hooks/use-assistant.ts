@@ -30,13 +30,10 @@ export type Turn = {
   heard?: TakePart[];
   /** The selection the request was about ("Bars 3–6"), shown with it in the chat. */
   context?: string;
-  /** Where it was asked: in the chat panel or from the selection on the sheet. */
-  origin: TurnOrigin;
 };
 
-export type TurnOrigin = "chat" | "canvas";
 /** What a request is about: the picked IDs and their name. Empty IDs mean the whole score. */
-export type RequestContext = { ids: string[]; name: string | null; origin: TurnOrigin };
+export type RequestContext = { ids: string[]; name: string | null };
 export type Assistant = ReturnType<typeof useAssistant>;
 
 type Options = {
@@ -44,7 +41,7 @@ type Options = {
   applyCommands: (commands: Command[], receipt: string) => boolean;
 };
 
-/** How long a sung stretch is, as the chat shows it. */
+/** How long a sung stretch is, as the history shows it. */
 export const sungLength = (seconds: number) => `${Math.max(1, Math.round(seconds))} s`;
 
 /** A take as text, in order: their words, and "♪ sang 3 s" where they sang (for history). */
@@ -56,9 +53,9 @@ export function describeHeard(parts: TakePart[]): string {
 const heardOf = ({ speech, sung }: HeardTake) => takeParts(speech, sung);
 
 /**
- * One conversation with the score assistant, shared by the chat panel and the composer on the
- * sheet. Each instruction (typed or a recorded take) is sent with the current score and what it
- * is about; returned commands are applied as one undoable step.
+ * One conversation with the score AI, driven from the compose bar. Each instruction (typed
+ * or a recorded take) is sent with the current score and what it is about; returned commands
+ * are applied as one undoable step.
  */
 export function useAssistant({ getScore, applyCommands }: Options) {
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -76,7 +73,7 @@ export function useAssistant({ getScore, applyCommands }: Options) {
         instruction: turn.context ? `[${turn.context}] ${turn.instruction}` : turn.instruction,
         reply: turn.reply!,
       }));
-    const about = { context: context.name ?? undefined, origin: context.origin };
+    const about = { context: context.name ?? undefined };
     setTurns((all) => [...all, { id, instruction: label, status: "working", spoken, ...about }]);
     const selection = { selectedIds: context.ids, ...(context.name ? { selectionName: context.name } : {}) };
     try {
@@ -92,7 +89,7 @@ export function useAssistant({ getScore, applyCommands }: Options) {
       const parts = result.heard && heardOf(result.heard);
       const heard = parts ? { heard: parts, instruction: describeHeard(parts) } : {};
       if (result.commands.length && !applyCommands(result.commands, result.reply)) {
-        update(id, { ...heard, status: "failed", reply: "The score changed while I was working. Ask again." });
+        update(id, { ...heard, status: "failed", reply: "The score changed while I was working. Try again." });
         return;
       }
       update(id, {
@@ -113,6 +110,7 @@ export function useAssistant({ getScore, applyCommands }: Options) {
     }
   };
 
+  /** Sends a typed instruction; resolves once it is answered. Ignored while another is running. */
   const send = async (instruction: string, context: RequestContext) => {
     const text = instruction.trim();
     if (text && !busy) await run(text, text, requestAssistant, context);

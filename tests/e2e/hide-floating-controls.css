@@ -1,0 +1,7 @@
+/*
+ * Engraving screenshots test only the engraving: the controls floating over the workspace
+ * (everything after the canvas, its first child) are hidden while the screenshot is taken.
+ */
+section[aria-label="Score workspace"] > :not(:first-child) {
+  visibility: hidden !important;
+}

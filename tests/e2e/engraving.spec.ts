@@ -6,6 +6,10 @@ import { readFileSync } from "node:fs";
  * After an intended engraving change, review the diff report, then refresh with:
  *   yarn build && yarn test:e2e engraving --update-snapshots
  */
+
+/** Only the engraving is under test: this stylesheet hides the controls floating over it. */
+const HIDE_FLOATING_CONTROLS = "tests/e2e/hide-floating-controls.css";
+
 for (const name of ["dense", "keys", "long", "short", "leadsheet"]) {
   test(`engraves the ${name} fixture`, async ({ page }) => {
     const score = readFileSync(`tests/fixtures/engraving/${name}.json`, "utf8");
@@ -13,6 +17,9 @@ for (const name of ["dense", "keys", "long", "short", "leadsheet"]) {
     await page.goto("/");
     const sheet = page.locator("svg[aria-label*='treble clef']");
     await expect(sheet).toBeVisible();
-    await expect(sheet).toHaveScreenshot(`${name}.png`, { animations: "disabled" });
+    await expect(sheet).toHaveScreenshot(`${name}.png`, {
+      animations: "disabled",
+      stylePath: HIDE_FLOATING_CONTROLS,
+    });
   });
 }

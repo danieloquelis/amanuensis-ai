@@ -1,4 +1,7 @@
+import { ColumnsPlusRight, Guitar, Repeat, SpeakerHigh, TextAa } from "@phosphor-icons/react";
+import type { ReactNode } from "react";
 import { meterName, scoreKey, type Score } from "@/modules/score";
+import surface from "@/shared/ui/surface.module.css";
 import { toolTarget, type Selection } from "../../../application/selection";
 import type { CommitEdit } from "../../hooks/use-score-editor";
 import { ChordEntry } from "./ChordEntry";
@@ -10,6 +13,8 @@ import { TextEntry } from "./TextEntry";
 import { ToolPopover } from "./ToolPopover";
 import styles from "./toolbar.module.css";
 
+const ICON = { size: 22, weight: "regular" } as const;
+
 type ScoreToolMenusProps = {
   score: Score;
   selection: Selection | null;
@@ -17,19 +22,42 @@ type ScoreToolMenusProps = {
   ready: boolean;
   onCommand: CommitEdit;
   onError: (message: string) => void;
+  /** Controls at the start of the pill (playback), split from the tools by a hairline. */
+  leading?: ReactNode;
+  /** Little room (the chat is docked beside it): on narrower screens the names under the icons go. */
+  compact?: boolean;
 };
 
 /**
- * Notation toolbar. Every tool acts on the selected note or bar (bar 1 when nothing is selected)
- * and applies on click; Undo is the safety net.
+ * Notation tools as one floating pill: each shows an icon (or the current value) over a short
+ * name. Every tool acts on the selected note or bar (bar 1 when nothing is selected) and applies
+ * on click; Undo is the safety net.
  */
-export function ScoreToolMenus({ score, selection, selectedBarId, ready, onCommand, onError }: ScoreToolMenusProps) {
+export function ScoreToolMenus({
+  score,
+  selection,
+  selectedBarId,
+  ready,
+  onCommand,
+  onError,
+  leading,
+  compact = false,
+}: ScoreToolMenusProps) {
   const target = toolTarget(score, selection, selectedBarId);
   const barKey = `${target.measureId}-${score.revision}`;
+  const meter = meterName(score.measures[target.barIndex].meter);
   return (
-    <div className={styles.tools} role="group" aria-label="Notation toolbar">
+    <div
+      className={`${surface.glass} ${styles.tools}`}
+      data-compact={compact}
+      role="group"
+      aria-label="Notation toolbar"
+    >
+      {leading}
+      {leading && <span className={surface.divider} />}
       <ToolPopover
-        label={meterName(score.measures[target.barIndex].meter)}
+        icon={<span className={styles.valueGlyph}>{meter}</span>}
+        label="Time"
         accessibleLabel="Change time signature"
         disabled={!ready}
       >
@@ -37,29 +65,38 @@ export function ScoreToolMenus({ score, selection, selectedBarId, ready, onComma
           <MeterGrid score={score} barIndex={target.barIndex} onCommand={onCommand} onError={onError} onDone={close} />
         )}
       </ToolPopover>
-      <ToolPopover label={keyLabel(scoreKey(score))} accessibleLabel="Change key signature" disabled={!ready}>
+      <ToolPopover
+        icon={<span className={styles.valueGlyph}>{keyLabel(scoreKey(score))}</span>}
+        label="Key"
+        accessibleLabel="Change key signature"
+        disabled={!ready}
+      >
         <KeyGrid key={barKey} score={score} onCommand={onCommand} />
       </ToolPopover>
-      <ToolPopover label="Chord" accessibleLabel="Chord symbols" disabled={!ready}>
+      <span className={surface.divider} />
+      <ToolPopover icon={<Guitar {...ICON} />} label="Chords" accessibleLabel="Chord symbols" disabled={!ready}>
         <ChordEntry key={target.eventId ?? target.measureId} score={score} target={target} onCommand={onCommand} />
       </ToolPopover>
-      <ToolPopover label="ƒ" accessibleLabel="Dynamics" disabled={!ready} symbol>
+      <ToolPopover icon={<SpeakerHigh {...ICON} />} label="Dynamics" accessibleLabel="Dynamics" disabled={!ready}>
         <DynamicsRow score={score} target={target} onCommand={onCommand} />
       </ToolPopover>
-      <ToolPopover label="Text" accessibleLabel="Text indications" disabled={!ready}>
+      <ToolPopover icon={<TextAa {...ICON} />} label="Text" accessibleLabel="Text indications" disabled={!ready}>
         {(close) => <TextEntry target={target} onCommand={onCommand} onDone={close} />}
       </ToolPopover>
-      <ToolPopover label="Marks" accessibleLabel="Marks and repeats" disabled={!ready}>
+      <span className={surface.divider} />
+      <ToolPopover icon={<Repeat {...ICON} />} label="Repeats" accessibleLabel="Marks and repeats" disabled={!ready}>
         <MarksPalette score={score} barIndex={target.barIndex} onCommand={onCommand} onError={onError} />
       </ToolPopover>
       <button
-        className={styles.trigger}
+        className={styles.tool}
         disabled={!ready}
         aria-label="Add bar"
-        title="Add a bar after the selection"
         onClick={() => onCommand({ type: "appendMeasure", afterMeasureId: target.measureId }, "Added bar")}
       >
-        + Bar
+        <span className={styles.toolIcon}>
+          <ColumnsPlusRight {...ICON} />
+        </span>
+        <span className={styles.toolLabel}>Add bar</span>
       </button>
     </div>
   );

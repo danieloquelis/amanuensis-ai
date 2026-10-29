@@ -14,7 +14,6 @@ test("edit, undo, redo and reload preserve the musical document", async ({ page 
   await page.getByRole("button", { name: "Redo", exact: true }).click();
   await page.reload();
   await expect(page.getByRole("button", { name: "Bar 1, beat 1, D4, 1 beats", exact: true })).toBeVisible();
-  await expect(page.getByText("Saved on this device")).toBeVisible();
   expect(errors).toEqual([]);
   await page.screenshot({ path: "test-results/workspace-desktop.png", fullPage: true });
 });
@@ -144,8 +143,10 @@ test("sheet context actions replace the old note inspector", async ({ page }) =>
   await menu.getByRole("button", { name: "Sharp", exact: true }).click();
   await expect(page.getByRole("button", { name: "Bar 1, beat 1, C♯4, 1 beats", exact: true })).toBeVisible();
   await expect(menu).toHaveCount(0);
-  await page.getByRole("button", { name: "More note actions", exact: true }).click();
-  await menu.getByRole("button", { name: "staccato", exact: true }).click();
+  // The same tools sit in the card beside the selected note.
+  const card = page.getByRole("toolbar", { name: "Selected note actions" });
+  await card.getByRole("button", { name: "staccato", exact: true }).click();
+  await expect(card.getByRole("button", { name: "staccato", exact: true })).toHaveAttribute("aria-pressed", "true");
   await page.screenshot({ path: "test-results/direct-sheet-editing.png", fullPage: true });
 });
 
@@ -204,7 +205,8 @@ test("a key signature changes the engraving and diatonic steps, not the written 
   await page.getByRole("button", { name: "D major", exact: true }).click();
   await page.keyboard.press("Escape");
   await expect(page.locator("svg[aria-label*='D major']")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Change key signature" })).toHaveText("D");
+  // The tool shows the current key over its name.
+  await expect(page.getByRole("button", { name: "Change key signature" })).toHaveText(/^D\s*Key$/);
   await page.getByRole("button", { name: "Bar 1, beat 2, E4, 1 beats", exact: true }).click();
   await page.keyboard.press("ArrowUp");
   await expect(page.getByRole("button", { name: "Bar 1, beat 2, F♯4, 1 beats", exact: true })).toBeVisible();
@@ -262,7 +264,7 @@ const streamed = (body: unknown) => ({
   body: `${JSON.stringify({ type: "progress", event: { stage: "thinking" } })}\n${JSON.stringify({ type: "result", status: 200, body })}\n`,
 });
 
-test("the assistant applies an instruction as one undoable step", async ({ page }) => {
+test("the AI applies an instruction as one undoable step", async ({ page }) => {
   // The model is mocked: browser tests never call the real API.
   await page.route("/api/assistant", async (route) => {
     const { score } = route.request().postDataJSON();
@@ -284,18 +286,18 @@ test("the assistant applies an instruction as one undoable step", async ({ page 
   });
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Change time signature" })).toBeEnabled();
-  await page.getByRole("button", { name: "Open chat" }).click();
-  const instruction = page.getByLabel("Instruction for the assistant");
+  const instruction = page.getByLabel("Describe the music");
   await instruction.fill("Add Am7 on beat 3 of bar 2");
   await instruction.press("Enter");
-  const assistant = page.getByRole("complementary", { name: "Assistant" });
-  await expect(assistant.getByText("Added Am7 on beat 3 of bar 2.")).toBeVisible();
+  // Sending opens the chat above the bar.
+  const reply = page.getByRole("region", { name: "Chat" });
+  await expect(reply.getByText("Added Am7 on beat 3 of bar 2.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Chord Am7", exact: true })).toBeVisible();
-  await assistant.getByRole("button", { name: "Undo", exact: true }).click();
+  await reply.getByRole("button", { name: "Undo", exact: true }).click();
   await expect(page.getByRole("button", { name: "Chord Am7", exact: true })).toHaveCount(0);
 });
 
-test("the assistant's question becomes buttons that answer it", async ({ page }) => {
+test("the AI's question becomes buttons that answer it", async ({ page }) => {
   let calls = 0;
   await page.route("/api/assistant", async (route) => {
     calls++;
@@ -312,19 +314,18 @@ test("the assistant's question becomes buttons that answer it", async ({ page })
     await route.fulfill(streamed(body));
   });
   await page.goto("/");
-  await page.getByRole("button", { name: "Open chat" }).click();
-  const instruction = page.getByLabel("Instruction for the assistant");
+  const instruction = page.getByLabel("Describe the music");
   await instruction.fill("repeat that");
   await instruction.press("Enter");
-  const assistant = page.getByRole("complementary", { name: "Assistant" });
-  await assistant.getByRole("button", { name: "Bar 2", exact: true }).click();
-  await expect(assistant.getByText("Repeated bar 2.")).toBeVisible();
+  const reply = page.getByRole("region", { name: "Chat" });
+  await reply.getByRole("button", { name: "Bar 2", exact: true }).click();
+  await expect(reply.getByText("Repeated bar 2.")).toBeVisible();
 });
 
 /** A bar's empty staff, clicked near its corner so the click lands on the bar, not a note. */
 const barCorner = { position: { x: 6, y: 6 } };
 
-test("shift-click picks a range of bars, and the assistant on the sheet asks about just those", async ({ page }) => {
+test("shift-click picks a range of bars, and the compose bar works on just those", async ({ page }) => {
   const asked: { selectedIds: string[]; selectionName?: string }[] = [];
   await page.route("/api/assistant", async (route) => {
     asked.push(route.request().postDataJSON());
@@ -337,19 +338,25 @@ test("shift-click picks a range of bars, and the assistant on the sheet asks abo
   for (const bar of ["Bar 2", "Bar 3", "Bar 4"]) {
     await expect(page.getByRole("button", { name: bar, exact: true })).toHaveAttribute("aria-pressed", "true");
   }
-  await page.getByRole("button", { name: "Ask the assistant about Bars 2–4" }).click();
-  const composer = page.getByRole("dialog", { name: "Ask the assistant" });
-  await composer.getByLabel("Ask about the selection").fill("make these slash bars");
-  await composer.getByLabel("Ask about the selection").press("Enter");
-  await expect(composer.getByText("Made bars 2–4 slash bars.")).toBeVisible();
+  // The selection is in the bar already: no extra click to tell the AI what it is about.
+  const compose = page.getByRole("form", { name: "Compose" });
+  await expect(compose.getByText("Bars 2–4", { exact: true })).toBeVisible();
+  await page.keyboard.press("ControlOrMeta+k");
+  const instruction = compose.getByLabel("Describe the music");
+  await expect(instruction).toBeFocused();
+  await instruction.fill("make these slash bars");
+  await instruction.press("Enter");
+  const chat = page.getByRole("region", { name: "Chat" });
+  await expect(chat.getByText("Made bars 2–4 slash bars.")).toBeVisible();
+  await expect(chat.getByText("Bars 2–4", { exact: true })).toBeVisible();
   expect(asked).toEqual([
     expect.objectContaining({ selectedIds: ["bar-2", "bar-3", "bar-4"], selectionName: "Bars 2–4" }),
   ]);
-  // The exchange is part of the one conversation: the chat shows it with what it was about.
-  await page.getByRole("button", { name: "Open chat" }).click();
-  const chat = page.getByRole("complementary", { name: "Assistant" });
+  // The chat can be hidden and brought back from the bar.
+  await page.getByRole("button", { name: "Hide chat", exact: true }).first().click();
+  await expect(chat).toHaveCount(0);
+  await page.getByRole("button", { name: "Show chat", exact: true }).click();
   await expect(chat.getByText("Made bars 2–4 slash bars.")).toBeVisible();
-  await expect(chat.getByText("Bars 2–4", { exact: true })).toBeVisible();
 });
 
 test("cmd-click adds a note to the selection, and cmd-clicking it again removes it", async ({ page }) => {
@@ -360,31 +367,42 @@ test("cmd-click adds a note to the selection, and cmd-clicking it again removes 
   await second.click({ modifiers: ["ControlOrMeta"] });
   await expect(first).toHaveAttribute("aria-pressed", "true");
   await expect(second).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByText("2 notes · bars 1, 3 selected")).toBeVisible();
+  await expect(
+    page.getByRole("form", { name: "Compose" }).getByText("2 notes · bars 1, 3", { exact: true }),
+  ).toBeVisible();
   await second.click({ modifiers: ["ControlOrMeta"] });
   await expect(second).toHaveAttribute("aria-pressed", "false");
   await expect(first).toHaveAttribute("aria-pressed", "true");
 });
 
-test("the chat is closed at first and opens and closes from the header", async ({ page }) => {
+test("the compose bar follows the selection, and ⌘K focuses it from anywhere", async ({ page }) => {
   await page.goto("/");
-  const chat = page.getByRole("complementary", { name: "Assistant" });
-  await expect(chat).toHaveCount(0);
-  await page.getByRole("button", { name: "Open chat" }).click();
-  await expect(chat).toBeVisible();
-  await chat.getByRole("button", { name: "Close chat" }).click();
-  await expect(chat).toHaveCount(0);
+  const compose = page.getByRole("form", { name: "Compose" });
+  await expect(compose.getByText("Whole score", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true }).click();
+  await expect(compose.getByText("C4 · bar 1", { exact: true })).toBeVisible();
+  await page.keyboard.press("ControlOrMeta+k");
+  await expect(compose.getByLabel("Describe the music")).toBeFocused();
 });
 
-test("with nothing selected, the assistant waits in the corner and ⌘K opens it for the whole score", async ({
+test("the chat expands into a sidebar that holds the compose bar, and closing it puts the bar back", async ({
   page,
 }) => {
+  await page.route("/api/assistant", (route) =>
+    route.fulfill(streamed({ reply: "Done.", question: null, commands: [], changes: [] })),
+  );
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "Ask the assistant", exact: true })).toBeVisible();
-  await page.keyboard.press("ControlOrMeta+k");
-  const composer = page.getByRole("dialog", { name: "Ask the assistant" });
-  await expect(composer.getByText("Whole score")).toBeVisible();
-  await expect(composer.getByLabel("Ask about the selection")).toBeFocused();
-  await page.keyboard.press("Escape");
-  await expect(composer).toHaveCount(0);
+  const instruction = page.getByLabel("Describe the music");
+  await instruction.fill("make it brighter");
+  await instruction.press("Enter");
+  await expect(page.getByRole("region", { name: "Chat" }).getByText("Done.")).toBeVisible();
+  await instruction.fill("a half-typed idea");
+  await page.getByRole("button", { name: "Expand chat" }).click();
+  const sidebar = page.getByRole("complementary", { name: "Chat" });
+  await expect(sidebar.getByText("Done.")).toBeVisible();
+  // The bar moved into the sidebar, keeping what was typed.
+  await expect(sidebar.getByLabel("Describe the music")).toHaveValue("a half-typed idea");
+  await sidebar.getByRole("button", { name: "Close chat" }).click();
+  await expect(sidebar).toHaveCount(0);
+  await expect(page.getByLabel("Describe the music")).toHaveValue("a half-typed idea");
 });

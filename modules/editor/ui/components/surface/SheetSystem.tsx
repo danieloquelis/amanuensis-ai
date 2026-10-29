@@ -2,7 +2,6 @@ import { beatX, type System } from "@/modules/engraving";
 import { BeamLines, ChordSymbol, IndicationText, KeySignature, StaffLines, TrebleClef } from "@/modules/engraving/ui";
 import styles from "./score-surface.module.css";
 import { BarArea } from "./BarArea";
-import { SelectedNoteToolbar } from "./SelectedNoteToolbar";
 import { SheetBar } from "./SheetBar";
 import { SheetEvent } from "./SheetEvent";
 import { selectableItem, type SheetInteractions } from "./sheet-interactions";
@@ -10,24 +9,13 @@ import { selectableItem, type SheetInteractions } from "./sheet-interactions";
 type SheetSystemProps = {
   system: System;
   eventOrder: Map<string, number>;
-  selectedId: string | null;
   playBeat: number | null;
-  showQuickActions: boolean;
   interactions: SheetInteractions;
 };
 
 /** One line of music. Children are drawn in paint order: staff, bars, notes, beams, overlays. */
-export function SheetSystem({
-  system,
-  eventOrder,
-  selectedId,
-  playBeat,
-  showQuickActions,
-  interactions,
-}: SheetSystemProps) {
+export function SheetSystem({ system, eventOrder, playBeat, interactions }: SheetSystemProps) {
   const events = [...system.events].sort((a, b) => eventOrder.get(a.event.id)! - eventOrder.get(b.event.id)!);
-  const selectedItem =
-    showQuickActions && !interactions.multiple ? system.events.find((item) => item.event.id === selectedId) : undefined;
 
   return (
     <g>
@@ -99,7 +87,6 @@ export function SheetSystem({
           }}
         />
       ))}
-      {selectedItem && <SelectedNoteToolbar item={selectedItem} system={system} interactions={interactions} />}
       {playBeat !== null && <Playhead system={system} playBeat={playBeat} />}
     </g>
   );

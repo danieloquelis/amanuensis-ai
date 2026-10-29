@@ -1,43 +1,107 @@
+/* A floating glass pill of tools; each tool is an icon (or the current value) over its name. */
 .tools {
   display: flex;
   align-items: center;
   gap: 2px;
+  max-width: 100%;
+  padding: 5px;
+  border-radius: var(--r-xl);
 }
 
-.trigger {
-  height: 34px;
-  min-width: 34px;
-  padding: 0 10px;
+.tool {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex: none;
+  min-width: 58px;
+  height: 54px;
+  padding: 0 8px;
   border: 0;
-  border-radius: 5px;
-  color: #586a4e;
+  border-radius: var(--r-md);
+  corner-shape: squircle;
   background: transparent;
-  font-size: 12px;
+  color: var(--ink-soft);
+  transition:
+    background var(--fast) var(--ease-out),
+    color var(--fast) var(--ease-out),
+    transform var(--fast) var(--ease-out);
 }
 
-.trigger:hover {
-  background: #e5ecde;
+.tool:hover:not(:disabled) {
+  background: var(--hover);
+  color: var(--ink);
 }
 
-/* Music-symbol triggers such as ƒ and 𝄋 */
-.trigger.symbol {
-  font:
-    22px Georgia,
-    serif;
+.tool:active:not(:disabled) {
+  transform: scale(0.94);
 }
 
+/* The tool whose popover is open stays lit. */
+.tool:has(+ :popover-open) {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.toolIcon {
+  display: grid;
+  place-items: center;
+  height: 24px;
+}
+
+.toolLabel {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--muted);
+}
+
+.tool:hover .toolLabel {
+  color: var(--ink-soft);
+}
+
+/* Current values shown in place of an icon: "4/4", "D", "B♭m". */
+.valueGlyph {
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Popovers: glass panels that grow out of their trigger. */
 .popover {
   position: fixed;
   inset: auto;
   margin: 0;
   width: max-content;
   max-width: calc(100vw - 24px);
-  padding: 8px;
-  border: 1px solid #d1d9c9;
-  border-radius: 9px;
-  background: #fcfdf8;
-  color: #384c30;
-  box-shadow: 0 8px 35px #273b1726;
+  padding: 10px;
+  border: 0;
+  border-radius: var(--r-lg);
+  corner-shape: squircle;
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-blur);
+  color: var(--ink);
+  box-shadow: var(--shadow-popover);
+  transform-origin: top center;
+  transition:
+    opacity var(--fast) var(--ease-out),
+    transform var(--medium) var(--ease-out),
+    overlay var(--medium) allow-discrete,
+    display var(--medium) allow-discrete;
+}
+
+.popover:not(:popover-open) {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.97);
+}
+
+@starting-style {
+  .popover:popover-open {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.94);
+  }
 }
 
 .popover::backdrop {
@@ -46,79 +110,119 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(44px, auto));
-  gap: 2px;
+  grid-template-columns: repeat(4, minmax(48px, auto));
+  gap: 4px;
 }
 
 .wideGrid {
-  grid-template-columns: repeat(5, minmax(44px, auto));
+  grid-template-columns: repeat(5, minmax(48px, auto));
 }
 
 .grid button,
 .segmented button {
-  min-height: 34px;
-  padding: 6px 10px;
+  min-height: 38px;
+  padding: 6px 12px;
   border: 0;
-  border-radius: 5px;
+  border-radius: var(--r-sm);
+  corner-shape: squircle;
   background: transparent;
   color: inherit;
-  font-size: 13px;
+  font-size: 14px;
   white-space: nowrap;
+  transition:
+    background var(--fast) var(--ease-out),
+    color var(--fast) var(--ease-out),
+    transform var(--fast) var(--ease-out);
 }
 
 .grid button:hover,
 .segmented button:hover {
-  background: #e9efe2;
+  background: var(--hover);
+}
+
+.grid button:active,
+.segmented button:active {
+  transform: scale(0.94);
 }
 
 .grid button[aria-pressed="true"],
 .segmented button[aria-pressed="true"],
 .segmented button[aria-checked="true"] {
-  background: #45663c;
+  background: var(--accent);
   color: white;
+  box-shadow: 0 4px 12px -4px rgb(63 106 80 / 60%);
 }
 
 .music {
-  font:
-    italic bold 17px Georgia,
-    serif;
+  font: italic bold 17px var(--font-serif);
 }
 
+/* Two or three options in a recessed track, like a segmented control. */
 .segmented {
   display: flex;
   gap: 2px;
-  padding-bottom: 6px;
-  margin-bottom: 6px;
-  border-bottom: 1px solid #e3e9dc;
+  padding: 3px;
+  margin-bottom: 8px;
+  border-radius: var(--r-md);
+  corner-shape: squircle;
+  background: var(--hover);
+}
+
+.segmented button {
+  flex: 1;
+  min-height: 32px;
 }
 
 .divider {
   grid-column: 1 / -1;
   height: 1px;
   margin: 4px 0;
-  background: #e3e9dc;
+  background: var(--line);
 }
 
 .field {
-  width: 220px;
-  padding: 8px 10px;
-  border: 1px solid #cdd6c6;
-  border-radius: 6px;
+  width: 240px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--r-sm);
+  corner-shape: squircle;
+  outline: none;
   font-size: 14px;
-  color: #34452e;
-  background: white;
+  color: var(--ink);
+  background: var(--surface-raised);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  transition: box-shadow var(--fast) var(--ease-out);
+}
+
+.field:focus {
+  box-shadow:
+    inset 0 0 0 1px var(--accent),
+    0 0 0 4px var(--accent-soft);
 }
 
 .fieldHint {
-  margin: 6px 2px 0;
-  font-size: 11px;
-  color: #7c8771;
+  margin: 8px 4px 0;
+  font-size: 12px;
+  color: var(--muted);
 }
 
 .error {
-  margin: 6px 2px 0;
-  font-size: 11px;
+  margin: 8px 4px 0;
+  font-size: 12px;
   color: #8a5a2b;
+}
+
+/* Compact (the chat docked beside it) on screens without room for the names: icons only. */
+@media (max-width: 1400px) {
+  .tools[data-compact="true"] .tool {
+    min-width: 42px;
+    height: 44px;
+    padding: 0 6px;
+  }
+
+  .tools[data-compact="true"] .toolLabel {
+    display: none;
+  }
 }
 
 @media print {

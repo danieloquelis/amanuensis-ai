@@ -1,216 +1,187 @@
+/*
+ * The score fills the window and the controls float over it: notation tools at the top centre,
+ * the app mark and document controls in the top corners, the selection card beside whatever is
+ * selected, and the bar to play, sing and describe at the bottom centre.
+ */
+
 .app {
   height: 100dvh;
-  color: var(--ink);
-  background: #f7f8f4;
   overflow: hidden;
-}
-
-/* Header */
-
-.header {
-  height: 76px;
-  display: flex;
-  align-items: center;
-  border-bottom: 1px solid var(--line);
-  background: #fbfcf8;
-  padding: 0 30px;
-  gap: 45px;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  text-decoration: none;
-  color: #344a3b;
-  font:
-    24px Georgia,
-    serif;
-  letter-spacing: -0.8px;
-}
-
-.brandMark {
-  background: #425e49;
-  color: #fffdf2;
-  width: 34px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  border-radius: 10px 10px 10px 2px;
-}
-
-.ai {
-  font:
-    8px var(--font-geist-mono),
-    monospace;
-  letter-spacing: 1px;
-  vertical-align: top;
-  display: inline-block;
-  margin: 3px 0 0 6px;
-}
-
-.breadcrumb {
-  font-size: 11px;
-  color: #9a9e92;
-  display: flex;
-  gap: 14px;
-}
-
-.breadcrumb strong {
-  color: #636f5d;
-  font-weight: 400;
-}
-
-/* Layout */
-
-/* Assistant on the left, score on the right; on phones the assistant follows the score. */
-.main {
-  display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
-  height: calc(100dvh - 76px);
-  min-height: 0;
-}
-
-.main.chatClosed {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-/* The sheet and what floats over it (the assistant pinned to the selection). */
-.canvasArea {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.chatToggle {
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  margin-right: -25px;
-  border: 1px solid #d8dfcf;
-  border-radius: 12px;
-  background: white;
-  color: #5d7354;
-  cursor: pointer;
-  transition:
-    background 150ms,
-    color 150ms;
-}
-
-.chatToggle:hover {
-  background: #eef3e8;
-}
-
-.chatToggleOn {
-  background: #48694f;
-  border-color: #48694f;
-  color: #f8faf4;
-}
-
-.chatToggleOn:hover {
-  background: #3f5f46;
+  color: var(--ink);
+  background: var(--background);
 }
 
 .studio {
+  position: relative;
+  height: 100%;
+  /* A quiet dot grid on the canvas around the sheet (the paper itself stays clean). */
+  background:
+    radial-gradient(circle, rgb(52 72 48 / 16%) 1px, transparent 1.4px) 0 0 / 22px 22px,
+    radial-gradient(55% 45% at 12% 8%, rgb(196 222 186 / 55%) 0%, transparent 70%),
+    radial-gradient(45% 40% at 92% 12%, rgb(205 225 220 / 60%) 0%, transparent 70%),
+    radial-gradient(60% 50% at 85% 100%, rgb(236 226 205 / 65%) 0%, transparent 70%),
+    radial-gradient(50% 45% at 5% 95%, rgb(214 230 205 / 55%) 0%, transparent 70%),
+    var(--background);
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  transition: left 420ms var(--ease-in-out);
+  display: grid;
+  /*
+   * The logo and the document controls always keep their size; the toolbar sits exactly in the
+   * middle while there is room, moves aside when there is not, and scrolls as a last resort.
+   */
+  grid-template-columns: minmax(max-content, 1fr) minmax(0, max-content) minmax(max-content, 1fr);
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "top-start top-center top-end"
+    ". . ."
+    ". bottom-center .";
+  gap: 12px;
+  padding: 14px 16px 20px;
+  pointer-events: none;
+}
+
+.overlay > div {
   display: flex;
-  flex-direction: column;
   min-width: 0;
-  min-height: 0;
 }
 
-.editActions {
-  display: flex;
-  gap: 7px;
-  align-items: center;
+.overlay > div > * {
+  pointer-events: auto;
 }
 
-.editActions button {
-  border: 0;
-  background: none;
-  display: flex;
-  gap: 7px;
+.topStart {
+  grid-area: top-start;
+  align-items: flex-start;
+}
+
+.topCenter {
+  grid-area: top-center;
+  flex-direction: column;
   align-items: center;
+  gap: 10px;
+}
+
+.topCenter > [role="group"] {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.topEnd {
+  grid-area: top-end;
+  justify-content: flex-end;
+  align-items: flex-start;
+}
+
+.bottomCenter {
+  grid-area: bottom-center;
   justify-content: center;
-  min-width: 28px;
-  min-height: 32px;
-  font-size: 10px;
-  color: #7b8670;
-  border-radius: 5px;
-  padding: 5px 7px;
+  width: min(760px, calc(100vw - 32px));
 }
 
-.editActions button:hover {
-  background: #e9eee3;
+/* App mark */
+
+.brandMark {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--r-lg);
+  corner-shape: squircle;
+  background: linear-gradient(150deg, #6a9c76 0%, #2f5a3e 100%);
+  color: #fffdf2;
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255 / 40%),
+    inset 0 -2px 4px rgb(0 0 0 / 12%),
+    0 6px 18px -6px rgb(47 90 62 / 55%);
+  transition: transform var(--medium) var(--ease-spring);
 }
 
-/* Transport */
+.brandMark:hover {
+  transform: rotate(-6deg) scale(1.05);
+}
+
+/* Document controls */
+
+.zoomValue {
+  min-width: 52px;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Playback, first in the toolbar */
 
 .transport {
-  min-height: 66px;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  padding: 10px 28px;
-  border-bottom: 1px solid var(--line);
-  gap: 14px;
-  flex-shrink: 0;
-}
-
-.playback {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
+  gap: 2px;
+  padding-left: 3px;
 }
 
 .play {
-  background: #48694f;
-  border: 1px solid #48694f;
-  color: #f8faf4;
-  min-width: 79px;
-  height: 33px;
-  border-radius: 6px;
-  display: flex;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ink);
+  color: white;
+  box-shadow: 0 4px 12px -4px rgb(30 45 30 / 50%);
+  transition:
+    transform var(--medium) var(--ease-spring),
+    background var(--fast) var(--ease-out);
+}
+
+.play:hover:not(:disabled) {
+  transform: scale(1.06);
+  background: #1b261b;
+}
+
+.play:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.play[data-playing="true"] {
+  background: var(--accent);
+}
+
+/* Tempo looks like the other tools (value over name) and is edited in place. */
+.tempo {
+  display: inline-flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  font-size: 11px;
+  gap: 3px;
+  min-width: 58px;
+  height: 54px;
+  border-radius: var(--r-md);
+  corner-shape: squircle;
+  cursor: text;
+  transition: background var(--fast) var(--ease-out);
 }
 
-.play:hover {
-  background: #36563e;
-}
-
-.separator {
-  width: 1px;
-  height: 19px;
-  background: #dfe4d7;
-}
-
-.tempo {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.tempo > span {
-  font-size: 22px;
-  color: #62755a;
+.tempo:hover,
+.tempo:focus-within {
+  background: var(--hover);
 }
 
 .tempo input {
-  width: 39px;
+  width: 44px;
+  height: 24px;
   border: none;
+  outline: none;
   background: transparent;
   text-align: center;
-  font:
-    12px var(--font-geist-mono),
-    monospace;
-  color: #65715e;
+  font: 650 16px var(--font-ui);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
   appearance: textfield;
   -moz-appearance: textfield;
 }
@@ -219,61 +190,90 @@
   appearance: none;
 }
 
-.tempo small {
-  font:
-    8px var(--font-geist-mono),
-    monospace;
-  color: #9aa38e;
+.tempoLabel {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
 }
 
-.editActions select {
-  border: 0;
-  background: none;
-  font-size: 10px;
-  color: #7c8771;
-  padding: 4px;
+/* The selection card */
+
+/* The selection's edit tools, placed below it (or above, when there is no room). */
+.selectionCard {
+  position: absolute;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: min(560px, calc(100% - 24px));
+  padding: 8px 10px 10px;
+  border-radius: var(--r-xl);
+  background: var(--glass-strong);
+  box-shadow: var(--shadow-popover);
+  animation: card-in var(--medium) var(--ease-out) both;
+  transition:
+    left var(--medium) var(--ease-out),
+    top var(--medium) var(--ease-out),
+    bottom var(--medium) var(--ease-out);
+}
+
+.selectionName {
+  padding: 2px 6px 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
 }
 
 /* Canvas and paper */
 
 .canvas {
-  flex: 1;
-  min-height: 0;
-  padding: 25px 40px 20px;
-  background: radial-gradient(ellipse at 60% 40%, #eff1e9 0%, #e9ede3 100%);
+  position: absolute;
+  inset: 0;
   overflow: auto;
+  padding: 104px 48px 220px;
+  transition: padding 420ms var(--ease-in-out);
 }
 
-.statusDot {
-  display: inline-block;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #91a281;
-  vertical-align: middle;
+/*
+ * The chat expanded into the left column (16 px margin + 400 px + 16 px gap): the toolbar row and
+ * the sheet move into the rest together, so the toolbar stays centred over the score.
+ */
+.studio[data-chat="sidebar"] .overlay {
+  left: 416px;
+}
+
+.studio[data-chat="sidebar"] .canvas {
+  padding-left: calc(416px + 48px);
+}
+
+/* Not much room beside the docked chat: the zoom steps step aside until the chat is closed. */
+@media (max-width: 1400px) {
+  .studio[data-chat="sidebar"] .zoomPart,
+  .studio[data-chat="sidebar"] .tempoLabel {
+    display: none;
+  }
 }
 
 .paper {
   min-width: 580px;
   max-width: 1100px;
   margin: 0 auto;
-  background: var(--paper);
-  border: 1px solid #e1e5d8;
-  border-radius: 2px;
-  box-shadow:
-    0 4px 8px #53643b05,
-    0 16px 40px #53643b08;
   padding: 30px 27px 22px;
-}
-
-.paperFooter {
-  display: flex;
-  justify-content: space-between;
-  color: #a7ab9c;
-  font:
-    7px var(--font-geist-mono),
-    monospace;
-  letter-spacing: 1.4px;
+  border-radius: var(--r-lg);
+  corner-shape: squircle;
+  background: var(--paper);
+  box-shadow:
+    0 0 0 1px rgb(52 72 48 / 6%),
+    0 2px 6px rgb(30 45 30 / 4%),
+    0 24px 60px -20px rgb(30 45 30 / 18%);
 }
 
 .scoreHeading {
@@ -282,134 +282,114 @@
 }
 
 .titleInput {
-  font:
-    39px Georgia,
-    serif;
-  letter-spacing: -1.2px;
-  color: #394b3b;
-  border: 1px solid transparent;
-  background: transparent;
-  text-align: center;
   width: 100%;
   padding: 2px 5px;
-  border-radius: 5px;
+  border: 0;
+  border-radius: var(--r-sm);
+  corner-shape: squircle;
+  background: transparent;
+  color: #33463a;
+  font: 40px var(--font-serif);
+  letter-spacing: -1.2px;
+  text-align: center;
+  transition: background var(--fast) var(--ease-out);
 }
 
 .titleInput:hover {
-  border-color: #e4e8dd;
+  background: var(--hover);
+}
+
+.titleInput:focus-visible {
+  outline: none;
+  background: var(--accent-soft);
 }
 
 .scoreMeta {
   display: flex;
   justify-content: space-between;
   margin: 0 28px -25px;
-  font:
-    italic 12px Georgia,
-    serif;
-  color: #748067;
+  font: italic 13px var(--font-serif);
+  color: #66725a;
 }
 
 .tempoMark {
   font:
-    normal 10px var(--font-geist-sans),
+    normal 12px var(--font-ui),
     sans-serif;
-  margin-left: 12px;
-  color: #949d87;
+  margin-left: 10px;
+  color: var(--muted);
 }
 
 .scoreMeta > span:last-child {
   font:
-    9px var(--font-geist-sans),
+    12px var(--font-ui),
     sans-serif;
-  letter-spacing: 0.5px;
+  color: var(--muted);
 }
 
 .paperFooter {
-  border-top: 1px solid #e9ecdf;
-  padding-top: 18px;
-}
-
-.paperFooter > span:first-child {
-  font:
-    italic 11px Georgia,
-    serif;
-  letter-spacing: 0;
-}
-
-/* Status and errors */
-
-.statusBar {
-  height: 32px;
-  flex-shrink: 0;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 0 28px;
+  padding-top: 16px;
   border-top: 1px solid var(--line);
-  font:
-    8px var(--font-geist-mono),
-    monospace;
-  letter-spacing: 0.5px;
-  color: #6e7c60;
+  color: var(--muted);
+  font: italic 12px var(--font-serif);
 }
 
-.statusBar > span:first-child {
-  display: flex;
-  gap: 7px;
-  align-items: center;
-}
-
-.error {
-  background: #fbf1df;
-  color: #7d6134;
-  padding: 12px 25px;
-  font-size: 12px;
-  line-height: 1.6;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
-}
-
-.error button {
-  background: none;
-  border: 0;
-  color: inherit;
-  padding: 5px;
+.paperFooter > span:last-child {
+  font-style: normal;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
 }
 
 .printTitle {
   display: none;
 }
 
-/* Responsive */
+/* Errors: a toast under the tools */
 
-@media (min-width: 1550px) {
-  .canvas {
-    padding: 35px 65px;
-  }
+.error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 8px 8px 8px 12px;
+  border-radius: var(--r-md);
+  corner-shape: squircle;
+  background: rgb(253 243 224 / 88%);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-glass);
+  color: #6f4f1d;
+  font-size: 13px;
+  line-height: 1.45;
+  animation: toast-in var(--medium) var(--ease-spring) both;
 }
 
-@media (max-width: 1100px) {
-  .canvas {
-    padding: 22px;
-  }
+.error > svg {
+  flex: none;
+  color: #c08a2e;
+}
 
-  .transport {
-    padding-left: 20px;
-    padding-right: 20px;
-  }
+.error button {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+}
 
-  .header {
-    gap: 30px;
-  }
+.error button:hover {
+  background: rgb(111 79 29 / 10%);
+}
 
-  .main {
-    grid-template-columns: 270px minmax(0, 1fr);
-  }
-
-  .main.chatClosed {
-    grid-template-columns: minmax(0, 1fr);
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
   }
 }
 
@@ -418,38 +398,28 @@
  * so printing also matches the max-width query and its layout rules must win.
  */
 @media print {
-  .chatToggle,
-  .header,
-  .transport,
-  .statusBar,
-  .error {
+  .overlay,
+  .selectionCard {
     display: none !important;
   }
 
-  .app {
+  .app,
+  .studio {
     height: auto;
     overflow: visible;
     background: white;
   }
 
-  .main,
-  .studio,
   .canvas {
-    display: block;
-    background: white;
+    position: static;
+    overflow: visible;
     padding: 0;
-  }
-
-  .main,
-  .canvas {
-    height: auto;
-    overflow: visible;
   }
 
   .paper {
     width: 100% !important;
     min-width: 0;
-    border: 0;
+    border-radius: 0;
     box-shadow: none;
     padding: 10px;
   }
@@ -460,66 +430,52 @@
 
   .printTitle {
     display: block;
-    font:
-      36px Georgia,
-      serif;
+    font: 36px var(--font-serif);
   }
 }
 
-@media (max-width: 760px) {
-  .app {
-    height: auto;
-    overflow: visible;
-  }
-
-  .main {
-    display: flex;
-    flex-direction: column;
-    height: auto;
-  }
-
-  .main > aside {
-    order: 2;
-    max-height: 70vh;
-  }
-
-  .header {
-    height: 66px;
-    padding: 0 20px;
-  }
-
-  .breadcrumb {
-    display: none;
-  }
-
-  .brand {
-    font-size: 23px;
-  }
-
-  .studio {
-    min-height: 700px;
-  }
-
-  .canvas {
-    padding: 20px 14px;
-  }
-
-  .transport {
-    padding: 10px 15px;
-  }
-
-  .statusBar {
-    padding: 0 15px;
-  }
-
-  .statusBar > span:nth-child(2) {
-    display: none;
-  }
-}
-
+/* Phones: tools on their own scrolling row; the bottom bar spans the width. */
 @media screen and (max-width: 760px) {
-  .canvas {
-    flex: none;
+  .overlay {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr auto;
+    grid-template-areas:
+      "top-start top-end"
+      "top-center top-center"
+      ". ."
+      "bottom-center bottom-center";
+    gap: 10px;
+    padding: 10px 10px 12px;
+  }
+
+  .topCenter {
+    align-items: stretch;
+  }
+
+  .topCenter > [role="group"] {
     overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .zoomPart {
+    display: none !important;
+  }
+
+  .bottomCenter {
+    width: auto;
+  }
+
+  .selectionCard {
+    max-width: calc(100% - 20px);
+  }
+
+  .canvas,
+  .studio[data-chat="sidebar"] .canvas {
+    padding: 150px 12px 170px;
+  }
+
+  /* Phones: the sidebar covers the screen instead of sharing it. */
+  .studio[data-chat="sidebar"] .overlay {
+    left: 0;
   }
 }

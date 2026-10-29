@@ -1,41 +1,41 @@
-import { useId, useState, type ReactNode } from "react";
-import { classNames } from "@/shared/ui/class-names";
+import { useId, useRef, useState, type ReactNode } from "react";
 import styles from "./toolbar.module.css";
 
-const ESTIMATED_WIDTH = 300;
 const EDGE_MARGIN = 12;
+const GAP = 10;
 
 type ToolPopoverProps = {
-  label: ReactNode;
+  /** The trigger's face: an icon, or the current value ("4/4", "D"). */
+  icon: ReactNode;
+  /** The short name under it ("Time", "Key"). */
+  label: string;
   accessibleLabel: string;
   disabled?: boolean;
-  /** Renders the trigger label as a music symbol (ƒ, 𝄋). */
-  symbol?: boolean;
   /** Content, optionally a function receiving `close` for one-shot tools. */
   children: ReactNode | ((close: () => void) => ReactNode);
 };
 
-/** Toolbar button with a native popover placed under it and kept inside the viewport. */
-export function ToolPopover({ label, accessibleLabel, disabled, symbol = false, children }: ToolPopoverProps) {
+/** Toolbar tool with a native popover centred under it and kept inside the viewport. */
+export function ToolPopover({ icon, label, accessibleLabel, disabled, children }: ToolPopoverProps) {
   const id = useId();
-  const [position, setPosition] = useState({ left: EDGE_MARGIN, top: 160 });
+  const anchor = useRef({ center: 0, top: 0 });
+  const [position, setPosition] = useState({ left: EDGE_MARGIN, top: 80 });
   const close = () => document.getElementById(id)?.hidePopover();
   return (
     <>
       <button
-        className={classNames(styles.trigger, symbol && styles.symbol)}
+        className={styles.tool}
         popoverTarget={id}
         disabled={disabled}
         aria-label={accessibleLabel}
-        title={accessibleLabel}
         aria-haspopup="dialog"
         onClick={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
-          const left = Math.max(EDGE_MARGIN, Math.min(rect.left, window.innerWidth - ESTIMATED_WIDTH));
-          setPosition({ left, top: rect.bottom + 8 });
+          anchor.current = { center: rect.left + rect.width / 2, top: rect.bottom + GAP };
         }}
       >
-        {label}
+        <span className={styles.toolIcon}>{icon}</span>
+        <span className={styles.toolLabel}>{label}</span>
       </button>
       <div
         id={id}
@@ -44,6 +44,14 @@ export function ToolPopover({ label, accessibleLabel, disabled, symbol = false, 
         aria-label={accessibleLabel}
         className={styles.popover}
         style={position}
+        onToggle={(e) => {
+          if (e.newState !== "open") return;
+          // Centre under the trigger now that the open popover has a measurable width.
+          const width = e.currentTarget.offsetWidth;
+          const { center, top } = anchor.current;
+          const left = Math.max(EDGE_MARGIN, Math.min(center - width / 2, window.innerWidth - width - EDGE_MARGIN));
+          setPosition({ left, top });
+        }}
       >
         {typeof children === "function" ? children(close) : children}
       </div>

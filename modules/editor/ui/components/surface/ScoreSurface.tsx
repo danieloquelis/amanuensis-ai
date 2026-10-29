@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { layoutScore } from "@/modules/engraving";
 import { keyName, meterName, scoreKey, type Score, type Step } from "@/modules/score";
 import { applyGesturePreview } from "../../../application/gesture-preview";
@@ -13,7 +13,6 @@ import { SheetSystem } from "./SheetSystem";
 
 type ScoreSurfaceProps = {
   score: Score;
-  selectedId: string | null;
   playBeat: number | null;
   interactive: boolean;
   onSelect: (id: string | null) => void;
@@ -32,12 +31,13 @@ type ScoreSurfaceProps = {
   picked: SheetRef[];
   onPick: (ref: SheetRef, mode: PickMode) => void;
   onFocusEvent: (id: string) => void;
+  /** Told when a context menu opens or closes, so other floating panels can step aside. */
+  onMenuOpenChange?: (open: boolean) => void;
 };
 
 /** The editable sheet: engraved score plus selection, drag gestures and context menus. */
 export function ScoreSurface({
   score,
-  selectedId,
   playBeat,
   interactive,
   onSelect,
@@ -55,10 +55,13 @@ export function ScoreSurface({
   picked,
   onPick,
   onFocusEvent,
+  onMenuOpenChange,
 }: ScoreSurfaceProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [menu, setMenu] = useState<SheetMenuTarget | null>(null);
   const closeMenu = useCallback(() => setMenu(null), []);
+  const menuOpen = menu !== null;
+  useEffect(() => onMenuOpenChange?.(menuOpen), [menuOpen, onMenuOpenChange]);
   const gestures = useSheetGestures({
     svgRef,
     score,
@@ -114,15 +117,12 @@ export function ScoreSurface({
           closeMenu();
         }}
       >
-        <title>{`${score.title} — editable score`}</title>
         {scene.systems.map((system) => (
           <SheetSystem
             key={system.firstMeasure}
             system={system}
             eventOrder={eventOrder}
-            selectedId={selectedId}
             playBeat={playBeat}
-            showQuickActions={!gestures.preview && !menu && interactive}
             interactions={interactions}
           />
         ))}

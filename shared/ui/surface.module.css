@@ -1,0 +1,108 @@
+/* Frosted glass: the look of everything that floats over the score. */
+.glass {
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-glass);
+  border-radius: var(--r-lg);
+  corner-shape: squircle;
+}
+
+/* A pill of related controls. */
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 48px;
+  padding: 0 6px;
+}
+
+.divider {
+  flex: none;
+  width: 1px;
+  height: 22px;
+  margin: 0 4px;
+  background: var(--line-strong);
+}
+
+/* Icon button with a tooltip naming it (and its shortcut) after a short hover. */
+.iconButton {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--r-sm);
+  corner-shape: squircle;
+  background: transparent;
+  color: var(--ink-soft);
+  transition:
+    background var(--fast) var(--ease-out),
+    color var(--fast) var(--ease-out),
+    transform var(--fast) var(--ease-out);
+}
+
+.iconButton:hover:not(:disabled) {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+.iconButton:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.iconButton[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.iconButton[data-tooltip]::after {
+  content: attr(data-tooltip) "  " attr(data-shortcut);
+  position: absolute;
+  z-index: 60;
+  left: 50%;
+  top: calc(100% + 10px);
+  padding: 6px 10px;
+  border-radius: var(--r-xs);
+  corner-shape: squircle;
+  background: rgb(30 40 30 / 88%);
+  color: #f6f8f2;
+  font:
+    500 12px var(--font-ui),
+    sans-serif;
+  letter-spacing: 0;
+  white-space: pre;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -4px) scale(0.96);
+  transition:
+    opacity var(--fast) var(--ease-out),
+    transform var(--medium) var(--ease-out);
+}
+
+.iconButton[data-tooltip][data-side="top"]::after {
+  top: auto;
+  bottom: calc(100% + 10px);
+  transform: translate(-50%, 4px) scale(0.96);
+}
+
+.iconButton[data-tooltip]:hover::after,
+.iconButton[data-tooltip]:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+  transition-delay: 400ms;
+}
+
+/* No tooltip while the button's own popover is open. */
+.iconButton[data-tooltip]:has(+ :popover-open)::after {
+  opacity: 0;
+  transition-delay: 0ms;
+}
+
+@media (hover: none) {
+  .iconButton[data-tooltip]::after {
+    display: none;
+  }
+}

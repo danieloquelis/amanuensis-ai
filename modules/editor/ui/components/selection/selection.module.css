@@ -1,0 +1,57 @@
+/* A row of edit tools in the selection card; groups are split by hairlines. */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  /* On narrow screens the row scrolls sideways rather than being cut off. */
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.actions > [role="group"] {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 0 5px 0 0;
+  margin-right: 3px;
+  border: 0;
+  border-right: 1px solid var(--line-strong);
+}
+
+.actions > [role="group"] button,
+.action {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-sm);
+  corner-shape: squircle;
+  background: none;
+  color: var(--ink-soft);
+  font:
+    19px var(--font-serif),
+    serif;
+  transition:
+    background var(--fast) var(--ease-out),
+    transform var(--fast) var(--ease-out);
+}
+
+.actions > [role="group"] button:hover,
+.action:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+.actions > [role="group"] button:active,
+.action:active {
+  transform: scale(0.9);
+}
+
+.actions > [role="group"] button[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}

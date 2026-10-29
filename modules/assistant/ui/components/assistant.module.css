@@ -1,23 +1,474 @@
-.panel {
+/* The dock: the compose bar, with the chat (or suggestions) rising above it. */
+
+.dock {
+  position: relative;
+  width: min(700px, 100%);
+}
+
+.above {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 12px);
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  border-right: 1px solid var(--line);
-  background: linear-gradient(180deg, #f9faf5 0%, #f4f7ef 100%);
+  align-items: stretch;
+  pointer-events: none;
 }
 
-.header {
+.above > * {
+  pointer-events: auto;
+}
+
+/* The compose bar: always there, glass, with a hairline of the AI gradient around it. */
+
+.barWrap {
+  position: relative;
+}
+
+.bar {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 12px 8px 18px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: #4b5e44;
+  gap: 8px;
+  width: 100%;
+  margin: 0 auto;
+  min-height: 66px;
+  padding: 8px 8px 8px 8px;
+  border-radius: var(--r-xl);
+  corner-shape: squircle;
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-glass);
+  transition:
+    width 520ms var(--ease-in-out),
+    transform var(--medium) var(--ease-out);
 }
 
-.closePanel {
+/* Capturing a take: the pill is only as wide as what it shows. */
+.barWrap[data-capturing="true"] .bar {
+  width: 290px;
+}
+
+.barWrap[data-capturing="true"] .glow {
+  inset: 14px calc(50% - 110px) -10px;
+}
+
+.bar::before {
+  content: "";
+  position: absolute;
+  inset: -1.5px;
+  padding: 1.5px;
+  border-radius: inherit;
+  corner-shape: squircle;
+  background: var(--ai-gradient);
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  opacity: 0.6;
+  animation: ai-turn 12s linear infinite;
+  pointer-events: none;
+}
+
+.bar[data-state="listening"]::before,
+.bar[data-state="working"]::before {
+  opacity: 1;
+  animation-duration: 3s;
+}
+
+.bar:focus-within {
+  transform: translateY(-1px);
+}
+
+/* A soft glow of the gradient under the bar; it brightens on focus and while working. */
+.glow {
+  position: absolute;
+  inset: 14px 50px -10px;
+  border-radius: 999px;
+  background: var(--ai-gradient);
+  filter: blur(26px);
+  opacity: 0.25;
+  animation: ai-turn 12s linear infinite;
+  transition:
+    opacity var(--medium) var(--ease-in-out),
+    inset 520ms var(--ease-in-out);
+  pointer-events: none;
+}
+
+.barWrap:focus-within .glow {
+  opacity: 0.45;
+}
+
+.glow[data-state="listening"],
+.glow[data-state="working"] {
+  opacity: 0.65;
+  animation-duration: 3s;
+}
+
+.field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 2px;
+}
+
+/* What the request is about: "Whole score", "F4 · bar 2", "Bars 2–4". */
+.subject {
+  flex: none;
+  max-width: 40%;
+  overflow: hidden;
+  padding: 5px 10px;
+  border-radius: var(--r-xs);
+  corner-shape: squircle;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  animation: chip-in var(--medium) var(--ease-spring);
+}
+
+@keyframes chip-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  min-height: 24px;
+  max-height: 140px;
+  padding: 10px 0;
+  border: 0;
+  outline: none;
+  resize: none;
+  field-sizing: content;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.input::placeholder {
+  color: var(--muted);
+}
+
+.input:focus-visible {
+  outline: none;
+}
+
+.send {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: var(--r-md);
+  corner-shape: squircle;
+  overflow: hidden;
+  background: var(--ink);
+  color: white;
+  transition:
+    width var(--medium) var(--ease-out),
+    margin var(--medium) var(--ease-out),
+    transform var(--medium) var(--ease-spring),
+    opacity var(--fast) var(--ease-out),
+    background var(--fast) var(--ease-out);
+}
+
+/* Nothing to send: it takes no room at all (the bar's gap included), and slides in on typing. */
+.send:disabled {
+  width: 0;
+  margin-left: -8px;
+  opacity: 0;
+  transform: scale(0.6);
+  pointer-events: none;
+}
+
+.send:hover:not(:disabled) {
+  background: var(--accent);
+}
+
+.attach {
+  width: 40px;
+  height: 42px;
+  cursor: default;
+}
+
+.chatButton {
+  position: relative;
+  width: 42px;
+  height: 42px;
+}
+
+/* The chat is hidden but the AI is still working: a small pulsing dot says so. */
+.activityDot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #36b86c;
+  animation: bounce 1.2s var(--ease-in-out) infinite;
+}
+
+/* Recording: the bar draws in to a compact pill around the orb, a live waveform and the time. */
+.capture {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 14px 0 6px;
+  animation: appear 320ms var(--ease-out) 180ms both;
+}
+
+.wave {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 30px;
+}
+
+.wave i {
+  width: 3px;
+  height: 30px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #d0684f, #b4452f);
+  transform: scaleY(0.12);
+  transition: transform 90ms linear;
+}
+
+/* While the take is read, the waveform rests and a soft shimmer runs through it. */
+.wave[data-active="false"] i {
+  background: var(--accent);
+  opacity: 0.35;
+  animation: bounce 1.4s var(--ease-in-out) infinite;
+}
+
+.wave[data-active="false"] i:nth-child(3n + 1) {
+  animation-delay: 120ms;
+}
+
+.wave[data-active="false"] i:nth-child(3n + 2) {
+  animation-delay: 240ms;
+}
+
+.captureText {
+  min-width: 40px;
+  color: #8a3423;
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bar:has(.wave[data-active="false"]) .captureText {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.recorderError {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 16px;
+  margin: 0;
+  color: #8a3423;
+  font-size: 12px;
+}
+
+/* The orb: the AI's voice button, a glassy sphere of slowly turning greens with a mic on it. */
+.orb {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 50px;
+  height: 50px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ai-orb);
+  color: white;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 35%),
+    0 6px 18px -4px rgb(44 106 78 / 65%);
+  animation: ai-turn 7s linear infinite;
+  transition:
+    transform var(--medium) var(--ease-spring),
+    box-shadow var(--medium) var(--ease-out);
+}
+
+.orb svg {
+  filter: drop-shadow(0 1px 1px rgb(20 50 30 / 45%));
+}
+
+.orb:hover:not(:disabled) {
+  transform: scale(1.07);
+}
+
+.orb:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+/* Busy: it keeps turning (faster) rather than fading like other disabled buttons. */
+.orb:disabled {
+  opacity: 1;
+  cursor: progress;
+}
+
+.orb[data-state="working"] {
+  animation-duration: 1.6s;
+}
+
+.orb[data-state="listening"] {
+  background: radial-gradient(circle at 35% 30%, #e6876f, #b4452f 70%);
+  animation: breathe 1.6s var(--ease-in-out) infinite;
+}
+
+/* Floating above the bar: suggestions before the first request, then the chat */
+
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity var(--medium) var(--ease-out),
+    transform var(--medium) var(--ease-out);
+}
+
+.dock:focus-within .suggestions,
+.dock:hover .suggestions {
+  opacity: 1;
+  transform: none;
+}
+
+.suggestions button,
+.choices button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: var(--r-md);
+  corner-shape: squircle;
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-glass);
+  color: var(--accent-ink);
+  font-size: 13px;
+  font-weight: 500;
+  transition:
+    transform var(--fast) var(--ease-out),
+    background var(--fast) var(--ease-out);
+}
+
+.suggestions button:hover,
+.choices button:hover {
+  background: white;
+  transform: translateY(-1px);
+}
+
+.suggestions button:active,
+.choices button:active {
+  transform: scale(0.97);
+}
+
+/* The chat floating above the bar: narrower than the bar, and short, so the score stays in view. */
+.chat {
+  position: relative;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  width: min(540px, 100%);
+  max-height: min(42vh, 400px);
+  border-radius: var(--r-xl);
+  corner-shape: squircle;
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-popover);
+  transform-origin: bottom center;
+  animation: lift var(--medium) var(--ease-out) both;
+}
+
+.chatHeader {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 8px 8px 18px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.chatActions {
+  display: flex;
+  gap: 2px;
+}
+
+.chat .turnList,
+.sidebar .turnList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 18px 20px;
+}
+
+/* Expanded: the chat as the screen's left column, top to bottom, with the compose bar at its foot. */
+.sidebar {
+  position: absolute;
+  z-index: 15;
+  top: 14px;
+  bottom: 16px;
+  left: 16px;
+  display: flex;
+  flex-direction: column;
+  width: min(400px, calc(100vw - 32px));
+  border-radius: var(--r-xl);
+  corner-shape: squircle;
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-popover);
+  animation: slide-in var(--medium) var(--ease-out) both;
+}
+
+.sidebarComposer {
+  flex: none;
+  padding: 10px;
+}
+
+.sidebarComposer .bar {
+  min-height: 60px;
+}
+
+.sidebarEmpty {
+  list-style: none;
+}
+
+.sidebar .suggestions {
+  flex-direction: column;
+  align-items: flex-start;
+  opacity: 1;
+  transform: none;
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+}
+
+.dismiss {
   display: grid;
   place-items: center;
   width: 28px;
@@ -25,422 +476,185 @@
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: #7c8873;
-  cursor: pointer;
+  color: var(--muted);
+  transition: background var(--fast) var(--ease-out);
 }
 
-.closePanel:hover {
-  background: #e8eee1;
-  color: #3f5a42;
+.dismiss:hover {
+  background: var(--hover);
+  color: var(--ink);
 }
 
-/* What a message is about: "Bars 3–6". In your bubble it sits on the dark green. */
+/*
+ * One exchange: the musician's bubble on the right, then the AI's answer on the left beside its
+ * small orb. Tight inside an exchange, roomy between them, so each turn reads as one unit.
+ */
+
+.turnList {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.exchange {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* The musician: a sage bubble, what it was about in small type on top. */
+.mine {
+  align-self: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 78%;
+  padding: 8px 13px 9px;
+  border-radius: 18px 18px 6px 18px;
+  background: rgb(63 106 80 / 11%);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.45;
+  animation: rise var(--medium) var(--ease-out) both;
+}
+
+.mineMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent);
+}
+
+/* What a message is about: "Bar 9", "Bars 3–6". */
 .contextChip {
-  display: inline-block;
-  margin-right: 6px;
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: #e3ebdc;
-  color: #3f5a42;
+  color: var(--accent-ink);
   font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.mine .contextChip {
-  background: rgb(255 255 255 / 18%);
-  color: #f3f7ee;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 /* Where they sang, inside their words: "…be like ♪ 8 s". */
 .sungChip {
   display: inline-flex;
   align-items: center;
-  margin: 0 4px 0 0;
-  padding: 0 8px;
+  margin: 0 2px;
+  padding: 0 7px;
   border-radius: 999px;
-  background: rgb(255 255 255 / 20%);
-  color: #f3f7ee;
+  background: var(--accent);
+  color: white;
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
 }
 
-.panelContext {
-  margin: 0;
-  padding: 6px 16px 0;
-  font-size: 11px;
-  color: var(--muted);
+/* The AI: the answer at a readable measure, on the left. */
+.theirs {
+  display: flex;
+  align-items: flex-start;
+  animation: rise var(--medium) var(--ease-out) 60ms both;
 }
 
-/* Conversation */
-
-.turns {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  margin: 0;
-  padding: 6px 14px 16px;
-  list-style: none;
+.answer {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.exchange {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.mine,
-.theirs {
-  max-width: 88%;
-  font-size: 13px;
-  line-height: 1.45;
-  animation: rise 220ms ease-out both;
-}
-
-.mine {
-  align-self: flex-end;
-  padding: 9px 13px;
-  border-radius: 16px 16px 4px 16px;
-  background: #48694f;
-  color: #f8faf4;
-  box-shadow: 0 1px 2px rgb(40 60 40 / 18%);
-}
-
-.spoken {
-  display: inline-flex;
-  margin-right: 6px;
-  vertical-align: -1px;
-  opacity: 0.75;
-}
-
-.theirs {
-  align-self: flex-start;
-  padding: 10px 13px;
-  border: 1px solid #e1e7da;
-  border-radius: 16px 16px 16px 4px;
-  background: white;
-  color: #2f3d2b;
-  box-shadow: 0 1px 2px rgb(40 60 40 / 6%);
-  animation-delay: 60ms;
-}
-
-.theirs p {
-  margin: 0;
-}
-
-.failed {
-  border-color: #ecd9b9;
-  background: #fdf7ec;
-  color: #7d6134;
-}
-
-.thinking {
-  display: inline-flex;
-  align-items: center;
   gap: 10px;
-  color: #66745d;
+  min-width: 0;
+  max-width: 62ch;
+  color: var(--ink);
+  font-size: 14.5px;
+  line-height: 1.55;
 }
 
-.dots {
-  display: inline-flex;
-  gap: 4px;
+.answer p {
+  margin: 0;
 }
 
-.dots i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #8aa17f;
-  animation: bounce 1.2s ease-in-out infinite;
+.theirs[data-failed="true"] .answer {
+  color: #7d5320;
 }
 
-.dots i:nth-child(2) {
-  animation-delay: 150ms;
+.warning {
+  margin-right: 6px;
+  vertical-align: -3px;
+  color: #d39a3a;
 }
 
-.dots i:nth-child(3) {
-  animation-delay: 300ms;
+/* Working: a shimmer runs through the activity line. */
+.thinking {
+  padding-top: 1px;
 }
 
-.activity {
-  animation: appear 300ms ease-out both;
+.thinking .activity {
+  background: linear-gradient(90deg, var(--muted) 0%, var(--accent) 40%, #8fc49b 50%, var(--muted) 70%);
+  background-size: 250% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: shimmer 2.2s linear infinite;
 }
 
-.changes {
+/* Answers to tap when the AI asks something. */
+.choices {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  margin: 8px 0 0;
+  gap: 6px;
+}
+
+.choices button {
+  padding: 6px 12px;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  backdrop-filter: none;
+}
+
+/* What changed, as quiet receipts, with Undo at the end of the line. */
+.receipts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+}
+
+.receipts ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.changes li {
-  padding: 2px 8px;
-  border-radius: 10px;
-  background: #eef3e8;
-  color: #5d6e54;
-  font-size: 11px;
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
-}
-
-.actions button,
-.examples button {
-  padding: 5px 11px;
-  border: 1px solid #cdd8c4;
-  border-radius: 14px;
-  background: #f6f9f2;
-  color: #415b38;
-  font-size: 12px;
-  transition:
-    background 120ms,
-    transform 120ms;
-}
-
-.actions button:hover,
-.examples button:hover {
-  background: #e7eee0;
-}
-
-.actions button:active,
-.examples button:active {
-  transform: scale(0.97);
-}
-
-.actions .undo {
-  background: white;
-}
-
-.welcome {
-  margin-top: 4px;
-  animation: rise 300ms ease-out both;
-}
-
-.welcome p {
-  margin: 4px 4px 10px;
-  font-size: 13px;
-  color: #6d7a64;
-}
-
-.examples {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  margin: 0 4px;
-}
-
-/* Composer */
-
-.composerArea {
-  padding: 10px 14px 14px;
-  border-top: 1px solid var(--line);
-}
-
-.composer {
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  padding: 5px 5px 5px 14px;
-  border: 1px solid #d6decf;
-  border-radius: 22px;
-  background: white;
-  transition:
-    border-color 150ms,
-    box-shadow 150ms,
-    background 150ms;
-}
-
-.composer:focus-within {
-  border-color: #9cb291;
-  box-shadow: 0 0 0 3px rgb(72 105 79 / 12%);
-}
-
-.composer textarea {
-  flex: 1;
-  min-height: 34px;
-  max-height: 140px;
-  padding: 8px 0;
-  border: 0;
-  outline: none;
-  resize: none;
-  field-sizing: content;
-  background: transparent;
-  font: inherit;
-  font-size: 13px;
-  color: #2f3d2b;
-}
-
-.iconButton {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: #48694f;
-  transition:
-    background 120ms,
-    transform 120ms,
-    opacity 120ms;
-}
-
-.iconButton:hover:not(:disabled) {
-  background: #eef3e8;
-}
-
-.iconButton:active:not(:disabled) {
-  transform: scale(0.92);
-}
-
-.iconButton:disabled {
-  opacity: 0.35;
-}
-
-.send {
-  background: #48694f;
-  color: white;
-}
-
-.send:hover:not(:disabled) {
-  background: #3c5a42;
-}
-
-.stop {
-  background: #b4452f;
-  color: white;
-  animation: pulse 1.6s ease-out infinite;
-}
-
-.stop:hover:not(:disabled) {
-  background: #9e3a27;
-}
-
-.recordingComposer {
-  border-color: #e5b8ae;
-  background: #fff8f6;
-}
-
-.listening {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 34px;
-  color: #8a3423;
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-}
-
-.levels {
+.receipts li {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  height: 18px;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 12.5px;
 }
 
-.levels i {
-  width: 3px;
-  height: 18px;
-  border-radius: 2px;
-  background: #b4452f;
-  transform: scaleY(0.15);
-  transition: transform 90ms linear;
+.receipts li svg {
+  color: #3f8a55;
 }
 
-.recorderError {
-  margin: 8px 6px 0;
-  color: #8a3423;
-  font-size: 12px;
-}
-
-/* On the sheet: the assistant pinned to the selection, and its composer */
-
-.canvasButton {
-  position: absolute;
-  z-index: 20;
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border: 0;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 25%, #6c9473 0%, #3f5f46 70%);
-  color: #fffdf2;
-  box-shadow:
-    0 6px 16px rgb(40 70 45 / 28%),
-    0 1px 2px rgb(40 70 45 / 30%);
-  cursor: pointer;
-  animation: pop 240ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
-  transition:
-    left 180ms ease,
-    top 180ms ease,
-    transform 150ms ease;
-}
-
-.canvasButton:hover {
-  transform: scale(1.08);
-}
-
-.canvasButton:active {
-  transform: scale(0.94);
-}
-
-.canvasButton.docked,
-.canvasComposer.docked {
-  right: 22px;
-  bottom: 18px;
-}
-
-.canvasComposer {
-  position: absolute;
-  z-index: 21;
-  width: 360px;
-  max-width: calc(100% - 24px);
-  border: 1px solid #d6decf;
-  border-radius: 18px;
-  background: #fbfcf8;
-  box-shadow: 0 18px 40px rgb(40 60 40 / 22%);
-  animation: rise 200ms ease-out both;
-}
-
-.canvasComposer .composerArea {
-  border-top: 0;
-  padding: 4px 10px 10px;
-}
-
-.canvasHeader {
-  display: flex;
+.undo {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 10px 8px 4px 12px;
+  gap: 5px;
+  padding: 3px 9px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent-ink);
+  font-size: 12.5px;
+  font-weight: 600;
+  transition: background var(--fast) var(--ease-out);
 }
 
-.canvasTurn {
-  max-height: 220px;
-  overflow-y: auto;
-  margin: 0;
-  padding: 4px 12px 8px;
-  list-style: none;
-}
-
-@keyframes pop {
-  from {
-    opacity: 0;
-    transform: scale(0.6);
-  }
+.undo:hover {
+  background: var(--accent-soft);
 }
 
 @keyframes rise {
@@ -450,9 +664,39 @@
   }
 }
 
+@keyframes lift {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+}
+
 @keyframes appear {
   from {
     opacity: 0;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -150% 0;
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 2px 3px rgb(255 255 255 / 40%),
+      0 0 0 0 rgb(180 69 47 / 45%);
+  }
+  50% {
+    box-shadow:
+      inset 0 2px 3px rgb(255 255 255 / 40%),
+      0 0 0 10px rgb(180 69 47 / 0%);
   }
 }
 
@@ -469,33 +713,23 @@
   }
 }
 
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgb(180 69 47 / 45%);
+@media (max-width: 760px) {
+  .orb {
+    width: 44px;
+    height: 44px;
   }
-  100% {
-    box-shadow: 0 0 0 10px rgb(180 69 47 / 0%);
-  }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .mine,
-  .theirs,
-  .welcome,
-  .activity,
-  .dots i,
-  .stop,
-  .canvasButton,
-  .canvasComposer {
-    animation: none;
-    transition: none;
+  .subject {
+    max-width: 32%;
+  }
+
+  .suggestions {
+    display: none;
   }
 }
 
 @media print {
-  .panel,
-  .canvasButton,
-  .canvasComposer {
+  .dock {
     display: none !important;
   }
 }

@@ -6,10 +6,12 @@ export function ScoreCanvas({
   editor,
   playBeat,
   zoom,
+  onMenuOpenChange,
 }: {
   editor: ScoreEditor;
   playBeat: number | null;
   zoom: number;
+  onMenuOpenChange: (open: boolean) => void;
 }) {
   const { score, ready, commit } = editor;
   const barCount = score.measures.length;
@@ -44,7 +46,6 @@ export function ScoreCanvas({
         </div>
         <ScoreSurface
           score={score}
-          selectedId={editor.selectedId}
           playBeat={playBeat}
           onSelect={editor.select}
           selectedBarId={editor.selectedBarId}
@@ -62,10 +63,11 @@ export function ScoreCanvas({
           picked={editor.picked}
           onPick={editor.pick}
           onFocusEvent={editor.focusEvent}
+          onMenuOpenChange={onMenuOpenChange}
         />
         <div className={styles.paperFooter}>
           <span>{barCount} measures · Treble clef</span>
-          <span>{String(barCount).padStart(2, "0")} BARS</span>
+          <span>amanuensis</span>
         </div>
       </article>
     </div>
