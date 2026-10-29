@@ -16,6 +16,7 @@ import {
 import { moveAnnotation, putChord, putMark, setMeasureStyle, setSection } from "./lead-sheet-operations";
 import { setMeter } from "./meter-operations";
 import { newScore } from "./new-score";
+import { setClef, setInstrument } from "./part-operations";
 import { putSlur, shapeSlur, transpose } from "./phrase-operations";
 import { putAnnotation, putRepeat, removeNotation, removeTempo, rename, setKey, setTempo } from "./notation-operations";
 import { commandSchema, type Command, type OperationOf, type OperationType } from "./schema";
@@ -54,6 +55,8 @@ const handlers: OperationHandlers = {
   setMeasureStyle,
   setSection,
   putMark,
+  setInstrument,
+  setClef,
 };
 
 /**

@@ -1,11 +1,14 @@
-import { ColumnsPlusRight, Guitar, Repeat, SpeakerHigh, TextAa } from "@phosphor-icons/react";
+import { ColumnsPlusRight, Repeat, SpeakerHigh, TextAa } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
-import { meterName, scoreKey, type Score } from "@/modules/score";
+import { meterName, partOf, scoreKey, type Score } from "@/modules/score";
 import surface from "@/shared/ui/surface.module.css";
 import { toolTarget, type Selection } from "../../../application/selection";
 import type { CommitEdit } from "../../hooks/use-score-editor";
 import { ChordEntry } from "./ChordEntry";
+import { ChordIcon } from "./ChordIcon";
 import { DynamicsRow } from "./DynamicsRow";
+import { InstrumentIcon } from "./InstrumentIcon";
+import { InstrumentMenu } from "./InstrumentMenu";
 import { KeyGrid, keyLabel } from "./KeyGrid";
 import { MarksPalette } from "./MarksPalette";
 import { MeterGrid } from "./MeterGrid";
@@ -46,6 +49,8 @@ export function ScoreToolMenus({
   const target = toolTarget(score, selection, selectedBarId);
   const barKey = `${target.measureId}-${score.revision}`;
   const meter = meterName(score.measures[target.barIndex].meter);
+  // The tool shows what plays the selected note's part (or the first part), like Time and Key show theirs.
+  const { instrument } = target.eventId ? partOf(score, target.eventId) : score.parts[0];
   return (
     <div
       className={`${surface.glass} ${styles.tools}`}
@@ -55,6 +60,14 @@ export function ScoreToolMenus({
     >
       {leading}
       {leading && <span className={surface.divider} />}
+      <ToolPopover
+        icon={<InstrumentIcon instrument={instrument} size={ICON.size} />}
+        label="Instrument"
+        accessibleLabel="Instrument"
+        disabled={!ready}
+      >
+        {(close) => <InstrumentMenu score={score} target={target} onCommand={onCommand} onDone={close} />}
+      </ToolPopover>
       <ToolPopover
         icon={<span className={styles.valueGlyph}>{meter}</span>}
         label="Time"
@@ -74,7 +87,12 @@ export function ScoreToolMenus({
         <KeyGrid key={barKey} score={score} onCommand={onCommand} />
       </ToolPopover>
       <span className={surface.divider} />
-      <ToolPopover icon={<Guitar {...ICON} />} label="Chords" accessibleLabel="Chord symbols" disabled={!ready}>
+      <ToolPopover
+        icon={<ChordIcon size={ICON.size} />}
+        label="Chords"
+        accessibleLabel="Chord symbols"
+        disabled={!ready}
+      >
         <ChordEntry key={target.eventId ?? target.measureId} score={score} target={target} onCommand={onCommand} />
       </ToolPopover>
       <ToolPopover icon={<SpeakerHigh {...ICON} />} label="Dynamics" accessibleLabel="Dynamics" disabled={!ready}>

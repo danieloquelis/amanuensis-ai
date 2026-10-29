@@ -1,4 +1,5 @@
-import { keySignatureSteps, type KeySignature } from "@/modules/score";
+import { keySignatureSteps, type Clef, type KeySignature } from "@/modules/score";
+import { keyShift } from "./clefs";
 import type { AnalyzedBar } from "./measure-analysis";
 import { positionY, type KeyAccidentalMark } from "./scene";
 
@@ -25,11 +26,11 @@ export function headerEnd(key: KeySignature, firstBar: AnalyzedBar): number {
 export const headerMeterX = (key: KeySignature) => keyEnd(key) + METER_WIDTH / 2;
 
 /** Key signature accidentals repeated at the start of every system. `x` is each glyph's left edge. */
-export function keySignatureMarks(key: KeySignature, top: number): KeyAccidentalMark[] {
+export function keySignatureMarks(key: KeySignature, top: number, clef: Clef): KeyAccidentalMark[] {
   const positions = key.fifths > 0 ? SHARP_POSITIONS : FLAT_POSITIONS;
   return keySignatureSteps(key).map(({ alter }, index) => ({
     x: KEY_START + index * KEY_ACCIDENTAL_WIDTH,
-    y: positionY(top, positions[index]),
+    y: positionY(top, positions[index] + keyShift(clef)),
     alter,
   }));
 }

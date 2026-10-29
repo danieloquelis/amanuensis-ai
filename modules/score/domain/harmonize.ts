@@ -1,8 +1,9 @@
 import { CHORD_QUALITIES, formatChord, type ChordQuality } from "./chords";
 import { spellMidi } from "./key";
 import { midiPitch } from "./pitch";
-import { measureCapacity } from "./rhythm";
+import { measureCapacity, soundingBeats } from "./rhythm";
 import type { KeySignature, Score } from "./schema";
+import { barEvents } from "./voice-access";
 
 type Role = "tonic" | "subdominant" | "dominant";
 type Degree = { step: number; quality: ChordQuality; role: Role; tonic?: true };
@@ -94,8 +95,8 @@ function slotNotes(
       notes: [] as SlotNotes,
     }));
     let beat = 0;
-    for (const event of measure.events) {
-      const duration = event.duration.numerator / event.duration.denominator;
+    for (const event of barEvents(measure)) {
+      const duration = soundingBeats(event);
       const slot = slots[Math.min(perBar - 1, Math.floor(beat / length + 1e-9))];
       if (event.pitch) {
         const strong = Math.abs(beat - slot.beat) < 1e-9 ? STRONG_BEAT : 1;

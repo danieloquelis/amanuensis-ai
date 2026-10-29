@@ -1,4 +1,4 @@
-import type { ScoreEvent } from "@/modules/score";
+import { isRest, isNote, type ScoreEvent } from "@/modules/score";
 import type { ScoreEditor } from "../../hooks/use-score-editor";
 import { AccidentalButtons } from "../sheet-menu/AccidentalButtons";
 import { ArticulationButtons } from "../sheet-menu/ArticulationButtons";
@@ -27,14 +27,14 @@ export function NoteActions({ editor, event }: { editor: ScoreEditor; event: Sco
         <DurationButtons event={event} onCommand={editor.commit}>
           <TieButton event={event} onCommand={editor.commit} />
         </DurationButtons>
-        {!event.pitch && (
+        {isRest(event) && (
           <>
             <ArticulationButtons event={event} onCommand={editor.commit} />
             <AddNoteButton onAdd={() => editor.toggleRest(event.id)} />
           </>
         )}
       </div>
-      {event.pitch && (
+      {isNote(event) && (
         <div className={styles.actions}>
           <AccidentalButtons event={event} onCommand={editor.commit} />
           <ArticulationButtons event={event} onCommand={editor.commit} />

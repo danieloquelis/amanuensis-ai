@@ -1,3 +1,4 @@
+import { isNote } from "@/modules/score";
 import { solveStretch } from "./justify";
 import type { AnalyzedBar, AnalyzedEvent } from "./measure-analysis";
 import { MIDDLE_LINE, positionY, STEM_LENGTH, type BarScene, type BeatColumn, type EngravedEvent } from "./scene";
@@ -89,7 +90,7 @@ function engrave(item: AnalyzedEvent, x: number, bar: AnalyzedBar, top: number):
     measure: bar.index,
     stemDown: item.stemDown,
     stemEnd,
-    ledgerLines: item.event.pitch ? ledgerLines(top, item.position) : [],
+    ledgerLines: isNote(item.event) ? ledgerLines(top, item.position) : [],
     accidental: item.accidental,
     left: x - item.left,
     right: x + item.right,

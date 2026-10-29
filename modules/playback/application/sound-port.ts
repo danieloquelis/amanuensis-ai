@@ -1,5 +1,7 @@
-/** A sound set the player can load. Later phases add one per instrument, plus drums. */
-export type SoundId = "piano";
+import type { InstrumentId } from "@/modules/score";
+
+/** A sound set the player can load: one per instrument (drums come later). */
+export type SoundId = InstrumentId;
 
 /** One note on the audio clock: `time` and `duration` are in AudioContext seconds. */
 export type SoundRequest = { instrument: SoundId; midi: number; time: number; duration: number; velocity: number };

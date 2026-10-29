@@ -1,12 +1,17 @@
 import { measureCapacity } from "./rhythm";
-import type { Measure, Score } from "./schema";
+import type { Measure, Score, Staff } from "./schema";
+import { allStaves, measureEvents, voiceBars } from "./voice-access";
 
+/** Where an event is: its bar, its voice there, and its index within that voice bar. */
 export function findEvent(score: Score, id: string) {
   for (let measureIndex = 0; measureIndex < score.measures.length; measureIndex++) {
     const measure = score.measures[measureIndex];
-    const eventIndex = measure.events.findIndex((event) => event.id === id);
-    if (eventIndex !== -1) {
-      return { measure, measureIndex, eventIndex, event: measure.events[eventIndex] };
+    for (const voiceBar of voiceBars(measure)) {
+      const eventIndex = voiceBar.events.findIndex((event) => event.id === id);
+      if (eventIndex !== -1) {
+        const event = voiceBar.events[eventIndex];
+        return { measure, measureIndex, voiceId: voiceBar.voiceId, voiceBar, eventIndex, event };
+      }
     }
   }
   return null;
@@ -24,9 +29,17 @@ export function getMeasure(score: Score, id: string): Measure {
   return measure;
 }
 
+/** A staff by ID; the first staff when omitted. */
+export function getStaff(score: Score, id?: string): Staff {
+  const staves = allStaves(score);
+  const staff = id === undefined ? staves[0] : staves.find((s) => s.id === id);
+  if (!staff) throw new Error("That staff is not in the score.");
+  return staff;
+}
+
 /** IDs that selections and indications may anchor to. */
 export function anchorIds(measures: readonly Measure[]): Set<string> {
-  return new Set(measures.flatMap((m) => [m.id, ...m.events.map((e) => e.id)]));
+  return new Set(measures.flatMap((m) => [m.id, ...measureEvents(m).map((e) => e.id)]));
 }
 
 /** Absolute start beat of every measure, in score order. */

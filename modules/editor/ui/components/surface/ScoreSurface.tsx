@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { layoutScore } from "@/modules/engraving";
-import { keyName, meterName, scoreKey, type Pitch, type Score, type Step } from "@/modules/score";
+import { everyEvent, meterName, type Pitch, type Score, type Step } from "@/modules/score";
 import { applyGesturePreview } from "../../../application/gesture-preview";
 import { slurKeyEdit } from "../../../application/range-edits";
+import { sheetHeading } from "../../../application/sheet-view";
 import type { SheetItem } from "../../../application/notation-edits";
 import { sameRef, type PickMode, type SheetRef } from "../../../application/sheet-selection";
 import type { CommitEdit } from "../../hooks/use-score-editor";
@@ -112,7 +113,7 @@ export function ScoreSurface({
 
   const scene = layoutScore(applyGesturePreview(score, slurGestures.preview ?? gestures.preview));
   // Keep DOM nodes in score order while a drag previews new positions, so pointer capture holds.
-  const eventOrder = new Map(score.measures.flatMap((m) => m.events).map((event, index) => [event.id, index]));
+  const eventOrder = new Map(everyEvent(score).map((event, index) => [event.id, index]));
   const meters = score.measures.map((m) => meterName(m.meter)).join(", ");
 
   return (
@@ -121,7 +122,7 @@ export function ScoreSurface({
         ref={svgRef}
         className={styles.surface}
         viewBox={`0 0 ${scene.width} ${scene.height}`}
-        aria-label={`${score.title}, treble clef, ${keyName(scoreKey(score))}, ${meters} meter. Select a note to edit.`}
+        aria-label={`${score.title}, ${sheetHeading(score)}, ${meters} meter. Select a note to edit.`}
         onPointerDown={(e) => {
           if (e.target !== e.currentTarget) return;
           onSelect(null);

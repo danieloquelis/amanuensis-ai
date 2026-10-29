@@ -1,4 +1,14 @@
-import { beats, legatoIds, measureStarts, midiPitch, nextEvent, type Score, type ScoreEvent } from "@/modules/score";
+import {
+  barEvents,
+  soundingBeats,
+  legatoIds,
+  measureStarts,
+  midiPitch,
+  nextEvent,
+  type InstrumentId,
+  type Score,
+  type ScoreEvent,
+} from "@/modules/score";
 import { voiceChord, writtenChordSegments } from "./chord-track";
 import { accented, CHORD_VELOCITY, DEFAULT_VELOCITY, DYNAMIC_VELOCITY } from "./dynamics";
 import { performanceOrder, soundingSource } from "./performance-order";
@@ -21,13 +31,15 @@ export type PlaybackEvent = {
   notes: number[];
   /** MIDI velocity, 1–127, from the dynamic in force and any accent. */
   velocity: number;
+  /** What plays it: the instrument of the event's part. */
+  instrument: InstrumentId;
   /** Fraction of `duration` that sounds; above 1 when a tie holds the note into the next events. */
   gate: number;
   /** The event this note is tied into, when it is tied. */
   tiedTo?: string;
 };
 
-/** A soft chord under the melody, as MIDI notes. */
+/** A soft piano chord under the melody, as MIDI notes. */
 export type ChordSound = { start: number; duration: number; notes: number[]; velocity: number };
 
 export type PlaybackPlan = {
@@ -107,17 +119,19 @@ function resolveWrittenEvents(score: Score): Omit<PlaybackEvent, "start">[][] {
   const legato = legatoIds(score);
   let tempo = score.tempo;
   let velocity = DEFAULT_VELOCITY;
+  // Playback follows the primary voice, played by the first part.
+  const instrument = score.parts[0].instrument;
   return score.measures.map((measure, measureIndex) => {
     tempo = measure.tempo ?? tempo;
     // A repeat (%) bar plays its source bar's notes in its own written place and tempo.
-    const sounding = score.measures[soundingSource(score, measureIndex)].events;
+    const sounding = barEvents(score.measures[soundingSource(score, measureIndex)]);
     const measureDynamic = dynamicAt(measure.id);
     if (measureDynamic) velocity = DYNAMIC_VELOCITY[measureDynamic.text];
     let localBeat = 0;
     return sounding.map((event) => {
       const eventDynamic = dynamicAt(event.id);
       if (eventDynamic) velocity = DYNAMIC_VELOCITY[eventDynamic.text];
-      const length = beats(event.duration);
+      const length = soundingBeats(event);
       const stretch = event.articulation === "fermata" ? FERMATA_STRETCH : 1;
       const entry = {
         id: event.id,
@@ -126,6 +140,7 @@ function resolveWrittenEvents(score: Score): Omit<PlaybackEvent, "start">[][] {
         duration: ((length * 60) / tempo) * stretch,
         notes: notesOf(event),
         velocity: accented(velocity, event.articulation === "accent"),
+        instrument,
         gate: gateOf(event, legato.has(event.id)),
         ...(event.tie ? { tiedTo: nextEvent(score, event.id)?.id } : {}),
       };

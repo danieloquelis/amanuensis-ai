@@ -36,6 +36,11 @@
   stroke-dasharray: 3 3;
 }
 
+/* A note outside its instrument's range; selection and playback colours still win. */
+.outOfRange {
+  color: #b0572a;
+}
+
 .selected,
 .sounding {
   color: #407961;

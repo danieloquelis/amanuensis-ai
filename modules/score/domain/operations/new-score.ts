@@ -1,4 +1,6 @@
 import type { Meter } from "../schema";
+import { createPart } from "../instruments";
+import { createMeasure } from "../voice-access";
 import { fullMeasureRest, type Draft, type OperationContext } from "./draft";
 import type { OperationOf } from "./schema";
 
@@ -22,9 +24,18 @@ export function newScore(draft: Draft, op: OperationOf<"newScore">, { idPrefix }
   draft.tempo = op.tempo ?? NEW_SCORE_DEFAULTS.tempo;
   if (op.key) draft.key = { ...op.key };
   else delete draft.key;
+  draft.parts = [
+    createPart(op.instrument ?? "piano", {
+      part: `${idPrefix}-part`,
+      staff: `${idPrefix}-staff`,
+      voice: `${idPrefix}-voice`,
+    }),
+  ];
   draft.measures = Array.from({ length: bars }, (_, index) => {
     const id = `${idPrefix}-bar-${index + 1}`;
-    return { id, meter: { ...meter }, events: fullMeasureRest(meter, id) };
+    return createMeasure(draft, { id, meter: { ...meter } }, (staff) =>
+      fullMeasureRest(meter, staff === 0 ? id : `${id}-s${staff}`),
+    );
   });
   draft.annotations = [];
   draft.repeats = [];

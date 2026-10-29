@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ProjectRepository } from "@/modules/projects";
 import {
+  isNote,
   createExample,
   createSession,
   execute,
@@ -166,16 +167,16 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
     persist(score);
   }, [clear, onBeforeEdit, persist, ready, replaceSession]);
 
-  /** A–G typed on a selected note or rest. */
+  /** A–G typed on a selected note or rest; on a transposing part it names the written note the sheet shows. */
   const enterLetter = (eventId: string, step: Step) => {
-    const edit = letterNoteEdit(latest.current.score, eventId, step);
+    const edit = letterNoteEdit(latest.current.score, eventId, step, { written: true });
     commit(edit.operation, edit.receipt);
   };
 
   const toggleRest = (eventId: string) => {
     const score = latest.current.score;
     const { event } = locateEvent(score, eventId);
-    commit(toggleRestOperation(event, scoreKey(score)), event.pitch ? "Replaced note with rest" : "Added note");
+    commit(toggleRestOperation(event, scoreKey(score)), isNote(event) ? "Replaced note with rest" : "Added note");
   };
 
   const stepPitch = (eventId: string, steps: number) => {

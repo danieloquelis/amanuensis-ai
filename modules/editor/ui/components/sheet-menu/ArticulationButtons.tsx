@@ -1,4 +1,4 @@
-import { ARTICULATIONS, type Articulation, type Operation, type ScoreEvent } from "@/modules/score";
+import { isNote, ARTICULATIONS, type Articulation, type Operation, type ScoreEvent } from "@/modules/score";
 import styles from "./sheet-menu.module.css";
 
 export const ARTICULATION_SYMBOLS: Record<Articulation, string> = {
@@ -16,7 +16,7 @@ export function ArticulationButtons({
   event: ScoreEvent;
   onCommand: (operation: Operation, receipt: string) => unknown;
 }) {
-  const articulations = ARTICULATIONS.filter((a) => event.pitch || a === "fermata");
+  const articulations = ARTICULATIONS.filter((a) => isNote(event) || a === "fermata");
   return (
     <div className={styles.row} role="group" aria-label="Articulation">
       {articulations.map((articulation) => (

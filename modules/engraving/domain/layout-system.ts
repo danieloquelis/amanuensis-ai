@@ -1,6 +1,7 @@
 import { anchorIds, type KeySignature, type Score } from "@/modules/score";
 import { placeAboveStaff } from "./above-staff";
 import { beamBar } from "./beams";
+import { staffClef } from "./clefs";
 import { headerEnd, headerMeterX, keySignatureMarks } from "./header";
 import { layoutLabels } from "./labels";
 import type { Line } from "./line-breaking";
@@ -32,7 +33,8 @@ export function layoutSystem(
     top,
     firstMeasure: line.start,
     endX: 0,
-    keySignature: keySignatureMarks(key, top),
+    clef: staffClef(score),
+    keySignature: keySignatureMarks(key, top, staffClef(score)),
     bars: [],
     events: [],
     beams: [],

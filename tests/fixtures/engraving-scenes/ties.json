@@ -1,0 +1,848 @@
+{
+  "width": 900,
+  "height": 535,
+  "systems": [
+    {
+      "top": 90,
+      "firstMeasure": 0,
+      "endX": 846,
+      "clef": "treble",
+      "keySignature": [],
+      "bars": [
+        {
+          "id": "bar-1",
+          "number": 1,
+          "x": 116,
+          "endX": 317.32239001456765,
+          "width": 201.32239001456765,
+          "meter": { "numerator": 4, "denominator": 4 },
+          "meterX": 100,
+          "beat": 0,
+          "capacity": 4,
+          "notesX": 136,
+          "columns": [
+            { "beat": 0, "x": 136 },
+            { "beat": 1, "x": 181.3305975036419 },
+            { "beat": 2, "x": 226.66119500728382 },
+            { "beat": 3, "x": 271.99179251092573 },
+            { "beat": 4, "x": 307.32239001456765 }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": false,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        },
+        {
+          "id": "bar-2",
+          "number": 2,
+          "x": 317.32239001456765,
+          "endX": 483.1328192809775,
+          "width": 165.8104292664099,
+          "meter": { "numerator": 4, "denominator": 4 },
+          "meterX": null,
+          "beat": 4,
+          "capacity": 4,
+          "notesX": 337.32239001456765,
+          "columns": [
+            { "beat": 4, "x": 337.32239001456765 },
+            { "beat": 6, "x": 395.3455548192293 },
+            { "beat": 7.5, "x": 447.71828998125727 },
+            { "beat": 8, "x": 473.1328192809775 }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": false,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        },
+        {
+          "id": "bar-3",
+          "number": 3,
+          "x": 483.1328192809775,
+          "endX": 651.817179092923,
+          "width": 168.68435981194546,
+          "meter": { "numerator": 4, "denominator": 4 },
+          "meterX": null,
+          "beat": 8,
+          "capacity": 4,
+          "notesX": 503.1328192809775,
+          "columns": [
+            { "beat": 8, "x": 503.1328192809775 },
+            { "beat": 10, "x": 561.1559840856391 },
+            { "beat": 11, "x": 606.4865815892811 },
+            { "beat": 12, "x": 641.817179092923 }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": false,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        },
+        {
+          "id": "bar-4",
+          "number": 4,
+          "x": 651.817179092923,
+          "endX": 846,
+          "width": 194.18282090707703,
+          "meter": { "numerator": 4, "denominator": 4 },
+          "meterX": null,
+          "beat": 12,
+          "capacity": 4,
+          "notesX": 671.817179092923,
+          "columns": [
+            { "beat": 12, "x": 671.817179092923 },
+            { "beat": 12.5, "x": 707.2317083925409 },
+            { "beat": 13, "x": 742.6462376921588 },
+            { "beat": 14, "x": 787.9768351956698 },
+            { "beat": 16, "x": 836 }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": false,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        }
+      ],
+      "events": [
+        {
+          "event": {
+            "id": "t1-0-n0",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "G", "alter": 0, "octave": 4 }
+          },
+          "x": 136,
+          "y": 126,
+          "beat": 0,
+          "localBeat": 0,
+          "measure": 0,
+          "stemDown": false,
+          "stemEnd": 84,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 128,
+          "right": 144,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-0-n1",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "C", "alter": 0, "octave": 5 },
+            "tie": true
+          },
+          "x": 181.3305975036419,
+          "y": 108,
+          "beat": 1,
+          "localBeat": 1,
+          "measure": 0,
+          "stemDown": true,
+          "stemEnd": 150,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 173.3305975036419,
+          "right": 189.3305975036419,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-0-n2",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "C", "alter": 0, "octave": 5 }
+          },
+          "x": 226.66119500728382,
+          "y": 108,
+          "beat": 2,
+          "localBeat": 2,
+          "measure": 0,
+          "stemDown": true,
+          "stemEnd": 150,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 218.66119500728382,
+          "right": 234.66119500728382,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-0-n3",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "E", "alter": 0, "octave": 4 },
+            "tie": true
+          },
+          "x": 271.99179251092573,
+          "y": 138,
+          "beat": 3,
+          "localBeat": 3,
+          "measure": 0,
+          "stemDown": false,
+          "stemEnd": 96,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 263.99179251092573,
+          "right": 279.99179251092573,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-1-n0",
+            "duration": { "numerator": 2, "denominator": 1 },
+            "pitch": { "step": "E", "alter": 0, "octave": 4 }
+          },
+          "x": 337.32239001456765,
+          "y": 138,
+          "beat": 4,
+          "localBeat": 0,
+          "measure": 1,
+          "stemDown": false,
+          "stemEnd": 96,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 329.32239001456765,
+          "right": 345.32239001456765,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-1-n1",
+            "duration": { "numerator": 3, "denominator": 2 },
+            "pitch": { "step": "D", "alter": 0, "octave": 4 },
+            "tie": true
+          },
+          "x": 395.3455548192293,
+          "y": 144,
+          "beat": 6,
+          "localBeat": 2,
+          "measure": 1,
+          "stemDown": false,
+          "stemEnd": 102,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 387.3455548192293,
+          "right": 412.3455548192293,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-1-n2",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "D", "alter": 0, "octave": 4 }
+          },
+          "x": 447.71828998125727,
+          "y": 144,
+          "beat": 7.5,
+          "localBeat": 3.5,
+          "measure": 1,
+          "stemDown": false,
+          "stemEnd": 102,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 439.71828998125727,
+          "right": 471.71828998125727,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-2-n0",
+            "duration": { "numerator": 2, "denominator": 1 },
+            "pitch": { "step": "F", "alter": 0, "octave": 5 },
+            "tie": true
+          },
+          "x": 503.1328192809775,
+          "y": 90,
+          "beat": 8,
+          "localBeat": 0,
+          "measure": 2,
+          "stemDown": true,
+          "stemEnd": 132,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 495.1328192809775,
+          "right": 511.1328192809775,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-2-n1",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "F", "alter": 0, "octave": 5 }
+          },
+          "x": 561.1559840856391,
+          "y": 90,
+          "beat": 10,
+          "localBeat": 2,
+          "measure": 2,
+          "stemDown": true,
+          "stemEnd": 132,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 553.1559840856391,
+          "right": 569.1559840856391,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-2-n2",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "A", "alter": 0, "octave": 5 },
+            "tie": true
+          },
+          "x": 606.4865815892811,
+          "y": 78,
+          "beat": 11,
+          "localBeat": 3,
+          "measure": 2,
+          "stemDown": true,
+          "stemEnd": 120,
+          "ledgerLines": [78],
+          "accidental": null,
+          "left": 598.4865815892811,
+          "right": 614.4865815892811,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-3-n0",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "A", "alter": 0, "octave": 5 }
+          },
+          "x": 671.817179092923,
+          "y": 78,
+          "beat": 12,
+          "localBeat": 0,
+          "measure": 3,
+          "stemDown": true,
+          "stemEnd": 123,
+          "ledgerLines": [78],
+          "accidental": null,
+          "left": 663.817179092923,
+          "right": 679.817179092923,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-3-n1",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "G", "alter": 0, "octave": 5 }
+          },
+          "x": 707.2317083925409,
+          "y": 84,
+          "beat": 12.5,
+          "localBeat": 0.5,
+          "measure": 3,
+          "stemDown": true,
+          "stemEnd": 126,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 699.2317083925409,
+          "right": 715.2317083925409,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-3-n2",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "E", "alter": 0, "octave": 5 }
+          },
+          "x": 742.6462376921588,
+          "y": 96,
+          "beat": 13,
+          "localBeat": 1,
+          "measure": 3,
+          "stemDown": true,
+          "stemEnd": 138,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 734.6462376921588,
+          "right": 750.6462376921588,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-3-n3",
+            "duration": { "numerator": 2, "denominator": 1 },
+            "pitch": { "step": "C", "alter": 0, "octave": 5 },
+            "tie": true
+          },
+          "x": 787.9768351956698,
+          "y": 108,
+          "beat": 14,
+          "localBeat": 2,
+          "measure": 3,
+          "stemDown": true,
+          "stemEnd": 150,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 779.9768351956698,
+          "right": 795.9768351956698,
+          "hidden": false
+        }
+      ],
+      "beams": [{ "x1": 665.817179092923, "y1": 123, "x2": 701.2317083925409, "y2": 126, "level": 1, "down": true }],
+      "beamedIds": ["t1-3-n0", "t1-3-n1"],
+      "ties": [
+        { "id": "t1-0-n1", "x1": 188.3305975036419, "x2": 219.66119500728382, "y": 101, "above": true },
+        { "id": "t1-0-n3", "x1": 278.99179251092573, "x2": 330.32239001456765, "y": 145, "above": false },
+        { "id": "t1-1-n1", "x1": 414.3455548192293, "x2": 440.71828998125727, "y": 151, "above": false },
+        { "id": "t1-2-n0", "x1": 510.1328192809775, "x2": 554.1559840856391, "y": 83, "above": true },
+        { "id": "t1-2-n2", "x1": 613.4865815892811, "x2": 664.817179092923, "y": 71, "above": true },
+        { "id": "t1-3-n3", "x1": 794.9768351956698, "x2": 844, "y": 101, "above": true }
+      ],
+      "slurs": [],
+      "labels": [],
+      "chords": [],
+      "chordY": 60,
+      "markY": 60
+    },
+    {
+      "top": 320,
+      "firstMeasure": 4,
+      "endX": 846,
+      "clef": "treble",
+      "keySignature": [],
+      "bars": [
+        {
+          "id": "t0-0-bar",
+          "number": 5,
+          "x": 92,
+          "endX": 181.11352223671673,
+          "width": 89.11352223671675,
+          "meter": { "numerator": 4, "denominator": 4 },
+          "meterX": null,
+          "beat": 16,
+          "capacity": 4,
+          "notesX": 114,
+          "columns": [
+            { "beat": 16, "x": 114 },
+            { "beat": 20, "x": 171.11352223671673 }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": false,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        },
+        {
+          "id": "t0-1-bar",
+          "number": 6,
+          "x": 181.11352223671673,
+          "endX": 335.4716478082688,
+          "width": 154.35812557155208,
+          "meter": { "numerator": 4, "denominator": 4 },
+          "meterX": null,
+          "beat": 20,
+          "capacity": 4,
+          "notesX": 201.11352223671673,
+          "columns": [
+            { "beat": 20, "x": 201.11352223671673 },
+            { "beat": 22, "x": 253.5459614841517 },
+            { "beat": 23, "x": 294.50880464621025 },
+            { "beat": 24, "x": 325.4716478082688 }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": false,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        },
+        {
+          "id": "t0-2-bar",
+          "number": 7,
+          "x": 335.4716478082688,
+          "endX": 457.0123435870818,
+          "width": 121.54069577881295,
+          "meter": { "numerator": 4, "denominator": 4 },
+          "meterX": null,
+          "beat": 24,
+          "capacity": 4,
+          "notesX": 355.4716478082688,
+          "columns": [
+            { "beat": 24, "x": 355.4716478082688 },
+            { "beat": 27, "x": 416.0495004250232 },
+            { "beat": 28, "x": 447.0123435870818 }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": false,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        },
+        {
+          "id": "t0-3-bar",
+          "number": 8,
+          "x": 457.0123435870818,
+          "endX": 611.3704691586338,
+          "width": 154.35812557155208,
+          "meter": { "numerator": 4, "denominator": 4 },
+          "meterX": null,
+          "beat": 28,
+          "capacity": 4,
+          "notesX": 477.0123435870818,
+          "columns": [
+            { "beat": 28, "x": 477.0123435870818 },
+            { "beat": 29, "x": 517.9751867491403 },
+            { "beat": 30, "x": 558.9380299111989 },
+            { "beat": 32, "x": 601.3704691586338 }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": false,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        },
+        {
+          "id": "t0-4-bar",
+          "number": 9,
+          "x": 611.3704691586338,
+          "endX": 765.7285947301859,
+          "width": 154.35812557155208,
+          "meter": { "numerator": 4, "denominator": 4 },
+          "meterX": null,
+          "beat": 32,
+          "capacity": 4,
+          "notesX": 631.3704691586338,
+          "columns": [
+            { "beat": 32, "x": 631.3704691586338 },
+            { "beat": 33, "x": 672.3333123206924 },
+            { "beat": 34, "x": 713.2961554827509 },
+            { "beat": 36, "x": 755.7285947301859 }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": false,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        },
+        {
+          "id": "t0-5-bar",
+          "number": 10,
+          "x": 765.7285947301859,
+          "endX": 846,
+          "width": 80.27140526981407,
+          "meter": { "numerator": 4, "denominator": 4 },
+          "meterX": null,
+          "beat": 36,
+          "capacity": 4,
+          "notesX": 777.7285947301859,
+          "columns": [
+            { "beat": 36, "x": 777.7285947301859 },
+            { "beat": 40, "x": 836 }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": true,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        }
+      ],
+      "events": [
+        {
+          "event": {
+            "id": "t1-4-n0",
+            "duration": { "numerator": 4, "denominator": 1 },
+            "pitch": { "step": "C", "alter": 0, "octave": 5 },
+            "tie": true
+          },
+          "x": 114,
+          "y": 338,
+          "beat": 16,
+          "localBeat": 0,
+          "measure": 4,
+          "stemDown": true,
+          "stemEnd": 380,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 104,
+          "right": 124,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-5-n0",
+            "duration": { "numerator": 2, "denominator": 1 },
+            "pitch": { "step": "C", "alter": 0, "octave": 5 }
+          },
+          "x": 201.11352223671673,
+          "y": 338,
+          "beat": 20,
+          "localBeat": 0,
+          "measure": 5,
+          "stemDown": true,
+          "stemEnd": 380,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 193.11352223671673,
+          "right": 209.11352223671673,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-5-n1",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "B", "alter": 0, "octave": 4 }
+          },
+          "x": 253.5459614841517,
+          "y": 344,
+          "beat": 22,
+          "localBeat": 2,
+          "measure": 5,
+          "stemDown": true,
+          "stemEnd": 386,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 245.5459614841517,
+          "right": 261.5459614841517,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-5-n2",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "G", "alter": 0, "octave": 4 },
+            "tie": true
+          },
+          "x": 294.50880464621025,
+          "y": 356,
+          "beat": 23,
+          "localBeat": 3,
+          "measure": 5,
+          "stemDown": false,
+          "stemEnd": 314,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 286.50880464621025,
+          "right": 302.50880464621025,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-6-n0",
+            "duration": { "numerator": 3, "denominator": 1 },
+            "pitch": { "step": "G", "alter": 0, "octave": 4 },
+            "tie": true
+          },
+          "x": 355.4716478082688,
+          "y": 356,
+          "beat": 24,
+          "localBeat": 0,
+          "measure": 6,
+          "stemDown": false,
+          "stemEnd": 314,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 347.4716478082688,
+          "right": 372.4716478082688,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-6-n1",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "G", "alter": 0, "octave": 4 }
+          },
+          "x": 416.0495004250232,
+          "y": 356,
+          "beat": 27,
+          "localBeat": 3,
+          "measure": 6,
+          "stemDown": false,
+          "stemEnd": 314,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 408.0495004250232,
+          "right": 424.0495004250232,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-7-n0",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "A", "alter": 0, "octave": 4 }
+          },
+          "x": 477.0123435870818,
+          "y": 350,
+          "beat": 28,
+          "localBeat": 0,
+          "measure": 7,
+          "stemDown": false,
+          "stemEnd": 308,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 469.0123435870818,
+          "right": 485.0123435870818,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-7-n1",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "F", "alter": 0, "octave": 4 }
+          },
+          "x": 517.9751867491403,
+          "y": 362,
+          "beat": 29,
+          "localBeat": 1,
+          "measure": 7,
+          "stemDown": false,
+          "stemEnd": 320,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 509.97518674914033,
+          "right": 525.9751867491403,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-7-n2",
+            "duration": { "numerator": 2, "denominator": 1 },
+            "pitch": { "step": "E", "alter": 0, "octave": 4 },
+            "tie": true
+          },
+          "x": 558.9380299111989,
+          "y": 368,
+          "beat": 30,
+          "localBeat": 2,
+          "measure": 7,
+          "stemDown": false,
+          "stemEnd": 326,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 550.9380299111989,
+          "right": 566.9380299111989,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-8-n0",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "E", "alter": 0, "octave": 4 }
+          },
+          "x": 631.3704691586338,
+          "y": 368,
+          "beat": 32,
+          "localBeat": 0,
+          "measure": 8,
+          "stemDown": false,
+          "stemEnd": 326,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 623.3704691586338,
+          "right": 639.3704691586338,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-8-n1",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "D", "alter": 0, "octave": 4 }
+          },
+          "x": 672.3333123206924,
+          "y": 374,
+          "beat": 33,
+          "localBeat": 1,
+          "measure": 8,
+          "stemDown": false,
+          "stemEnd": 332,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 664.3333123206924,
+          "right": 680.3333123206924,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t1-8-n2",
+            "duration": { "numerator": 2, "denominator": 1 },
+            "pitch": { "step": "C", "alter": 0, "octave": 4 }
+          },
+          "x": 713.2961554827509,
+          "y": 380,
+          "beat": 34,
+          "localBeat": 2,
+          "measure": 8,
+          "stemDown": false,
+          "stemEnd": 338,
+          "ledgerLines": [380],
+          "accidental": null,
+          "left": 705.2961554827509,
+          "right": 721.2961554827509,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "t0-5-r0",
+            "duration": { "numerator": 4, "denominator": 1 },
+            "pitch": null,
+            "measureRest": true
+          },
+          "x": 811.864297365093,
+          "y": 344,
+          "beat": 36,
+          "localBeat": 0,
+          "measure": 9,
+          "stemDown": true,
+          "stemEnd": 386,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 798.864297365093,
+          "right": 819.864297365093,
+          "hidden": false
+        }
+      ],
+      "beams": [],
+      "beamedIds": [],
+      "ties": [
+        { "id": "t1-3-n3-continued", "x1": 92, "x2": 107, "y": 331, "above": true },
+        { "id": "t1-4-n0", "x1": 121, "x2": 194.11352223671673, "y": 331, "above": true },
+        { "id": "t1-5-n2", "x1": 301.50880464621025, "x2": 348.4716478082688, "y": 363, "above": false },
+        { "id": "t1-6-n0", "x1": 374.4716478082688, "x2": 409.0495004250232, "y": 363, "above": false },
+        { "id": "t1-7-n2", "x1": 565.9380299111989, "x2": 624.3704691586338, "y": 375, "above": false }
+      ],
+      "slurs": [],
+      "labels": [],
+      "chords": [],
+      "chordY": 298,
+      "markY": 298
+    }
+  ]
+}

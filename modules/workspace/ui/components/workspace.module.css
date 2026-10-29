@@ -106,6 +106,14 @@
   transform: rotate(-6deg) scale(1.05);
 }
 
+/* The brand mark (public/brand/mark.svg) as a mask, painted in the tile's ink colour. */
+.brandLogo {
+  width: 28px;
+  height: 28px;
+  background: currentColor;
+  mask: url("/brand/mark.svg") center / contain no-repeat;
+}
+
 /* Document controls */
 
 .zoomValue {

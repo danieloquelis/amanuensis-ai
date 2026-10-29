@@ -1,16 +1,23 @@
 import { z } from "zod";
 import { CHORD_QUALITY_NAMES, type ChordQuality } from "./chords";
+import { INSTRUMENT_IDS } from "./instruments";
 import { KEY_FIFTHS } from "./key";
 import { MARK_KINDS, SECTION_LABEL_MAX } from "./navigation";
 import { ARTICULATIONS, REPEAT_PASSES } from "./notation";
-import { OCTAVE_RANGE, STEPS } from "./pitch";
+import { isWithinPitchRange, OCTAVE_RANGE, STEPS } from "./pitch";
 
 export const TEMPO_RANGE = { min: 40, max: 200 } as const;
 /** Engraving override for a bar's width, in scene units. Layout never draws a bar narrower than its content needs. */
 export const MEASURE_WIDTH = { min: 100, max: 720 } as const;
 export const SCORE_LIMITS = {
   measures: 32,
+  /** Per voice bar. */
   eventsPerMeasure: 32,
+  /** Every voice together: keeps a score request well under the assistant's size limit. */
+  events: 4096,
+  parts: 8,
+  stavesPerPart: 2,
+  voicesPerStaff: 4,
   annotations: 128,
   repeats: 16,
   chords: 256,
@@ -26,11 +33,13 @@ export const idSchema = z.string().regex(/^[\w-]{1,100}$/);
 
 export const tempoSchema = z.number().int().min(TEMPO_RANGE.min).max(TEMPO_RANGE.max);
 
-export const pitchSchema = z.strictObject({
-  step: z.enum(STEPS),
-  alter: z.union([z.literal(-1), z.literal(0), z.literal(1)]),
-  octave: z.number().int().min(OCTAVE_RANGE.min).max(OCTAVE_RANGE.max),
-});
+export const pitchSchema = z
+  .strictObject({
+    step: z.enum(STEPS),
+    alter: z.union([z.literal(-1), z.literal(0), z.literal(1)]),
+    octave: z.number().int().min(OCTAVE_RANGE.min).max(OCTAVE_RANGE.max),
+  })
+  .refine(isWithinPitchRange, "A pitch must lie between A0 and C8.");
 
 export const meterSchema = z.strictObject({
   numerator: z.number().int().min(2).max(12),
@@ -49,20 +58,51 @@ export const eventSchema = z.strictObject({
   pitch: pitchSchema.nullable(),
   measureRest: z.literal(true).optional(),
   articulation: z.enum(ARTICULATIONS).optional(),
-  /** Tied to the next note in score order (same pitch), across a barline too. */
+  /** Tied to the next note of its voice (same pitch), across a barline too. */
   tie: z.literal(true).optional(),
+});
+
+export const CLEFS = ["treble", "bass", "treble8vb", "percussion"] as const;
+
+/** An independent line of music on a staff, such as a melody over a bass line. */
+const voiceSchema = z.strictObject({ id: idSchema });
+
+export const staffSchema = z.strictObject({
+  id: idSchema,
+  clef: z.enum(CLEFS),
+  /** The first voice is the staff's main line: it has a bar in every measure. */
+  voices: z.array(voiceSchema).min(1).max(SCORE_LIMITS.voicesPerStaff),
+});
+
+/** One instrument of the score, with its staves (two for a piano grand staff). */
+export const partSchema = z.strictObject({
+  id: idSchema,
+  instrument: z.enum(INSTRUMENT_IDS),
+  name: z.string().trim().min(1).max(40),
+  abbreviation: z.string().trim().min(1).max(12).optional(),
+  staves: z.array(staffSchema).min(1).max(SCORE_LIMITS.stavesPerPart),
+  /** Mixer level, 0–1; absent is the default level. */
+  volume: z.number().min(0).max(1).multipleOf(0.05).optional(),
+  muted: z.literal(true).optional(),
+});
+
+/** One voice's events in one bar; they fill the bar on their own. */
+export const voiceBarSchema = z.strictObject({
+  voiceId: idSchema,
+  events: z.array(eventSchema).min(1).max(SCORE_LIMITS.eventsPerMeasure),
+  /** Lead-sheet display of a staff: rhythm slashes (play freely on the chord) or a repeat of the previous bar. */
+  style: z.enum(["slashes", "repeat"]).optional(),
 });
 
 const measureSchema = z.strictObject({
   width: z.number().min(MEASURE_WIDTH.min).max(MEASURE_WIDTH.max).optional(),
   id: idSchema,
   meter: meterSchema,
-  events: z.array(eventSchema).min(1).max(SCORE_LIMITS.eventsPerMeasure),
   tempo: tempoSchema.optional(),
-  /** Lead-sheet display: rhythm slashes (play freely on the chord) or a repeat of the previous bar. */
-  style: z.enum(["slashes", "repeat"]).optional(),
   /** Rehearsal mark such as "A", "B" or "Verse", boxed above the bar. */
   section: z.string().trim().min(1).max(SECTION_LABEL_MAX).optional(),
+  /** Voice bars in the order the voices are declared (part, staff, voice); every staff's first voice has one. */
+  voices: z.array(voiceBarSchema).min(1),
 });
 
 /** Free placement of an indication relative to its anchor. */
@@ -77,6 +117,8 @@ export const annotationSchema = z.strictObject({
   targetId: idSchema,
   kind: z.enum(["text", "dynamic"]),
   text: z.string().trim().min(1).max(120),
+  /** The staff a bar-anchored indication belongs to; required for a dynamic on a bar. */
+  staffId: idSchema.optional(),
   offset: labelOffsetSchema.optional(),
 });
 
@@ -129,13 +171,14 @@ export const keySignatureSchema = z.strictObject({
 });
 
 export const scoreSchema = z.strictObject({
-  schemaVersion: z.literal(2),
+  schemaVersion: z.literal(3),
   id: idSchema,
   revision: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
   title: z.string().trim().min(1).max(100),
   tempo: tempoSchema,
   /** Global key signature; absent means C major. Display only: pitches store their own alteration. */
   key: keySignatureSchema.optional(),
+  parts: z.array(partSchema).min(1).max(SCORE_LIMITS.parts),
   measures: z.array(measureSchema).min(1).max(SCORE_LIMITS.measures),
   annotations: z.array(annotationSchema).max(SCORE_LIMITS.annotations),
   repeats: z.array(repeatSchema).max(SCORE_LIMITS.repeats),
@@ -150,6 +193,10 @@ export type Meter = z.infer<typeof meterSchema>;
 export type KeySignature = z.infer<typeof keySignatureSchema>;
 export type ScoreEvent = z.infer<typeof eventSchema>;
 export type Measure = z.infer<typeof measureSchema>;
+export type Part = z.infer<typeof partSchema>;
+export type Staff = z.infer<typeof staffSchema>;
+export type VoiceBar = z.infer<typeof voiceBarSchema>;
+export type Clef = (typeof CLEFS)[number];
 export type Annotation = z.infer<typeof annotationSchema>;
 export type Repeat = z.infer<typeof repeatSchema>;
 export type Chord = z.infer<typeof chordSchema>;

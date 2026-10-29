@@ -1,6 +1,6 @@
 import type { EngravedEvent, System } from "@/modules/engraving";
 import { EventGlyph } from "@/modules/engraving/ui";
-import { beats, pitchName } from "@/modules/score";
+import { pitchName, soundingBeats } from "@/modules/score";
 import { classNames } from "@/shared/ui/class-names";
 import styles from "./score-surface.module.css";
 import {
@@ -20,6 +20,12 @@ type SheetEventProps = {
   interactions: SheetInteractions;
 };
 
+/** The pitch as the sheet shows it, with its sound when written transposed and a range warning. */
+function pitchLabel({ event, sounds, outOfRange }: EngravedEvent) {
+  const shown = pitchName(event.pitch) + (sounds ? ` (sounds ${pitchName(sounds)})` : "");
+  return outOfRange ? `${shown}, out of range` : shown;
+}
+
 /**
  * A selectable, draggable note or rest; Shift/⌘-click adds it to the selection. Keyboard: ↑/↓ step the pitch, A–G enter a note,
  * Delete turns a note into a rest, S slurs, Enter opens its menu.
@@ -27,16 +33,21 @@ type SheetEventProps = {
 export function SheetEvent({ item, system, selected, playBeat, interactions }: SheetEventProps) {
   const { select, stepPitch, removeEvent, enterLetter, openMenu, gestures, pick, focusEvent } = interactions;
   const { event, x, y } = item;
-  const length = beats(event.duration);
+  const length = soundingBeats(event);
   const sounding = playBeat !== null && playBeat >= item.beat && playBeat < item.beat + length;
 
   return (
     <g
       {...sheetRefAttribute({ kind: "event", id: event.id })}
-      className={classNames(styles.event, selected && styles.selected, sounding && styles.sounding)}
+      className={classNames(
+        styles.event,
+        item.outOfRange && styles.outOfRange,
+        selected && styles.selected,
+        sounding && styles.sounding,
+      )}
       role="button"
       tabIndex={0}
-      aria-label={`Bar ${item.measure + 1}, beat ${item.localBeat + 1}, ${pitchName(event.pitch)}, ${length} beats`}
+      aria-label={`Bar ${item.measure + 1}, beat ${item.localBeat + 1}, ${pitchLabel(item)}, ${length} beats`}
       aria-pressed={selected}
       onFocus={() => focusEvent(event.id)}
       // A Shift/⌘ click adds to the selection without moving focus (which would select only this).

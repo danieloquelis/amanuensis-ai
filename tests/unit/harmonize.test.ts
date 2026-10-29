@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createExample, suggestChords, type KeySignature, type Score } from "@/modules/score";
+import { createExample, primaryVoiceId, suggestChords, type KeySignature, type Score } from "@/modules/score";
 
 /** A score from bars in the eval notation ("A4/1 G4/1 r/1"), all in one meter. */
 function melody(bars: string[], numerator: number): Score {
@@ -11,12 +11,18 @@ function melody(bars: string[], numerator: number): Score {
       ...base.measures[0],
       id: `bar-${b + 1}`,
       meter: { numerator, denominator: 4 },
-      events: bar.split(" ").map((token, i) => {
-        const [name, beats] = token.split("/");
-        const alter = name.includes("#") ? 1 : 0;
-        const pitch = name === "r" ? null : { step: name[0] as "C", alter: alter as 0, octave: Number(name.at(-1)) };
-        return { id: `n-${b}-${i}`, pitch, duration: { numerator: Number(beats) * 8, denominator: 8 } };
-      }),
+      voices: [
+        {
+          voiceId: primaryVoiceId(base),
+          events: bar.split(" ").map((token, i) => {
+            const [name, beats] = token.split("/");
+            const alter = name.includes("#") ? 1 : 0;
+            const pitch =
+              name === "r" ? null : { step: name[0] as "C", alter: alter as 0, octave: Number(name.at(-1)) };
+            return { id: `n-${b}-${i}`, pitch, duration: { numerator: Number(beats) * 8, denominator: 8 } };
+          }),
+        },
+      ],
     })),
   };
 }

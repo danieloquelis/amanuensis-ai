@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  barEvents,
   applyCommand,
   beats,
   createExample,
@@ -30,7 +31,7 @@ test("4/4 → 6/8 → 4/4 is local, exact and reversible", () => {
     ["4/4", "6/8", "4/4", "4/4"],
   );
   assert.deepEqual(
-    mixed.measures[1].events.map((e) => beats(e.duration)),
+    barEvents(mixed.measures[1]).map((e) => beats(e.duration)),
     [0.75, 0.375, 0.375, 1.5],
   );
   assert.equal(createPlaybackPlan(mixed).events.find((e) => e.id === "note-2-0")?.beat, 7);
@@ -64,7 +65,7 @@ test("preserve-duration meter changes never cut notes and batches roll back toge
   );
   // Three quarters in 6/8, written to show its dotted-quarter beats: q e~e q.
   assert.deepEqual(
-    changed.measures[0].events.map((e) => beats(e.duration)),
+    barEvents(changed.measures[0]).map((e) => beats(e.duration)),
     [1, 0.5, 0.5, 1],
   );
 });
@@ -86,7 +87,7 @@ test("compound meter beams six eighths into two groups of three", () => {
     ],
   });
   const system = layoutScore(score).systems[0];
-  const ids = new Set(score.measures[0].events.map((e) => e.id));
+  const ids = new Set(barEvents(score.measures[0]).map((e) => e.id));
   assert.equal(system.beamedIds.filter((id) => ids.has(id)).length, 6);
   assert.equal(system.beams.filter((b) => b.x1 < system.bars[0].endX).length, 2);
 });
@@ -131,9 +132,9 @@ test("full-measure rests follow local meter including 5/4", () => {
       { type: "setMeter", measureIds: ["bar-1"], meter: { numerator: 5, denominator: 4 }, policy: "preserve" },
     ],
   });
-  assert.equal(score.measures[0].events.length, 1);
-  assert.equal(score.measures[0].events[0].measureRest, true);
-  assert.equal(beats(score.measures[0].events[0].duration), 5);
+  assert.equal(barEvents(score.measures[0]).length, 1);
+  assert.equal(barEvents(score.measures[0])[0].measureRest, true);
+  assert.equal(beats(barEvents(score.measures[0])[0].duration), 5);
 });
 
 test("v1 files migrate without losing identity or edits", () => {
@@ -141,8 +142,9 @@ test("v1 files migrate without losing identity or edits", () => {
   const legacy = {
     ...original,
     schemaVersion: 1,
-    measures: original.measures.map(({ id, events }) => ({ id, events })),
+    measures: original.measures.map((measure) => ({ id: measure.id, events: barEvents(measure) })),
   } as Record<string, unknown>;
+  delete legacy.parts;
   delete legacy.annotations;
   delete legacy.repeats;
   delete legacy.chords;
@@ -181,7 +183,7 @@ test("bar spacing changes engraving but never musical timing, and persists", () 
   const naturalWidth = Math.round(layoutScore(original).systems[0].bars[0].width);
   const wider = edit(original, { type: "setMeasureWidth", measureId: "bar-1", width: naturalWidth + 40 });
   assert.deepEqual(createPlaybackPlan(wider), createPlaybackPlan(original));
-  assert.deepEqual(wider.measures[0].events, original.measures[0].events);
+  assert.deepEqual(barEvents(wider.measures[0]), barEvents(original.measures[0]));
   // The override sets the bar's engraved width; the rest of the line re-justifies around it.
   const widened = layoutScore(wider).systems[0];
   assert.equal(widened.bars[0].width, naturalWidth + 40);
@@ -198,7 +200,7 @@ test("drag-style reorder can move to the end without changing durations or ident
   const original = createExample();
   const moved = edit(original, { type: "moveEvent", eventId: "note-0-0", beforeEventId: null });
   assert.deepEqual(
-    moved.measures[0].events.map((e) => e.id),
+    barEvents(moved.measures[0]).map((e) => e.id),
     ["note-0-1", "note-0-2", "note-0-3", "note-0-0"],
   );
   assert.equal(createPlaybackPlan(moved).duration, createPlaybackPlan(original).duration);

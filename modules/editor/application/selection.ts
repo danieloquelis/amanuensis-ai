@@ -1,4 +1,4 @@
-import { findEvent, type Score, type ScoreEvent } from "@/modules/score";
+import { barEvents, eventOnsets, findEvent, measureEvents, type Score, type ScoreEvent } from "@/modules/score";
 
 export type Selection = { event: ScoreEvent; measureIndex: number };
 
@@ -19,15 +19,15 @@ export function toolTarget(score: Score, selection: Selection | null, selectedBa
     return { barIndex, measureId: score.measures[barIndex].id, eventId: null, beat: 0 };
   }
   const measure = score.measures[selection.measureIndex];
-  const index = measure.events.findIndex((e) => e.id === selection.event.id);
-  const beat = measure.events
-    .slice(0, index)
-    .reduce((sum, e) => sum + e.duration.numerator / e.duration.denominator, 0);
+  const events = findEvent(score, selection.event.id)?.voiceBar.events ?? barEvents(measure);
+  const index = events.findIndex((e) => e.id === selection.event.id);
+  const beat = eventOnsets(events)[index];
   return { barIndex: selection.measureIndex, measureId: measure.id, eventId: selection.event.id, beat };
 }
 
 /** Selecting a bar selects its first event. */
-export const firstEventOfMeasure = (score: Score, measureIndex: number) => score.measures[measureIndex].events[0].id;
+export const firstEventOfMeasure = (score: Score, measureIndex: number) =>
+  barEvents(score.measures[measureIndex])[0].id;
 
 /**
  * Keeps the selection meaningful after an edit: keep it if the event survived, otherwise move
@@ -35,8 +35,8 @@ export const firstEventOfMeasure = (score: Score, measureIndex: number) => score
  */
 export function selectionAfterEdit(previous: Score, next: Score, selectedId: string | null): string | null {
   if (!selectedId || findEvent(next, selectedId)) return selectedId;
-  const oldIndex = previous.measures.findIndex((m) => m.events.some((e) => e.id === selectedId));
+  const oldIndex = previous.measures.findIndex((m) => measureEvents(m).some((e) => e.id === selectedId));
   const sameMeasure = next.measures.find((m) => m.id === previous.measures[oldIndex]?.id);
   const nearest = next.measures[Math.max(0, Math.min(oldIndex, next.measures.length - 1))];
-  return (sameMeasure ?? nearest).events[0].id;
+  return barEvents(sameMeasure ?? nearest)[0].id;
 }

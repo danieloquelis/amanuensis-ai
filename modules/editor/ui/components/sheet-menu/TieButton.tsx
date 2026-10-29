@@ -1,4 +1,4 @@
-import type { Operation, ScoreEvent } from "@/modules/score";
+import { isRest, type Operation, type ScoreEvent } from "@/modules/score";
 
 /** Ties a note into the next one, or removes its tie. Renders nothing for a rest. */
 export function TieButton({
@@ -8,7 +8,7 @@ export function TieButton({
   event: ScoreEvent;
   onCommand: (operation: Operation, receipt: string) => unknown;
 }) {
-  if (!event.pitch) return null;
+  if (isRest(event)) return null;
   const tied = !!event.tie;
   return (
     <button

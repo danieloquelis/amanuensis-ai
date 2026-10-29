@@ -25,6 +25,13 @@ const SOURCES: Source[] = [
     license: "Public domain",
     url: "https://github.com/smpldsnds/sfzinstruments-splendid-grand-piano",
   },
+  {
+    id: "fluidr3-gm",
+    name: "FluidR3 GM (guitar, trumpet, flute, trombone)",
+    author: "Frank Wen (Fluid R3); converted by Benjamin Gleitzman (midi-js-soundfonts)",
+    license: "CC BY 3.0 as published by midi-js-soundfonts; Fluid R3 itself is MIT",
+    url: "https://github.com/gleitz/midi-js-soundfonts",
+  },
 ];
 
 const sha256 = (data: Uint8Array) => createHash("sha256").update(data).digest("hex");
@@ -68,10 +75,9 @@ async function fetchAll() {
 }
 
 async function updateManifest() {
-  const { pianoFiles } = await import("@/modules/playback/infrastructure/sound-sources");
-  const pianoUrl = (file: string) =>
-    `https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/${encodeURIComponent(file.replace(/^piano\//, ""))}`;
-  const wanted = pianoFiles().map((file) => ({ file, url: pianoUrl(file), source: SOURCES[0] }));
+  const { sampleFiles } = await import("@/modules/playback/infrastructure/sound-sources");
+  const wanted = sampleFiles();
+  const sourceOf = (id: string) => SOURCES.find((s) => s.id === id)!;
   // Files the selection no longer uses are removed, so the folder matches the manifest.
   if (existsSync(MANIFEST)) {
     const previous: { files: Entry[] } = JSON.parse(readFileSync(MANIFEST, "utf8"));
@@ -83,16 +89,11 @@ async function updateManifest() {
     const path = join(ROOT, file);
     const data = existsSync(path) ? new Uint8Array(readFileSync(path)) : await download(url);
     save(file, data);
-    entries.push({
-      file,
-      url,
-      bytes: data.byteLength,
-      sha256: sha256(data),
-      source: source.id,
-      license: source.license,
-    });
+    const { license } = sourceOf(source);
+    entries.push({ file, url, bytes: data.byteLength, sha256: sha256(data), source, license });
   });
-  entries.sort((a, b) => wanted.findIndex((w) => w.file === a.file) - wanted.findIndex((w) => w.file === b.file));
+  const order = wanted.map((w) => w.file);
+  entries.sort((a, b) => order.indexOf(a.file) - order.indexOf(b.file));
   writeFileSync(MANIFEST, `${JSON.stringify({ files: entries }, null, 2)}\n`);
   writeFileSync(join(ROOT, "CREDITS.md"), credits());
   console.log(`sounds: manifest lists ${entries.length} files`);

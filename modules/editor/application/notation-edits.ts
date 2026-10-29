@@ -1,4 +1,5 @@
 import {
+  barStyle,
   MARK_LABELS,
   meterName,
   nextSectionLabel,
@@ -45,7 +46,7 @@ export function addMark(score: Score, barIndex: number, kind: MarkKind): Edit {
 /** Shows a bar as notes, rhythm slashes, or a repeat of the previous bar. */
 export function barStyleEdit(score: Score, barIndex: number, style: "notes" | "slashes" | "repeat"): Edit | null {
   const measure = score.measures[barIndex];
-  if ((measure.style ?? "notes") === style) return null;
+  if ((barStyle(measure) ?? "notes") === style) return null;
   const receipt = { notes: "Notes", slashes: "Slash bar", repeat: "Repeat previous bar" }[style];
   return { operation: { type: "setMeasureStyle", measureId: measure.id, style }, receipt };
 }

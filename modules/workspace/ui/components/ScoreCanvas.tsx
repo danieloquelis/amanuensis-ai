@@ -1,3 +1,4 @@
+import { sheetHeading } from "@/modules/editor";
 import { ScoreSurface, type ScoreEditor } from "@/modules/editor/ui";
 import type { Pitch } from "@/modules/score";
 import styles from "./workspace.module.css";
@@ -73,7 +74,9 @@ export function ScoreCanvas({
           onAudition={onAudition}
         />
         <div className={styles.paperFooter}>
-          <span>{barCount} measures · Treble clef</span>
+          <span>
+            {barCount} measures · {sheetHeading(score)}
+          </span>
           <span>amanuensis</span>
         </div>
       </article>

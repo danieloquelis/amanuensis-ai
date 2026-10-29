@@ -22,7 +22,8 @@ const UNSUPPORTED_NOTATION = [
   "tuplets",
   "hairpins",
   "nested repeats and alternate endings",
-  "mid-score key or clef changes",
+  "mid-score key, clef or instrument changes",
+  "several instruments at once",
 ];
 
 type StoredPreview = { command: Command; applied: boolean };

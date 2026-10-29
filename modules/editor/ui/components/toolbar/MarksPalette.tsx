@@ -1,4 +1,4 @@
-import { MARK_KINDS, MARK_LABELS, type Score } from "@/modules/score";
+import { barStyle, MARK_KINDS, MARK_LABELS, type Score } from "@/modules/score";
 import { addMark, addSection, barStyleEdit, endRepeatEdit, startRepeatEdit } from "../../../application/notation-edits";
 import type { Edit } from "../../../application/note-edits";
 import { checkOperation } from "../../../application/operation-check";
@@ -23,7 +23,7 @@ type MarksPaletteProps = {
  * on the sheet and press Delete.
  */
 export function MarksPalette({ score, barIndex, onCommand, onError }: MarksPaletteProps) {
-  const style = score.measures[barIndex].style ?? "notes";
+  const style = barStyle(score.measures[barIndex]) ?? "notes";
   const apply = (edit: Edit | null) => {
     if (!edit) return;
     const problem = checkOperation(score, edit.operation);

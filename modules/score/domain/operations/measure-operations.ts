@@ -1,6 +1,17 @@
-import { getMeasure } from "../queries";
+import { getMeasure, getStaff } from "../queries";
 import { durationFromBeats } from "../rhythm";
-import { detachFrom, fullMeasureRest, type Draft, type OperationContext } from "./draft";
+import {
+  allStaves,
+  barEvents,
+  barStyle,
+  createMeasure,
+  measureEvents,
+  primaryVoiceId,
+  putVoiceBar,
+  setBarStyle,
+  voiceBars,
+} from "../voice-access";
+import { detachFrom, fullMeasureRest, restStaff, type Draft, type OperationContext } from "./draft";
 import type { OperationOf } from "./schema";
 
 /** Inserts an empty bar (full-measure rest) after the given bar, or at the end. */
@@ -9,19 +20,20 @@ export function appendMeasure(draft: Draft, op: OperationOf<"appendMeasure">, { 
     ? draft.measures.indexOf(getMeasure(draft, op.afterMeasureId))
     : draft.measures.length - 1;
   const meter = { ...draft.measures[index].meter };
-  draft.measures.splice(index + 1, 0, {
-    id: `${idPrefix}-bar`,
-    meter,
-    events: fullMeasureRest(meter, idPrefix),
-  });
+  // Every staff's main line gets a whole-bar rest; staves after the first take their own rest IDs.
+  const bar = createMeasure(draft, { id: `${idPrefix}-bar`, meter }, (staff) =>
+    fullMeasureRest(meter, staff === 0 ? idPrefix : `${idPrefix}-s${staff}`),
+  );
+  draft.measures.splice(index + 1, 0, bar);
 }
 
 export function deleteMeasure(draft: Draft, op: OperationOf<"deleteMeasure">) {
   const measure = getMeasure(draft, op.measureId);
-  detachFrom(draft, [measure.id, ...measure.events.map((e) => e.id)]);
+  detachFrom(draft, [measure.id, ...measureEvents(measure).map((e) => e.id)]);
   draft.measures = draft.measures.filter((m) => m.id !== measure.id);
   // A repeat sign needs a bar before it.
-  if (draft.measures[0]?.style === "repeat") delete draft.measures[0].style;
+  const first = draft.measures[0];
+  if (first && barStyle(first) === "repeat") setBarStyle(first, undefined);
 }
 
 /**
@@ -34,9 +46,13 @@ export function duplicateMeasure(draft: Draft, op: OperationOf<"duplicateMeasure
   const copiedIds = new Map([[measure.id, `${idPrefix}-bar`]]);
   copy.id = `${idPrefix}-bar`;
   delete copy.section;
-  copy.events.forEach((event, index) => {
-    copiedIds.set(event.id, `${idPrefix}-n${index}`);
-    event.id = `${idPrefix}-n${index}`;
+  // The primary voice's notes are -n0, -n1…; another voice k's are -vkn0, -vkn1….
+  voiceBars(copy).forEach((voiceBar, k) => {
+    voiceBar.events.forEach((event, index) => {
+      const id = k === 0 ? `${idPrefix}-n${index}` : `${idPrefix}-v${k}n${index}`;
+      copiedIds.set(event.id, id);
+      event.id = id;
+    });
   });
   const annotations = draft.annotations
     .filter((a) => copiedIds.has(a.targetId))
@@ -49,29 +65,29 @@ export function duplicateMeasure(draft: Draft, op: OperationOf<"duplicateMeasure
   draft.measures.splice(draft.measures.indexOf(measure) + 1, 0, copy);
 }
 
+/** Empties one staff of a bar, or every staff when none is named. */
 export function clearMeasure(draft: Draft, op: OperationOf<"clearMeasure">, { idPrefix }: OperationContext) {
   const measure = getMeasure(draft, op.measureId);
-  detachFrom(
-    draft,
-    measure.events.map((e) => e.id),
-  );
-  measure.events = fullMeasureRest(measure.meter, idPrefix);
-  delete measure.style;
+  const staves = op.staffId ? [getStaff(draft, op.staffId)] : allStaves(draft);
+  staves.forEach((staff, index) => restStaff(draft, measure, staff, index === 0 ? idPrefix : `${idPrefix}-s${index}`));
 }
 
+/** Writes one line of a bar (the main line unless a voice is named), replacing what it held. */
 export function replaceMeasure(draft: Draft, op: OperationOf<"replaceMeasure">, { idPrefix }: OperationContext) {
   const measure = getMeasure(draft, op.measureId);
+  const voiceId = op.voiceId ?? primaryVoiceId(draft);
   detachFrom(
     draft,
-    measure.events.map((e) => e.id),
+    barEvents(measure, voiceId).map((e) => e.id),
   );
-  delete measure.style;
-  measure.events = op.events.map((event, index) => ({
+  const events = op.events.map((event, index) => ({
     id: `${idPrefix}-n${index}`,
     pitch: event.pitch,
     duration: durationFromBeats(event.duration),
     ...(event.tie && event.pitch ? { tie: true as const } : {}),
   }));
+  putVoiceBar(draft, measure, voiceId, events);
+  setBarStyle(measure, undefined, voiceId);
 }
 
 /** Layout-only override; never changes musical timing. `null` restores default spacing. */

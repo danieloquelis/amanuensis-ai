@@ -1,6 +1,7 @@
-import { beats } from "../domain/rhythm";
+import { eventOnsets } from "../domain/rhythm";
 import type { Score } from "../domain/schema";
 import { isNotationHandle, notationAt } from "./notation-positions";
+import { barEvents } from "../domain/voice-access";
 
 /**
  * Musical addresses for operations, so an agent reading score text can target what it sees:
@@ -31,18 +32,18 @@ function measureAt(score: Score, value: string | number): string {
 function eventAt(score: Score, position: string): string {
   const order = EVENT_ORDER.exec(position);
   if (order) {
-    const event = score.measures[Number(order[1]) - 1]?.events[Number(order[2]) - 1];
+    const measure = score.measures[Number(order[1]) - 1];
+    const event = measure && barEvents(measure)[Number(order[2]) - 1];
     if (!event) throw new Error(`Bar ${order[1]} has no note or rest number ${order[2]}.`);
     return event.id;
   }
   const [, bar, beat] = EVENT_POSITION.exec(position)!;
   const measure = score.measures[Number(bar) - 1];
   if (!measure) throw new Error(`There is no bar ${bar}.`);
-  let onset = 1;
-  for (const event of measure.events) {
-    if (Math.abs(onset - Number(beat)) < EPSILON) return event.id;
-    onset += beats(event.duration);
-  }
+  const events = barEvents(measure);
+  const onsets = eventOnsets(events);
+  const at = onsets.findIndex((onset) => Math.abs(onset + 1 - Number(beat)) < EPSILON);
+  if (at !== -1) return events[at].id;
   throw new Error(`No note or rest starts at bar ${bar}, beat ${beat}.`);
 }
 

@@ -94,7 +94,9 @@ test("an octave keeps accidentals; other moves stay in the key; rests and ties c
   const tied = edit(createExample(), { type: "setTie", eventId: "note-0-3", tied: true });
   const moved = edit(tied, { type: "transpose", eventIds: ["note-0-3"], steps: -7 });
   assert.equal(pitchOf(moved, "note-1-0"), "E3");
-  assert.throws(() => edit(createExample(), { type: "transpose", eventIds: bar1, steps: -14 }), /range/);
+  // Every pitch stays within A0–C8, the piano keyboard: four octaves below middle C is too far.
+  const low = edit(createExample(), { type: "transpose", eventIds: bar1, steps: -21 });
+  assert.throws(() => edit(low, { type: "transpose", eventIds: bar1, steps: -7 }), /A0–C8/);
 });
 
 test("the multi-selection tools build one edit for the whole phrase", () => {

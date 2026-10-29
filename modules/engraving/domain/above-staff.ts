@@ -1,4 +1,4 @@
-import { formatChord, type Score } from "@/modules/score";
+import { formatChord, isNote, type Score } from "@/modules/score";
 import { beatX, type EngravedEvent, type System } from "./scene";
 
 /** Space between the topmost ink and the chord row, and between rows. */
@@ -13,7 +13,7 @@ const BAR_NUMBER_TOP = 44;
 function eventTop(item: EngravedEvent, systemTop: number): number {
   if (item.hidden) return systemTop;
   const head = item.y - 8;
-  const stem = item.event.pitch && !item.stemDown ? item.stemEnd : head;
+  const stem = isNote(item.event) && !item.stemDown ? item.stemEnd : head;
   const articulation = item.event.articulation ? Math.min(item.y - 18, systemTop - 12) - 6 : head;
   return Math.min(head, stem, articulation);
 }

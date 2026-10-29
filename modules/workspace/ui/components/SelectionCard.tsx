@@ -1,3 +1,4 @@
+import { isNote } from "@/modules/score";
 import { pickedEvents } from "@/modules/editor";
 import { BarActions, NoteActions, RangeActions, type ScoreEditor } from "@/modules/editor/ui";
 import { placeAround } from "@/shared/ui/floating-placement";
@@ -35,7 +36,7 @@ export function SelectionCard({ editor, anchor, area, reserved }: SelectionCardP
   const measure = single?.kind === "bar" ? score.measures.find((m) => m.id === single.id) : undefined;
   const range = pickedEvents(score, picked);
   if (!event && !measure && !range) return null;
-  const size = event ? CARD[event.pitch ? "note" : "rest"] : range ? CARD.range : CARD.bar;
+  const size = event ? CARD[isNote(event) ? "note" : "rest"] : range ? CARD.range : CARD.bar;
 
   return (
     <section

@@ -1,4 +1,4 @@
-import type { MarkKind, Meter, ScoreEvent } from "@/modules/score";
+import type { Clef, MarkKind, Meter, Pitch, ScoreEvent } from "@/modules/score";
 
 /** One placed note, rest or space. Coordinates are SVG scene units (12 per staff space). */
 export type EngravedEvent = {
@@ -21,6 +21,10 @@ export type EngravedEvent = {
   right: number;
   /** The bar's whole-bar rest behind a slash or repeat display: selectable, not drawn. */
   hidden: boolean;
+  /** The note sounds outside its instrument's range: drawn in the warning colour. */
+  outOfRange?: true;
+  /** The pitch it sounds, when the staff shows a transposing part as written (`event.pitch` is written). */
+  sounds?: Pitch;
 };
 
 /** A beam segment. `y1`/`y2` are the stem tips (outer edge); thickness grows toward the noteheads. */
@@ -105,6 +109,7 @@ export type System = {
   firstMeasure: number;
   /** Where the staff lines end: the last barline. */
   endX: number;
+  clef: Clef;
   keySignature: KeyAccidentalMark[];
   bars: BarScene[];
   events: EngravedEvent[];

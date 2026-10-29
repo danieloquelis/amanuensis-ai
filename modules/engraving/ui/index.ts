@@ -1,5 +1,6 @@
 // Public React API of the engraving module: stateless SVG glyphs, no interaction.
 export { BeamLines } from "./components/BeamLines";
+export { ClefGlyph } from "./components/ClefGlyph";
 export { EventGlyph } from "./components/EventGlyph";
 export { IndicationText } from "./components/IndicationText";
 export { SlurCurve } from "./components/SlurCurve";

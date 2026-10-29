@@ -43,6 +43,40 @@ test("shortening a note leaves a rest that becomes a note by typing its letter",
   await expect(page.getByRole("button", { name: "Play score" })).toBeVisible();
 });
 
+test("a draft saved in the older format opens, and is saved in the current one after an edit", async ({ page }) => {
+  const whole = { numerator: 4, denominator: 1 };
+  const draft = {
+    schemaVersion: 2,
+    id: "old-draft",
+    revision: 3,
+    title: "Old draft",
+    tempo: 90,
+    measures: [
+      {
+        id: "m1",
+        meter: { numerator: 4, denominator: 4 },
+        events: [{ id: "n1", pitch: { step: "D", octave: 4, alter: 0 }, duration: whole }],
+      },
+    ],
+    annotations: [{ id: "d1", targetId: "m1", kind: "dynamic", text: "p" }],
+    repeats: [],
+  };
+  await page.goto("/");
+  await page.evaluate((saved) => localStorage.setItem("amanuensis.score.v1", JSON.stringify(saved)), draft);
+  await page.reload();
+  const note = page.getByRole("button", { name: "Bar 1, beat 1, D4, 4 beats", exact: true });
+  await expect(note).toBeVisible();
+  await note.click();
+  await page.keyboard.press("ArrowUp");
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, E4, 4 beats", exact: true })).toBeVisible();
+  const saved = JSON.parse((await page.evaluate(() => localStorage.getItem("amanuensis.score.v1")))!);
+  expect(saved.schemaVersion).toBe(3);
+  expect(saved.parts[0].instrument).toBe("piano");
+  expect(saved.annotations[0].staffId).toBe(saved.parts[0].staves[0].id);
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, E4, 4 beats", exact: true })).toBeVisible();
+});
+
 test("pointer drag and keyboard editing operate on the same note", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true })).toBeEnabled();
@@ -588,7 +622,15 @@ test("with a bar selected, Play starts from that bar", async ({ page }) => {
 const installSoundProbe = (page: Page) =>
   page.addInitScript(() => {
     const heard: number[] = [];
-    Object.assign(window, { heard, __amanuensisSoundProbe: (sound: { midi: number }) => heard.push(sound.midi) });
+    const instruments: string[] = [];
+    Object.assign(window, {
+      heard,
+      instruments,
+      __amanuensisSoundProbe: (sound: { midi: number; instrument: string }) => {
+        heard.push(sound.midi);
+        instruments.push(sound.instrument);
+      },
+    });
   });
 const heardNotes = (page: Page) => page.evaluate(() => (window as unknown as { heard: number[] }).heard);
 
@@ -640,4 +682,34 @@ test("when sounds cannot load, the score still plays", async ({ page }) => {
   );
   await expect(page.getByRole("button", { name: "Stop playback" })).toBeVisible();
   await expect.poll(() => heardNotes(page).then((notes) => notes[0])).toBe(60);
+});
+
+test("the instrument sets the clef, the written pitch and the sound, and survives a reload", async ({ page }) => {
+  await installSoundProbe(page);
+  await page.goto("/");
+  const sheet = page.locator("svg[aria-label$='Select a note to edit.']");
+  await page.getByRole("button", { name: "Instrument", exact: true }).click();
+  await page.getByRole("button", { name: "Trombone", exact: true }).click();
+  await expect(sheet).toHaveAttribute("aria-label", /bass clef/);
+  await page.reload();
+  await expect(sheet).toHaveAttribute("aria-label", /bass clef/);
+
+  await page.getByRole("button", { name: "Instrument", exact: true }).click();
+  await page.getByRole("button", { name: "Trumpet in B♭", exact: true }).click();
+  // Concert C4 is written D4 for a B♭ trumpet, in D major.
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, D4 (sounds C4), 1 beats", exact: true })).toBeVisible();
+  await expect(sheet).toHaveAttribute("aria-label", /treble clef, D major/);
+  // Typing E on the trumpet writes the E you see, which sounds D.
+  await page.getByRole("button", { name: "Bar 1, beat 1, D4 (sounds C4), 1 beats", exact: true }).click();
+  await page.keyboard.press("e");
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, E4 (sounds D4), 1 beats", exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  await page.getByRole("button", { name: "Play score" }).click();
+  await expect(page.getByRole("button", { name: "Stop playback" })).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { instruments: string[] }).instruments[0]))
+    .toBe("trumpet");
+  expect((await heardNotes(page))[0]).toBe(60);
+  await page.getByRole("button", { name: "Stop playback" }).click();
 });

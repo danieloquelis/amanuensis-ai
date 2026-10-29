@@ -1,4 +1,3 @@
-import { MusicNotesSimple } from "@phosphor-icons/react";
 import Link from "next/link";
 import styles from "./workspace.module.css";
 
@@ -6,7 +5,7 @@ import styles from "./workspace.module.css";
 export function BrandMark() {
   return (
     <Link className={styles.brandMark} href="/" aria-label="Amanuensis home">
-      <MusicNotesSimple size={22} weight="fill" />
+      <span className={styles.brandLogo} aria-hidden="true" />
     </Link>
   );
 }

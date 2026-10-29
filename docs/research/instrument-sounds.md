@@ -19,7 +19,7 @@ There is no GM drum kit (channel 10) in `midi-js-soundfonts`: `FluidR3_GM/percus
 ## What the app uses
 
 - **Piano** (phase A1, implemented): Splendid Grand Piano, two velocity layers (`PP` for pp–mp, `Mf` for mf–ff) with one sample every minor third, so a played note is at most a semitone from its sample. Opus and AAC: 116 files, 11.4 MB. The full two-layer set at every sample root would be about 16 MB.
-- **Guitar, trumpet, flute, trombone** (phase A2): FluidR3_GM `-mp3.js`, about 10.4 MB for the four.
+- **Guitar, trumpet, flute, trombone** (phase A2, implemented): FluidR3_GM `-mp3.js` (nylon guitar), 10.4 MB for the four; 21.7 MB with the piano.
 - **Drums** (phase F): a small kit of VCSL CC0 one-shots.
 - **Hosting**: served from `public/sounds/v1/` but not kept in git. The committed `manifest.json` (URL, size, sha256) drives `yarn sounds:fetch`, which runs after `yarn install` and before `yarn build`.
 - **Budget**: 25 MB for every sample set together, enforced by `tests/integration/sounds.integration-test.ts`.

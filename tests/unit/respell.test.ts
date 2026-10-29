@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  barEvents,
+  setBarEvents,
   applyCommand,
   beats,
   createExample,
@@ -24,11 +26,11 @@ const E4 = { step: "E", alter: 0, octave: 4 } as const;
 /** The example with bar 1 written as no musician would: e h q. (the half hides beat 3), slurred, with a dynamic. */
 function awkward(): Score {
   const score = structuredClone(createExample());
-  score.measures[0].events = [
+  setBarEvents(score.measures[0], [
     { id: "a", pitch: C4, duration: { numerator: 1, denominator: 2 }, articulation: "accent" },
     { id: "b", pitch: D4, duration: { numerator: 2, denominator: 1 } },
     { id: "c", pitch: E4, duration: { numerator: 3, denominator: 2 } },
-  ];
+  ]);
   score.slurs = [{ id: "s", startEventId: "a", endEventId: "b" }];
   score.annotations = [{ id: "f", targetId: "b", kind: "dynamic", text: "f" }];
   return parseScore(score);
@@ -41,7 +43,7 @@ test("a bar already in the score is written as a musician would on the next edit
 
 test("a respelled note keeps its markings: the slur reaches its last part, the dynamic and accent stay", () => {
   const score = edit(awkward(), { type: "rename", title: "Renamed" });
-  const [first, , last] = score.measures[0].events;
+  const [first, , last] = barEvents(score.measures[0]);
   assert.equal(first.articulation, "accent");
   assert.deepEqual(
     score.slurs.map((s) => [s.startEventId, s.endEventId]),

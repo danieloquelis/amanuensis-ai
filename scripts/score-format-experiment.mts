@@ -8,6 +8,7 @@ import { readFileSync } from "node:fs";
 import { scoreTools, toolParameters, type ChatMessage, type ToolSpec } from "@/modules/assistant";
 import { createMetaModel } from "@/modules/assistant/server";
 import {
+  barEvents,
   applyCommand,
   beats,
   commandSchema,
@@ -43,7 +44,7 @@ const base = parseScore(JSON.parse(readFileSync("tests/fixtures/engraving/long.j
 
 const bar = (score: Score, n: number) => score.measures[n - 1];
 const notesOf = (score: Score, n: number) =>
-  bar(score, n).events.map((e) => `${e.pitch ? pitchName(e.pitch) : "r"}/${beats(e.duration)}`);
+  barEvents(bar(score, n)).map((e) => `${e.pitch ? pitchName(e.pitch) : "r"}/${beats(e.duration)}`);
 const chordsOf = (score: Score, n: number) =>
   score.chords.filter((c) => c.measureId === bar(score, n).id).map((c) => `${formatChord(c)}@${c.beat}`);
 const sameNotes = (a: Score, b: Score, n: number) => notesOf(a, n).join() === notesOf(b, n).join();
@@ -77,15 +78,15 @@ const TASKS: { name: string; instruction: string; check: (s: Score) => boolean }
     name: "slur and tie",
     instruction: "Slur all the notes of bar 2, and make bar 3 start with A4 tied from the last note of bar 2.",
     check: (s) => {
-      const two = bar(s, 2).events;
+      const two = barEvents(bar(s, 2));
       const slurred = s.slurs.some((x) => x.startEventId === two[0].id && x.endEventId === two.at(-1)!.id);
-      return slurred && !!two.at(-1)!.tie && pitchName(bar(s, 3).events[0].pitch) === "A4";
+      return slurred && !!two.at(-1)!.tie && pitchName(barEvents(bar(s, 3))[0].pitch) === "A4";
     },
   },
   {
     name: "staccato",
     instruction: "Make every note in bars 1 and 3 staccato.",
-    check: (s) => [1, 3].every((n) => bar(s, n).events.every((e) => !e.pitch || e.articulation === "staccato")),
+    check: (s) => [1, 3].every((n) => barEvents(bar(s, n)).every((e) => !e.pitch || e.articulation === "staccato")),
   },
   {
     name: "octave up",

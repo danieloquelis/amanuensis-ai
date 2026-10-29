@@ -1,6 +1,6 @@
 # Triplets plan
 
-Status: planned, not started. Written 29 October 2026 against commit `5799adf` (main). This document is self-contained: a session that implements it needs no other context than the repository, `AGENTS.md` and [code conventions](../architecture/code-conventions.md).
+Status: phase 0 (one place for note lengths: `soundingDuration`, `soundingBeats`, `eventOnsets`) implemented with the instruments plan; phases 1–4 planned. Written 29 October 2026 against commit `5799adf` (main). This document is self-contained: a session that implements it needs no other context than the repository, `AGENTS.md` and [code conventions](../architecture/code-conventions.md).
 
 ## Goal
 

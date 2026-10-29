@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { layoutScore } from "@/modules/engraving";
 import { createPlaybackPlan } from "@/modules/playback";
 import {
+  barEvents,
   applyCommand,
   beats,
   createExample,
@@ -85,13 +86,13 @@ test("whole bars can be written with a note held over the barline", () => {
       },
     ],
   });
-  assert.equal(score.measures[0].events[1].tie, true);
+  assert.equal(barEvents(score.measures[0])[1].tie, true);
   assert.equal(describeScore(score).bars[0].events[1].tiedToNext, true);
 });
 
 test("a stored tie between different pitches is invalid", () => {
   const broken = structuredClone(createExample());
-  broken.measures[0].events[0].tie = true;
+  barEvents(broken.measures[0])[0].tie = true;
   assert.throws(() => parseScore(broken), /same pitch/);
 });
 

@@ -1,5 +1,6 @@
-import { beats } from "../domain/rhythm";
+import { eventOnsets } from "../domain/rhythm";
 import type { Score } from "../domain/schema";
+import { barEvents } from "../domain/voice-access";
 
 /**
  * Positions for things other than notes, as score text shows them: "chord 2:3" (the chord in
@@ -15,13 +16,10 @@ export const isNotationHandle = (value: unknown): value is string => typeof valu
 
 /** Onset (0-based beats) of each event in a bar, by ID. */
 function onsets(score: Score, barIndex: number): Map<string, number> {
-  const map = new Map<string, number>();
-  let beat = 0;
-  for (const event of score.measures[barIndex]?.events ?? []) {
-    map.set(event.id, beat);
-    beat += beats(event.duration);
-  }
-  return map;
+  const measure = score.measures[barIndex];
+  const events = measure ? barEvents(measure) : [];
+  const starts = eventOnsets(events);
+  return new Map(events.map((event, i) => [event.id, starts[i]]));
 }
 
 /** The note an "n:beat" or "n#k" position names, or null. */
@@ -31,9 +29,10 @@ function eventAt(score: Score, where: string): { id: string; bar: number; beat: 
   const bar = Number((order ?? at)?.[1]) - 1;
   const measure = score.measures[bar];
   if (!measure) return null;
+  const events = barEvents(measure);
   const event = order
-    ? measure.events[Number(order[2]) - 1]
-    : measure.events.find((e) => Math.abs(onsets(score, bar).get(e.id)! - (Number(at?.[2]) - 1)) < EPSILON);
+    ? events[Number(order[2]) - 1]
+    : events.find((e) => Math.abs(onsets(score, bar).get(e.id)! - (Number(at?.[2]) - 1)) < EPSILON);
   return event ? { id: event.id, bar, beat: onsets(score, bar).get(event.id)! } : null;
 }
 
@@ -77,7 +76,7 @@ export function positionOf(score: Score, id: string): string {
   const barOf = (measureId: string) => score.measures.findIndex((m) => m.id === measureId) + 1;
   for (const [index, measure] of score.measures.entries()) {
     if (measure.id === id) return `${index + 1}`;
-    const order = measure.events.findIndex((e) => e.id === id);
+    const order = barEvents(measure).findIndex((e) => e.id === id);
     if (order !== -1) return `${index + 1}#${order + 1}`;
   }
   const chord = score.chords.find((c) => c.id === id);

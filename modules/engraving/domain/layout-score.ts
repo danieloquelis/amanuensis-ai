@@ -1,5 +1,6 @@
 import { scoreKey, type Score } from "@/modules/score";
 import { systemCeiling } from "./above-staff";
+import { writtenView } from "./clefs";
 import { headerEnd } from "./header";
 import { DYNAMIC_ROW_HEIGHT } from "./labels";
 import { layoutSystem, type SystemContext } from "./layout-system";
@@ -14,12 +15,16 @@ const SCENE_BOTTOM_TRIM = 15;
 /** How far above its staff a system may reach before it is moved down. */
 const HEADROOM = 82;
 
+/** How the sheet is shown: `concertPitch` draws transposing parts as they sound rather than as written. */
+export type LayoutOptions = { concertPitch?: boolean };
+
 /**
  * Derives the engraved scene from a score revision. Pure and deterministic, in stages:
  * analyze bars → break into lines → per line: justify and place, beam, stack the rows above the
  * staff, place labels. Ties and slurs are placed last, as they may span lines. A line whose content reaches too high is laid out again lower down.
  */
-export function layoutScore(score: Score): Scene {
+export function layoutScore(stored: Score, { concertPitch = false }: LayoutOptions = {}): Scene {
+  const { score, outOfRange, sounding } = writtenView(stored, concertPitch);
   const key = scoreKey(score);
   const bars = analyzeScore(score);
   const context: SystemContext = {
@@ -41,5 +46,10 @@ export function layoutScore(score: Score): Scene {
   });
   placeTies(score, systems);
   placeSlurs(score, systems);
+  for (const item of systems.flatMap((system) => system.events)) {
+    if (outOfRange.has(item.event.id)) item.outOfRange = true;
+    const sounds = sounding.get(item.event.id);
+    if (sounds) item.sounds = sounds;
+  }
   return { width: SCENE_WIDTH, height: nextTop - SCENE_BOTTOM_TRIM, systems };
 }

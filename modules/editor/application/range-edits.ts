@@ -1,4 +1,13 @@
-import { findEvent, slurEnds, type Articulation, type BasicOperation, type Score } from "@/modules/score";
+import {
+  everyEvent,
+  findEvent,
+  isNote,
+  slurEnds,
+  voiceLine,
+  type Articulation,
+  type BasicOperation,
+  type Score,
+} from "@/modules/score";
 import type { Edit } from "./note-edits";
 import type { SheetRef } from "./sheet-selection";
 
@@ -10,12 +19,16 @@ export const PHRASE_ARTICULATIONS = ["staccato", "accent", "tenuto"] as const sa
 /** The picked notes and rests in score order, when two or more are picked and nothing else. */
 export function pickedEvents(score: Score, refs: SheetRef[]): string[] | null {
   if (refs.length < 2 || refs.some((r) => r.kind !== "event")) return null;
-  const order = score.measures.flatMap((m) => m.events.map((e) => e.id));
+  const order = everyEvent(score).map((e) => e.id);
   const ids = refs.map((r) => r.id).filter((id) => order.includes(id));
   return ids.length < 2 ? null : ids.sort((a, b) => order.indexOf(a) - order.indexOf(b));
 }
 
-const notesOf = (score: Score, ids: string[]) => ids.filter((id) => findEvent(score, id)?.event.pitch);
+const notesOf = (score: Score, ids: string[]) =>
+  ids.filter((id) => {
+    const found = findEvent(score, id);
+    return found !== null && isNote(found.event);
+  });
 
 /** Where a slur over these events would start and end, or null when fewer than two are notes. */
 function slurSpan(score: Score, ids: string[]) {
@@ -44,9 +57,9 @@ export function slurEdit(score: Score, ids: string[]): Edit | null {
 export function slurKeyEdit(score: Score, refs: SheetRef[], eventId: string): Edit | null {
   const picked = pickedEvents(score, refs);
   if (picked) return slurEdit(score, picked);
-  const order = score.measures.flatMap((m) => m.events);
+  const order = voiceLine(score, eventId);
   const index = order.findIndex((e) => e.id === eventId);
-  const next = order.slice(index + 1).find((e) => e.pitch);
+  const next = order.slice(index + 1).find(isNote);
   return index === -1 || !next ? null : slurEdit(score, [eventId, next.id]);
 }
 

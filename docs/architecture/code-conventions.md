@@ -68,6 +68,7 @@ The editor is one client of the engine; agents are another, with equal power.
   2. Write a handler `(draft, op, { idPrefix }) => void` in the matching `*-operations.ts` file.
   3. Register it in `apply-command.ts`. TypeScript fails if a type has no handler.
   4. Add a unit test.
+- Read and write a bar's events and display style only through `score/domain/voice-access.ts` (`barEvents`, `setBarEvents`, `putVoiceBar`, `voiceBars`, `barStyle`, `setBarStyle`, `voiceLine`, `everyEvent`, …), so a bar can hold several voices. ESLint rejects `measure.voices`, `measure.events` and `measure.style` elsewhere in `modules/` (migrations aside). Time arithmetic uses `soundingBeats` / `eventOnsets`, never the written `event.duration` directly. Ask `isNote(event)` / `isRest(event)` rather than testing `event.pitch` when the question is "is this a note?".
 - Handlers mutate the cloned draft they are given. `applyCommand` clones, checks the revision, and re-validates the whole score afterwards.
 - Validate before showing a preview with `checkOperation` (`@/modules/editor`) rather than calling `applyCommand` in a `try` block in a component.
 

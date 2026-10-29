@@ -1,29 +1,26 @@
-import { z } from "zod";
 import { DYNAMICS } from "./notation";
 import { validateBarMarks, validateChords } from "./lead-sheet-validation";
 import { anchorIds } from "./queries";
-import { add, beats, fraction, isSupportedDuration, measureCapacity, meterName, METERS } from "./rhythm";
-import { eventSchema, idSchema, scoreSchema, type Measure, type Score } from "./schema";
+import {
+  add,
+  beats,
+  fraction,
+  isSupportedDuration,
+  measureCapacity,
+  meterName,
+  METERS,
+  soundingDuration,
+} from "./rhythm";
+import { scoreSchema, type Measure, type Meter, type Score, type ScoreEvent } from "./schema";
+import { migrateScore } from "./migrations";
 import { validateSlurs } from "./slurs";
+import { validateAnnotationStaff, validateStructure } from "./structure-validation";
 import { validateTies } from "./ties";
+import { isNote, isRest, voiceBars } from "./voice-access";
 
-const legacyScoreSchema = z.strictObject({
-  schemaVersion: z.literal(1),
-  id: idSchema,
-  revision: z.number().int().nonnegative(),
-  title: z.string(),
-  tempo: z.number(),
-  measures: z.array(
-    z.strictObject({
-      id: idSchema,
-      events: z.array(eventSchema.omit({ articulation: true, measureRest: true, tie: true })),
-    }),
-  ),
-});
-
-/** Parses and validates a native score, migrating v1 files without changing IDs, notes or revision. */
+/** Parses and validates a native score, migrating older files without changing IDs, notes or revision. */
 export function parseScore(value: unknown): Score {
-  const result = scoreSchema.safeParse(convertLegacyGaps(migrateVersion1(value)));
+  const result = scoreSchema.safeParse(migrateScore(value));
   if (!result.success) {
     const issue = result.error.issues[0];
     throw new Error(`Invalid or unsupported score data: ${issue.path.join(".")} — ${issue.message}`);
@@ -31,49 +28,16 @@ export function parseScore(value: unknown): Score {
   const score = result.data;
   const ids = createUniqueIdRegistry();
   ids.add(score.id);
+  validateStructure(score, ids);
   for (const measure of score.measures) validateMeasure(measure, ids);
   validateAnnotations(score, ids);
+  validateAnnotationStaff(score);
   validateRepeats(score, ids);
   validateChords(score, ids);
   validateBarMarks(score, ids);
   validateTies(score);
   validateSlurs(score, ids);
   return score;
-}
-
-function migrateVersion1(value: unknown): unknown {
-  const isVersion1 = value && typeof value === "object" && "schemaVersion" in value && value.schemaVersion === 1;
-  if (!isVersion1) return value;
-  const legacy = legacyScoreSchema.parse(value);
-  return {
-    ...legacy,
-    schemaVersion: 2,
-    measures: legacy.measures.map((m) => ({ ...m, meter: { numerator: 4, denominator: 4 } })),
-    annotations: [],
-    repeats: [],
-  };
-}
-
-const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null;
-
-/**
- * Early v2 drafts marked space left by a shortened note with `gap: true` and drew it as a
- * placeholder. That space is now an ordinary rest, so the marker is dropped on load.
- */
-function convertLegacyGaps(value: unknown): unknown {
-  if (!isRecord(value) || !Array.isArray(value.measures)) return value;
-  const withoutGap = (event: unknown) => {
-    if (!isRecord(event) || !("gap" in event)) return event;
-    const rest = { ...event };
-    delete rest.gap;
-    return rest;
-  };
-  const measures = value.measures.map((measure) =>
-    isRecord(measure) && Array.isArray(measure.events)
-      ? { ...measure, events: measure.events.map(withoutGap) }
-      : measure,
-  );
-  return { ...value, measures };
 }
 
 function createUniqueIdRegistry() {
@@ -88,31 +52,36 @@ function createUniqueIdRegistry() {
 
 export type IdRegistry = ReturnType<typeof createUniqueIdRegistry>;
 
-/** Normalizes event durations in place and checks that the bar is exactly full. */
+/** Normalizes event durations in place and checks that every voice fills the bar exactly. */
 function validateMeasure(measure: Measure, ids: IdRegistry) {
   ids.add(measure.id);
   if (!(METERS as readonly string[]).includes(meterName(measure.meter))) {
     throw new Error("Unsupported meter. Choose a listed time signature.");
   }
+  for (const voiceBar of voiceBars(measure)) validateVoiceBar(voiceBar.events, measure.meter, ids);
+}
+
+/** One voice's events in a bar: supported values, adding up to exactly the bar. */
+function validateVoiceBar(events: ScoreEvent[], meter: Meter, ids: IdRegistry) {
   let total = fraction(0);
-  for (const event of measure.events) {
+  for (const event of events) {
     ids.add(event.id);
     event.duration = fraction(event.duration.numerator, event.duration.denominator);
-    if (event.measureRest && (event.pitch || measure.events.length !== 1)) {
+    if (event.measureRest && (isNote(event) || events.length !== 1)) {
       throw new Error("A full-measure rest must occupy the measure alone.");
     }
     if (!event.measureRest && !isSupportedDuration(beats(event.duration))) {
       throw new Error("Unsupported duration; tuplets are not available yet.");
     }
-    if (!event.pitch && event.articulation && event.articulation !== "fermata") {
+    if (isRest(event) && event.articulation && event.articulation !== "fermata") {
       throw new Error("Only a fermata can be placed on a rest.");
     }
-    total = add(total, event.duration);
+    total = add(total, soundingDuration(event));
   }
-  const capacity = measureCapacity(measure.meter);
+  const capacity = measureCapacity(meter);
   if (beats(total) !== capacity) {
     throw new Error(
-      `Each ${meterName(measure.meter)} measure must contain exactly ${capacity} quarter-note beats (four beats in 4/4).`,
+      `Each ${meterName(meter)} measure must contain exactly ${capacity} quarter-note beats (four beats in 4/4).`,
     );
   }
 }

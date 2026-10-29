@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { beats, durationNotation, type ScoreEvent } from "@/modules/score";
+import { isNote, beats, durationNotation, type ScoreEvent } from "@/modules/score";
 import { NOTE_DURATION_CHOICES, toggleDotOperation } from "../../../application/note-edits";
 import type { CommitEdit } from "../../hooks/use-score-editor";
 import styles from "./sheet-menu.module.css";
@@ -27,7 +27,7 @@ export function DurationButtons({
           aria-pressed={!event.measureRest && beats(event.duration) === value}
           onClick={() => onCommand({ type: "setDuration", eventId: event.id, duration: value }, `${label} duration`)}
         >
-          {event.pitch ? <DurationIcon value={value} /> : <RestDurationIcon value={value} />}
+          {isNote(event) ? <DurationIcon value={value} /> : <RestDurationIcon value={value} />}
         </button>
       ))}
       <button

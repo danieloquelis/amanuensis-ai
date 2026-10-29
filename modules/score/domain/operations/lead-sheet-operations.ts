@@ -1,6 +1,7 @@
 import { CHORD_QUALITY_NAMES, parseChordSymbol } from "../chords";
-import { getMeasure } from "../queries";
-import { fullMeasureRest, detachFrom, type Draft, type OperationContext } from "./draft";
+import { getMeasure, getStaff } from "../queries";
+import { barStyle, setBarStyle } from "../voice-access";
+import { restStaff, type Draft, type OperationContext } from "./draft";
 import type { OperationOf } from "./schema";
 
 export function putChord(draft: Draft, op: OperationOf<"putChord">, { idPrefix }: OperationContext) {
@@ -28,17 +29,15 @@ export function putChord(draft: Draft, op: OperationOf<"putChord">, { idPrefix }
  */
 export function setMeasureStyle(draft: Draft, op: OperationOf<"setMeasureStyle">, { idPrefix }: OperationContext) {
   const measure = getMeasure(draft, op.measureId);
+  const staff = getStaff(draft, op.staffId);
+  const main = staff.voices[0].id;
   if (op.style === "notes") {
-    delete measure.style;
+    setBarStyle(measure, undefined, main);
     return;
   }
-  if (measure.style === op.style) return;
-  detachFrom(
-    draft,
-    measure.events.map((e) => e.id),
-  );
-  measure.events = fullMeasureRest(measure.meter, idPrefix);
-  measure.style = op.style;
+  if (barStyle(measure, main) === op.style) return;
+  restStaff(draft, measure, staff, idPrefix);
+  setBarStyle(measure, op.style, main);
 }
 
 export function setSection(draft: Draft, op: OperationOf<"setSection">) {

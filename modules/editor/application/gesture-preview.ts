@@ -1,4 +1,4 @@
-import { movePitch, scoreKey, type Score } from "@/modules/score";
+import { everyEvent, findEvent, movePitch, scoreKey, setBarEvents, type Score } from "@/modules/score";
 
 /** A drag in progress, drawn on the sheet but not yet committed. */
 export type GesturePreview =
@@ -8,12 +8,18 @@ export type GesturePreview =
   | { kind: "label"; id: string; offset: { x: number; y: number } }
   | { kind: "slur"; id: string; lift: number };
 
+/** The event after this one in its own voice of the bar, or null: where a cancelled move puts it back. */
+export function eventAfter(score: Score, eventId: string): string | null {
+  const events = findEvent(score, eventId)?.voiceBar.events ?? [];
+  return events[events.findIndex((e) => e.id === eventId) + 1]?.id ?? null;
+}
+
 /** Returns a copy of the score showing the preview; the input score is never modified. */
 export function applyGesturePreview(score: Score, preview: GesturePreview | null): Score {
   if (!preview) return score;
   const draft = structuredClone(score);
   if (preview.kind === "pitch") {
-    const event = draft.measures.flatMap((m) => m.events).find((e) => e.id === preview.id);
+    const event = everyEvent(draft).find((e) => e.id === preview.id);
     if (event?.pitch && preview.delta) event.pitch = movePitch(event.pitch, preview.delta, scoreKey(score));
   } else if (preview.kind === "label") {
     const annotation = draft.annotations.find((a) => a.id === preview.id);
@@ -25,14 +31,13 @@ export function applyGesturePreview(score: Score, preview: GesturePreview | null
     const measure = draft.measures.find((m) => m.id === preview.id);
     if (measure) measure.width = preview.width;
   } else {
-    const measure = draft.measures.find((m) => m.id === preview.measureId);
-    const event = measure?.events.find((e) => e.id === preview.id);
-    if (measure && event) {
-      measure.events = measure.events.filter((e) => e.id !== event.id);
-      const index = preview.beforeId
-        ? measure.events.findIndex((e) => e.id === preview.beforeId)
-        : measure.events.length;
-      measure.events.splice(Math.max(0, index), 0, event);
+    // A note moves within its own voice of the bar.
+    const found = findEvent(draft, preview.id);
+    if (found && found.measure.id === preview.measureId) {
+      const events = found.voiceBar.events.filter((e) => e.id !== found.event.id);
+      const index = preview.beforeId ? events.findIndex((e) => e.id === preview.beforeId) : events.length;
+      events.splice(Math.max(0, index), 0, found.event);
+      setBarEvents(found.measure, events, found.voiceId);
     }
   }
   return draft;

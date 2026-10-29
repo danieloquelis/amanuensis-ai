@@ -1,4 +1,4 @@
-import { findEvent, formatChord, MARK_LABELS, pitchName, type Score } from "@/modules/score";
+import { findEvent, formatChord, MARK_LABELS, pitchName, voiceLine, type Score } from "@/modules/score";
 import type { SheetItem } from "./notation-edits";
 
 /** Something picked on the sheet: a note or rest, a whole bar, or another item (chord, text…). */
@@ -25,8 +25,8 @@ export function toggleRef(refs: SheetRef[], ref: SheetRef): SheetRef[] {
  */
 export function rangeOfRefs(score: Score, anchor: SheetRef | undefined, target: SheetRef): SheetRef[] {
   if (!anchor || anchor.kind !== target.kind || (target.kind !== "event" && target.kind !== "bar")) return [target];
-  const order =
-    target.kind === "bar" ? score.measures.map((m) => m.id) : score.measures.flatMap((m) => m.events.map((e) => e.id));
+  // A range of notes stays within the anchor's voice.
+  const order = target.kind === "bar" ? score.measures.map((m) => m.id) : voiceLine(score, anchor.id).map((e) => e.id);
   const from = order.indexOf(anchor.id);
   const to = order.indexOf(target.id);
   if (from === -1 || to === -1) return [target];
@@ -128,11 +128,11 @@ export function selectionName(score: Score, refs: SheetRef[]): string | null {
  * picked notes, so tools placed beside the selection leave the slur free to grab.
  */
 export function selectionAnchors(score: Score, refs: SheetRef[]): string[] {
-  const order = score.measures.flatMap((m) => m.events.map((e) => e.id));
-  const picked = new Set(refs.filter((r) => r.kind === "event").map((r) => order.indexOf(r.id)));
+  const picked = refs.filter((r) => r.kind === "event").map((r) => r.id);
   const slurs = score.slurs.filter((slur) => {
+    const order = voiceLine(score, slur.startEventId).map((e) => e.id);
     const [start, end] = [order.indexOf(slur.startEventId), order.indexOf(slur.endEventId)];
-    return [...picked].some((index) => index >= start && index <= end);
+    return picked.some((id) => order.indexOf(id) !== -1 && order.indexOf(id) >= start && order.indexOf(id) <= end);
   });
   return [...refs, ...slurs.map((s) => ({ kind: "slur", id: s.id }))].map((ref) => `${ref.kind}:${ref.id}`);
 }

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent, type RefObject } from "react";
 import type { BarScene, EngravedEvent, System } from "@/modules/engraving";
-import { isWithinOctaveRange, LABEL_OFFSET_LIMIT, movePitch, scoreKey, type Pitch, type Score } from "@/modules/score";
+import { LABEL_OFFSET_LIMIT, movePitch, scoreKey, type Pitch, type Score } from "@/modules/score";
 import { clampMeasureWidth } from "../../application/bar-spacing";
-import type { GesturePreview } from "../../application/gesture-preview";
+import { eventAfter, type GesturePreview } from "../../application/gesture-preview";
+import { canDragTo } from "../../application/note-edits";
 import type { CommitEdit } from "./use-score-editor";
 
 /** Pointer travel (scene units) before a drag commits to an axis. */
@@ -96,17 +97,18 @@ export function useSheetGestures(options: Options) {
     const id = item.event.id;
     capturePointer(event);
     onSelect(id);
-    if (item.event.pitch) onAudition?.(id, item.event.pitch);
+    // The sheet may show a transposing part as written; sound and drags follow the stored, sounding pitch.
+    const sounding = item.sounds ?? item.event.pitch;
+    if (sounding) onAudition?.(id, sounding);
     const point = scenePoint(event.clientX, event.clientY);
-    const measure = score.measures[item.measure];
-    const beforeId = measure.events[measure.events.findIndex((e) => e.id === id) + 1]?.id ?? null;
+    const beforeId = eventAfter(score, id);
     drag.current = {
       kind: "note",
       id,
-      measureId: measure.id,
+      measureId: score.measures[item.measure].id,
       startX: point.x,
       startY: point.y,
-      pitch: item.event.pitch,
+      pitch: sounding,
       delta: 0,
       axis: null,
       beforeId,
@@ -130,7 +132,7 @@ export function useSheetGestures(options: Options) {
     if (gesture.axis === "y" && gesture.pitch) {
       const delta = Math.round(-dy / PITCH_DRAG_STEP);
       const pitch = movePitch(gesture.pitch, delta, scoreKey(score));
-      if (!isWithinOctaveRange(pitch)) return;
+      if (!canDragTo(score, eventId, pitch)) return;
       if (delta !== gesture.delta) onAudition?.(eventId, pitch);
       gesture.delta = delta;
       setPreview({ kind: "pitch", id: eventId, delta });

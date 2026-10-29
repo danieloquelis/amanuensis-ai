@@ -1,0 +1,788 @@
+{
+  "width": 900,
+  "height": 535,
+  "systems": [
+    {
+      "top": 90,
+      "firstMeasure": 0,
+      "endX": 846,
+      "clef": "treble",
+      "keySignature": [
+        { "x": 88, "y": 90, "alter": 1 },
+        { "x": 99, "y": 108, "alter": 1 }
+      ],
+      "bars": [
+        {
+          "id": "k1",
+          "number": 1,
+          "x": 142,
+          "endX": 485.8037183787583,
+          "width": 343.8037183787583,
+          "meter": { "numerator": 4, "denominator": 4 },
+          "meterX": 126,
+          "beat": 0,
+          "capacity": 4,
+          "notesX": 162,
+          "columns": [
+            { "beat": 0, "x": 162 },
+            { "beat": 0.5, "x": 202.47546479734478 },
+            { "beat": 1, "x": 242.95092959468957 },
+            { "beat": 1.5, "x": 283.42639439203435 },
+            { "beat": 2, "x": 323.90185918937914 },
+            { "beat": 2.5, "x": 364.3773239867239 },
+            { "beat": 3, "x": 404.8527887840687 },
+            { "beat": 3.5, "x": 445.3282535814135 },
+            { "beat": 4, "x": 475.8037183787583 }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": false,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        },
+        {
+          "id": "k2",
+          "number": 2,
+          "x": 485.8037183787583,
+          "endX": 846,
+          "width": 360.1962816212418,
+          "meter": { "numerator": 4, "denominator": 4 },
+          "meterX": null,
+          "beat": 4,
+          "capacity": 4,
+          "notesX": 505.8037183787583,
+          "columns": [
+            { "beat": 4, "x": 505.8037183787583 },
+            { "beat": 4.5, "x": 546.2791831760519 },
+            { "beat": 5, "x": 586.7546479733455 },
+            { "beat": 5.5, "x": 627.2301127706392 },
+            { "beat": 6, "x": 667.7055775679328 },
+            { "beat": 6.25, "x": 699.3270344408185 },
+            { "beat": 6.5, "x": 730.9484913137042 },
+            { "beat": 6.75, "x": 762.5699481865898 },
+            { "beat": 7, "x": 794.1914050594755 },
+            { "beat": 8, "x": 836 }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": false,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        }
+      ],
+      "events": [
+        {
+          "event": {
+            "id": "a0",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "D", "alter": 0, "octave": 4 }
+          },
+          "x": 162,
+          "y": 144,
+          "beat": 0,
+          "localBeat": 0,
+          "measure": 0,
+          "stemDown": false,
+          "stemEnd": 99,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 154,
+          "right": 170,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "a1",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "E", "alter": 0, "octave": 4 }
+          },
+          "x": 202.47546479734478,
+          "y": 138,
+          "beat": 0.5,
+          "localBeat": 0.5,
+          "measure": 0,
+          "stemDown": false,
+          "stemEnd": 96,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 194.47546479734478,
+          "right": 210.47546479734478,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "a2",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "F", "alter": 1, "octave": 4 }
+          },
+          "x": 242.95092959468957,
+          "y": 132,
+          "beat": 1,
+          "localBeat": 1,
+          "measure": 0,
+          "stemDown": false,
+          "stemEnd": 87,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 234.95092959468957,
+          "right": 250.95092959468957,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "a3",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "G", "alter": 0, "octave": 4 }
+          },
+          "x": 283.42639439203435,
+          "y": 126,
+          "beat": 1.5,
+          "localBeat": 1.5,
+          "measure": 0,
+          "stemDown": false,
+          "stemEnd": 84,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 275.42639439203435,
+          "right": 291.42639439203435,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "a4",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "A", "alter": 0, "octave": 4 }
+          },
+          "x": 323.90185918937914,
+          "y": 120,
+          "beat": 2,
+          "localBeat": 2,
+          "measure": 0,
+          "stemDown": false,
+          "stemEnd": 75,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 315.90185918937914,
+          "right": 331.90185918937914,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "a5",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "B", "alter": 0, "octave": 4 }
+          },
+          "x": 364.3773239867239,
+          "y": 114,
+          "beat": 2.5,
+          "localBeat": 2.5,
+          "measure": 0,
+          "stemDown": false,
+          "stemEnd": 72,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 356.3773239867239,
+          "right": 372.3773239867239,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "a6",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "C", "alter": 1, "octave": 5 }
+          },
+          "x": 404.8527887840687,
+          "y": 108,
+          "beat": 3,
+          "localBeat": 3,
+          "measure": 0,
+          "stemDown": true,
+          "stemEnd": 150,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 396.8527887840687,
+          "right": 412.8527887840687,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "a7",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "D", "alter": 0, "octave": 5 }
+          },
+          "x": 445.3282535814135,
+          "y": 102,
+          "beat": 3.5,
+          "localBeat": 3.5,
+          "measure": 0,
+          "stemDown": true,
+          "stemEnd": 147,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 437.3282535814135,
+          "right": 453.3282535814135,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "b0",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "F", "alter": 1, "octave": 5 }
+          },
+          "x": 505.8037183787583,
+          "y": 90,
+          "beat": 4,
+          "localBeat": 0,
+          "measure": 1,
+          "stemDown": true,
+          "stemEnd": 138,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 497.8037183787583,
+          "right": 513.8037183787583,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "b1",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "D", "alter": 0, "octave": 5 }
+          },
+          "x": 546.2791831760519,
+          "y": 102,
+          "beat": 4.5,
+          "localBeat": 0.5,
+          "measure": 1,
+          "stemDown": true,
+          "stemEnd": 144,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 538.2791831760519,
+          "right": 554.2791831760519,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "b2",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "F", "alter": 0, "octave": 4 }
+          },
+          "x": 586.7546479733455,
+          "y": 132,
+          "beat": 5,
+          "localBeat": 1,
+          "measure": 1,
+          "stemDown": false,
+          "stemEnd": 90,
+          "ledgerLines": [],
+          "accidental": 0,
+          "left": 560.7546479733455,
+          "right": 594.7546479733455,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "b3",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "F", "alter": 1, "octave": 4 }
+          },
+          "x": 627.2301127706392,
+          "y": 132,
+          "beat": 5.5,
+          "localBeat": 1.5,
+          "measure": 1,
+          "stemDown": false,
+          "stemEnd": 90,
+          "ledgerLines": [],
+          "accidental": 1,
+          "left": 601.2301127706392,
+          "right": 635.2301127706392,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "b4",
+            "duration": { "numerator": 1, "denominator": 4 },
+            "pitch": { "step": "A", "alter": 0, "octave": 5 }
+          },
+          "x": 667.7055775679328,
+          "y": 78,
+          "beat": 6,
+          "localBeat": 2,
+          "measure": 1,
+          "stemDown": true,
+          "stemEnd": 154.5,
+          "ledgerLines": [78],
+          "accidental": null,
+          "left": 659.7055775679328,
+          "right": 675.7055775679328,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "b5",
+            "duration": { "numerator": 1, "denominator": 4 },
+            "pitch": { "step": "F", "alter": 1, "octave": 5 }
+          },
+          "x": 699.3270344408185,
+          "y": 90,
+          "beat": 6.25,
+          "localBeat": 2.25,
+          "measure": 1,
+          "stemDown": true,
+          "stemEnd": 158.5,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 691.3270344408185,
+          "right": 707.3270344408185,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "b6",
+            "duration": { "numerator": 1, "denominator": 4 },
+            "pitch": { "step": "D", "alter": 0, "octave": 5 }
+          },
+          "x": 730.9484913137042,
+          "y": 102,
+          "beat": 6.5,
+          "localBeat": 2.5,
+          "measure": 1,
+          "stemDown": true,
+          "stemEnd": 162.5,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 722.9484913137042,
+          "right": 738.9484913137042,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "b7",
+            "duration": { "numerator": 1, "denominator": 4 },
+            "pitch": { "step": "A", "alter": 0, "octave": 4 }
+          },
+          "x": 762.5699481865898,
+          "y": 120,
+          "beat": 6.75,
+          "localBeat": 2.75,
+          "measure": 1,
+          "stemDown": true,
+          "stemEnd": 166.5,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 754.5699481865898,
+          "right": 770.5699481865898,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "b8",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "C", "alter": 1, "octave": 5 }
+          },
+          "x": 794.1914050594755,
+          "y": 108,
+          "beat": 7,
+          "localBeat": 3,
+          "measure": 1,
+          "stemDown": true,
+          "stemEnd": 150,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 786.1914050594755,
+          "right": 802.1914050594755,
+          "hidden": false
+        }
+      ],
+      "beams": [
+        { "x1": 168, "y1": 99, "x2": 208.47546479734478, "y2": 96, "level": 1, "down": false },
+        { "x1": 248.95092959468957, "y1": 87, "x2": 289.42639439203435, "y2": 84, "level": 1, "down": false },
+        { "x1": 329.90185918937914, "y1": 75, "x2": 370.3773239867239, "y2": 72, "level": 1, "down": false },
+        { "x1": 398.8527887840687, "y1": 150, "x2": 439.3282535814135, "y2": 147, "level": 1, "down": true },
+        { "x1": 499.8037183787583, "y1": 138, "x2": 540.2791831760519, "y2": 144, "level": 1, "down": true },
+        { "x1": 592.7546479733455, "y1": 90, "x2": 633.2301127706392, "y2": 90, "level": 1, "down": false },
+        { "x1": 661.7055775679328, "y1": 154.5, "x2": 756.5699481865898, "y2": 166.5, "level": 1, "down": true },
+        { "x1": 661.7055775679328, "y1": 145.5, "x2": 693.3270344408185, "y2": 149.5, "level": 2, "down": true },
+        { "x1": 693.3270344408185, "y1": 149.5, "x2": 724.9484913137042, "y2": 153.5, "level": 2, "down": true },
+        { "x1": 724.9484913137042, "y1": 153.5, "x2": 756.5699481865898, "y2": 157.5, "level": 2, "down": true }
+      ],
+      "beamedIds": ["a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", "b0", "b1", "b2", "b3", "b4", "b5", "b6", "b7"],
+      "ties": [],
+      "slurs": [],
+      "labels": [],
+      "chords": [],
+      "chordY": 60,
+      "markY": 60
+    },
+    {
+      "top": 320,
+      "firstMeasure": 2,
+      "endX": 846,
+      "clef": "treble",
+      "keySignature": [
+        { "x": 88, "y": 320, "alter": 1 },
+        { "x": 99, "y": 338, "alter": 1 }
+      ],
+      "bars": [
+        {
+          "id": "k3",
+          "number": 3,
+          "x": 142,
+          "endX": 422.8386493439184,
+          "width": 280.8386493439184,
+          "meter": { "numerator": 3, "denominator": 4 },
+          "meterX": 126,
+          "beat": 8,
+          "capacity": 3,
+          "notesX": 162,
+          "columns": [
+            { "beat": 8, "x": 162 },
+            { "beat": 8.5, "x": 205.4731082239864 },
+            { "beat": 9, "x": 248.9462164479728 },
+            { "beat": 9.5, "x": 292.4193246719592 },
+            { "beat": 10, "x": 335.8924328959456 },
+            { "beat": 10.5, "x": 379.365541119932 },
+            { "beat": 11, "x": 412.8386493439184 }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": false,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        },
+        {
+          "id": "k4",
+          "number": 4,
+          "x": 422.8386493439184,
+          "endX": 696.830284142559,
+          "width": 273.9916347986406,
+          "meter": { "numerator": 3, "denominator": 4 },
+          "meterX": null,
+          "beat": 11,
+          "capacity": 3,
+          "notesX": 442.8386493439184,
+          "columns": [
+            { "beat": 11, "x": 442.8386493439184 },
+            { "beat": 11.5, "x": 486.3117575679048 },
+            { "beat": 12, "x": 529.7848657918912 },
+            { "beat": 12.5, "x": 573.2579740158776 },
+            { "beat": 12.75, "x": 607.2213398158669 },
+            { "beat": 13, "x": 641.1847056158563 },
+            { "beat": 14, "x": 686.830284142559 }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": false,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        },
+        {
+          "id": "k5",
+          "number": 5,
+          "x": 696.830284142559,
+          "endX": 846,
+          "width": 149.16971585744102,
+          "meter": { "numerator": 4, "denominator": 4 },
+          "meterX": 722.830284142559,
+          "beat": 14,
+          "capacity": 4,
+          "notesX": 754.830284142559,
+          "columns": [
+            { "beat": 14, "x": 754.830284142559 },
+            { "beat": 18, "x": 836 }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": true,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        }
+      ],
+      "events": [
+        {
+          "event": {
+            "id": "c0",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "A", "alter": 0, "octave": 3 }
+          },
+          "x": 162,
+          "y": 392,
+          "beat": 8,
+          "localBeat": 0,
+          "measure": 2,
+          "stemDown": false,
+          "stemEnd": 345.5,
+          "ledgerLines": [380, 392],
+          "accidental": null,
+          "left": 154,
+          "right": 170,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "c1",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "B", "alter": 0, "octave": 3 }
+          },
+          "x": 205.4731082239864,
+          "y": 386,
+          "beat": 8.5,
+          "localBeat": 0.5,
+          "measure": 2,
+          "stemDown": false,
+          "stemEnd": 342.5,
+          "ledgerLines": [380],
+          "accidental": null,
+          "left": 197.4731082239864,
+          "right": 213.4731082239864,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "c2",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "C", "alter": 1, "octave": 4 }
+          },
+          "x": 248.9462164479728,
+          "y": 380,
+          "beat": 9,
+          "localBeat": 1,
+          "measure": 2,
+          "stemDown": false,
+          "stemEnd": 338,
+          "ledgerLines": [380],
+          "accidental": null,
+          "left": 240.9462164479728,
+          "right": 256.9462164479728,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "c3",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "A", "alter": 0, "octave": 3 }
+          },
+          "x": 292.4193246719592,
+          "y": 392,
+          "beat": 9.5,
+          "localBeat": 1.5,
+          "measure": 2,
+          "stemDown": false,
+          "stemEnd": 344,
+          "ledgerLines": [380, 392],
+          "accidental": null,
+          "left": 284.4193246719592,
+          "right": 300.4193246719592,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "c4",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "E", "alter": 0, "octave": 4 }
+          },
+          "x": 335.8924328959456,
+          "y": 368,
+          "beat": 10,
+          "localBeat": 2,
+          "measure": 2,
+          "stemDown": false,
+          "stemEnd": 326,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 327.8924328959456,
+          "right": 343.8924328959456,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "c5",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "D", "alter": 0, "octave": 4 }
+          },
+          "x": 379.365541119932,
+          "y": 374,
+          "beat": 10.5,
+          "localBeat": 2.5,
+          "measure": 2,
+          "stemDown": false,
+          "stemEnd": 329,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 371.365541119932,
+          "right": 387.365541119932,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "e0",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "D", "alter": 0, "octave": 5 }
+          },
+          "x": 442.8386493439184,
+          "y": 332,
+          "beat": 11,
+          "localBeat": 0,
+          "measure": 3,
+          "stemDown": true,
+          "stemEnd": 374,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 434.8386493439184,
+          "right": 450.8386493439184,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "e1",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "G", "alter": 0, "octave": 5 }
+          },
+          "x": 486.3117575679048,
+          "y": 314,
+          "beat": 11.5,
+          "localBeat": 0.5,
+          "measure": 3,
+          "stemDown": true,
+          "stemEnd": 365,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 478.3117575679048,
+          "right": 494.3117575679048,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "e2",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "D", "alter": 0, "octave": 5 }
+          },
+          "x": 529.7848657918912,
+          "y": 332,
+          "beat": 12,
+          "localBeat": 1,
+          "measure": 3,
+          "stemDown": true,
+          "stemEnd": 390.5,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 521.7848657918912,
+          "right": 537.7848657918912,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "e3",
+            "duration": { "numerator": 1, "denominator": 4 },
+            "pitch": { "step": "B", "alter": 0, "octave": 4 }
+          },
+          "x": 573.2579740158776,
+          "y": 344,
+          "beat": 12.5,
+          "localBeat": 1.5,
+          "measure": 3,
+          "stemDown": true,
+          "stemEnd": 390.5,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 565.2579740158776,
+          "right": 581.2579740158776,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "e4",
+            "duration": { "numerator": 1, "denominator": 4 },
+            "pitch": { "step": "C", "alter": 1, "octave": 5 }
+          },
+          "x": 607.2213398158669,
+          "y": 338,
+          "beat": 12.75,
+          "localBeat": 1.75,
+          "measure": 3,
+          "stemDown": true,
+          "stemEnd": 390.5,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 599.2213398158669,
+          "right": 615.2213398158669,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "e5",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "D", "alter": 0, "octave": 5 }
+          },
+          "x": 641.1847056158563,
+          "y": 332,
+          "beat": 13,
+          "localBeat": 2,
+          "measure": 3,
+          "stemDown": true,
+          "stemEnd": 374,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 633.1847056158563,
+          "right": 649.1847056158563,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "f0",
+            "duration": { "numerator": 4, "denominator": 1 },
+            "pitch": { "step": "D", "alter": 0, "octave": 4 }
+          },
+          "x": 754.830284142559,
+          "y": 374,
+          "beat": 14,
+          "localBeat": 0,
+          "measure": 4,
+          "stemDown": false,
+          "stemEnd": 332,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 744.830284142559,
+          "right": 764.830284142559,
+          "hidden": false
+        }
+      ],
+      "beams": [
+        { "x1": 168, "y1": 345.5, "x2": 211.4731082239864, "y2": 342.5, "level": 1, "down": false },
+        { "x1": 254.9462164479728, "y1": 338, "x2": 298.4193246719592, "y2": 344, "level": 1, "down": false },
+        { "x1": 341.8924328959456, "y1": 326, "x2": 385.365541119932, "y2": 329, "level": 1, "down": false },
+        { "x1": 436.8386493439184, "y1": 374, "x2": 480.3117575679048, "y2": 365, "level": 1, "down": true },
+        { "x1": 523.7848657918912, "y1": 390.5, "x2": 601.2213398158669, "y2": 390.5, "level": 1, "down": true },
+        { "x1": 567.2579740158776, "y1": 381.5, "x2": 601.2213398158669, "y2": 381.5, "level": 2, "down": true }
+      ],
+      "beamedIds": ["c0", "c1", "c2", "c3", "c4", "c5", "e0", "e1", "e2", "e3", "e4"],
+      "ties": [],
+      "slurs": [],
+      "labels": [],
+      "chords": [],
+      "chordY": 296,
+      "markY": 296
+    }
+  ]
+}

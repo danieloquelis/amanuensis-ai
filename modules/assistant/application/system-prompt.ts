@@ -24,6 +24,8 @@ Voice takes: a message may include a take timeline. What was said is the musicia
 - What was sung stays as heard. Change the notes of bars you just transcribed only when they asked for that change ("make the last note higher"), passing their words as asked in score_edit. Otherwise review the evidence like a musician and mention doubts in your reply (a bar that breaks a repeated figure, a guessed start); they will correct it or sing again. Put the chords they named on the bars with score_edit.
 - In your reply, mention a transposition into their key, a guessed start, and what you corrected.
 
+Instruments: "play it on trumpet" is setInstrument; the notes keep their sound. Pitches you read and write are concert pitch for every instrument, but the sheet shows a B♭ trumpet a major 2nd higher and a guitar an octave higher, as players read them: when you switch to one, say the written notes moved but sound the same. If notes fall out of the instrument's range, say so and offer to move them by an octave.
+
 ${SCORE_TEXT_GUIDE}
 
 Reply with one short sentence saying what you changed, like "Added Am7 on beat 3 of bar 2." No preamble.`;

@@ -1,6 +1,7 @@
 import { measureCapacity } from "./rhythm";
 import type { Score } from "./schema";
 import type { IdRegistry } from "./validation";
+import { voiceBars } from "./voice-access";
 
 /** Chords anchor to an existing bar, inside it, and at most one per beat. */
 export function validateChords(score: Score, ids: IdRegistry) {
@@ -19,10 +20,12 @@ export function validateChords(score: Score, ids: IdRegistry) {
 /** Slash and repeat bars hold only a whole-bar rest; a repeat bar needs a bar before it. Marks need a bar. */
 export function validateBarMarks(score: Score, ids: IdRegistry) {
   score.measures.forEach((measure, index) => {
-    if (measure.style && !(measure.events.length === 1 && measure.events[0].measureRest)) {
-      throw new Error("A slash or repeat bar cannot also contain notes.");
+    for (const { events, style } of voiceBars(measure)) {
+      if (style && !(events.length === 1 && events[0].measureRest)) {
+        throw new Error("A slash or repeat bar cannot also contain notes.");
+      }
+      if (style === "repeat" && index === 0) throw new Error("The first bar has nothing to repeat.");
     }
-    if (measure.style === "repeat" && index === 0) throw new Error("The first bar has nothing to repeat.");
   });
   for (const mark of score.marks) {
     ids.add(mark.id);

@@ -1,5 +1,5 @@
-import { beatGroupLength, durationFromBeats, measureCapacity } from "../rhythm";
-import type { Measure, Meter, ScoreEvent } from "../schema";
+import { beatGroupLength, durationFromBeats, eventOnsets, measureCapacity } from "../rhythm";
+import type { Meter, ScoreEvent } from "../schema";
 
 /** Rest values a meter may use, longest first. Simple meters avoid dotted rests. */
 const SIMPLE_RESTS = [4, 2, 1, 0.5, 0.25];
@@ -47,7 +47,5 @@ export function makeRests(duration: number, prefix: string, position: number, me
   return rests;
 }
 
-/** Beat at which the event at `index` starts within its measure. */
-export function onsetOf(measure: Measure, index: number): number {
-  return measure.events.slice(0, index).reduce((sum, e) => sum + e.duration.numerator / e.duration.denominator, 0);
-}
+/** Beat at which the event at `index` starts within its voice bar. */
+export const onsetOf = (events: ScoreEvent[], index: number): number => eventOnsets(events.slice(0, index + 1))[index];

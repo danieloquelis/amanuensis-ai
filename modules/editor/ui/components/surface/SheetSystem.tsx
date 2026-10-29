@@ -2,11 +2,11 @@ import { beatX, type System } from "@/modules/engraving";
 import {
   BeamLines,
   ChordSymbol,
+  ClefGlyph,
   IndicationText,
   KeySignature,
   StaffLines,
   TieArcs,
-  TrebleClef,
 } from "@/modules/engraving/ui";
 import styles from "./score-surface.module.css";
 import { BarArea } from "./BarArea";
@@ -29,7 +29,7 @@ export function SheetSystem({ system, eventOrder, playBeat, interactions }: Shee
   return (
     <g>
       <StaffLines top={system.top} endX={system.endX} />
-      <TrebleClef top={system.top} />
+      <ClefGlyph clef={system.clef} top={system.top} />
       <KeySignature marks={system.keySignature} />
       {system.bars.map((bar) => (
         <BarArea key={`area-${bar.id}`} bar={bar} system={system} interactions={interactions} />

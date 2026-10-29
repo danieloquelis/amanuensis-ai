@@ -1,10 +1,12 @@
+import { INSTRUMENT_IDS, INSTRUMENTS } from "../domain/instruments";
 import { CHORD_QUALITY_NAMES, formatChord } from "../domain/chords";
 import { keyName, scoreKey } from "../domain/key";
 import { MARK_KINDS, MARK_LABELS } from "../domain/navigation";
 import { ARTICULATIONS, DYNAMICS } from "../domain/notation";
 import { pitchName } from "../domain/pitch";
-import { beats, DURATIONS, meterName, METERS } from "../domain/rhythm";
+import { beats, DURATIONS, eventOnsets, meterName, METERS, soundingBeats } from "../domain/rhythm";
 import type { Score, ScoreEvent } from "../domain/schema";
+import { barEvents, barStyle } from "../domain/voice-access";
 
 const durationName = (event: ScoreEvent) =>
   event.measureRest
@@ -21,11 +23,10 @@ export function describeScore(score: Score) {
   const anchorOf = (targetId: string) => {
     for (const [index, measure] of score.measures.entries()) {
       if (measure.id === targetId) return `bar ${index + 1}`;
-      let beat = 1;
-      for (const event of measure.events) {
-        if (event.id === targetId) return `bar ${index + 1}, beat ${beat}`;
-        beat += beats(event.duration);
-      }
+      const events = barEvents(measure);
+      const onsets = eventOnsets(events);
+      const at = events.findIndex((event) => event.id === targetId);
+      if (at !== -1) return `bar ${index + 1}, beat ${onsets[at] + 1}`;
     }
     return "missing anchor";
   };
@@ -35,27 +36,25 @@ export function describeScore(score: Score) {
     key: keyName(scoreKey(score)),
     tempo: `${score.tempo} quarter-note BPM`,
     bars: score.measures.map((measure, index) => {
-      let beat = 1;
+      const onsets = eventOnsets(barEvents(measure));
       return {
         bar: index + 1,
         id: measure.id,
         meter: meterName(measure.meter),
         ...(measure.section ? { section: measure.section } : {}),
-        ...(measure.style ? { shows: measure.style === "slashes" ? "rhythm slashes" : "repeat of previous bar" } : {}),
+        ...(barStyle(measure)
+          ? { shows: barStyle(measure) === "slashes" ? "rhythm slashes" : "repeat of previous bar" }
+          : {}),
         ...(measure.tempo ? { tempo: measure.tempo } : {}),
-        events: measure.events.map((event) => {
-          const entry = {
-            id: event.id,
-            beat,
-            pitch: event.pitch ? pitchName(event.pitch) : "rest",
-            duration: durationName(event),
-            beats: beats(event.duration),
-            ...(event.articulation ? { articulation: event.articulation } : {}),
-            ...(event.tie ? { tiedToNext: true } : {}),
-          };
-          beat += beats(event.duration);
-          return entry;
-        }),
+        events: barEvents(measure).map((event, i) => ({
+          id: event.id,
+          beat: onsets[i] + 1,
+          pitch: event.pitch ? pitchName(event.pitch) : "rest",
+          duration: durationName(event),
+          beats: soundingBeats(event),
+          ...(event.articulation ? { articulation: event.articulation } : {}),
+          ...(event.tie ? { tiedToNext: true } : {}),
+        })),
         chords: score.chords
           .filter((c) => c.measureId === measure.id)
           .sort((a, b) => a.beat - b.beat)
@@ -84,7 +83,15 @@ export const SCORE_VOCABULARY = {
   units: "Durations and chord/mark positions are in quarter-note beats; operation `beat` fields count from 0.",
   meters: METERS,
   durations: DURATIONS.map((d) => ({ name: d.label.toLowerCase(), beats: d.value })),
-  pitch: "{ step: C–B, alter: -1 flat | 0 | 1 sharp, octave: 3–6 }; C4 is middle C.",
+  pitch:
+    "{ step: C–B, alter: -1 flat | 0 | 1 sharp, octave: 0–8 }, A0–C8, as it sounds (concert pitch); C4 is middle C.",
+  instruments: INSTRUMENT_IDS.map((id) => {
+    const { name, clef, range, transposition } = INSTRUMENTS[id];
+    const written = transposition
+      ? `written ${transposition.semitones} semitones above its sound`
+      : "written as it sounds";
+    return { id, name, clef, range: `MIDI ${range.low}–${range.high}`, written };
+  }),
   articulations: ARTICULATIONS,
   slurs:
     "A slur joins a phrase of notes into one legato line (one breath, or one syllable over several notes). Use putSlur.",

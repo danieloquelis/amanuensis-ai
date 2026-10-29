@@ -2,8 +2,17 @@ import {
   durationNotation,
   locateEvent,
   inKey,
-  isWithinOctaveRange,
+  isPlayable,
+  isWithinPitchRange,
+  midiPitch,
+  INSTRUMENTS,
   movePitch,
+  partOf,
+  spellMidi,
+  toConcert,
+  toWritten,
+  transpositionOf,
+  writtenKey,
   pitchName,
   scoreKey,
   staffPosition,
@@ -14,6 +23,7 @@ import {
   type Score,
   type ScoreEvent,
   type Step,
+  voiceLine,
 } from "@/modules/score";
 
 /** A score operation plus the short receipt shown to the user. */
@@ -68,27 +78,50 @@ export function toggleRestOperation(event: ScoreEvent, key: KeySignature): Opera
 
 /**
  * Typing a letter A–G: the event (note or rest) takes that pitch, spelled in the key, in the
- * octave nearest the note it replaces, or else the previous note, as notation editors do.
+ * octave nearest the note it replaces, or else the previous note, as notation editors do; an
+ * octave the instrument plays is preferred. With `written`, a transposing part's letter names the
+ * written note the sheet shows (E on a B♭ trumpet sounds D).
  */
-export function letterNoteEdit(score: Score, eventId: string, step: Step): Edit {
+export function letterNoteEdit(score: Score, eventId: string, step: Step, { written = false } = {}): Edit {
   const { event } = locateEvent(score, eventId);
-  const reference = event.pitch ?? previousPitch(score, eventId) ?? MIDDLE_LINE_PITCH;
+  const { instrument } = partOf(score, eventId);
+  const concertKey = scoreKey(score);
+  const t = written ? transpositionOf(instrument) : null;
+  const shown = (p: Pitch) => (t ? toWritten(p, t, concertKey) : p);
+  const sounding = (p: Pitch) => (t ? toConcert(p, t, concertKey) : p);
+  const { low, high } = INSTRUMENTS[instrument].range;
+  const middle = spellMidi(Math.round((low + high) / 2), concertKey);
+  const reference = shown(event.pitch ?? previousPitch(score, eventId) ?? middle);
   const candidates = [-1, 0, 1]
-    .map((offset) => inKey({ step, octave: reference.octave + offset, alter: 0 }, scoreKey(score)))
-    .filter(isWithinOctaveRange);
-  const distance = (pitch: Pitch) => Math.abs(staffPosition(pitch) - staffPosition(reference));
-  const pitch = candidates.reduce((best, candidate) => (distance(candidate) < distance(best) ? candidate : best));
+    .map((offset) =>
+      inKey({ step, octave: reference.octave + offset, alter: 0 }, t ? writtenKey(concertKey, t) : concertKey),
+    )
+    .map(sounding)
+    .filter(isWithinPitchRange);
+  const playable = candidates.filter((p) => isPlayable(midiPitch(p), instrument));
+  const distance = (pitch: Pitch) => Math.abs(staffPosition(shown(pitch)) - staffPosition(reference));
+  const pitch = (playable.length ? playable : candidates).reduce((best, candidate) =>
+    distance(candidate) < distance(best) ? candidate : best,
+  );
   return {
     operation: pitchOperation(event, pitch),
     receipt: event.pitch ? `Changed ${pitchName(event.pitch)} to ${pitchName(pitch)}` : `Added ${pitchName(pitch)}`,
   };
 }
 
-const MIDDLE_LINE_PITCH: Pitch = { step: "B", octave: 4, alter: 0 };
+/** How far past an instrument's range a drag may go: an octave, for notes written out of range on purpose. */
+const DRAG_MARGIN = 12;
+
+/** Whether a note may be dragged to `pitch`: storable, and within an octave of the instrument's range. */
+export function canDragTo(score: Score, eventId: string, pitch: Pitch): boolean {
+  const { low, high } = INSTRUMENTS[partOf(score, eventId).instrument].range;
+  const midi = midiPitch(pitch);
+  return isWithinPitchRange(pitch) && midi >= low - DRAG_MARGIN && midi <= high + DRAG_MARGIN;
+}
 
 function previousPitch(score: Score, eventId: string): Pitch | null {
   let last: Pitch | null = null;
-  for (const event of score.measures.flatMap((m) => m.events)) {
+  for (const event of voiceLine(score, eventId)) {
     if (event.id === eventId) return last;
     if (event.pitch) last = event.pitch;
   }

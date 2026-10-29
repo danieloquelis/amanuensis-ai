@@ -1,23 +1,25 @@
 import {
+  barEvents,
+  barStyle,
   beatGroupLength,
-  beats,
   durationNotation,
+  eventOnsets,
+  isNote,
   keyAlter,
   measureCapacity,
   measureStarts,
   meterName,
   scoreKey,
+  soundingBeats,
   staffPosition,
   type MarkKind,
   type Measure,
   type Score,
   type ScoreEvent,
 } from "@/modules/score";
+import { CLEF_BOTTOM_LINE, staffClef } from "./clefs";
 import { MIDDLE_LINE } from "./scene";
 import { eventExtents, springFor } from "./spacing";
-
-/** Staff position of the bottom line (E4) on a treble staff. */
-const BOTTOM_LINE = staffPosition({ step: "E", octave: 4, alter: 0 });
 
 /** Everything about an event that does not depend on horizontal placement. */
 export type AnalyzedEvent = {
@@ -72,11 +74,11 @@ export function analyzeScore(score: Score): AnalyzedBar[] {
       capacity: measureCapacity(measure.meter),
       events,
       beamGroups,
-      measureRest: measure.events.length === 1 && Boolean(measure.events[0].measureRest),
+      measureRest: isMeasureRest(barEvents(measure)),
       meterChanges: !previous || meterName(previous.meter) !== meterName(measure.meter),
       repeatStart: score.repeats.some((r) => r.startMeasureId === measure.id),
       repeatEnd: score.repeats.find((r) => r.endMeasureId === measure.id)?.count ?? null,
-      style: measure.style ?? null,
+      style: barStyle(measure) ?? null,
       marks: score.marks.filter((m) => m.measureId === measure.id).map(({ id, kind }) => ({ id, kind })),
       repeatStartId: score.repeats.find((r) => r.startMeasureId === measure.id)?.id ?? null,
       repeatEndId: score.repeats.find((r) => r.endMeasureId === measure.id)?.id ?? null,
@@ -84,13 +86,17 @@ export function analyzeScore(score: Score): AnalyzedBar[] {
   });
 }
 
+const isMeasureRest = (events: ScoreEvent[]) => events.length === 1 && Boolean(events[0].measureRest);
+
 /** Positions and accidentals; an accidental holds for its staff position until the barline. */
 function analyzeEvents(score: Score, measure: Measure): AnalyzedEvent[] {
   const key = scoreKey(score);
+  const bottomLine = CLEF_BOTTOM_LINE[staffClef(score)];
   const alterations = new Map<string, number>();
-  let onset = 0;
-  return measure.events.map((event) => {
-    const position = event.pitch ? staffPosition(event.pitch) - BOTTOM_LINE : MIDDLE_LINE;
+  const events = barEvents(measure);
+  const onsets = eventOnsets(events);
+  return events.map((event, index) => {
+    const position = event.pitch ? staffPosition(event.pitch) - bottomLine : MIDDLE_LINE;
     let accidental: number | null = null;
     if (event.pitch) {
       const at = `${event.pitch.step}${event.pitch.octave}`;
@@ -100,16 +106,15 @@ function analyzeEvents(score: Score, measure: Measure): AnalyzedEvent[] {
     }
     const item: AnalyzedEvent = {
       event,
-      localBeat: onset,
+      localBeat: onsets[index],
       position,
       accidental,
       stemDown: position >= MIDDLE_LINE,
       beamGroup: null,
       left: 0,
       right: 0,
-      spring: springFor(beats(event.duration)),
+      spring: springFor(soundingBeats(event)),
     };
-    onset += beats(event.duration);
     return item;
   });
 }
@@ -124,7 +129,7 @@ function findBeamGroups(measure: Measure, events: AnalyzedEvent[]): number[][] {
     current = [];
   };
   events.forEach((item, index) => {
-    const beamable = item.event.pitch && durationNotation(item.event.duration).base <= 0.5;
+    const beamable = isNote(item.event) && durationNotation(item.event.duration).base <= 0.5;
     if (!beamable) return flush();
     const beatGroup = (beat: number) => Math.floor(beat / groupLength);
     if (current.length && beatGroup(item.localBeat) !== beatGroup(events[current[0]].localBeat)) flush();

@@ -9,24 +9,25 @@ const soundKey = (eventId: string, pitch: Pitch) => `${eventId}:${pitchName(pitc
  * note sounds whenever it or its pitch changes (arrow keys, a typed letter, Add note), unless that
  * exact note and pitch was just heard, so a drag does not sound again when it is committed.
  */
-export function useNoteAudition(selected: ScoreEvent | null, sound: (pitch: Pitch) => void) {
+export function useNoteAudition(selected: ScoreEvent | null, sound: (pitch: Pitch, eventId: string) => void) {
   const lastHeard = useRef<string | null>(null);
 
   const audition = useCallback(
     (eventId: string, pitch: Pitch) => {
       lastHeard.current = soundKey(eventId, pitch);
-      sound(pitch);
+      sound(pitch, eventId);
     },
     [sound],
   );
 
   const pitch = selected?.pitch ?? null;
-  const key = selected && pitch ? soundKey(selected.id, pitch) : null;
+  const selectedId = selected?.id ?? null;
+  const key = selectedId && pitch ? soundKey(selectedId, pitch) : null;
   useEffect(() => {
-    if (!key || !pitch || key === lastHeard.current) return;
+    if (!key || !pitch || !selectedId || key === lastHeard.current) return;
     lastHeard.current = key;
-    sound(pitch);
-  }, [key, pitch, sound]);
+    sound(pitch, selectedId);
+  }, [key, pitch, sound, selectedId]);
 
   return audition;
 }

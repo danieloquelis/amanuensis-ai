@@ -1,4 +1,4 @@
-import { CHORD_QUALITIES, pitchClass, type Chord, type Score } from "@/modules/score";
+import { barStyle, CHORD_QUALITIES, pitchClass, type Chord, type Score } from "@/modules/score";
 import { soundingSource } from "./performance-order";
 
 const MAX_UPPER_VOICES = 4;
@@ -18,7 +18,7 @@ export function writtenChordSegments(score: Score): ChordSegment[][] {
   score.measures.forEach((measure, index) => {
     const own = score.chords.filter((c) => c.measureId === measure.id).sort((a, b) => a.beat - b.beat);
     let segments: ChordSegment[];
-    if (!own.length && measure.style === "repeat") {
+    if (!own.length && barStyle(measure) === "repeat") {
       segments = result[soundingSource(score, index)];
     } else {
       segments = own.map((chord) => ({ beat: chord.beat, chord }));

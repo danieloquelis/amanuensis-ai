@@ -1,4 +1,4 @@
-import { durationNotation, type Score } from "@/modules/score";
+import { durationNotation, isNote, voiceLine, type Score } from "@/modules/score";
 import { stemX, type EngravedEvent, type System } from "./scene";
 
 /** Gap between a slur's end and the notehead (or stem tip) it starts from. */
@@ -26,7 +26,7 @@ const MIN_BULGE = 2;
 const LINE_START_INSET = 2;
 const LINE_END_CLEARANCE = 2;
 
-const hasStem = (item: EngravedEvent) => !!item.event.pitch && durationNotation(item.event.duration).base < 4;
+const hasStem = (item: EngravedEvent) => isNote(item.event) && durationNotation(item.event.duration).base < 4;
 
 /** Where a slur meets a note: at the head on the head side, at the stem tip on the stem side. */
 function endPoint(item: EngravedEvent, above: boolean): { x: number; y: number } {
@@ -37,7 +37,7 @@ function endPoint(item: EngravedEvent, above: boolean): { x: number; y: number }
 
 /** The outermost ink of a note or rest on the slur's side. */
 function inkEdge(item: EngravedEvent, above: boolean): number {
-  if (!item.event.pitch) return item.y + (above ? -REST_REACH.up : REST_REACH.down);
+  if (!isNote(item.event)) return item.y + (above ? -REST_REACH.up : REST_REACH.down);
   const head = item.y + (above ? -HEAD_HALF : HEAD_HALF);
   const stemOnSide = hasStem(item) && item.stemDown !== above;
   if (!stemOnSide) return head;
@@ -60,14 +60,15 @@ function accidentalObstacle(item: EngravedEvent, above: boolean): Obstacle[] {
  * passes, then by the slur's own `lift`. Across a line break each line gets its own open arc.
  */
 export function placeSlurs(score: Score, systems: System[]) {
-  const order = score.measures.flatMap((m) => m.events.map((e) => e.id));
   const placed = new Map<string, { item: EngravedEvent; system: System }>();
   for (const system of systems) for (const item of system.events) placed.set(item.event.id, { item, system });
   for (const slur of score.slurs) {
+    // A slur joins notes of one voice, so its notes are that voice's events between its ends.
+    const order = voiceLine(score, slur.startEventId).map((e) => e.id);
     const ids = order.slice(order.indexOf(slur.startEventId), order.indexOf(slur.endEventId) + 1);
     const items = ids.flatMap((id) => (placed.has(id) ? [placed.get(id)!] : []));
     if (items.length < 2 || items.some(({ item }) => item.hidden)) continue;
-    const notes = items.filter(({ item }) => item.event.pitch);
+    const notes = items.filter(({ item }) => isNote(item.event));
     const above = !notes.every(({ item }) => !item.stemDown);
     const bars: [number, number] = [items[0].item.measure + 1, items.at(-1)!.item.measure + 1];
     for (const system of new Set(items.map((i) => i.system))) {

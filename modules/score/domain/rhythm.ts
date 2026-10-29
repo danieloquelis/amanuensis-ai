@@ -1,4 +1,4 @@
-import type { Meter } from "./schema";
+import type { Meter, ScoreEvent } from "./schema";
 
 /** Musical time in quarter-note beats: an eighth is 1/2, a 6/8 bar holds 3. */
 export type Fraction = { numerator: number; denominator: number };
@@ -34,6 +34,26 @@ export function add(a: Fraction, b: Fraction): Fraction {
 }
 
 export const beats = (value: Fraction) => value.numerator / value.denominator;
+
+/**
+ * How long an event sounds, as an exact fraction of quarter-note beats. `event.duration` is the
+ * written value, which decides how the note looks; time arithmetic (onsets, bar totals, playback)
+ * uses this instead, so a written value that sounds shorter (a triplet eighth) needs one change here.
+ */
+export const soundingDuration = (event: Pick<ScoreEvent, "duration">): Fraction => event.duration;
+
+/** How long an event sounds, in quarter-note beats. */
+export const soundingBeats = (event: Pick<ScoreEvent, "duration">) => beats(soundingDuration(event));
+
+/** Where each event starts in its bar, in beats from 0, summed exactly so positions never drift. */
+export function eventOnsets(events: readonly Pick<ScoreEvent, "duration">[]): number[] {
+  let at = fraction(0);
+  return events.map((event) => {
+    const onset = beats(at);
+    at = add(at, soundingDuration(event));
+    return onset;
+  });
+}
 
 /** Converts a supported written value (multiple of 1/8 beat) into an exact fraction. */
 export const durationFromBeats = (value: number) => fraction(value * 8, 8);

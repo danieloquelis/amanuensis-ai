@@ -1,25 +1,18 @@
 import { z } from "zod";
+import { INSTRUMENT_IDS } from "../instruments";
 import { ARTICULATIONS } from "../notation";
-import {
-  idSchema,
-  keySignatureSchema,
-  MEASURE_WIDTH,
-  meterSchema,
-  pitchSchema,
-  SCORE_LIMITS,
-  tempoSchema,
-} from "../schema";
+import { idSchema, keySignatureSchema, meterSchema, pitchSchema, SCORE_LIMITS, tempoSchema } from "../schema";
 
 import { durationSchema, eventId, measureId } from "./fields";
 import { NEW_SCORE_DEFAULTS } from "./new-score";
 import { notationOperationSchemas } from "./notation-schemas";
+import { measureOperationSchemas } from "./measure-schemas";
+import { partOperationSchemas } from "./part-schemas";
 import { phraseOperationSchemas } from "./phrase-schemas";
 
 /** Room for a whole score written at once: 32 bars, each added, written, with chords and a section. */
 export const OPERATION_BATCH_LIMIT = 256;
 export type { DurationValue } from "./fields";
-
-const measureIdsSchema = z.array(idSchema).min(1).max(SCORE_LIMITS.measures);
 
 export const operationSchema = z.discriminatedUnion("type", [
   z
@@ -62,61 +55,6 @@ export const operationSchema = z.discriminatedUnion("type", [
     ),
   z
     .strictObject({
-      type: z.literal("replaceMeasure"),
-      measureId,
-      events: z
-        .array(
-          z.strictObject({
-            pitch: pitchSchema.nullable(),
-            duration: durationSchema,
-            tie: z
-              .boolean()
-              .optional()
-              .describe(
-                "Tie into the next note, which must have the same pitch; the last note ties into the next bar.",
-              ),
-          }),
-        )
-        .min(1)
-        .max(SCORE_LIMITS.eventsPerMeasure)
-        .describe("New notes and rests; their beats must add up exactly to the bar's length."),
-    })
-    .describe(
-      "Write a whole bar of new music, e.g. a sung phrase. A note held over the barline is written as tied notes. Indications on the old notes are removed.",
-    ),
-  z
-    .strictObject({
-      type: z.literal("appendMeasure"),
-      afterMeasureId: idSchema.optional().describe("Default: last bar."),
-    })
-    .describe("Insert an empty bar (a whole-bar rest) with the same meter."),
-  z
-    .strictObject({ type: z.literal("deleteMeasure"), measureId })
-    .describe("Delete a bar and everything anchored to it."),
-  z
-    .strictObject({ type: z.literal("duplicateMeasure"), measureId })
-    .describe("Copy a bar with its chords and indications right after it."),
-  z
-    .strictObject({ type: z.literal("clearMeasure"), measureId })
-    .describe("Replace a bar's notes with a whole-bar rest."),
-  z
-    .strictObject({
-      type: z.literal("setMeter"),
-      measureIds: measureIdsSchema,
-      meter: meterSchema,
-      policy: z
-        .enum(["preserve", "scale", "auto"])
-        .describe(
-          "preserve keeps note values (adds/trims rests), scale fits proportionally, auto tries preserve first.",
-        ),
-      extend: z
-        .boolean()
-        .optional()
-        .describe("Also change the following bars up to the next time-signature change, like a notation editor."),
-    })
-    .describe("Change the time signature of bars. Never cuts notes or invents tuplets."),
-  z
-    .strictObject({
       type: z.literal("setTempo"),
       tempo: tempoSchema.describe("Quarter-note BPM."),
       measureId: idSchema.optional().describe("Omit for the global tempo; give a bar for a tempo change there."),
@@ -141,24 +79,15 @@ export const operationSchema = z.discriminatedUnion("type", [
         .describe(`Empty bars. Default: ${NEW_SCORE_DEFAULTS.bars}.`),
       tempo: tempoSchema.optional().describe(`Quarter-note BPM. Default: ${NEW_SCORE_DEFAULTS.tempo}.`),
       key: keySignatureSchema.optional().describe("Default: C major."),
+      instrument: z.enum(INSTRUMENT_IDS).optional().describe("Default: piano."),
     })
     .describe(
       "Start a new song: replace the whole score with empty bars and nothing else. Only when the musician asks to start over or begin a new piece. One undoable edit.",
     ),
   ...notationOperationSchemas,
   ...phraseOperationSchemas,
-  z
-    .strictObject({
-      type: z.literal("setMeasureWidth"),
-      measureId,
-      width: z
-        .number()
-        .min(MEASURE_WIDTH.min)
-        .max(MEASURE_WIDTH.max)
-        .nullable()
-        .describe("null restores automatic spacing."),
-    })
-    .describe("Layout only: set a bar's engraved width. Never changes the music."),
+  ...measureOperationSchemas,
+  ...partOperationSchemas,
 ]);
 
 const batchSchema = z

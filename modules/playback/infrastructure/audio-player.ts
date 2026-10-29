@@ -13,7 +13,6 @@ const LOOKAHEAD = 1.5;
 const REFILL_MS = 100;
 /** A clicked or moved note: short enough to keep up with a drag, long enough to hear the pitch. */
 const AUDITION = { duration: 0.45, velocity: 80, delay: 0.012 };
-const INSTRUMENT: SoundId = "piano";
 
 export type PlaybackListener = {
   /** The playhead beat each frame, then `null` when finished. */
@@ -54,15 +53,15 @@ export class AudioPlayer {
     const generation = this.generation;
     const context = this.audioContext();
     await context.resume();
-    const output = await this.loadedOutput(listener);
-    if (generation !== this.generation) return;
     const plan = createPlaybackPlan(score, fromMeasureId);
+    const output = await this.loadedOutput(instrumentsOf(plan), listener);
+    if (generation !== this.generation) return;
     const origin = context.currentTime + START_DELAY;
     let scheduledUntil = 0;
     const schedule = () => {
       const until = context.currentTime - origin + LOOKAHEAD;
       for (const { start, ...sound } of soundsBetween(plan, scheduledUntil, until))
-        this.sound(output, { instrument: INSTRUMENT, ...sound, time: origin + start });
+        this.sound(output, { ...sound, time: origin + start });
       scheduledUntil = until;
     };
     schedule();
@@ -85,15 +84,15 @@ export class AudioPlayer {
    * Sounds one note now, cutting off the previous audition so a fast drag never piles up. Until
    * the instrument has loaded, the note sounds as a reference tone and loading starts.
    */
-  audition(midi: number) {
+  audition(midi: number, instrument: SoundId) {
     const context = this.audioContext();
     void context.resume();
     this.auditioned?.();
     const sampled = this.sampledSounds();
-    const ready = sampled.isReady([INSTRUMENT]);
-    if (!ready) sampled.prepare([INSTRUMENT]).catch(() => {});
+    const ready = sampled.isReady([instrument]);
+    if (!ready) sampled.prepare([instrument]).catch(() => {});
     const output = ready ? sampled : this.referenceTone();
-    const request = { instrument: INSTRUMENT, midi, velocity: AUDITION.velocity, duration: AUDITION.duration };
+    const request = { instrument, midi, velocity: AUDITION.velocity, duration: AUDITION.duration };
     this.auditioned = this.sound(output, { ...request, time: context.currentTime + AUDITION.delay });
   }
 
@@ -105,12 +104,12 @@ export class AudioPlayer {
     this.reference = null;
   }
 
-  private async loadedOutput(listener: PlaybackListener): Promise<SoundOutput> {
+  private async loadedOutput(instruments: SoundId[], listener: PlaybackListener): Promise<SoundOutput> {
     const sampled = this.sampledSounds();
-    if (sampled.isReady([INSTRUMENT])) return sampled;
+    if (sampled.isReady(instruments)) return sampled;
     listener.onLoading(true);
     try {
-      await sampled.prepare([INSTRUMENT]);
+      await sampled.prepare(instruments);
       return sampled;
     } catch {
       listener.onFallback();
@@ -140,6 +139,11 @@ export class AudioPlayer {
     return this.reference;
   }
 }
+
+/** Every instrument the plan plays, chord symbols' piano included. */
+const instrumentsOf = (plan: PlaybackPlan): SoundId[] => [
+  ...new Set(soundsBetween(plan, 0, plan.duration + 1).map((sound) => sound.instrument)),
+];
 
 /** The written beat sounding `elapsed` seconds into the plan. */
 function playheadBeat(plan: PlaybackPlan, elapsed: number) {

@@ -38,6 +38,16 @@ const BROWSER_GLOBALS = ["window", "document", "localStorage", "sessionStorage",
     message: "Browser APIs belong in infrastructure/ or ui/.",
   }),
 );
+// Bar events, voice bars and bar styles are read and written only through score/domain/voice-access.ts, so a
+// bar can hold several voices. Score measures are recognised by name (measure, m, …Measure) or by
+// coming from `.measures[i]` / `.measure`; engraving scenes and playback plans are other types.
+const BAR_DATA = "/^(events|style|voices)$/";
+const VOICE_ACCESS = "Read bar events and styles through voice-access (barEvents, voiceBars, barStyle, …).";
+const BAR_DATA_ACCESS = [
+  `MemberExpression[property.name=${BAR_DATA}][object.type='Identifier'][object.name=/^m$|[Mm]easure$/]`,
+  `MemberExpression[property.name=${BAR_DATA}][object.type='MemberExpression'][object.property.name='measure']`,
+  `MemberExpression[property.name=${BAR_DATA}][object.type='MemberExpression'][object.object.property.name='measures']`,
+].map((selector) => ({ selector, message: VOICE_ACCESS }));
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -92,6 +102,11 @@ const eslintConfig = defineConfig([
         { patterns: [{ group: ["@/modules/*"], message: "shared/ must not depend on modules." }] },
       ],
     },
+  },
+  {
+    files: ["modules/**/*.{ts,tsx}"],
+    ignores: ["modules/score/domain/voice-access.ts", "modules/score/domain/migrations.ts"],
+    rules: { "no-restricted-syntax": ["error", ...BAR_DATA_ACCESS] },
   },
   {
     files: ["tests/**"],

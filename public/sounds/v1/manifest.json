@@ -927,6 +927,38 @@
       "sha256": "aa40e71c42a25d9ef01745c9f85d155c7075f766b6af2f9b56e5730d6d858fe9",
       "source": "splendid-grand-piano",
       "license": "Public domain"
+    },
+    {
+      "file": "fluidr3/acoustic_guitar_nylon-mp3.js",
+      "url": "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/acoustic_guitar_nylon-mp3.js",
+      "bytes": 1837439,
+      "sha256": "5375fa9e0408d960e12b6e4ec120c42bce824d80b18e982b27ddaece146a4f64",
+      "source": "fluidr3-gm",
+      "license": "CC BY 3.0 as published by midi-js-soundfonts; Fluid R3 itself is MIT"
+    },
+    {
+      "file": "fluidr3/trumpet-mp3.js",
+      "url": "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/trumpet-mp3.js",
+      "bytes": 2937749,
+      "sha256": "7f37e0b8fbbfbf67a1183c746d83c85c11790283e2ea9994bdcdb9055bb0e67c",
+      "source": "fluidr3-gm",
+      "license": "CC BY 3.0 as published by midi-js-soundfonts; Fluid R3 itself is MIT"
+    },
+    {
+      "file": "fluidr3/flute-mp3.js",
+      "url": "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/flute-mp3.js",
+      "bytes": 2969583,
+      "sha256": "e2e35283876eec60b919beeb8bfa49f46f12dddf5b8c6025e7a45c5d2a24bda5",
+      "source": "fluidr3-gm",
+      "license": "CC BY 3.0 as published by midi-js-soundfonts; Fluid R3 itself is MIT"
+    },
+    {
+      "file": "fluidr3/trombone-mp3.js",
+      "url": "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/trombone-mp3.js",
+      "bytes": 2621806,
+      "sha256": "670c03635d7147847d029f09d9bb2d8c8e902852192713dce3750d16d7265abd",
+      "source": "fluidr3-gm",
+      "license": "CC BY 3.0 as published by midi-js-soundfonts; Fluid R3 itself is MIT"
     }
   ]
 }

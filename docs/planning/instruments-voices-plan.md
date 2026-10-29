@@ -1,6 +1,6 @@
 # Instruments, voices and ensembles plan
 
-Status: phase A1 (sampled piano) implemented; B0 onwards planned. Written 29 October 2026 against commit `5799adf` (main). The document is self-contained. A session implementing it needs only the repository, `AGENTS.md`, [code conventions](../architecture/code-conventions.md) and this plan. Read the [triplets plan](triplets-plan.md) too, because the two plans touch the same code.
+Status: phases A1 (sampled piano), B0 (accessor seam), triplets phase 0 (note lengths) B1 (score v3, one part) and A2 (choosing the instrument) implemented; D onwards planned. Written 29 October 2026 against commit `5799adf` (main). The document is self-contained. A session implementing it needs only the repository, `AGENTS.md`, [code conventions](../architecture/code-conventions.md) and this plan. Read the [triplets plan](triplets-plan.md) too, because the two plans touch the same code.
 
 ## Goal
 
@@ -374,7 +374,7 @@ Every phase leaves the app working, with `yarn check` passing and then `yarn bui
   - `setInstrument { partId?: id, instrument, name? }`. It sets the instrument, default name and abbreviation, and the default clef of each staff. It never changes notes. A piano part keeps its staff count, and any other instrument requires one staff.
   - `setClef { staffId?, clef }`, for trombone in tenor clef later, or guitar in plain treble. It validates percussion versus drums.
   - `newScore` gains `instrument?` (default piano).
-- **View**: a "Concert pitch" toggle in `DocumentControls.tsx`, visible only when a transposing part exists. It is engraving state, not score state (`layoutScore(score, { concertPitch })`), like zoom.
+- **View**: transposing parts are always shown as written. The engraving supports a concert view (`layoutScore(score, { concertPitch })`), but the "Concert pitch" toggle was left out on 29 October 2026 (product owner): with one instrument it adds little. Revisit with several instruments (phase E).
 - **Out of range**: `EngravedEvent.outOfRange` is drawn in `--warning` colour. `scoreText` adds a header line, for example `out of range for trumpet: 3#2 (A5 sounds above B♭5)`.
 
 **Files.**

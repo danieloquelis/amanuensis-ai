@@ -1,6 +1,6 @@
-import { HttpStorage, Sampler, type Storage } from "smplr";
+import { HttpStorage, Sampler, Soundfont, type Smplr, type Storage } from "smplr";
 import type { SoundId, SoundOutput, SoundRequest } from "../application/sound-port";
-import { pianoPreset } from "./sound-sources";
+import { pianoPreset, soundfontUrl } from "./sound-sources";
 
 /** Give up on samples after this long and fall back to reference tones. */
 export const SOUND_LOAD_TIMEOUT_MS = 10_000;
@@ -24,9 +24,9 @@ function withTimeout<T>(promise: Promise<T>, ms: number) {
   });
 }
 
-/** Sampled instruments through smplr: one sampler per sound, loaded once and kept. */
+/** Sampled instruments through smplr: one sampler per instrument, loaded on first use and kept. */
 export class SampledSounds implements SoundOutput {
-  private samplers = new Map<SoundId, Sampler>();
+  private samplers = new Map<SoundId, Smplr>();
   private loading = new Map<SoundId, Promise<void>>();
 
   constructor(private readonly context: AudioContext) {}
@@ -53,7 +53,10 @@ export class SampledSounds implements SoundOutput {
   private load(id: SoundId) {
     let loading = this.loading.get(id);
     if (!loading) {
-      const sampler = Sampler(this.context, { preset: pianoPreset(), storage: strictStorage });
+      const sampler =
+        id === "piano"
+          ? Sampler(this.context, { preset: pianoPreset(), storage: strictStorage })
+          : Soundfont(this.context, { instrumentUrl: soundfontUrl(id), storage: strictStorage });
       loading = withTimeout(sampler.ready, SOUND_LOAD_TIMEOUT_MS).then(
         () => void this.samplers.set(id, sampler),
         (error) => {

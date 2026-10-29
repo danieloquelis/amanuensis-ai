@@ -1,0 +1,218 @@
+{
+  "schemaVersion": 3,
+  "id": "trombone",
+  "revision": 0,
+  "title": "Trombone line",
+  "tempo": 92,
+  "key": {
+    "fifths": -2,
+    "mode": "major"
+  },
+  "parts": [
+    {
+      "id": "part-1",
+      "instrument": "trombone",
+      "name": "Trombone",
+      "staves": [
+        {
+          "id": "staff-1",
+          "clef": "bass",
+          "voices": [
+            {
+              "id": "voice-1"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "measures": [
+    {
+      "id": "m1",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "voices": [
+        {
+          "voiceId": "voice-1",
+          "events": [
+            {
+              "id": "t1",
+              "pitch": {
+                "step": "B",
+                "octave": 2,
+                "alter": -1
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              }
+            },
+            {
+              "id": "t2",
+              "pitch": {
+                "step": "D",
+                "octave": 3,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              }
+            },
+            {
+              "id": "t3",
+              "pitch": {
+                "step": "F",
+                "octave": 3,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              }
+            },
+            {
+              "id": "t4",
+              "pitch": {
+                "step": "B",
+                "octave": 3,
+                "alter": -1
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m2",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "voices": [
+        {
+          "voiceId": "voice-1",
+          "events": [
+            {
+              "id": "t5",
+              "pitch": {
+                "step": "G",
+                "octave": 2,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              }
+            },
+            {
+              "id": "t6",
+              "pitch": {
+                "step": "F",
+                "octave": 2,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              }
+            },
+            {
+              "id": "t7",
+              "pitch": {
+                "step": "E",
+                "octave": 2,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              }
+            },
+            {
+              "id": "t8",
+              "pitch": null,
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m3",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "voices": [
+        {
+          "voiceId": "voice-1",
+          "events": [
+            {
+              "id": "t9",
+              "pitch": {
+                "step": "C",
+                "octave": 4,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              }
+            },
+            {
+              "id": "t10",
+              "pitch": {
+                "step": "D",
+                "octave": 4,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              }
+            },
+            {
+              "id": "t11",
+              "pitch": {
+                "step": "E",
+                "octave": 4,
+                "alter": -1
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              }
+            },
+            {
+              "id": "t12",
+              "pitch": {
+                "step": "F",
+                "octave": 4,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 2,
+                "denominator": 1
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "annotations": [],
+  "repeats": [],
+  "chords": [],
+  "marks": [],
+  "slurs": []
+}

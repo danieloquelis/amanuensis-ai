@@ -1,3 +1,4 @@
+import { createPart } from "./instruments";
 import type { Step } from "./pitch";
 import { durationFromBeats } from "./rhythm";
 import type { Score } from "./schema";
@@ -27,9 +28,11 @@ const OPENING_PHRASE: ExampleNote[][] = [
 ];
 
 /** Hand-authored opening melody shown before the user has a saved score. */
+const EXAMPLE_PART = { part: "part-1", staff: "staff-1", voice: "voice-1" };
+
 export function createExample(): Score {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     id: "first-light",
     revision: 0,
     title: "First light",
@@ -39,14 +42,20 @@ export function createExample(): Score {
     chords: [],
     marks: [],
     slurs: [],
+    parts: [createPart("piano", EXAMPLE_PART)],
     measures: OPENING_PHRASE.map((bar, barIndex) => ({
       id: `bar-${barIndex + 1}`,
       meter: { numerator: 4, denominator: 4 },
-      events: bar.map(([step, octave, beats], noteIndex) => ({
-        id: `note-${barIndex}-${noteIndex}`,
-        pitch: { step, octave, alter: 0 },
-        duration: durationFromBeats(beats),
-      })),
+      voices: [
+        {
+          voiceId: EXAMPLE_PART.voice,
+          events: bar.map(([step, octave, beats], noteIndex) => ({
+            id: `note-${barIndex}-${noteIndex}`,
+            pitch: { step, octave, alter: 0 },
+            duration: durationFromBeats(beats),
+          })),
+        },
+      ],
     })),
   };
 }

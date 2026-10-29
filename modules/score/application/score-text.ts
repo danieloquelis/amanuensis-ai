@@ -1,7 +1,9 @@
 import { formatChord } from "../domain/chords";
+import { instrumentLines } from "./instrument-text";
 import { keyName, scoreKey } from "../domain/key";
-import { beats, meterName } from "../domain/rhythm";
+import { beats, eventOnsets, meterName } from "../domain/rhythm";
 import type { Pitch, Score, ScoreEvent } from "../domain/schema";
+import { barEvents, barStyle } from "../domain/voice-access";
 
 /**
  * Score text: a compact, line-per-bar view of a score for language models, roughly a tenth the
@@ -21,6 +23,7 @@ Durations: w whole, h half, q quarter, e eighth, s sixteenth; add "." for dotted
 Each bar's durations must add up to its meter exactly (4/4: 4 quarter beats).
 After a note: ~ ties it into the next note (same pitch, may be in the next bar); !staccato, !accent, !tenuto or !fermata.
 Slurs: ( before the first note and ) after the last note of the phrase; may span bars.
+Pitches are concert pitch (as they sound) for every instrument; an "instrument" line says when the sheet shows a part transposed, and an "out of range" line lists notes the instrument can't play comfortably.
 Parts after ";": chords C Am7@3 (beats from 1, @1 may be left out), section A, and read-only: shows slashes|repeat, tempo N, marks …, dynamics mf@2, text "…"@1.`;
 
 export const pitchText = (pitch: Pitch) => `${pitch.step}${ACCIDENTALS[pitch.alter]}${pitch.octave}`;
@@ -52,11 +55,10 @@ export function scoreText(score: Score): string {
   const lines = score.measures.map((measure, index) => {
     const previous = score.measures[index - 1];
     const meterChange = previous && meterName(previous.meter) !== meterName(measure.meter);
-    let beat = 0;
-    const onsets = new Map<string, number>();
-    const notes = measure.events.map((event) => {
-      onsets.set(event.id, beat);
-      beat += beats(event.duration);
+    const events = barEvents(measure);
+    const starts = eventOnsets(events);
+    const onsets = new Map(events.map((event, i) => [event.id, starts[i]]));
+    const notes = events.map((event) => {
       return `${opens.has(event.id) ? "(" : ""}${eventText(event)}${closes.has(event.id) ? ")" : ""}`;
     });
     const anchored = (targetId: string) => (targetId === measure.id ? 0 : onsets.get(targetId));
@@ -66,7 +68,7 @@ export function scoreText(score: Score): string {
     const parts = [
       chords.length ? `chords ${chords.map((c) => `${formatChord(c)}${at(c.beat)}`).join(" ")}` : null,
       measure.section ? `section ${measure.section}` : null,
-      measure.style ? `shows ${measure.style === "slashes" ? "slashes" : "repeat"}` : null,
+      barStyle(measure) ? `shows ${barStyle(measure)}` : null,
       measure.tempo ? `tempo ${measure.tempo}` : null,
       marks.length ? `marks ${marks.map((m) => m.kind).join(" ")}` : null,
       ...labels.map((a) =>
@@ -82,5 +84,5 @@ export function scoreText(score: Score): string {
     const bar = (id: string) => score.measures.findIndex((m) => m.id === id) + 1;
     return `repeat bars ${bar(r.startMeasureId)}-${bar(r.endMeasureId)} x${r.count}`;
   });
-  return [header, ...lines, ...repeats].join("\n");
+  return [header, ...instrumentLines(score), ...lines, ...repeats].join("\n");
 }

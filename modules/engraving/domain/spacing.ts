@@ -1,4 +1,4 @@
-import { beatGroupLength, durationNotation } from "@/modules/score";
+import { beatGroupLength, durationNotation, isRest } from "@/modules/score";
 import type { AnalyzedBar, AnalyzedEvent } from "./measure-analysis";
 
 /**
@@ -35,7 +35,7 @@ export const springFor = (duration: number) => QUARTER_SPACE * duration ** SPACE
 export function eventExtents(item: AnalyzedEvent): { left: number; right: number } {
   const { event } = item;
   const { base, dotted } = durationNotation(event.duration);
-  if (!event.pitch) return { left: REST_LEFT, right: dotted ? DOT_REACH : REST_RIGHT };
+  if (isRest(event)) return { left: REST_LEFT, right: dotted ? DOT_REACH : REST_RIGHT };
   const head = base === 4 ? WHOLE_NOTEHEAD_HALF : NOTEHEAD_HALF;
   let right = dotted ? DOT_REACH : head;
   if (base <= 0.5 && item.beamGroup === null) right = Math.max(right, item.stemDown ? FLAG_REACH_DOWN : FLAG_REACH_UP);

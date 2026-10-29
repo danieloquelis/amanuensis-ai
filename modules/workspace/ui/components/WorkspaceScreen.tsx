@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { partOf, type Pitch } from "@/modules/score";
 import { localChatRepository } from "@/modules/assistant";
 import { ComposeDock, useAssistant, useComposeDock } from "@/modules/assistant/ui";
 import { playbackStart, selectionAnchors } from "@/modules/editor";
@@ -53,7 +54,14 @@ export function WorkspaceScreen() {
   const chatOpen = dock.chatMode === "floating";
   const selectionOpen = editor.ready && !menuOpen && !chatOpen && editor.picked.length > 0 && anchor !== null;
   useWorkspaceShortcuts(playback.stop, editor.undoRedo);
-  const audition = useNoteAudition(editor.selection?.event ?? null, playback.audition);
+  const { audition: soundPitch } = playback;
+  const { getScore } = editor;
+  // A note sounds on its own part's instrument.
+  const soundNote = useCallback(
+    (pitch: Pitch, eventId: string) => soundPitch(pitch, partOf(getScore(), eventId).instrument),
+    [soundPitch, getScore],
+  );
+  const audition = useNoteAudition(editor.selection?.event ?? null, soundNote);
   const undo = () => editor.undoRedo("undo");
   // With something selected, Play starts from the first bar of the selection.
   const playFrom = playbackStart(editor.score, editor.picked);

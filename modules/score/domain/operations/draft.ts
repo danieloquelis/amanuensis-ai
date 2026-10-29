@@ -1,5 +1,6 @@
 import { durationFromBeats, measureCapacity } from "../rhythm";
-import type { Meter, Score, ScoreEvent } from "../schema";
+import type { Measure, Meter, Score, ScoreEvent, Staff } from "../schema";
+import { removeVoiceBar, setBarEvents, setBarStyle, voiceBars } from "../voice-access";
 
 /**
  * Operation handlers mutate a cloned draft of the score. `applyCommand` owns cloning,
@@ -23,4 +24,21 @@ export function detachFrom(draft: Draft, removedIds: string[]) {
   draft.repeats = draft.repeats.filter(
     (r) => !removedIds.includes(r.startMeasureId) && !removedIds.includes(r.endMeasureId),
   );
+}
+
+/**
+ * Empties one staff of a bar: its main line becomes a whole-bar rest shown as notes, its other
+ * voices leave the bar, and indications on the removed notes go with them.
+ */
+export function restStaff(draft: Draft, measure: Measure, staff: Staff, idPrefix: string) {
+  const voiceIds = new Set(staff.voices.map((voice) => voice.id));
+  const removed = voiceBars(measure).filter((bar) => voiceIds.has(bar.voiceId));
+  detachFrom(
+    draft,
+    removed.flatMap((bar) => bar.events.map((e) => e.id)),
+  );
+  const main = staff.voices[0].id;
+  for (const bar of removed) if (bar.voiceId !== main) removeVoiceBar(measure, bar.voiceId);
+  setBarEvents(measure, fullMeasureRest(measure.meter, idPrefix), main);
+  setBarStyle(measure, undefined, main);
 }

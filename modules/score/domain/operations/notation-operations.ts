@@ -33,11 +33,14 @@ export function putAnnotation(draft: Draft, op: OperationOf<"putAnnotation">, { 
     op.kind === "dynamic"
       ? draft.annotations.find((a) => a.targetId === op.targetId && a.kind === "dynamic")?.id
       : undefined;
+  // An indication on a bar belongs to a staff: the first, until scores hold several.
+  const onBar = draft.measures.some((m) => m.id === op.targetId);
   const annotation = {
     id: op.id ?? existingDynamicId ?? `${idPrefix}-annotation`,
     targetId: op.targetId,
     kind: op.kind,
     text: op.text,
+    ...(onBar ? { staffId: draft.parts[0].staves[0].id } : {}),
   };
   draft.annotations = [...draft.annotations.filter((a) => a.id !== annotation.id), annotation];
 }

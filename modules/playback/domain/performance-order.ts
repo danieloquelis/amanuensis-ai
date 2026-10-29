@@ -1,4 +1,4 @@
-import { JUMP_MARKS, type MarkKind, type Score } from "@/modules/score";
+import { barStyle, JUMP_MARKS, type MarkKind, type Score } from "@/modules/score";
 
 /** Safety bound: a malformed form can never loop forever. */
 const MAX_PERFORMED_BARS = 4096;
@@ -65,6 +65,6 @@ export function performanceOrder(score: Score): number[] {
 /** For a repeat (%) bar, the written bar whose music it plays; otherwise the bar itself. */
 export function soundingSource(score: Score, index: number): number {
   let source = index;
-  while (source > 0 && score.measures[source].style === "repeat") source--;
+  while (source > 0 && barStyle(score.measures[source]) === "repeat") source--;
   return source;
 }

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createScoreToolGateway, scoreTools } from "@/modules/assistant";
-import { createExample, createSession, type Session } from "@/modules/score";
+import { barStyle, barEvents, createExample, createSession, type Session } from "@/modules/score";
 
 function gateway() {
   let session: Session = createSession(createExample());
@@ -32,7 +32,7 @@ test("score_edit names notes by position, and score_write writes whole bars", ()
     operation: { type: "setTie", eventId: "1#4", tied: true },
   });
   assert.equal(tied.ok, true);
-  assert.equal(current().score.measures[0].events[3].tie, true);
+  assert.equal(barEvents(current().score.measures[0])[3].tie, true);
   const written = call("score_write", { requestId: "agent-2", expectedRevision: 1, text: "bar 5: (C5q B4q A4q G4q)" });
   assert.equal(written.ok, true);
   assert.equal(current().score.measures.length, 5);
@@ -134,7 +134,7 @@ test("an agent can write a whole lead sheet through the tools alone", () => {
   assert.equal(score.chords.length, 3);
   assert.equal(score.marks.length, 3);
   assert.deepEqual(
-    score.measures.map((m) => m.style ?? "notes"),
+    score.measures.map((m) => barStyle(m) ?? "notes"),
     ["notes", "notes", "slashes", "repeat"],
   );
 });

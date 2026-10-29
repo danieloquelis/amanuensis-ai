@@ -23,7 +23,7 @@ yarn install
 yarn dev
 ```
 
-Open http://localhost:3000. `yarn install` also downloads the instrument samples (about 11 MB) into `public/sounds/v1/`; they are not kept in git. Only their `manifest.json` (URL, size and hash of every file) and `CREDITS.md` are. Run `yarn sounds:fetch` to download them again; offline, the app plays reference tones instead. `yarn build` fetches them first and fails without them, so a deploy always has sound. Yarn uses `node_modules` because the installed Next.js Turbopack does not support Plug'n'Play. Keep `.env` private; the planned server adapter will use `MODEL_API_KEY`.
+Open http://localhost:3000. `yarn install` also downloads the instrument samples (about 11 MB) into `public/sounds/v1/`; they are not kept in git. Only their `manifest.json` (URL, size and hash of every file) and `CREDITS.md` are. Run `yarn sounds:fetch` to download them again; offline, the app plays reference tones instead. `yarn build` fetches them first and fails without them, so a deploy always has sound. The app icons (`app/icon.svg`, `app/apple-icon.png`, `app/favicon.ico`) are built from the brand mark in `public/brand/mark.svg` by `yarn icons`. Yarn uses `node_modules` because the installed Next.js Turbopack does not support Plug'n'Play. Keep `.env` private; the planned server adapter will use `MODEL_API_KEY`.
 
 ## Checks
 

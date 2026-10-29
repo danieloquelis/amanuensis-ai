@@ -1,4 +1,6 @@
 import {
+  isNote,
+  barEvents,
   describeReadability,
   measureCapacity,
   readability,
@@ -126,7 +128,7 @@ function tempoOfSinging(spans: { frames: PitchFrame[]; bars?: number }[], barBea
 
 /** The last bar (from 1) that has a note in it; 0 for a score of rests. */
 const lastBarWithNotes = (score: Score) =>
-  score.measures.findLastIndex((measure) => measure.events.some((event) => event.pitch !== null)) + 1;
+  score.measures.findLastIndex((measure) => barEvents(measure).some(isNote)) + 1;
 
 /**
  * Where each span starts: the bar asked for, or right after the previous span. A span fills the

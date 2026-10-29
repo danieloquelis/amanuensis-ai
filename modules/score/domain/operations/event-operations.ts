@@ -1,7 +1,8 @@
 import { locateEvent } from "../queries";
-import { beats, durationFromBeats } from "../rhythm";
+import { durationFromBeats, soundingBeats } from "../rhythm";
 import type { Pitch } from "../schema";
 import { nextEvent, tieChain } from "../ties";
+import { isNote, isRest, setBarStyle } from "../voice-access";
 import { detachFrom, type Draft, type OperationContext } from "./draft";
 import { makeRests, onsetOf } from "./rests";
 import type { OperationOf } from "./schema";
@@ -24,8 +25,8 @@ function writePitch(draft: Draft, eventId: string, pitch: Pitch | null) {
   const { measure, event } = locateEvent(draft, eventId);
   event.pitch = pitch;
   // Writing a note into a slash or repeat bar turns it back into a normal bar.
-  if (event.pitch) delete measure.style;
-  if (event.pitch) delete event.measureRest;
+  if (isNote(event)) setBarStyle(measure, undefined);
+  if (isNote(event)) delete event.measureRest;
   else delete event.articulation;
 }
 
@@ -52,15 +53,15 @@ export function setTie(draft: Draft, op: OperationOf<"setTie">) {
   event.tie = true;
 }
 
-/** Reorders within one measure; `beforeEventId: null` moves the event to the end. */
+/** Reorders within one voice of one measure; `beforeEventId: null` moves the event to the end. */
 export function moveEvent(draft: Draft, op: OperationOf<"moveEvent">) {
   const from = locateEvent(draft, op.eventId);
   const to = op.beforeEventId ? locateEvent(draft, op.beforeEventId) : null;
-  if (to && from.measure.id !== to.measure.id) {
-    throw new Error("Reordering currently stays within one measure.");
+  if (to && (from.measure.id !== to.measure.id || from.voiceId !== to.voiceId)) {
+    throw new Error("Reordering currently stays within one measure and one voice.");
   }
   if (from.event.id === to?.event.id) return;
-  const events = from.measure.events;
+  const events = from.voiceBar.events;
   events.splice(from.eventIndex, 1);
   const index = to ? events.findIndex((e) => e.id === to.event.id) : events.length;
   events.splice(index, 0, from.event);
@@ -71,12 +72,13 @@ export function moveEvent(draft: Draft, op: OperationOf<"moveEvent">) {
  * Shortening fills the remainder with rests, so the bar stays complete and silent there.
  */
 export function setDuration(draft: Draft, op: OperationOf<"setDuration">, { idPrefix }: OperationContext) {
-  const { measure, eventIndex, event } = locateEvent(draft, op.eventId);
-  const events = measure.events;
-  let available = beats(event.duration);
+  const { measure, voiceBar, eventIndex, event } = locateEvent(draft, op.eventId);
+  const events = voiceBar.events;
+  let available = soundingBeats(event);
   let consumed = 1;
-  while (available < op.duration && events[eventIndex + consumed]?.pitch === null) {
-    available += beats(events[eventIndex + consumed].duration);
+  const restAfter = () => events[eventIndex + consumed] && isRest(events[eventIndex + consumed]);
+  while (available < op.duration && restAfter()) {
+    available += soundingBeats(events[eventIndex + consumed]);
     consumed++;
   }
   if (available < op.duration) {
@@ -88,8 +90,8 @@ export function setDuration(draft: Draft, op: OperationOf<"setDuration">, { idPr
     events.slice(eventIndex + 1, eventIndex + consumed).map((e) => e.id),
   );
   delete event.measureRest;
-  delete measure.style;
+  setBarStyle(measure, undefined);
   event.duration = durationFromBeats(op.duration);
-  const restsStart = onsetOf(measure, eventIndex) + op.duration;
+  const restsStart = onsetOf(events, eventIndex) + op.duration;
   events.splice(eventIndex, consumed, event, ...makeRests(remainder, idPrefix, restsStart, measure.meter));
 }

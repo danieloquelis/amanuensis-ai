@@ -50,10 +50,11 @@ export {
   type OperationType,
 } from "./domain/operations/schema";
 export {
-  isWithinOctaveRange,
+  isWithinPitchRange,
   midiPitch,
   movePitch,
   OCTAVE_RANGE,
+  PITCH_RANGE,
   pitchName,
   staffPosition,
   STEPS,
@@ -67,10 +68,13 @@ export {
   durationFromBeats,
   durationNotation,
   DURATIONS,
+  eventOnsets,
   fraction,
   measureCapacity,
   meterName,
   METERS,
+  soundingBeats,
+  soundingDuration,
   type Fraction,
 } from "./domain/rhythm";
 export {
@@ -88,6 +92,10 @@ export {
   type KeySignature,
   type Measure,
   type Meter,
+  type Part,
+  type Staff,
+  type Clef,
+  CLEFS,
   type Pitch,
   type Repeat,
   type Score,
@@ -97,5 +105,39 @@ export {
 export { legatoIds, slurEnds } from "./domain/slurs";
 export { nextEvent, samePitch, tieChain, tiePairs } from "./domain/ties";
 export { parseScore } from "./domain/validation";
+export {
+  barEvents,
+  barStyle,
+  createMeasure,
+  everyEvent,
+  isNote,
+  isRest,
+  measureEvents,
+  primaryVoiceId,
+  putVoiceBar,
+  partOf,
+  allStaves,
+  voiceInfo,
+  setBarEvents,
+  setBarStyle,
+  voiceBars,
+  voiceEvents,
+  voiceIds,
+  voiceLine,
+  voiceOf,
+  type BarStyle,
+  type VoiceBar,
+  type VoiceInfo,
+} from "./domain/voice-access";
+export { toConcert, toWritten, transpositionOf, writtenKey } from "./domain/transposition";
+export {
+  createPart,
+  INSTRUMENT_IDS,
+  INSTRUMENTS,
+  isPlayable,
+  type Instrument,
+  type InstrumentId,
+  type Transposition,
+} from "./domain/instruments";
 export { metricWeight, spellRhythm } from "./domain/rhythm-spelling";
 export { describeReadability, readability, type Readability } from "./domain/rhythm-readability";

@@ -1,5 +1,5 @@
 import { scoreKey } from "../key";
-import { isWithinOctaveRange, movePitch } from "../pitch";
+import { isWithinPitchRange, movePitch } from "../pitch";
 import { locateEvent } from "../queries";
 import { overlappingSlurs, slurEnds } from "../slurs";
 import { tieChain } from "../ties";
@@ -41,7 +41,7 @@ export function transpose(draft: Draft, op: OperationOf<"transpose">) {
     const { event } = locateEvent(draft, id);
     if (!event.pitch) continue;
     const pitch = movePitch(event.pitch, op.steps, keepsSpelling ? undefined : key);
-    if (!isWithinOctaveRange(pitch)) throw new Error("That would move notes beyond the staff's range.");
+    if (!isWithinPitchRange(pitch)) throw new Error("That would move notes beyond A0–C8, the range of any instrument.");
     event.pitch = pitch;
   }
 }

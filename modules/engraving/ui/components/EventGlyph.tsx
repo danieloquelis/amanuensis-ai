@@ -1,4 +1,4 @@
-import { durationNotation, type Articulation } from "@/modules/score";
+import { durationNotation, isNote, type Articulation } from "@/modules/score";
 import { STAFF_GAP, stemX, type EngravedEvent } from "../../domain/scene";
 import { AccidentalGlyph } from "./AccidentalGlyph";
 
@@ -21,7 +21,7 @@ export function EventGlyph({ item, systemTop, beamed }: { item: EngravedEvent; s
       {item.ledgerLines.map((lineY) => (
         <line key={lineY} x1={x - 13} x2={x + 13} y1={lineY} y2={lineY} stroke="currentColor" strokeWidth="1.1" />
       ))}
-      {event.pitch ? <NoteGlyph item={item} beamed={beamed} /> : <RestGlyph item={item} />}
+      {isNote(event) ? <NoteGlyph item={item} beamed={beamed} /> : <RestGlyph item={item} />}
       {notation.dotted && !event.measureRest && <AugmentationDot x={x} y={y} systemTop={systemTop} />}
       {event.articulation && (
         <ArticulationMark articulation={event.articulation} x={x} y={Math.min(y - 18, systemTop - 12)} />

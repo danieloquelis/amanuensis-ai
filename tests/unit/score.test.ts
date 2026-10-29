@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  barEvents,
   add,
   applyCommand,
   beats,
@@ -24,14 +25,14 @@ test("rational rhythm is exact, and every example measure is complete", () => {
   const score = parseScore(createExample());
   for (const measure of score.measures)
     assert.equal(
-      measure.events.reduce((sum, event) => sum + beats(event.duration), 0),
+      barEvents(measure).reduce((sum, event) => sum + beats(event.duration), 0),
       4,
     );
 });
 
 test("shortening a note fills the rest of its value with silence", () => {
   const shorter = edit(createExample(), { type: "setDuration", eventId: "note-0-0", duration: 0.5 });
-  const [note, rest] = shorter.measures[0].events;
+  const [note, rest] = barEvents(shorter.measures[0]);
   assert.equal(beats(note.duration), 0.5);
   assert.equal(rest.pitch, null);
   assert.equal(beats(rest.duration), 0.5);
@@ -51,7 +52,7 @@ test("a note cannot grow over the next note", () => {
 
 test("deleting a note leaves a rest of the same length", () => {
   const removed = edit(createExample(), { type: "removeEvent", eventId: "note-0-0" });
-  assert.deepEqual(removed.measures[0].events[0], {
+  assert.deepEqual(barEvents(removed.measures[0])[0], {
     id: "note-0-0",
     pitch: null,
     duration: { numerator: 1, denominator: 1 },
@@ -61,7 +62,9 @@ test("deleting a note leaves a rest of the same length", () => {
 test("rests complete the beat first, then follow the beats of a simple meter", () => {
   const score = edit(createExample(), { type: "setDuration", eventId: "note-3-0", duration: 0.5 });
   assert.deepEqual(
-    score.measures[3].events.slice(1).map((e) => beats(e.duration)),
+    barEvents(score.measures[3])
+      .slice(1)
+      .map((e) => beats(e.duration)),
     [0.5, 1, 2],
   );
 });
@@ -75,16 +78,30 @@ test("rests follow dotted-quarter beats in compound meter", () => {
   });
   const score = edit(sixEight, { type: "setDuration", eventId: "note-3-0", duration: 0.5 }, "shorten");
   assert.deepEqual(
-    score.measures[3].events.slice(1).map((e) => beats(e.duration)),
+    barEvents(score.measures[3])
+      .slice(1)
+      .map((e) => beats(e.duration)),
     [0.5, 0.5, 1.5],
   );
 });
 
 test("drafts saved with the old empty-space marker open as ordinary rests", () => {
-  const legacy = JSON.parse(JSON.stringify(createExample()));
-  legacy.measures[0].events[0] = { id: "note-0-0", pitch: null, duration: { numerator: 1, denominator: 1 }, gap: true };
+  // A v2 draft: one list of events per bar, no parts.
+  const { parts, ...example } = structuredClone(createExample());
+  assert.ok(parts.length);
+  const legacy = {
+    ...example,
+    schemaVersion: 2,
+    measures: example.measures.map(({ voices, ...measure }) => ({ ...measure, events: voices[0].events })),
+  };
+  legacy.measures[0].events[0] = {
+    id: "note-0-0",
+    pitch: null,
+    duration: { numerator: 1, denominator: 1 },
+    gap: true,
+  } as never;
   const opened = parseScore(legacy);
-  assert.deepEqual(opened.measures[0].events[0], {
+  assert.deepEqual(barEvents(opened.measures[0])[0], {
     id: "note-0-0",
     pitch: null,
     duration: { numerator: 1, denominator: 1 },
@@ -106,7 +123,7 @@ test("stale agent writes cannot overwrite a newer manual edit", () => {
       }),
     /score changed/,
   );
-  assert.equal(score.measures[0].events[0].pitch?.step, "D");
+  assert.equal(barEvents(score.measures[0])[0].pitch?.step, "D");
 });
 
 test("duplicate requests are idempotent and changed payloads are rejected", () => {
@@ -140,14 +157,14 @@ test("undo/redo preserve content, increase revision, and new edits clear redo", 
 
 test("native file validation rejects bad bars, duplicate IDs, unsupported content and invalid pitch", () => {
   const invalid = createExample();
-  invalid.measures[0].events.pop();
+  barEvents(invalid.measures[0]).pop();
   assert.throws(() => parseScore(invalid), /four beats/);
   const duplicate = createExample();
   duplicate.measures[1].id = duplicate.measures[0].id;
   assert.throws(() => parseScore(duplicate), /unique/);
   assert.throws(() => parseScore({ ...createExample(), secretUnsupportedNotation: true }), /unsupported/);
   assert.throws(
-    () => edit(createExample(), { type: "setPitch", eventId: "note-0-0", pitch: { step: "C", alter: 0, octave: 7 } }),
+    () => edit(createExample(), { type: "setPitch", eventId: "note-0-0", pitch: { step: "D", alter: 0, octave: 8 } }),
     /Invalid operation/,
   );
   assert.deepEqual(parseScore(JSON.parse(JSON.stringify(createExample()))), createExample());
@@ -197,7 +214,7 @@ test("a new score is blank, with sensible defaults, and the old song is one undo
   assert.equal(blank.tempo, 100);
   assert.notEqual(blank.id, session.score.id);
   assert.equal(blank.measures.length, 4);
-  assert.ok(blank.measures.every((measure) => measure.events.length === 1 && measure.events[0].measureRest));
+  assert.ok(blank.measures.every((measure) => barEvents(measure).length === 1 && barEvents(measure)[0].measureRest));
   assert.deepEqual([blank.chords, blank.annotations, blank.marks, blank.repeats], [[], [], [], []]);
   assert.deepEqual(travel(started, "undo").score.chords, session.score.chords);
 });
@@ -213,7 +230,7 @@ test("a new score can start in the musician's meter, key, tempo and length", () 
   });
   assert.equal(blank.title, "Waltz for June");
   assert.equal(blank.measures.length, 8);
-  assert.equal(beats(blank.measures[0].events[0].duration), 3);
+  assert.equal(beats(barEvents(blank.measures[0])[0].duration), 3);
   assert.deepEqual(blank.key, { fifths: 1, mode: "major" });
   assert.equal(blank.tempo, 132);
 });

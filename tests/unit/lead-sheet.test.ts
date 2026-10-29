@@ -2,6 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createPlaybackPlan } from "@/modules/playback";
 import {
+  barStyle,
+  barEvents,
   applyCommand,
   createExample,
   parseChordSymbol,
@@ -20,7 +22,7 @@ const mark = (score: Score, measureId: string, kind: MarkKind) => edit(score, { 
 /** Bars in the order playback visits them, read from the melody events. */
 const playedBars = (score: Score) => {
   const plan = createPlaybackPlan(score);
-  const firstEvents = new Set(score.measures.map((m) => m.events[0].id));
+  const firstEvents = new Set(score.measures.map((m) => barEvents(m)[0].id));
   return plan.events.filter((e) => firstEvents.has(e.id)).map((e) => Math.floor(e.beat / 4) + 1);
 };
 
@@ -55,14 +57,14 @@ test("a chord must start inside its bar", () => {
 test("a slash bar replaces the notes but keeps the bar's chords", () => {
   const withChord = chord(createExample(), "bar-2", 0, "Dm7");
   const slashed = edit(withChord, { type: "setMeasureStyle", measureId: "bar-2", style: "slashes" });
-  assert.equal(slashed.measures[1].style, "slashes");
-  assert.equal(slashed.measures[1].events.length, 1);
+  assert.equal(barStyle(slashed.measures[1]), "slashes");
+  assert.equal(barEvents(slashed.measures[1]).length, 1);
   assert.equal(slashed.chords.length, 1);
 });
 
 test("writing a note into a slash bar turns it back into a normal bar", () => {
   const slashed = edit(createExample(), { type: "setMeasureStyle", measureId: "bar-2", style: "slashes" });
-  const restId = slashed.measures[1].events[0].id;
+  const restId = barEvents(slashed.measures[1])[0].id;
   const pitch = { step: "A", octave: 4, alter: 0 } as const;
   const noted = edit(slashed, {
     type: "batch",
@@ -71,7 +73,7 @@ test("writing a note into a slash bar turns it back into a normal bar", () => {
       { type: "setPitch", eventId: restId, pitch },
     ],
   });
-  assert.equal(noted.measures[1].style, undefined);
+  assert.equal(barStyle(noted.measures[1]), undefined);
 });
 
 test("the first bar cannot be a repeat (%) bar", () => {
