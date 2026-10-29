@@ -1,21 +1,24 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Pitch, Score } from "@/modules/score";
-import { pitchFrequency } from "../../domain/plan";
+import { midiPitch, type Pitch, type Score } from "@/modules/score";
 import { AudioPlayer } from "../../infrastructure/audio-player";
 
+const FALLBACK_MESSAGE = "Instrument sounds could not load; playing reference tones.";
+
 /**
- * Transport state for the reference player. Playback stops when the tab is hidden; `stop` is
- * stable so callers can stop playback before any score edit.
+ * Transport state for the player. Playback stops when the tab is hidden; `stop` is stable so
+ * callers can stop playback before any score edit.
  */
 export function usePlayback() {
   const player = useRef<AudioPlayer | null>(null);
   const [playBeat, setPlayBeat] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const stop = useCallback(() => {
     player.current?.stop();
     setPlayBeat(null);
     setPlaying(false);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -31,7 +34,10 @@ export function usePlayback() {
     };
   }, [stop]);
 
-  /** Starts playback (from a bar, if given), or stops it if already playing. */
+  /**
+   * Starts playback (from a bar, if given), or stops it if already playing. `onError` also hears
+   * that the score is playing with reference tones because the instrument could not load.
+   */
   const toggle = async (score: Score, onError: (message: string) => void, fromMeasureId?: string) => {
     if (playing) {
       stop();
@@ -41,9 +47,13 @@ export function usePlayback() {
       setPlaying(true);
       await player.current?.play(
         score,
-        (beat) => {
-          setPlayBeat(beat);
-          if (beat === null) setPlaying(false);
+        {
+          onBeat: (beat) => {
+            setPlayBeat(beat);
+            if (beat === null) setPlaying(false);
+          },
+          onLoading: setLoading,
+          onFallback: () => onError(FALLBACK_MESSAGE),
         },
         fromMeasureId,
       );
@@ -56,10 +66,10 @@ export function usePlayback() {
   /** Sounds a single note, e.g. one just clicked; silent while the score is playing. */
   const audition = useCallback(
     (pitch: Pitch) => {
-      if (!playing) player.current?.audition(pitchFrequency(pitch));
+      if (!playing) player.current?.audition(midiPitch(pitch));
     },
     [playing],
   );
 
-  return { playing, playBeat, toggle, stop, audition };
+  return { playing, loading, playBeat, toggle, stop, audition };
 }

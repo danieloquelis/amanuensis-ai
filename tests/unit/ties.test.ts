@@ -99,7 +99,7 @@ test("tied notes sound once, for their whole held length", () => {
   const plan = createPlaybackPlan(tiedOverBarline());
   const held = plan.events.find((e) => e.id === "note-0-3")!;
   const continued = plan.events.find((e) => e.id === "note-1-0")!;
-  assert.equal(continued.frequency, null);
+  assert.deepEqual(continued.notes, []);
   const soundingEnd = held.start + held.duration * held.gate;
   assert.ok(soundingEnd > continued.start + continued.duration * 0.9, "holds through the tied note");
   assert.ok(soundingEnd < continued.start + continued.duration, "releases before the next note");
@@ -108,7 +108,7 @@ test("tied notes sound once, for their whole held length", () => {
 test("playing from the bar a tie ends in still sounds the held note", () => {
   const plan = createPlaybackPlan(tiedOverBarline(), "bar-2");
   assert.equal(plan.events[0].id, "note-1-0");
-  assert.notEqual(plan.events[0].frequency, null);
+  assert.notDeepEqual(plan.events[0].notes, []);
 });
 
 test("a tie arcs between its noteheads, away from the stems", () => {

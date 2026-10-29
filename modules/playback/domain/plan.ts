@@ -1,20 +1,9 @@
-import {
-  beats,
-  legatoIds,
-  measureStarts,
-  midiPitch,
-  nextEvent,
-  type Pitch,
-  type Score,
-  type ScoreEvent,
-} from "@/modules/score";
-import { CHORD_VOICE_GAIN, voiceChord, writtenChordSegments } from "./chord-track";
+import { beats, legatoIds, measureStarts, midiPitch, nextEvent, type Score, type ScoreEvent } from "@/modules/score";
+import { voiceChord, writtenChordSegments } from "./chord-track";
+import { accented, CHORD_VELOCITY, DEFAULT_VELOCITY, DYNAMIC_VELOCITY } from "./dynamics";
 import { performanceOrder, soundingSource } from "./performance-order";
+import { joinTies, startingAt } from "./tie-join";
 
-/** Reference-tone gain for each written dynamic. */
-const DYNAMIC_GAIN: Record<string, number> = { pp: 0.045, p: 0.07, mp: 0.1, mf: 0.14, f: 0.19, ff: 0.24 };
-const DEFAULT_GAIN = DYNAMIC_GAIN.mf;
-const ACCENT_GAIN = 1.3;
 /** Documented reference hold for a fermata, not an interpretation. */
 const FERMATA_STRETCH = 1.5;
 /** Fraction of the written length that sounds. */
@@ -28,17 +17,18 @@ export type PlaybackEvent = {
   /** Seconds from the start of playback. */
   start: number;
   duration: number;
-  /** null is silence: a rest, or a tied note held over from the event before. */
-  frequency: number | null;
-  gain: number;
+  /** MIDI notes that start here; empty is silence: a rest, or a tied note held over from the event before. */
+  notes: number[];
+  /** MIDI velocity, 1–127, from the dynamic in force and any accent. */
+  velocity: number;
   /** Fraction of `duration` that sounds; above 1 when a tie holds the note into the next events. */
   gate: number;
   /** The event this note is tied into, when it is tied. */
   tiedTo?: string;
 };
 
-/** A soft chord under the melody. */
-export type ChordSound = { start: number; duration: number; frequencies: number[]; gain: number };
+/** A soft chord under the melody, as MIDI notes. */
+export type ChordSound = { start: number; duration: number; notes: number[]; velocity: number };
 
 export type PlaybackPlan = {
   events: PlaybackEvent[];
@@ -47,10 +37,7 @@ export type PlaybackPlan = {
   secondsPerBeat: number;
 };
 
-/** Equal-tempered frequency of a written pitch, A4 = 440 Hz. */
-export const pitchFrequency = (pitch: Pitch) => 440 * 2 ** ((midiPitch(pitch) - 69) / 12);
-
-const frequencyOf = (event: ScoreEvent) => (event.pitch ? pitchFrequency(event.pitch) : null);
+const notesOf = (event: ScoreEvent) => (event.pitch ? [midiPitch(event.pitch)] : []);
 
 /** A slurred note runs into the next, like tenuto; staccato under a slur stays short. */
 function gateOf(event: ScoreEvent, slurred: boolean) {
@@ -90,43 +77,14 @@ export function createPlaybackPlan(score: Score, fromMeasureId?: string): Playba
       chords.push({
         start: at(beat),
         duration: end - at(beat),
-        frequencies: voiceChord(chord),
-        gain: CHORD_VOICE_GAIN,
+        notes: voiceChord(chord),
+        velocity: CHORD_VELOCITY,
       });
     });
   }
   const plan = { events, chords, duration: time, secondsPerBeat: 60 / score.tempo };
   // Ties are joined after the start is cut, so starting on a held note still sounds it.
   return joinTies(offset ? startingAt(plan, offset) : plan);
-}
-
-/**
- * A tied note sounds once, for its whole held length: it keeps sounding through each event it is
- * tied into (when that event is performed next), and those events fall silent.
- */
-function joinTies(plan: PlaybackPlan): PlaybackPlan {
-  const events = plan.events.map((event) => ({ ...event }));
-  let head: PlaybackEvent | null = null;
-  events.forEach((event, i) => {
-    const previous = events[i - 1];
-    if (head && previous?.tiedTo === event.id) {
-      head.gate = (event.start + event.duration * event.gate - head.start) / head.duration;
-      event.frequency = null;
-    } else {
-      head = event;
-    }
-  });
-  return { ...plan, events };
-}
-
-/** The plan from `offset` seconds on, re-timed to start at 0. Chords never cross a bar line. */
-function startingAt(plan: PlaybackPlan, offset: number): PlaybackPlan {
-  return {
-    ...plan,
-    events: plan.events.filter((e) => e.start >= offset).map((e) => ({ ...e, start: e.start - offset })),
-    chords: plan.chords.filter((c) => c.start >= offset).map((c) => ({ ...c, start: c.start - offset })),
-    duration: plan.duration - offset,
-  };
 }
 
 /** Seconds from the bar's start to a beat inside it, following the bar's actual event timing. */
@@ -148,17 +106,17 @@ function resolveWrittenEvents(score: Score): Omit<PlaybackEvent, "start">[][] {
     score.annotations.find((a) => a.targetId === targetId && a.kind === "dynamic");
   const legato = legatoIds(score);
   let tempo = score.tempo;
-  let gain = DEFAULT_GAIN;
+  let velocity = DEFAULT_VELOCITY;
   return score.measures.map((measure, measureIndex) => {
     tempo = measure.tempo ?? tempo;
     // A repeat (%) bar plays its source bar's notes in its own written place and tempo.
     const sounding = score.measures[soundingSource(score, measureIndex)].events;
     const measureDynamic = dynamicAt(measure.id);
-    if (measureDynamic) gain = DYNAMIC_GAIN[measureDynamic.text];
+    if (measureDynamic) velocity = DYNAMIC_VELOCITY[measureDynamic.text];
     let localBeat = 0;
     return sounding.map((event) => {
       const eventDynamic = dynamicAt(event.id);
-      if (eventDynamic) gain = DYNAMIC_GAIN[eventDynamic.text];
+      if (eventDynamic) velocity = DYNAMIC_VELOCITY[eventDynamic.text];
       const length = beats(event.duration);
       const stretch = event.articulation === "fermata" ? FERMATA_STRETCH : 1;
       const entry = {
@@ -166,8 +124,8 @@ function resolveWrittenEvents(score: Score): Omit<PlaybackEvent, "start">[][] {
         beat: starts[measureIndex] + localBeat,
         beats: length,
         duration: ((length * 60) / tempo) * stretch,
-        frequency: frequencyOf(event),
-        gain: gain * (event.articulation === "accent" ? ACCENT_GAIN : 1),
+        notes: notesOf(event),
+        velocity: accented(velocity, event.articulation === "accent"),
         gate: gateOf(event, legato.has(event.id)),
         ...(event.tie ? { tiedTo: nextEvent(score, event.id)?.id } : {}),
       };

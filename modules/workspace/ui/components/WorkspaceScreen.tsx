@@ -104,6 +104,7 @@ export function WorkspaceScreen() {
                 <PlaybackControls
                   editor={editor}
                   playing={playback.playing}
+                  loading={playback.loading}
                   startBar={playFrom?.bar ?? null}
                   onTogglePlay={() => playback.toggle(editor.score, editor.setError, playFrom?.measureId)}
                 />

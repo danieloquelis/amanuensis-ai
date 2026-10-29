@@ -45,3 +45,8 @@ next-env.d.ts
 # local voice takes and cached transcriptions (personal recordings, never committed)
 /.takes/
 /.cache/
+
+# instrument samples: downloaded by `yarn sounds:fetch` from the committed manifest
+/public/sounds/v1/*
+!/public/sounds/v1/manifest.json
+!/public/sounds/v1/CREDITS.md

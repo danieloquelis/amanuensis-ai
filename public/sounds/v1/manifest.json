@@ -1,0 +1,932 @@
+{
+  "files": [
+    {
+      "file": "piano/PP B-1.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20B-1.ogg",
+      "bytes": 123553,
+      "sha256": "e86693db57f97363577f95df6ceab85855706afbb7a8b58af87857964d3ab9ee",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP B-1.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20B-1.m4a",
+      "bytes": 195232,
+      "sha256": "a1bcc20dda9fda29e38239266c3f3208e4ed1f9d1840700dd93d1b26178c3dc1",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP D#0.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20D%230.ogg",
+      "bytes": 137346,
+      "sha256": "08b9341ff94679e4f215c37d753192ee054aa37b28b1a1c10f92f89fa757dd0a",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP D#0.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20D%230.m4a",
+      "bytes": 207318,
+      "sha256": "0c7dfc121712005dadeda30d17f336616391521bf702402b6950108c2f8c6419",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP F0.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20F0.ogg",
+      "bytes": 111322,
+      "sha256": "c8716110112cec506ab9652fd4e0dd87e28ad2c407fac33183b3ed2be8b36fe1",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP F0.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20F0.m4a",
+      "bytes": 168849,
+      "sha256": "8baa572baa24f1b4c209b25a3914bd25cf50caff5f23d79d1139162567d19af7",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP A0.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20A0.ogg",
+      "bytes": 112224,
+      "sha256": "52007e8d9e38a14986751933da858256291c84d7b1c9e3989af632be3bf1bf74",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP A0.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20A0.m4a",
+      "bytes": 155939,
+      "sha256": "1b4be891739e411e3db9b56cd7cebb3cda3e8dbf89885d307eb7c695fd704e3d",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP B0.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20B0.ogg",
+      "bytes": 112989,
+      "sha256": "e9a228b4960f12dd1da40a512d6ec4b0054bea2d48cbec0a2a75258deaf5130d",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP B0.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20B0.m4a",
+      "bytes": 145824,
+      "sha256": "30a2b68092a0c097c062790cde396d2449ca78fa77c53da01046d79cc95b634b",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP D1.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20D1.ogg",
+      "bytes": 139389,
+      "sha256": "256b2c74c2dcf0c8813c02d33a17bd873ecc9780edea04bb5b53a0dc135b52b2",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP D1.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20D1.m4a",
+      "bytes": 161348,
+      "sha256": "aeda0e10e1407197e12879186bd80db1ae8d63c6293ebda6358e83f1323b2291",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP F1.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20F1.ogg",
+      "bytes": 117179,
+      "sha256": "cc5a25e3e2fe3011102ca3db5608cfe2f8b715ac60d729e4e59bb7cfbf18cce7",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP F1.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20F1.m4a",
+      "bytes": 132821,
+      "sha256": "b81c0b01cf7100bd71b7b6587088b0f13831090b72b61dfdb62b82b7680da987",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP A1.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20A1.ogg",
+      "bytes": 108185,
+      "sha256": "47d0f75ac429d008eb0a53a753891d10ea06b041b22883f2e52a0743bf7e4f7a",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP A1.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20A1.m4a",
+      "bytes": 121615,
+      "sha256": "20dfeb4a6026b6c60a1bd6a46a99c7acd2d64e456f2c3f04ad3186f93280a973",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP C2.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20C2.ogg",
+      "bytes": 106698,
+      "sha256": "20566353db60a9b03b05cb2c1f7d32ba7ab723c92b4623e856907f3d0923e6a7",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP C2.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20C2.m4a",
+      "bytes": 120494,
+      "sha256": "4e087e9bc304c80ef37df89e0846412fb8aa99c3271d4897b00eabbf689e4c42",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP D2.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20D2.ogg",
+      "bytes": 87382,
+      "sha256": "e9036876528a1effaeed01eda803f9499b07434ca5e8dd0542035c7ea91d6f50",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP D2.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20D2.m4a",
+      "bytes": 98048,
+      "sha256": "a3a2a75ff3276c86f21a5a6af9fb1b6f206ac6e88cc5c607294c85d954db66e7",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP F2.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20F2.ogg",
+      "bytes": 89829,
+      "sha256": "440cfe023742d718f03888390531729279410c2fc9de117a2f5dd910e9b22439",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP F2.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20F2.m4a",
+      "bytes": 100149,
+      "sha256": "965755f4f5a44edba2102daf1097cfbb216fb1ef860309ddf1ec87f87fafb434",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP A2.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20A2.ogg",
+      "bytes": 97977,
+      "sha256": "9933839c60e234972f64907a3584f2e1baa013969b84997d15eed6be5fc8a559",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP A2.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20A2.m4a",
+      "bytes": 109832,
+      "sha256": "a8e022724b4e375937274633d81cbd91269c88b99739d7f6cc99c6fd80c2b474",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP C3.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20C3.ogg",
+      "bytes": 74496,
+      "sha256": "4a78d9486794b641e16ae7750069f1e665155e0727f62a8993711696e558d1fb",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP C3.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20C3.m4a",
+      "bytes": 83229,
+      "sha256": "78bb4ff62019ecd3f490af26d5d4ac71eeaa4f673ea848f7d715ec6698b1cc29",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP D3.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20D3.ogg",
+      "bytes": 67767,
+      "sha256": "46e666161cd12b2d7573d607a78389755050012c620c75a195fc60a560e22012",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP D3.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20D3.m4a",
+      "bytes": 74231,
+      "sha256": "9d6db9f468cb761597a41c2d6f55cfdf56647a35b05c85ce60735e9fdc835f97",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP F3.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20F3.ogg",
+      "bytes": 70201,
+      "sha256": "58a1f47c3289c44c5273387a74b352876531c73d34bd01e094cdc33d6785ec94",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP F3.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20F3.m4a",
+      "bytes": 75730,
+      "sha256": "6262ec631c59ac56816a431ef7bb765da4971768af40ca705fd918af57d52fac",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP A3.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20A3.ogg",
+      "bytes": 83420,
+      "sha256": "31fede72739716181cbf014fed6c893a18bafad872d0d6643b663555935061e3",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP A3.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20A3.m4a",
+      "bytes": 94564,
+      "sha256": "b8f29d3e00b70e925a55944d887cd5a2b1fad1eb012807e042405ca6e5386526",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP C4.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20C4.ogg",
+      "bytes": 61613,
+      "sha256": "5655d87c4155fd93b5a8821720a609b273e2360892d594b37891431f665ac6a3",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP C4.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20C4.m4a",
+      "bytes": 68116,
+      "sha256": "eda43f897e51e6ca6ac642faa319abbb76dec0921f6a730cb65e1ee8f3b7e27a",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP D4.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20D4.ogg",
+      "bytes": 59752,
+      "sha256": "92d69db5663f73e7c49dce0bd3df3df8eadd20b91405e33afddf3abd44b82f9c",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP D4.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20D4.m4a",
+      "bytes": 65977,
+      "sha256": "933db0078bd4c26788d151b5531b8585493801e16d6b113a7b8376d82c4a65c1",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP F4.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20F4.ogg",
+      "bytes": 47902,
+      "sha256": "1c2a9051639abe4bbe05f06e71de9358fb6d73d9acb29dc061f95995ef9146a7",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP F4.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20F4.m4a",
+      "bytes": 52448,
+      "sha256": "dbb52563af063bdc4b46bb95af8d6b7abd9a7baa67a21744881ee48566e34c91",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP A4.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20A4.ogg",
+      "bytes": 26548,
+      "sha256": "a44504da70e4d856e187e8af531827b3a6beb10080c4031cf51e0719a8532655",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP A4.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20A4.m4a",
+      "bytes": 32910,
+      "sha256": "3f23b34840b56845ecec8cdff4630ceb69de2da4006aecdfb155f5f6da189cd7",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP B4.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20B4.ogg",
+      "bytes": 37234,
+      "sha256": "31573d0e777ee3bb195c166f5a91abe43c4d43612f8ff9c2b60bf3aa1d25e109",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP B4.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20B4.m4a",
+      "bytes": 41577,
+      "sha256": "dd40b779c26a7936a69c60614a1d8d0e09cdc426f7c683d6a13e001b31da18db",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP D#5.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20D%235.ogg",
+      "bytes": 30300,
+      "sha256": "666d281f6d776a2ac483b4f26f0eeb969a80c2cd2bc8c17619e81e5597dcf09e",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP D#5.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20D%235.m4a",
+      "bytes": 36993,
+      "sha256": "ace003483f298a06f38ac26f3161a8dc4b3cf351a2604d3a882a986f575442f8",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP F#5.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20F%235.ogg",
+      "bytes": 25713,
+      "sha256": "865c73a5801b953356902c29b8e3c36f2de947868f104027445f4efd51df9e2a",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP F#5.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20F%235.m4a",
+      "bytes": 34376,
+      "sha256": "5dba6ef7fda528980b0a9d34df2c27d9cf1078d690f68d58ada30efdbcd5d8ac",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP A5.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20A5.ogg",
+      "bytes": 32495,
+      "sha256": "86c68e6cd48d80b9f848f3eb306e9e9e45be5da15a44982d6e887a92f65d26df",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP A5.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20A5.m4a",
+      "bytes": 47515,
+      "sha256": "a10daa13010ee8faccdfe56abd0ae08e11ec8b3243bb4f689deb738791e48a0d",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP C6.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20C6.ogg",
+      "bytes": 28582,
+      "sha256": "73cff8780cfb82c7c95cae8b06550fdb5a3c00f71e6a3490ef6cfabb41782392",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP C6.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20C6.m4a",
+      "bytes": 41989,
+      "sha256": "5ce41964e3f94d19b18c7e3c481b41b6ed814967320a96283d7e9a96ec25d414",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP D#6.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20D%236.ogg",
+      "bytes": 28184,
+      "sha256": "b2ace6be2149aef3bac6d52df0f47c3959bcb373541d3224a1cc8f1dacf4c550",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP D#6.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20D%236.m4a",
+      "bytes": 42664,
+      "sha256": "592323633068bf39baf7bc16c6b46cf95f6f7f2b9a09fe4a9ffd5d40f9a9fdca",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP F#6.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20F%236.ogg",
+      "bytes": 26894,
+      "sha256": "6eb88ba0f3745df949501921ec6fcffffdffb3abb8f99ada7a71ca78fcef2e36",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP F#6.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20F%236.m4a",
+      "bytes": 38135,
+      "sha256": "d0fe26c94feeb66482feb6851e26b6ebcd35ae2f2e4ff96a8927a303754424f5",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP A6.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20A6.ogg",
+      "bytes": 25197,
+      "sha256": "51cc519f55211026912ec75e1b710fae17d968ed871a1fc5de2ee67e62cbb830",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP A6.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20A6.m4a",
+      "bytes": 39354,
+      "sha256": "b1ba05a2d50406383e48c53a482d67f1a81f5565700312e7dac9ecb73573df1d",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP C7.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20C7.ogg",
+      "bytes": 24114,
+      "sha256": "d6040c95d80a1d04c83a999818740d6647b3e7fcf5328ea66572562cc883b6bf",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP C7.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20C7.ogg",
+      "bytes": 24114,
+      "sha256": "d6040c95d80a1d04c83a999818740d6647b3e7fcf5328ea66572562cc883b6bf",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP C7.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20C7.m4a",
+      "bytes": 39659,
+      "sha256": "fcac30153da165910d90f2ba03305fc13c82ac212fa307fda3507bf4c0d386e6",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/PP C7.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/PP%20C7.m4a",
+      "bytes": 39659,
+      "sha256": "fcac30153da165910d90f2ba03305fc13c82ac212fa307fda3507bf4c0d386e6",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf B-1.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20B-1.ogg",
+      "bytes": 127108,
+      "sha256": "19804fcd6dad385047d71239f582766fe3da2db314a3ee70f989b312f613cd57",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf B-1.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20B-1.m4a",
+      "bytes": 197960,
+      "sha256": "7623ff55f14d747912a7e78ee0dac0757258c692bdebc223f51e5e9580b53128",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf D#0.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20D%230.ogg",
+      "bytes": 131863,
+      "sha256": "e8099b7bf3adf9b763dbb48b658f997714b6fe881c016cd957c6bdce68abc5b6",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf D#0.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20D%230.m4a",
+      "bytes": 199091,
+      "sha256": "20ea8e297b7225cc159ae69f0fb3bbd054ea1c651db3796d8653b1d8a7cf2d33",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf F0.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20F0.ogg",
+      "bytes": 154104,
+      "sha256": "fe4521f960acb2b130edbddadd082ccb9fed2c3f7562605076d176cbaee91de1",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf F0.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20F0.m4a",
+      "bytes": 225185,
+      "sha256": "e32422ab53d0e33d751f6de62e4280d7c6cfc9d6e2866c41fb52b1997e68f66c",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf A0.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20A0.ogg",
+      "bytes": 166178,
+      "sha256": "6fd328e8c19f22ad938366a34baf7af4cab1433ed9f6b34ea978d3d4fcbfd59a",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf A0.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20A0.m4a",
+      "bytes": 233168,
+      "sha256": "e6cef1afbc95cec0aeb981b83bbe1c926c68ed7216a188b09ab5bb18f0f23174",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf B0.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20B0.ogg",
+      "bytes": 164957,
+      "sha256": "7a31193627d6a29b7547625999d5853dbb2859caf21a239fcdbf62d00739b48e",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf B0.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20B0.m4a",
+      "bytes": 218223,
+      "sha256": "9e9d2d93622d0d5c8b20bc7304d8c689fcd3215abcea7bb42163a87ebe11c159",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF D1.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20D1.ogg",
+      "bytes": 175132,
+      "sha256": "4c1e3b268f8f1500a64b992eb21dfad3403422e7b1ff54f1380f46e8d80bf814",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF D1.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20D1.m4a",
+      "bytes": 205380,
+      "sha256": "c2ba6a725d4b6997493398381610220442d80497ce9487c1b7f13c5662184d99",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF F1.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20F1.ogg",
+      "bytes": 180670,
+      "sha256": "27c3cdc6af951c4e86ccf966cdc2de0696ed51917ce1894016f7e1f4c4ab1f2d",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF F1.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20F1.m4a",
+      "bytes": 207661,
+      "sha256": "ca9ffa6404343443830a400950ac6cc3fa4e9ca6a3207d1fcb35bedc69be21c4",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF A1.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20A1.ogg",
+      "bytes": 150874,
+      "sha256": "37e4550d72c015b7fe477e7334973ae8710715d1060ea5cdcc3405b4a873f5db",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF A1.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20A1.m4a",
+      "bytes": 171184,
+      "sha256": "a243d5e9de3ebbc24e5e9e0ddb1b16a72dcb7029ef440898423871c633efb085",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF C2.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20C2.ogg",
+      "bytes": 161597,
+      "sha256": "a381f6b65d06daa47a9773e8d31bc91b46b10dc46b2f70e896dd14efc2c617c1",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF C2.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20C2.m4a",
+      "bytes": 184936,
+      "sha256": "f83ca5a58610cfdd0628b08dcfb07897e843500b7fec9d69126001a62ef3a5be",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF D2.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20D2.ogg",
+      "bytes": 149569,
+      "sha256": "0ac08c01dafbaa40f93eecadc2c58a0a168fdc25cc2071f5ba2bdd9aeb8d020b",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF D2.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20D2.m4a",
+      "bytes": 166443,
+      "sha256": "4a61559c6699c389430988d197ca15f0c7a019db6ec2320d4c134536999097fc",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF F2.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20F2.ogg",
+      "bytes": 167800,
+      "sha256": "fdeda3510b2dfccb1df7b2e1c708ac467513b936c27f85108ae1c0e65c2cc1ae",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF F2.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20F2.m4a",
+      "bytes": 188560,
+      "sha256": "bc3f0b1bef444ba7f65cfea8bebe3e9776308a7b5672f5ddacc240c9433c46cc",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF A2.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20A2.ogg",
+      "bytes": 150922,
+      "sha256": "73241c4b6ed287823815a408bc4f3e712fc4909087609d1eeab09206f3f4e9c9",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF A2.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20A2.m4a",
+      "bytes": 169265,
+      "sha256": "ed6cbdaace2f2e83d2f9c741ba1f34c5a73855aa19aa602881a37292a0d18b3a",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF C3.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20C3.ogg",
+      "bytes": 109934,
+      "sha256": "154161661726ea8af9944235b4b456522d1617a569e88541ca03b464d1d02b89",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF C3.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20C3.m4a",
+      "bytes": 119106,
+      "sha256": "42d4d5dcf205f54e18b92481749ec21290ce1f5fcd6c228d3c90a0ff54a1df73",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF D3.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20D3.ogg",
+      "bytes": 139102,
+      "sha256": "a30dd5199dbfe0cd1985457fe9e1ab0849d92d17fb331edf8fbf4e1adc712ae2",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF D3.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20D3.m4a",
+      "bytes": 149730,
+      "sha256": "1c150b1ed2236f7207edee041ead4cfe5ea0494b5912bc1c68369d9da81d1cbd",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF F3.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20F3.ogg",
+      "bytes": 102561,
+      "sha256": "da9ce3c3c9b5c8269d4671ace0c21193f6ef5a5cbabe2ce6eac214baaa8f025d",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF F3.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20F3.m4a",
+      "bytes": 107752,
+      "sha256": "924222156532252ee780f611a512dd2533862649632488607d2de2c255da9fc5",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF A3.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20A3.ogg",
+      "bytes": 104578,
+      "sha256": "09ced8b8a19e9e2d0cafd8e55658c31470e666651599f2e83cfaccef1f5a4f4c",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF A3.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20A3.m4a",
+      "bytes": 107773,
+      "sha256": "a514fa5908e3aa98771080b89e09d71b6cc5d72b1cdcfa68781b56f8278101ce",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF C4.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20C4.ogg",
+      "bytes": 67477,
+      "sha256": "2abedb21e88bc9083b70ceabf3fd253af1829f1b36ae8e60675776661019510d",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/MF C4.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/MF%20C4.m4a",
+      "bytes": 70841,
+      "sha256": "87d38de30449443992798997203442f705be6aed557ee59c9e48f9ec396fada4",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf D4.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20D4.ogg",
+      "bytes": 82361,
+      "sha256": "53c05927e45b5d0c624f69c344fd7377ed08c023de043bb8e07a3d6a7a6d56de",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf D4.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20D4.m4a",
+      "bytes": 88564,
+      "sha256": "0d301530dffa310c9f07fbc2079704471a8937f2987848fad7dd0b353e3de327",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf F4.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20F4.ogg",
+      "bytes": 96708,
+      "sha256": "45b07eb190bd632f26dde2175f81c1c4d72cf26aa00c8fc1c2056df2f4cf6656",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf F4.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20F4.m4a",
+      "bytes": 113447,
+      "sha256": "752fc2a39e640dcbb5fb8a4d881a646d1f42a2de499c7228f5656110f0a8aafc",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf A4.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20A4.ogg",
+      "bytes": 77451,
+      "sha256": "629ca1299ba017fc40579e23a126d608e2db277ae42862f5dcdb88eae7d0baa1",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf A4.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20A4.m4a",
+      "bytes": 100898,
+      "sha256": "7f40879cda9fbb740c5098df1d3d93367f8e7dd66538cb99e386f5a44f2045e0",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf B4.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20B4.ogg",
+      "bytes": 67307,
+      "sha256": "aad232a8715780d72d2a9aa6a39aaa094399bf5cfb0ab186bf1caba641729314",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf B4.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20B4.m4a",
+      "bytes": 74433,
+      "sha256": "886be1ceb764bd0dc6909c0b1407b5af19d99ce235c195a746140f5422c75af5",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf D#5.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20D%235.ogg",
+      "bytes": 46269,
+      "sha256": "22a712c844bb0647bd173e2d3110853d316c0075a69e467299b225507be18c85",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf D#5.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20D%235.m4a",
+      "bytes": 60300,
+      "sha256": "edec4845f2b5e213a568e5e4d21f112fe0f8755140bd6557602e3325b30e6bd4",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf F#5.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20F%235.ogg",
+      "bytes": 44108,
+      "sha256": "f1ab5b3780dc2d1ee208e0a5d3eda9c08334f76f779529583c911c71686ec3e9",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf F#5.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20F%235.m4a",
+      "bytes": 57012,
+      "sha256": "81f4479e058c9732f523cf28b427552f2e3c1d8a6d30608008e2aeadb3ec02e8",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf A5.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20A5.ogg",
+      "bytes": 34554,
+      "sha256": "95564d04150021b1e7361e598d9394a6237a45a903e230ee0d584b48503b058d",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf A5.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20A5.m4a",
+      "bytes": 43884,
+      "sha256": "e725818ecd81bf7ee039dd46b021be86b53495a0597888442e7d1e9642beb69b",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf C6.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20C6.ogg",
+      "bytes": 30574,
+      "sha256": "d4dbbf7d80b859d3db45c08742e32556cb6c96636e4fc3c9757bdee13b951dea",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf C6.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20C6.m4a",
+      "bytes": 40069,
+      "sha256": "1d11e9f0d10f114e330f0c111f9ed77e646104815748faa2abc3d8a3bcd1c6bf",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf D#6.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20D%236.ogg",
+      "bytes": 33926,
+      "sha256": "07048249251e605692c1b1f40c74dfd1eeefd0363125352f5c8222f2a6f6a7a8",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf D#6.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20D%236.m4a",
+      "bytes": 40828,
+      "sha256": "172e6083a7be8a495191f981f96285bfd529b9fdfb516b2c953ae0cb16a8b858",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf F#6.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20F%236.ogg",
+      "bytes": 31291,
+      "sha256": "c799189dd477e1f37e7ef54fde3996ca3fcda5523a074cb8266f3f86a6baf90e",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf F#6.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20F%236.m4a",
+      "bytes": 39013,
+      "sha256": "220336586c7e421281740ba17b977e6c7dab4e634d50a33fb4b351dc4e512f6b",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf A6.ogg",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20A6.ogg",
+      "bytes": 27714,
+      "sha256": "fbe2c8a07b631a9972c1594610df805a63b69b7977ec408da7805d3228732f92",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    },
+    {
+      "file": "piano/Mf A6.m4a",
+      "url": "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples/Mf%20A6.m4a",
+      "bytes": 38527,
+      "sha256": "aa40e71c42a25d9ef01745c9f85d155c7075f766b6af2f9b56e5730d6d858fe9",
+      "source": "splendid-grand-piano",
+      "license": "Public domain"
+    }
+  ]
+}

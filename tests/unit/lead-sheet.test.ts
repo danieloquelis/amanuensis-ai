@@ -170,8 +170,8 @@ test("a repeat (%) bar plays the previous bar's notes in its own place", () => {
   const plan = createPlaybackPlan(score);
   const bar3 = plan.events.filter((e) => e.beat >= 8 && e.beat < 12);
   assert.deepEqual(
-    bar3.map((e) => e.frequency),
-    plan.events.filter((e) => e.beat >= 4 && e.beat < 8).map((e) => e.frequency),
+    bar3.map((e) => e.notes),
+    plan.events.filter((e) => e.beat >= 4 && e.beat < 8).map((e) => e.notes),
   );
 });
 
@@ -181,7 +181,7 @@ test("a chord sounds until the next chord, across bars", () => {
   const sounds = createPlaybackPlan(score).chords;
   // C fills bar 1 and the first half of bar 2; G7 the rest of bar 2 and bars 3–4.
   assert.deepEqual(
-    sounds.map((s) => s.frequencies.length),
+    sounds.map((s) => s.notes.length),
     [4, 4, 5, 5, 5],
   );
   const secondsPerBeat = 60 / score.tempo;

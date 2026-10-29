@@ -6,14 +6,23 @@ import styles from "./workspace.module.css";
 type PlaybackControlsProps = {
   editor: ScoreEditor;
   playing: boolean;
+  /** Instrument sounds are loading before the first note. */
+  loading: boolean;
   /** The bar playback starts from when something is selected; null plays from the beginning. */
   startBar: number | null;
   onTogglePlay: () => void;
 };
 
 /** Play/stop and the global tempo, first in the toolbar: listen, then edit. */
-export function PlaybackControls({ editor, playing, startBar, onTogglePlay }: PlaybackControlsProps) {
+export function PlaybackControls({ editor, playing, loading, startBar, onTogglePlay }: PlaybackControlsProps) {
   const fromBar = !playing && startBar !== null;
+  const label = loading
+    ? "Loading sounds"
+    : playing
+      ? "Stop playback"
+      : fromBar
+        ? `Play from bar ${startBar}`
+        : "Play score";
   return (
     <div className={styles.transport} role="group" aria-label="Playback">
       <button
@@ -22,7 +31,8 @@ export function PlaybackControls({ editor, playing, startBar, onTogglePlay }: Pl
         data-playing={playing}
         disabled={!editor.ready}
         onClick={onTogglePlay}
-        aria-label={playing ? "Stop playback" : fromBar ? `Play from bar ${startBar}` : "Play score"}
+        aria-busy={loading}
+        aria-label={label}
       >
         {playing ? <Stop size={18} weight="fill" /> : <Play size={18} weight="fill" />}
       </button>

@@ -1,6 +1,6 @@
 # Instruments, voices and ensembles plan
 
-Status: planned, not started. Written 29 October 2026 against commit `5799adf` (main). The document is self-contained. A session implementing it needs only the repository, `AGENTS.md`, [code conventions](../architecture/code-conventions.md) and this plan. Read the [triplets plan](triplets-plan.md) too, because the two plans touch the same code.
+Status: phase A1 (sampled piano) implemented; B0 onwards planned. Written 29 October 2026 against commit `5799adf` (main). The document is self-contained. A session implementing it needs only the repository, `AGENTS.md`, [code conventions](../architecture/code-conventions.md) and this plan. Read the [triplets plan](triplets-plan.md) too, because the two plans touch the same code.
 
 ## Goal
 
@@ -235,7 +235,7 @@ Every phase leaves the app working, with `yarn check` passing and then `yarn bui
 | Add | Purpose |
 | --- | --- |
 | `scripts/fetch-sounds.mts` (`yarn sounds:fetch`) | Downloads the chosen subsets to `public/sounds/v1/{piano,fluidr3}/` (and `drums` in F), mirroring the paths smplr requests. Confirm those paths from `pianoToPreset` / `soundfontToPreset` in `node_modules/smplr/dist`. It writes `manifest.json` (`{ file, bytes, sha256, source, license }`) and `CREDITS.md`. It is idempotent. |
-| `public/sounds/v1/**` | Committed sample files. The budget is 25 MB total across A1, A2 and F (see open questions). |
+| `public/sounds/v1/manifest.json`, `CREDITS.md` | Committed; the sample files themselves are downloaded by `yarn sounds:fetch` and gitignored. The budget is 25 MB total across A1, A2 and F. |
 | `modules/playback/application/sound-port.ts` | `SoundOutput`, `SoundRequest` |
 | `modules/playback/domain/schedule-window.ts` | `soundsBetween` |
 | `modules/playback/domain/dynamics.ts` | `DYNAMIC_VELOCITY` and the gain table, moved out of `plan.ts` (178 lines) |
@@ -739,7 +739,7 @@ flowchart LR
 
 ## Open questions for the product owner
 
-1. **Sample hosting**: commit about 20–25 MB of samples to git, use Git LFS, or put them in an object-storage bucket or CDN that we control? The plan assumes committing with a budget test.
+1. **Sample hosting**: decided 29 October 2026: samples are not committed. Git keeps `public/sounds/v1/manifest.json` (URL, size, sha256 per file) and `CREDITS.md`; `yarn sounds:fetch` downloads and verifies the files after `yarn install` and before `yarn build`. Later phases add their files to the manifest with `yarn sounds:fetch --update`.
 2. **Credits**: CC BY (FluidR3, as gleitz labels it) needs attribution. Where in the app should credits go: an "About sounds" item, the print footer, or a credits page?
 3. **Score text pitch**: concert pitch for the agent (recommended), or written pitch for transposing parts?
 4. **Guitar sound**: nylon (fingerstyle, matching "thumb and fingers") or steel? Should electric guitar and bass follow soon?

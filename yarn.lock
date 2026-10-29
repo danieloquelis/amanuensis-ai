@@ -1593,6 +1593,7 @@ __metadata:
     prettier: "npm:^3"
     react: "npm:19.3.0"
     react-dom: "npm:19.3.0"
+    smplr: "npm:^1.1.0"
     tailwindcss: "npm:^4"
     tsx: "npm:^4.23.15"
     typescript: "npm:^5"
@@ -4516,6 +4517,13 @@ __metadata:
     side-channel-map: "npm:^1.0.1"
     side-channel-weakmap: "npm:^1.0.2"
   checksum: 10c0/dc0ab81d67f61bda9247d053ce93f41c3fd8ad2bdcb9cf9d8d2f8540d488f26d87a5e99ebfc07eea49ec025867b2452b705442d974b1478f0395e69f6bfb3270
+  languageName: node
+  linkType: hard
+
+"smplr@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "smplr@npm:1.1.0"
+  checksum: 10c0/04654c5e2b2f1af4bfbf246800d1731232fe90fe25165ebe67845f9b75922913365862ececebd7cb1c686b6845848a5613a25719c5148b52e027844540b837ac
   languageName: node
   linkType: hard
 

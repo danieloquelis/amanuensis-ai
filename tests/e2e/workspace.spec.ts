@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 test("edit, undo, redo and reload preserve the musical document", async ({ page }) => {
   const errors: string[] = [];
@@ -584,20 +584,19 @@ test("with a bar selected, Play starts from that bar", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Play from bar 3" })).toBeVisible();
 });
 
+/** Headless browsers cannot listen: record the MIDI note of every sound the app asks for instead. */
+const installSoundProbe = (page: Page) =>
+  page.addInitScript(() => {
+    const heard: number[] = [];
+    Object.assign(window, { heard, __amanuensisSoundProbe: (sound: { midi: number }) => heard.push(sound.midi) });
+  });
+const heardNotes = (page: Page) => page.evaluate(() => (window as unknown as { heard: number[] }).heard);
+
 test("a note sounds when pressed, at each pitch while dragged, and when changed from the keyboard", async ({
   page,
 }) => {
-  // Headless browsers cannot listen: record the frequency of every tone that starts instead.
-  await page.addInitScript(() => {
-    const heard: number[] = [];
-    Object.assign(window, { heard });
-    const start = OscillatorNode.prototype.start;
-    OscillatorNode.prototype.start = function (when?: number) {
-      heard.push(Math.round(this.frequency.value));
-      return start.call(this, when);
-    };
-  });
-  const heard = () => page.evaluate(() => (window as unknown as { heard: number[] }).heard);
+  await installSoundProbe(page);
+  const heard = () => heardNotes(page);
   await page.goto("/");
   const note = page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true });
   await expect(note).toBeEnabled();
@@ -605,13 +604,40 @@ test("a note sounds when pressed, at each pitch while dragged, and when changed 
   const svg = (await page.locator("svg[aria-label*='treble clef']").boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
-  await expect.poll(heard).toEqual([262]);
+  await expect.poll(heard).toEqual([60]);
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - (12 * svg.width) / 900, { steps: 8 });
   await page.mouse.up();
   await expect(page.getByRole("button", { name: "Bar 1, beat 1, E4, 1 beats", exact: true })).toBeVisible();
   // C4, then D4 and E4 while dragging; releasing on E4 does not sound it again.
-  await expect.poll(heard).toEqual([262, 294, 330]);
+  await expect.poll(heard).toEqual([60, 62, 64]);
   await page.getByRole("button", { name: "Bar 1, beat 1, E4, 1 beats", exact: true }).focus();
   await page.keyboard.press("ArrowUp");
-  await expect.poll(heard).toEqual([262, 294, 330, 349]);
+  await expect.poll(heard).toEqual([60, 62, 64, 65]);
+});
+
+test("Play loads the piano and plays the score", async ({ page }) => {
+  await installSoundProbe(page);
+  const pianoFiles: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/sounds/v1/piano/")) pianoFiles.push(request.url());
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Play score" }).click();
+  await expect(page.getByRole("button", { name: "Stop playback" })).toBeVisible();
+  await expect.poll(() => heardNotes(page).then((notes) => notes[0])).toBe(60);
+  expect(pianoFiles.length).toBeGreaterThan(0);
+  await expect(page.getByRole("region", { name: "Score workspace" }).getByRole("alert")).toHaveCount(0);
+  await page.getByRole("button", { name: "Stop playback" }).click();
+});
+
+test("when sounds cannot load, the score still plays", async ({ page }) => {
+  await installSoundProbe(page);
+  await page.route("**/sounds/**", (route) => route.abort());
+  await page.goto("/");
+  await page.getByRole("button", { name: "Play score" }).click();
+  await expect(page.getByRole("region", { name: "Score workspace" }).getByRole("alert")).toContainText(
+    "Instrument sounds could not load; playing reference tones.",
+  );
+  await expect(page.getByRole("button", { name: "Stop playback" })).toBeVisible();
+  await expect.poll(() => heardNotes(page).then((notes) => notes[0])).toBe(60);
 });

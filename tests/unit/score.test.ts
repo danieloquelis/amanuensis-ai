@@ -35,7 +35,7 @@ test("shortening a note fills the rest of its value with silence", () => {
   assert.equal(beats(note.duration), 0.5);
   assert.equal(rest.pitch, null);
   assert.equal(beats(rest.duration), 0.5);
-  assert.equal(createPlaybackPlan(shorter).events[1].frequency, null);
+  assert.deepEqual(createPlaybackPlan(shorter).events[1].notes, []);
 });
 
 test("lengthening a note consumes the rests after it and keeps note IDs", () => {
@@ -158,10 +158,10 @@ test("playback uses tempo and pitch, preserves rests, and keeps notation IDs", (
   const rest = edit(score, { type: "setPitch", eventId: "note-0-0", pitch: null }, "rest");
   const plan = createPlaybackPlan(rest);
   assert.equal(plan.duration, 8);
-  assert.equal(plan.events[0].frequency, null);
+  assert.deepEqual(plan.events[0].notes, []);
   assert.equal(plan.events[1].start, 0.5);
   const a = plan.events.find((event) => event.id === "note-1-3")!;
-  assert.equal(a.frequency, 440);
+  assert.deepEqual(a.notes, [69]);
   assert.equal(a.duration, 1);
 });
 

@@ -36,8 +36,8 @@ function heard(score: Score): string[] {
     return event ? event.beats + length(event.tiedTo) : 0;
   };
   return events
-    .filter((e) => e.frequency !== null)
-    .map((e) => `${e.start.toFixed(3)} ${e.frequency!.toFixed(2)} ${e.beats + length(e.tiedTo)}`);
+    .filter((e) => e.notes.length)
+    .map((e) => `${e.start.toFixed(3)} ${e.notes.join(" ")} ${e.beats + length(e.tiedTo)}`);
 }
 
 test("writing back what was read changes nothing musical", () => {

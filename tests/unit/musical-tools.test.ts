@@ -107,7 +107,7 @@ test("repeats unfold, dynamics persist, articulation and tempo affect playback",
   const plan = createPlaybackPlan(score);
   assert.equal(plan.events.filter((e) => e.id === "note-0-0").length, 2);
   assert.equal(plan.events[0].gate, 0.45);
-  assert.ok(plan.events[1].gain > plan.events[0].gain);
+  assert.ok(plan.events[1].velocity > plan.events[0].velocity);
   assert.equal(plan.events.find((e) => e.id === "note-1-0")?.duration, 1);
   assert.equal(plan.duration, 20);
   assert.equal(plan.events[8].beat, 0);

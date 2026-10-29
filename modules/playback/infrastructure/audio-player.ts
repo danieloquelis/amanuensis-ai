@@ -1,138 +1,149 @@
 import type { Score } from "@/modules/score";
-import { createPlaybackPlan, type ChordSound, type PlaybackEvent } from "../domain/plan";
+import type { SoundId, SoundOutput, SoundRequest } from "../application/sound-port";
+import { createPlaybackPlan, type PlaybackPlan } from "../domain/plan";
+import { soundsBetween } from "../domain/schedule-window";
+import { ReferenceTone } from "./reference-tone";
+import { SampledSounds } from "./sampled-sounds";
+import { probeSound } from "./sound-probe";
 
 /** Small delay so the first note is not clipped while the context starts. */
 const START_DELAY = 0.08;
-const ATTACK = 0.012;
-const RELEASE = 0.01;
-const CHORD_ATTACK = 0.04;
-const CHORD_RELEASE = 0.08;
+/** Notes are scheduled this many seconds ahead, refilled on a timer (the Web Audio lookahead pattern). */
+const LOOKAHEAD = 1.5;
+const REFILL_MS = 100;
 /** A clicked or moved note: short enough to keep up with a drag, long enough to hear the pitch. */
-const AUDITION = { duration: 0.45, gate: 1, gain: 0.14 };
+const AUDITION = { duration: 0.45, velocity: 80, delay: 0.012 };
+const INSTRUMENT: SoundId = "piano";
 
-type Tone = Pick<PlaybackEvent, "duration" | "gate" | "gain">;
+export type PlaybackListener = {
+  /** The playhead beat each frame, then `null` when finished. */
+  onBeat: (beat: number | null) => void;
+  /** True while instrument sounds load before the first note. */
+  onLoading: (loading: boolean) => void;
+  /** Sounds could not load; the score plays with reference tones instead. */
+  onFallback: () => void;
+};
 
 /**
- * Web Audio reference-tone player. Notes are scheduled on the audio clock; animation frames
+ * Web Audio transport. Notes are scheduled on the audio clock, a window ahead at a time, through a
+ * sound output (sampled instruments, or reference tones when they cannot load); animation frames
  * only report the playhead and never drive musical timing.
  */
 export class AudioPlayer {
   private context: AudioContext | null = null;
-  private nodes = new Set<OscillatorNode>();
+  private sampled: SampledSounds | null = null;
+  private reference: ReferenceTone | null = null;
   private frame = 0;
+  private refill: ReturnType<typeof setInterval> | undefined;
   /** Incremented on every stop so late callbacks from an older run are ignored. */
   private generation = 0;
-  /** The note being auditioned, cut off when the next one sounds. */
-  private auditioned: OscillatorNode | null = null;
+  /** Cuts off the note being auditioned when the next one sounds. */
+  private auditioned: (() => void) | null = null;
 
   stop() {
     this.generation++;
     cancelAnimationFrame(this.frame);
-    for (const node of this.nodes) {
-      try {
-        node.stop();
-      } catch {
-        // Already stopped by the audio clock.
-      }
-      node.disconnect();
-    }
-    this.nodes.clear();
+    clearInterval(this.refill);
+    this.sampled?.stopAll();
+    this.reference?.stopAll();
   }
 
-  /**
-   * Plays the score, from a bar if given, and reports the playhead beat each frame, then `null`
-   * when finished.
-   */
-  async play(score: Score, onBeat: (beat: number | null) => void, fromMeasureId?: string) {
+  /** Plays the score, from a bar if given. */
+  async play(score: Score, listener: PlaybackListener, fromMeasureId?: string) {
     this.stop();
     const generation = this.generation;
-    this.context ??= new AudioContext();
-    await this.context.resume();
+    const context = this.audioContext();
+    await context.resume();
+    const output = await this.loadedOutput(listener);
     if (generation !== this.generation) return;
-    const context = this.context;
     const plan = createPlaybackPlan(score, fromMeasureId);
     const origin = context.currentTime + START_DELAY;
-    // Bounded to 32 short measures, so the whole score is scheduled up front.
-    for (const event of plan.events) {
-      if (event.frequency !== null) this.scheduleTone(context, event, event.frequency, origin + event.start);
-    }
-    for (const chord of plan.chords) this.scheduleChord(context, chord, origin + chord.start);
+    let scheduledUntil = 0;
+    const schedule = () => {
+      const until = context.currentTime - origin + LOOKAHEAD;
+      for (const { start, ...sound } of soundsBetween(plan, scheduledUntil, until))
+        this.sound(output, { instrument: INSTRUMENT, ...sound, time: origin + start });
+      scheduledUntil = until;
+    };
+    schedule();
+    this.refill = setInterval(schedule, REFILL_MS);
     const tick = () => {
       if (generation !== this.generation) return;
       const elapsed = context.currentTime - origin;
       if (elapsed >= plan.duration) {
         this.stop();
-        onBeat(null);
+        listener.onBeat(null);
         return;
       }
-      const current =
-        plan.events.find((event) => elapsed >= event.start && elapsed < event.start + event.duration) ?? plan.events[0];
-      onBeat(current ? current.beat + Math.max(0, (elapsed - current.start) / current.duration) * current.beats : 0);
+      listener.onBeat(playheadBeat(plan, elapsed));
       this.frame = requestAnimationFrame(tick);
     };
     tick();
   }
 
-  /** Sounds one note now, cutting off the previous audition so a fast drag never piles up. */
-  audition(frequency: number) {
-    this.context ??= new AudioContext();
-    const context = this.context;
+  /**
+   * Sounds one note now, cutting off the previous audition so a fast drag never piles up. Until
+   * the instrument has loaded, the note sounds as a reference tone and loading starts.
+   */
+  audition(midi: number) {
+    const context = this.audioContext();
     void context.resume();
-    try {
-      this.auditioned?.stop();
-    } catch {
-      // Already ended.
-    }
-    this.auditioned = this.scheduleTone(context, AUDITION, frequency, context.currentTime + ATTACK);
+    this.auditioned?.();
+    const sampled = this.sampledSounds();
+    const ready = sampled.isReady([INSTRUMENT]);
+    if (!ready) sampled.prepare([INSTRUMENT]).catch(() => {});
+    const output = ready ? sampled : this.referenceTone();
+    const request = { instrument: INSTRUMENT, midi, velocity: AUDITION.velocity, duration: AUDITION.duration };
+    this.auditioned = this.sound(output, { ...request, time: context.currentTime + AUDITION.delay });
   }
 
   dispose() {
     this.stop();
     void this.context?.close();
     this.context = null;
+    this.sampled = null;
+    this.reference = null;
   }
 
-  /** Soft sine voices that swell in and fade before the next chord. */
-  private scheduleChord(context: AudioContext, chord: ChordSound, start: number) {
-    const end = start + chord.duration;
-    for (const frequency of chord.frequencies) {
-      const oscillator = context.createOscillator();
-      const envelope = context.createGain();
-      oscillator.type = "sine";
-      oscillator.frequency.value = frequency;
-      envelope.gain.setValueAtTime(0, start);
-      envelope.gain.linearRampToValueAtTime(chord.gain, start + CHORD_ATTACK);
-      envelope.gain.setValueAtTime(chord.gain, Math.max(start + CHORD_ATTACK, end - CHORD_RELEASE));
-      envelope.gain.linearRampToValueAtTime(0, end);
-      this.connect(context, oscillator, envelope, start, end);
+  private async loadedOutput(listener: PlaybackListener): Promise<SoundOutput> {
+    const sampled = this.sampledSounds();
+    if (sampled.isReady([INSTRUMENT])) return sampled;
+    listener.onLoading(true);
+    try {
+      await sampled.prepare([INSTRUMENT]);
+      return sampled;
+    } catch {
+      listener.onFallback();
+      return this.referenceTone();
+    } finally {
+      listener.onLoading(false);
     }
   }
 
-  private scheduleTone(context: AudioContext, event: Tone, frequency: number, start: number) {
-    const oscillator = context.createOscillator();
-    const envelope = context.createGain();
-    oscillator.type = "triangle";
-    oscillator.frequency.value = frequency;
-    const sounding = event.duration * event.gate;
-    const end = start + sounding;
-    envelope.gain.setValueAtTime(0, start);
-    envelope.gain.linearRampToValueAtTime(event.gain, start + ATTACK);
-    envelope.gain.exponentialRampToValueAtTime(event.gain * 0.4, start + sounding * 0.65);
-    envelope.gain.linearRampToValueAtTime(0, end - RELEASE);
-    this.connect(context, oscillator, envelope, start, end);
-    return oscillator;
+  private sound(output: SoundOutput, request: SoundRequest) {
+    probeSound(request);
+    return output.play(request);
   }
 
-  private connect(context: AudioContext, oscillator: OscillatorNode, envelope: GainNode, start: number, end: number) {
-    oscillator.connect(envelope);
-    envelope.connect(context.destination);
-    this.nodes.add(oscillator);
-    oscillator.onended = () => {
-      oscillator.disconnect();
-      envelope.disconnect();
-      this.nodes.delete(oscillator);
-    };
-    oscillator.start(start);
-    oscillator.stop(end);
+  private audioContext() {
+    this.context ??= new AudioContext();
+    return this.context;
   }
+
+  private sampledSounds() {
+    this.sampled ??= new SampledSounds(this.audioContext());
+    return this.sampled;
+  }
+
+  private referenceTone() {
+    this.reference ??= new ReferenceTone(this.audioContext());
+    return this.reference;
+  }
+}
+
+/** The written beat sounding `elapsed` seconds into the plan. */
+function playheadBeat(plan: PlaybackPlan, elapsed: number) {
+  const current =
+    plan.events.find((event) => elapsed >= event.start && elapsed < event.start + event.duration) ?? plan.events[0];
+  return current ? current.beat + Math.max(0, (elapsed - current.start) / current.duration) * current.beats : 0;
 }
