@@ -1,4 +1,5 @@
 import { formatChord } from "../domain/chords";
+import { eventPitches } from "../domain/stacks";
 import { instrumentLines } from "./instrument-text";
 import { keyName, scoreKey } from "../domain/key";
 import { beats, eventOnsets, meterName } from "../domain/rhythm";
@@ -21,6 +22,7 @@ export const SCORE_TEXT_GUIDE = `Score text, one line per bar: "bar N: notes ; p
 Notes: pitch then duration, e.g. C4q, F#4e, Bb3h. (C4 is middle C; # sharp, b flat.)
 Durations: w whole, h half, q quarter, e eighth, s sixteenth; add "." for dotted (q. = 1.5 beats). Rests: rq, re., …; R is a whole-bar rest.
 Each bar's durations must add up to its meter exactly (4/4: 4 quarter beats).
+Notes sounding together on one stem (a chord within the voice): <C4 E4 G4>q; tied <C4 E4>h~.
 After a note: ~ ties it into the next note (same pitch, may be in the next bar); !staccato, !accent, !tenuto or !fermata.
 Slurs: ( before the first note and ) after the last note of the phrase; may span bars.
 A staff may hold two voices: "bar 2 v2: …" is the second line of bar 2 (stems down, e.g. a bass under the melody), complete in itself; "bar 2 v2: -" removes it; its notes are 2v2#1, 2v2:3. Chords, section and marks belong to the bar's first line.
@@ -38,10 +40,14 @@ export function durationCode(value: number): string | null {
   return null;
 }
 
-function eventText(event: ScoreEvent): string {
+/** One note, chord or rest as score text: "C4q", "<C4 E4>h~", "re.", "R". */
+export function eventText(event: ScoreEvent): string {
   if (event.measureRest) return "R";
   const value = durationCode(beats(event.duration)) ?? "?";
-  const head = event.pitch ? `${pitchText(event.pitch)}${value}` : `r${value}`;
+  // A chord: its notes in angle brackets, lowest first ("<C4 E4 G4>q").
+  const notes = eventPitches(event);
+  const pitches = notes.length > 1 ? `<${notes.map(pitchText).join(" ")}>` : notes.length ? pitchText(notes[0]) : "r";
+  const head = `${pitches}${value}`;
   return `${head}${event.tie ? "~" : ""}${event.articulation ? `!${event.articulation}` : ""}`;
 }
 

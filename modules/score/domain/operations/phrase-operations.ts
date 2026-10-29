@@ -2,6 +2,7 @@ import { scoreKey } from "../key";
 import { isWithinPitchRange, movePitch } from "../pitch";
 import { locateEvent } from "../queries";
 import { overlappingSlurs, slurEnds } from "../slurs";
+import { eventPitches, writeNotes } from "../stacks";
 import { tieChain } from "../ties";
 import type { Draft, OperationContext } from "./draft";
 import type { OperationOf } from "./schema";
@@ -40,8 +41,10 @@ export function transpose(draft: Draft, op: OperationOf<"transpose">) {
   for (const id of ids) {
     const { event } = locateEvent(draft, id);
     if (!event.pitch) continue;
-    const pitch = movePitch(event.pitch, op.steps, keepsSpelling ? undefined : key);
-    if (!isWithinPitchRange(pitch)) throw new Error("That would move notes beyond A0–C8, the range of any instrument.");
-    event.pitch = pitch;
+    const moved = eventPitches(event).map((p) => movePitch(p, op.steps, keepsSpelling ? undefined : key));
+    if (!moved.every(isWithinPitchRange)) {
+      throw new Error("That would move notes beyond A0–C8, the range of any instrument.");
+    }
+    writeNotes(event, moved);
   }
 }

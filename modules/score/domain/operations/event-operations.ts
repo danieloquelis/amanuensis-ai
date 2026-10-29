@@ -1,6 +1,9 @@
 import { locateEvent } from "../queries";
 import { durationFromBeats, soundingBeats } from "../rhythm";
+import { scoreKey } from "../key";
+import { movePitch, staffPosition } from "../pitch";
 import type { Pitch } from "../schema";
+import { eventPitches, writeNotes } from "../stacks";
 import { nextEvent, tieChain } from "../ties";
 import { isNote, isRest, setBarStyle } from "../voice-access";
 import { detachFrom, type Draft, type OperationContext } from "./draft";
@@ -9,21 +12,41 @@ import type { OperationOf } from "./schema";
 
 /**
  * A pitch makes a note; `null` makes an explicit rest. Tied notes are one sound, so a new pitch
- * moves the whole chain; a rest breaks it (`applyCommand` drops the broken ties).
+ * moves the whole chain; a rest breaks it (`applyCommand` drops the broken ties). A chord moves
+ * as a whole: its other notes follow its lowest by the same steps, in the key.
  */
 export function setPitch(draft: Draft, op: OperationOf<"setPitch">) {
   const ids = op.pitch ? tieChain(draft, op.eventId) : [op.eventId];
-  for (const id of ids) writePitch(draft, id, op.pitch);
+  for (const id of ids) {
+    const { event } = locateEvent(draft, id);
+    if (!op.pitch || !event.pitch) {
+      writeEventNotes(draft, id, op.pitch && [op.pitch]);
+      continue;
+    }
+    const steps = staffPosition(op.pitch) - staffPosition(event.pitch);
+    const above = (event.stack ?? []).map((p) => movePitch(p, steps, scoreKey(draft)));
+    writeEventNotes(draft, id, [op.pitch, ...above]);
+  }
+}
+
+/** Several notes on one stem (a chord), or one; the whole tie chain takes them, as one sound. */
+export function setNotes(draft: Draft, op: OperationOf<"setNotes">) {
+  for (const id of tieChain(draft, op.eventId)) writeEventNotes(draft, id, op.pitches);
 }
 
 /** Removing a note leaves a rest of the same length, never shifting later notes. */
 export function removeEvent(draft: Draft, op: OperationOf<"removeEvent">) {
-  writePitch(draft, op.eventId, null);
+  writeEventNotes(draft, op.eventId, null);
 }
 
-function writePitch(draft: Draft, eventId: string, pitch: Pitch | null) {
+/** Gives an event its notes (one, or a chord), or makes it a rest with `null`. */
+function writeEventNotes(draft: Draft, eventId: string, pitches: Pitch[] | null) {
   const { measure, event } = locateEvent(draft, eventId);
-  event.pitch = pitch;
+  if (pitches) writeNotes(event, pitches);
+  else {
+    event.pitch = null;
+    delete event.stack;
+  }
   // Writing a note into a slash or repeat bar turns it back into a normal bar.
   if (isNote(event)) setBarStyle(measure, undefined);
   if (isNote(event)) delete event.measureRest;
@@ -37,8 +60,8 @@ export function setArticulation(draft: Draft, op: OperationOf<"setArticulation">
 }
 
 /**
- * Ties a note into the next event, which takes its pitch (a rest becomes the held note). The
- * last note of the score has nothing to tie to.
+ * Ties a note (or chord) into the next event, which takes its notes (a rest becomes the held
+ * note). The last note of the score has nothing to tie to.
  */
 export function setTie(draft: Draft, op: OperationOf<"setTie">) {
   const { event } = locateEvent(draft, op.eventId);
@@ -49,7 +72,7 @@ export function setTie(draft: Draft, op: OperationOf<"setTie">) {
   if (!event.pitch) throw new Error("Only a note can be tied; a rest has nothing to hold.");
   const next = nextEvent(draft, event.id);
   if (!next) throw new Error("The last note has nothing to tie to. Add a bar first.");
-  writePitch(draft, next.id, { ...event.pitch });
+  writeEventNotes(draft, next.id, structuredClone(eventPitches(event)));
   event.tie = true;
 }
 

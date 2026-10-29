@@ -32,8 +32,12 @@ export type EngravedEvent = {
   hidden: boolean;
   /** The note sounds outside its instrument's range: drawn in the warning colour. */
   outOfRange?: true;
-  /** The pitch it sounds, when the staff shows a transposing part as written (`event.pitch` is written). */
-  sounds?: Pitch;
+  /** A chord's heads, lowest first, each with its offset across the stem; absent for a single note. */
+  heads?: { y: number; dx: number; accidental: number | null; accidentalShift: number }[];
+  /** A chord's highest head: an up-stem and its beam start from here. */
+  chordTop?: number;
+  /** The pitches it sounds, lowest first, when the staff shows a transposing part as written (the event's are written). */
+  sounds?: Pitch[];
 };
 
 /** A beam segment. `y1`/`y2` are the stem tips (outer edge); thickness grows toward the noteheads. */

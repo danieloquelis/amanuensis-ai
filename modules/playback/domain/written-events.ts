@@ -1,4 +1,5 @@
 import {
+  eventPitches,
   legatoIds,
   measureStarts,
   midiPitch,
@@ -20,7 +21,8 @@ const GATE = { staccato: 0.45, tenuto: 1, normal: 0.93 };
 /** One voice's events in one bar, with everything but their start time. */
 export type WrittenLine = Omit<PlaybackEvent, "start">[];
 
-const notesOf = (event: ScoreEvent) => (event.pitch ? [midiPitch(event.pitch)] : []);
+/** Every note the event sounds: one, or a chord's. */
+const notesOf = (event: ScoreEvent) => eventPitches(event).map(midiPitch);
 
 /** A slurred note runs into the next, like tenuto; staccato under a slur stays short. */
 function gateOf(event: ScoreEvent, slurred: boolean) {

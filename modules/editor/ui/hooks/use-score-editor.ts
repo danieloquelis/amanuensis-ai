@@ -15,13 +15,15 @@ import {
   type Step,
 } from "@/modules/score";
 import { removeItemOperation, type SheetItem } from "../../application/notation-edits";
-import { letterNoteEdit, stepPitchEdit, toggleRestOperation } from "../../application/note-edits";
+import { typedLetterEdit } from "../../application/chord-edits";
+import { stepPitchEdit, toggleRestOperation } from "../../application/note-edits";
 import { findSelection, selectionAfterEdit } from "../../application/selection";
 import { useSheetSelection } from "./use-sheet-selection";
 
 const RECEIPT_LIMIT = 5;
 
-export type CommitEdit = (operation: Operation, receipt: string, expectedRevision?: number) => void;
+/** `requestId` only when the operation was built for one (score text that adds bars names them after it). */
+export type CommitEdit = (operation: Operation, receipt: string, expectedRevision?: number, requestId?: string) => void;
 export type ScoreEditor = ReturnType<typeof useScoreEditor>;
 
 /**
@@ -89,12 +91,12 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
   );
 
   const commit: CommitEdit = useCallback(
-    (operation, receipt, expectedRevision) => {
+    (operation, receipt, expectedRevision, requestId) => {
       if (!ready) return;
       try {
         const previous = latest.current.score;
         const next = execute(latest.current, {
-          requestId: crypto.randomUUID(),
+          requestId: requestId ?? crypto.randomUUID(),
           expectedRevision: expectedRevision ?? previous.revision,
           operation,
         });
@@ -167,9 +169,12 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
     persist(score);
   }, [clear, onBeforeEdit, persist, ready, replaceSession]);
 
-  /** A–G typed on a selected note or rest; on a transposing part it names the written note the sheet shows. */
-  const enterLetter = (eventId: string, step: Step) => {
-    const edit = letterNoteEdit(latest.current.score, eventId, step, { written: true });
+  /**
+   * A–G typed on a selected note or rest; on a transposing part it names the written note the
+   * sheet shows. With Shift (`addToChord`) the note joins the selected one on its stem.
+   */
+  const enterLetter = (eventId: string, step: Step, addToChord = false) => {
+    const edit = typedLetterEdit(latest.current.score, eventId, step, addToChord);
     commit(edit.operation, edit.receipt);
   };
 

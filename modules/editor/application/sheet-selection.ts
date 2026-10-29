@@ -1,4 +1,13 @@
-import { findEvent, formatChord, MARK_LABELS, pitchName, voiceLine, voiceNumber, type Score } from "@/modules/score";
+import {
+  eventPitches,
+  findEvent,
+  formatChord,
+  MARK_LABELS,
+  pitchName,
+  voiceLine,
+  voiceNumber,
+  type Score,
+} from "@/modules/score";
 import type { SheetItem } from "./notation-edits";
 
 /** Something picked on the sheet: a note or rest, a whole bar, or another item (chord, text…). */
@@ -65,7 +74,8 @@ export function refName(score: Score, ref: SheetRef): string {
       const found = findEvent(score, ref.id);
       if (!found) return "Note";
       const voice = voiceNumber(score, found.voiceId);
-      const name = `${found.event.pitch ? pitchName(found.event.pitch) : "Rest"} · bar ${found.measureIndex + 1}`;
+      const notes = eventPitches(found.event).map(pitchName).join(" ");
+      const name = `${notes || "Rest"} · bar ${found.measureIndex + 1}`;
       return voice > 1 ? `${name} · voice ${voice}` : name;
     }
     case "bar":

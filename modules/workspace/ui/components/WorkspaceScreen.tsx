@@ -5,7 +5,7 @@ import { partOf, type Pitch } from "@/modules/score";
 import { localChatRepository } from "@/modules/assistant";
 import { ComposeDock, useAssistant, useComposeDock } from "@/modules/assistant/ui";
 import { playbackStart, selectionAnchors } from "@/modules/editor";
-import { ScoreToolMenus, useScoreEditor } from "@/modules/editor/ui";
+import { ScoreToolMenus, useClipboardShortcuts, useScoreEditor } from "@/modules/editor/ui";
 import { usePlayback } from "@/modules/playback/ui";
 import { localProjectRepository } from "@/modules/projects";
 import { useAnchorRect } from "@/shared/ui/hooks/use-anchor-rect";
@@ -55,6 +55,7 @@ export function WorkspaceScreen() {
   const chatOpen = dock.chatMode === "floating";
   const selectionOpen = editor.ready && !menuOpen && !chatOpen && editor.picked.length > 0 && anchor !== null;
   useWorkspaceShortcuts(playback.stop, editor.undoRedo);
+  useClipboardShortcuts(editor);
   const { audition: soundPitch } = playback;
   const { getScore } = editor;
   // A note sounds on its own part's instrument.

@@ -43,3 +43,7 @@ export function isWithinPitchRange(pitch: PitchShape): boolean {
   const midi = midiPitch(pitch);
   return midi >= PITCH_RANGE.low && midi <= PITCH_RANGE.high;
 }
+
+/** The same written note: letter, accidental and octave. */
+export const samePitch = (a: PitchShape | null, b: PitchShape | null) =>
+  !!a && !!b && a.step === b.step && a.alter === b.alter && a.octave === b.octave;

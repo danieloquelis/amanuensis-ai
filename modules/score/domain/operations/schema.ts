@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { INSTRUMENT_IDS } from "../instruments";
 import { ARTICULATIONS } from "../notation";
+import { MAX_CHORD_NOTES } from "../stacks";
 import { idSchema, keySignatureSchema, meterSchema, pitchSchema, SCORE_LIMITS, tempoSchema } from "../schema";
 
 import { durationSchema, eventId, measureId } from "./fields";
@@ -9,6 +10,7 @@ import { notationOperationSchemas } from "./notation-schemas";
 import { measureOperationSchemas } from "./measure-schemas";
 import { partOperationSchemas } from "./part-schemas";
 import { voiceOperationSchemas } from "./voice-schemas";
+import { copyOperationSchemas } from "./copy-schemas";
 import { phraseOperationSchemas } from "./phrase-schemas";
 
 /** Room for a whole score written at once: 32 bars, each added, written, with chords and a section. */
@@ -23,7 +25,20 @@ export const operationSchema = z.discriminatedUnion("type", [
       pitch: pitchSchema.nullable().describe("null makes a rest."),
     })
     .describe(
-      "Give a note or rest a pitch, or turn it into a rest. A whole-bar rest keeps its length. Tied notes change together.",
+      "Give a note or rest a pitch, or turn it into a rest. A whole-bar rest keeps its length. Tied notes change together; a chord moves as a whole, its lowest note to this pitch.",
+    ),
+  z
+    .strictObject({
+      type: z.literal("setNotes"),
+      eventId,
+      pitches: z
+        .array(pitchSchema)
+        .min(1)
+        .max(MAX_CHORD_NOTES)
+        .describe("Every note sounding together, in any order; one pitch makes a plain note."),
+    })
+    .describe(
+      "Several notes on one stem, played together: a chord within the voice (a piano chord, a guitar double stop). Tied notes change together.",
     ),
   z
     .strictObject({ type: z.literal("setDuration"), eventId, duration: durationSchema.describe("Quarter-note beats.") })
@@ -90,6 +105,7 @@ export const operationSchema = z.discriminatedUnion("type", [
   ...measureOperationSchemas,
   ...partOperationSchemas,
   ...voiceOperationSchemas,
+  ...copyOperationSchemas,
 ]);
 
 const batchSchema = z

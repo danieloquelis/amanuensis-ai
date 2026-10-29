@@ -45,9 +45,12 @@
     transform var(--medium) var(--ease-out);
 }
 
-/* Capturing a take: the pill is only as wide as what it shows. */
+/*
+ * Capturing a take: the pill is only as wide as what it shows (orb, waveform, time, discard), and
+ * never narrower than the screen allows; the waveform gives way first so discard stays inside.
+ */
 .barWrap[data-capturing="true"] .bar {
-  width: 290px;
+  width: min(348px, 100%);
 }
 
 .barWrap[data-capturing="true"] .glow {
@@ -222,6 +225,8 @@
 
 /* Recording: the bar draws in to a compact pill around the orb, a live waveform and the time. */
 .capture {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -230,6 +235,8 @@
 }
 
 .wave {
+  min-width: 0;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
   gap: 3px;

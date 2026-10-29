@@ -14,6 +14,7 @@ import {
 import { scoreSchema, type Measure, type Meter, type Score, type ScoreEvent } from "./schema";
 import { migrateScore } from "./migrations";
 import { validateSlurs } from "./slurs";
+import { validateStack } from "./stacks";
 import { validateAnnotationStaff, validateStructure } from "./structure-validation";
 import { validateTies } from "./ties";
 import { isNote, isRest, voiceBars } from "./voice-access";
@@ -73,6 +74,7 @@ function validateVoiceBar(events: ScoreEvent[], meter: Meter, ids: IdRegistry) {
     if (!event.measureRest && !isSupportedDuration(beats(event.duration))) {
       throw new Error("Unsupported duration; tuplets are not available yet.");
     }
+    validateStack(event);
     if (isRest(event) && event.articulation && event.articulation !== "fermata") {
       throw new Error("Only a fermata can be placed on a rest.");
     }

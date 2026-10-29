@@ -28,7 +28,7 @@ type ScoreSurfaceProps = {
   onCommand: CommitEdit;
   onStep: (id: string, steps: number) => void;
   onDelete: (id: string) => void;
-  onEnterLetter: (id: string, step: Step) => void;
+  onEnterLetter: (id: string, step: Step, addToChord: boolean) => void;
   onToggleRest: (id: string) => void;
   /** Everything picked, for highlighting; `onPick` handles Shift/⌘ clicks. */
   picked: SheetRef[];

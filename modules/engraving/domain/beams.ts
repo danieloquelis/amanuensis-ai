@@ -31,9 +31,10 @@ function beamGroup(group: EngravedEvent[], top: number): Beam[] {
   const slope = beamSlope(group, x0, stemX(last) - x0);
   const minimumStem = STEM_LENGTH + (group.some(isSixteenth) ? SECONDARY_BEAM_OFFSET / 2 : 0);
   // Anchor the beam on the note that would otherwise get the shortest stem.
+  // A chord's up-stem starts from its top note.
   let intercept = down
     ? Math.max(...group.map((e) => e.y + minimumStem - slope * (stemX(e) - x0)))
-    : Math.min(...group.map((e) => e.y - minimumStem - slope * (stemX(e) - x0)));
+    : Math.min(...group.map((e) => (e.chordTop ?? e.y) - minimumStem - slope * (stemX(e) - x0)));
   // Groups on ledger lines still reach the middle line.
   const middleY = positionY(top, MIDDLE_LINE);
   const midBeamY = intercept + slope * ((stemX(last) - x0) / 2);

@@ -1,6 +1,6 @@
 import type { EngravedEvent, System } from "@/modules/engraving";
 import { EventGlyph } from "@/modules/engraving/ui";
-import { pitchName, soundingBeats } from "@/modules/score";
+import { eventPitches, pitchName, soundingBeats, type Pitch } from "@/modules/score";
 import { classNames } from "@/shared/ui/class-names";
 import styles from "./score-surface.module.css";
 import {
@@ -20,14 +20,23 @@ type SheetEventProps = {
   interactions: SheetInteractions;
 };
 
-/** The pitch as the sheet shows it, with its sound when written transposed and a range warning. */
+/** "C4", or a chord's notes "C4, E4 and G4"; "Rest" for none. */
+const notesName = (pitches: Pitch[]) =>
+  pitches.length
+    ? pitches
+        .map(pitchName)
+        .join(", ")
+        .replace(/, ([^,]+)$/, " and $1")
+    : "Rest";
+
+/** The notes as the sheet shows them, with their sound when written transposed and a range warning. */
 function pitchLabel({ event, sounds, outOfRange }: EngravedEvent) {
-  const shown = pitchName(event.pitch) + (sounds ? ` (sounds ${pitchName(sounds)})` : "");
+  const shown = notesName(eventPitches(event)) + (sounds ? ` (sounds ${notesName(sounds)})` : "");
   return outOfRange ? `${shown}, out of range` : shown;
 }
 
 /**
- * A selectable, draggable note or rest; Shift/⌘-click adds it to the selection. Keyboard: ↑/↓ step the pitch, A–G enter a note,
+ * A selectable, draggable note or rest; Shift/⌘-click adds it to the selection. Keyboard: ↑/↓ step the pitch, A–G enter a note (Shift+A–G adds it to the chord),
  * Delete turns a note into a rest, S slurs, Enter opens its menu.
  */
 export function SheetEvent({ item, system, selected, playBeat, interactions }: SheetEventProps) {
@@ -67,7 +76,7 @@ export function SheetEvent({ item, system, selected, playBeat, interactions }: S
         const letter = noteLetterOf(e);
         if (letter) {
           e.preventDefault();
-          enterLetter(event.id, letter);
+          enterLetter(event.id, letter, e.shiftKey);
         }
         if (e.key === "Delete" || e.key === "Backspace") {
           e.preventDefault();
@@ -102,7 +111,15 @@ export function SheetEvent({ item, system, selected, playBeat, interactions }: S
       onPointerUp={gestures.finishGesture}
       onPointerCancel={gestures.cancelGesture}
     >
-      <rect className={styles.hit} x={x - 13} y={y - 22} width="26" height="44" rx="7" />
+      {/* The whole chord is the target: any of its notes can be grabbed. */}
+      <rect
+        className={styles.hit}
+        x={x - 13}
+        y={(item.chordTop ?? y) - 22}
+        width="26"
+        height={y - (item.chordTop ?? y) + 44}
+        rx="7"
+      />
       <g pointerEvents="none">
         {selected && <ellipse className={styles.halo} cx={x} cy={y} rx="18" ry="15" />}
         <EventGlyph item={item} systemTop={system.top} beamed={system.beamedIds.includes(event.id)} />

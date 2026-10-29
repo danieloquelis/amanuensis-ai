@@ -3,6 +3,7 @@ import {
   barStyle,
   beatGroupLength,
   durationNotation,
+  eventPitches,
   eventOnsets,
   isNote,
   keyAlter,
@@ -19,6 +20,7 @@ import {
   type ScoreEvent,
 } from "@/modules/score";
 import { CLEF_BOTTOM_LINE, staffClef } from "./clefs";
+import { headPositions, layoutChord, type ChordHead } from "./chord-heads";
 import { onsetColumns, type Column } from "./columns";
 import { MIDDLE_LINE } from "./scene";
 import { eventExtents } from "./spacing";
@@ -43,6 +45,8 @@ export type AnalyzedEvent = {
   xShift: number;
   /** How far further left its accidental sits, beside another accidental in the column. */
   accidentalShift: number;
+  /** A chord's heads, lowest first (`position` is the lowest); absent for a single note. */
+  heads?: ChordHead[];
 };
 
 export type AnalyzedBar = {
@@ -78,10 +82,13 @@ export function analyzeScore(score: Score): AnalyzedBar[] {
     const voices = [...new Set(events.map((item) => item.voice))];
     const beamGroups = voices.flatMap((voice) => findBeamGroups(measure, events, voice));
     beamGroups.forEach((group, groupIndex) => {
-      const down = polyphonic ? events[group[0]].stemDown : groupStemsDown(group.map((i) => events[i].position));
+      const down = polyphonic
+        ? events[group[0]].stemDown
+        : groupStemsDown(group.flatMap((i) => headPositions(events[i])));
       for (const i of group) Object.assign(events[i], { beamGroup: groupIndex, stemDown: down });
     });
     for (const item of events) Object.assign(item, eventExtents(item));
+    events.forEach(layoutChord);
     resolveCollisions(events);
     for (const item of events) item.left += item.accidentalShift;
     const capacity = measureCapacity(measure.meter);
@@ -121,13 +128,24 @@ function analyzeEvents(score: Score, measure: Measure, polyphonic: boolean): Ana
     const onsets = eventOnsets(voiceEvents);
     return voiceEvents.map((event, index): AnalyzedEvent => {
       const position = event.pitch ? staffPosition(event.pitch) - bottomLine : restPosition(event, voice, polyphonic);
+      const chord = event.stack
+        ? eventPitches(event).map((p) => ({
+            position: staffPosition(p) - bottomLine,
+            accidental: null,
+            dx: 0,
+            accidentalShift: 0,
+          }))
+        : undefined;
+      const extremes = chord ? chord.map((h) => h.position) : [position];
       return {
         event,
         voice,
         localBeat: onsets[index],
         position,
         accidental: null,
-        stemDown: polyphonic ? stemsDown(voice) : position >= MIDDLE_LINE,
+        // A lone chord's stem is set by its note farthest from the middle line.
+        stemDown: polyphonic ? stemsDown(voice) : groupStemsDown(extremes),
+        ...(chord ? { heads: chord } : {}),
         beamGroup: null,
         left: 0,
         right: 0,
@@ -139,12 +157,14 @@ function analyzeEvents(score: Score, measure: Measure, polyphonic: boolean): Ana
   const alterations = new Map<string, number>();
   const played = [...events].sort((a, b) => a.localBeat - b.localBeat || a.voice - b.voice);
   for (const item of played) {
-    const pitch = item.event.pitch;
-    if (!pitch) continue;
-    const at = `${pitch.step}${pitch.octave}`;
-    const current = alterations.get(at) ?? keyAlter(key, pitch.step);
-    if (current !== pitch.alter) item.accidental = pitch.alter;
-    alterations.set(at, pitch.alter);
+    eventPitches(item.event).forEach((pitch, k) => {
+      const at = `${pitch.step}${pitch.octave}`;
+      const current = alterations.get(at) ?? keyAlter(key, pitch.step);
+      const accidental = current !== pitch.alter ? pitch.alter : null;
+      alterations.set(at, pitch.alter);
+      if (item.heads) item.heads[k].accidental = accidental;
+      else item.accidental = accidental;
+    });
   }
   return events;
 }

@@ -158,14 +158,17 @@ test("empty measures become full-bar rests and allow note entry", async ({ page 
   await page.getByRole("dialog", { name: "Bar actions" }).getByRole("button", { name: "Clear", exact: true }).click();
   await page.getByRole("button", { name: "Change time signature" }).click();
   await page.getByRole("group", { name: "Time signature" }).getByRole("button", { name: "6/8", exact: true }).click();
-  await page.getByRole("button", { name: "Bar 1, beat 1, Rest, 3 beats", exact: true }).click({ button: "right" });
-  await page.getByRole("button", { name: "Add note", exact: true }).click();
+  await page.getByRole("button", { name: "Bar 1, beat 1, Rest, 3 beats", exact: true }).click();
+  await page
+    .getByRole("toolbar", { name: "Selected note actions" })
+    .getByRole("button", { name: "Add note", exact: true })
+    .click();
   await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Undo", exact: true }).click();
   await expect(page.getByRole("button", { name: "Bar 1, beat 1, Rest, 3 beats", exact: true })).toBeVisible();
 });
-test("sheet context actions replace the old note inspector", async ({ page }) => {
+test("the right-click menu offers what the card does not: chord notes, rest, second voice", async ({ page }) => {
   await page.goto("/");
   const note = page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true });
   await note.click();
@@ -174,10 +177,16 @@ test("sheet context actions replace the old note inspector", async ({ page }) =>
   await note.click({ button: "right" });
   const menu = page.getByRole("dialog", { name: "Note actions" });
   await expect(menu).toBeVisible();
-  await menu.getByRole("button", { name: "Sharp", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Bar 1, beat 1, C♯4, 1 beats", exact: true })).toBeVisible();
+  await expect(menu.getByRole("button", { name: "Sharp", exact: true })).toHaveCount(0);
+  await menu.getByRole("button", { name: "Add note to chord", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4 and E4, 1 beats", exact: true })).toBeVisible();
   await expect(menu).toHaveCount(0);
-  // The same tools sit in the card beside the selected note.
+  await page.getByRole("button", { name: "Bar 1, beat 1, C4 and E4, 1 beats", exact: true }).click({ button: "right" });
+  await page.getByRole("dialog", { name: "Note actions" }).getByRole("button", { name: "Remove top note" }).click();
+  const single = page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true });
+  await expect(single).toBeVisible();
+  // Accidentals and articulations live in the card beside the selected note.
+  await single.click();
   const card = page.getByRole("toolbar", { name: "Selected note actions" });
   await card.getByRole("button", { name: "staccato", exact: true }).click();
   await expect(card.getByRole("button", { name: "staccato", exact: true })).toHaveAttribute("aria-pressed", "true");
@@ -751,4 +760,60 @@ test("a bar gets a second voice, its rest becomes a note, and undo takes it away
   await page.getByRole("button", { name: "Undo", exact: true }).click();
   await page.getByRole("button", { name: "Undo", exact: true }).click();
   await expect(page.getByRole("button", { name: /voice 2/ })).toHaveCount(0);
+});
+
+test("Shift + a letter adds that note to the chord on the same stem", async ({ page }) => {
+  await page.goto("/");
+  const note = page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true });
+  await expect(note).toBeEnabled();
+  await note.click();
+  await page.keyboard.press("Shift+E");
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4 and E4, 1 beats", exact: true })).toBeVisible();
+  await page.keyboard.press("Shift+G");
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4, E4 and G4, 1 beats", exact: true })).toBeVisible();
+});
+
+test("a note of a chord can be dragged on its own; the others stay", async ({ page }) => {
+  await page.goto("/");
+  const note = page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true });
+  await expect(note).toBeEnabled();
+  await note.click();
+  await page.keyboard.press("Shift+G");
+  const chord = page.getByRole("button", { name: "Bar 1, beat 1, C4 and G4, 1 beats", exact: true });
+  await expect(chord).toBeVisible();
+  await page.keyboard.press("Escape");
+  // Grab the upper note (G4) and drag it up two steps, to B4.
+  const box = (await chord.locator("rect").boundingBox())!;
+  const svg = (await page.locator("svg[aria-label$='Select a note to edit.']").boundingBox())!;
+  const step = (6 * svg.width) / 900;
+  await page.mouse.move(box.x + box.width / 2, box.y + 22 * (svg.width / 900));
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2, box.y + 22 * (svg.width / 900) - 2 * step, { steps: 6 });
+  await page.mouse.up();
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4 and B4, 1 beats", exact: true })).toBeVisible();
+});
+
+test("⌘C on a bar and ⌘V on another bar pastes it there, as one undoable edit", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true })).toBeEnabled();
+  await page.getByRole("button", { name: "Select bar 1", exact: true }).click();
+  await page.keyboard.press("ControlOrMeta+C");
+  await page.getByRole("button", { name: "Select bar 3", exact: true }).click();
+  await page.keyboard.press("ControlOrMeta+V");
+  await expect(page.getByRole("button", { name: "Bar 3, beat 1, C4, 1 beats", exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Bar 3, beat 1, C4, 1 beats", exact: true })).toHaveCount(0);
+});
+
+test("⌘C then ⌘V on the same note pastes after it, and again after that", async ({ page }) => {
+  await page.goto("/");
+  const note = page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true });
+  await expect(note).toBeEnabled();
+  await note.click();
+  await page.keyboard.press("ControlOrMeta+C");
+  await page.keyboard.press("ControlOrMeta+V");
+  await expect(page.getByRole("button", { name: "Bar 1, beat 2, C4, 1 beats", exact: true })).toBeVisible();
+  await page.keyboard.press("ControlOrMeta+V");
+  await expect(page.getByRole("button", { name: "Bar 1, beat 3, C4, 1 beats", exact: true })).toBeVisible();
 });

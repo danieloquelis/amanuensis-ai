@@ -52,22 +52,31 @@ function NoteGlyph({ item, beamed }: { item: EngravedEvent; beamed: boolean }) {
   const stem = stemX(item);
   // Flags always point right; a down-stem flag is mirrored vertically only.
   const flagDirection = item.stemDown ? -1 : 1;
+  const heads = item.heads ?? [{ y, dx: 0, accidental: item.accidental, accidentalShift: item.accidentalShift ?? 0 }];
+  // The stem runs from the head farthest from its end, through every head of a chord.
+  const stemStart = item.stemDown ? (item.chordTop ?? y) : y;
   return (
     <>
-      {item.accidental !== null && (
-        <AccidentalGlyph value={item.accidental} x={x - ACCIDENTAL_OFFSET - (item.accidentalShift ?? 0)} y={y} />
+      {heads.map((head) => (
+        <g key={head.y}>
+          {head.accidental !== null && (
+            <AccidentalGlyph value={head.accidental} x={x - ACCIDENTAL_OFFSET - head.accidentalShift} y={head.y} />
+          )}
+          <ellipse
+            cx={x + head.dx}
+            cy={head.y}
+            rx={base === 4 ? 9 : 7.5}
+            ry="5.1"
+            transform={`rotate(-20 ${x + head.dx} ${head.y})`}
+            fill={hollow ? "var(--paper)" : "currentColor"}
+            stroke="currentColor"
+            strokeWidth={hollow ? 2.1 : 0.8}
+          />
+        </g>
+      ))}
+      {base < 4 && (
+        <line x1={stem} x2={stem} y1={stemStart} y2={item.stemEnd} stroke="currentColor" strokeWidth="1.5" />
       )}
-      <ellipse
-        cx={x}
-        cy={y}
-        rx={base === 4 ? 9 : 7.5}
-        ry="5.1"
-        transform={`rotate(-20 ${x} ${y})`}
-        fill={hollow ? "var(--paper)" : "currentColor"}
-        stroke="currentColor"
-        strokeWidth={hollow ? 2.1 : 0.8}
-      />
-      {base < 4 && <line x1={stem} x2={stem} y1={y} y2={item.stemEnd} stroke="currentColor" strokeWidth="1.5" />}
       {base <= 0.5 && !beamed && (
         <path
           transform={`translate(${stem} ${item.stemEnd}) scale(1 ${flagDirection})`}

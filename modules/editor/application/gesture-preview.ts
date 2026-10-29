@@ -1,8 +1,18 @@
-import { everyEvent, findEvent, movePitch, scoreKey, setBarEvents, type Score } from "@/modules/score";
+import {
+  chordFrom,
+  eventPitches,
+  everyEvent,
+  findEvent,
+  movePitch,
+  scoreKey,
+  setBarEvents,
+  type Score,
+} from "@/modules/score";
+import { withMovedNote } from "./note-drag";
 
 /** A drag in progress, drawn on the sheet but not yet committed. */
 export type GesturePreview =
-  | { kind: "pitch"; id: string; delta: number }
+  | { kind: "pitch"; id: string; delta: number; head: number }
   | { kind: "order"; id: string; measureId: string; beforeId: string | null }
   | { kind: "width"; id: string; width: number }
   | { kind: "label"; id: string; offset: { x: number; y: number } }
@@ -20,7 +30,13 @@ export function applyGesturePreview(score: Score, preview: GesturePreview | null
   const draft = structuredClone(score);
   if (preview.kind === "pitch") {
     const event = everyEvent(draft).find((e) => e.id === preview.id);
-    if (event?.pitch && preview.delta) event.pitch = movePitch(event.pitch, preview.delta, scoreKey(score));
+    // A single note moves; in a chord only the grabbed note, as the drag will commit.
+    if (event?.pitch && preview.delta) {
+      const notes = eventPitches(event);
+      const moved = notes.length > 1 ? withMovedNote(notes, preview.head, preview.delta, score) : null;
+      if (notes.length === 1) event.pitch = movePitch(event.pitch, preview.delta, scoreKey(score));
+      else if (moved) Object.assign(event, chordFrom(moved));
+    }
   } else if (preview.kind === "label") {
     const annotation = draft.annotations.find((a) => a.id === preview.id);
     if (annotation) annotation.offset = preview.offset;

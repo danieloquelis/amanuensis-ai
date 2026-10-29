@@ -1,7 +1,7 @@
 import { durationFromBeats, soundingBeats } from "./rhythm";
 import { spellRhythm } from "./rhythm-spelling";
 import type { Score, ScoreEvent } from "./schema";
-import { samePitch } from "./ties";
+import { sameNotes } from "./stacks";
 import { everyEvent, isRest, setBarEvents, voiceBars } from "./voice-access";
 
 const EPSILON = 1e-9;
@@ -11,7 +11,7 @@ function soundingGroups(events: ScoreEvent[]): ScoreEvent[][] {
   const groups: ScoreEvent[][] = [];
   events.forEach((event, i) => {
     const before = events[i - 1];
-    const joins = before && ((isRest(before) && isRest(event)) || (before.tie && samePitch(before.pitch, event.pitch)));
+    const joins = before && ((isRest(before) && isRest(event)) || (before.tie && sameNotes(before, event)));
     if (joins) groups.at(-1)!.push(event);
     else groups.push([event]);
   });
@@ -51,6 +51,7 @@ export function respellScore(draft: Score, idPrefix: string): void {
           return {
             id: group[k]?.id ?? `${idPrefix}-s${created++}`,
             pitch: lead.pitch,
+            ...(lead.stack ? { stack: lead.stack } : {}),
             duration: durationFromBeats(part),
             ...(k === 0 && lead.articulation ? { articulation: lead.articulation } : {}),
             ...((last ? group.at(-1)!.tie : !isRest(lead)) ? { tie: true as const } : {}),

@@ -4,4 +4,5 @@ export { NoteActions } from "./components/selection/NoteActions";
 export { RangeActions } from "./components/selection/RangeActions";
 export { ScoreSurface } from "./components/surface/ScoreSurface";
 export { ScoreToolMenus } from "./components/toolbar/ScoreToolMenus";
+export { useClipboardShortcuts } from "./hooks/use-clipboard-shortcuts";
 export { useScoreEditor, type CommitEdit, type ScoreEditor } from "./hooks/use-score-editor";

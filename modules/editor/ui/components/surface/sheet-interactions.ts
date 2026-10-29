@@ -26,7 +26,8 @@ export type SheetInteractions = {
   commit: CommitEdit;
   stepPitch: (eventId: string, steps: number) => void;
   removeEvent: (eventId: string) => void;
-  enterLetter: (eventId: string, step: Step) => void;
+  /** A–G on a note or rest; with Shift (`addToChord`) the note joins it on its stem. */
+  enterLetter: (eventId: string, step: Step, addToChord: boolean) => void;
   toggleRest: (eventId: string) => void;
   /** S: slurs the picked phrase, or this note to the next. */
   slur: (eventId: string) => void;

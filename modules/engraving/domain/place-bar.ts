@@ -97,8 +97,11 @@ function engrave(item: AnalyzedEvent, columnX: number, bar: AnalyzedBar, top: nu
   const x = columnX + item.xShift;
   const y = positionY(top, item.position);
   const middleY = positionY(top, MIDDLE_LINE);
-  // Stems reach at least the middle line, so notes on ledger lines don't get stubby stems.
-  const stemEnd = item.stemDown ? Math.max(y + STEM_LENGTH, middleY) : Math.min(y - STEM_LENGTH, middleY);
+  const positions = item.heads?.map((h) => h.position) ?? [item.position];
+  const chordTop = positionY(top, Math.max(...positions));
+  // Stems reach at least the middle line, so notes on ledger lines don't get stubby stems; a
+  // chord's up-stem starts from its top note.
+  const stemEnd = item.stemDown ? Math.max(y + STEM_LENGTH, middleY) : Math.min(chordTop - STEM_LENGTH, middleY);
   return {
     event: item.event,
     voice: item.voice,
@@ -109,7 +112,20 @@ function engrave(item: AnalyzedEvent, columnX: number, bar: AnalyzedBar, top: nu
     measure: bar.index,
     stemDown: item.stemDown,
     stemEnd,
-    ledgerLines: isNote(item.event) ? ledgerLines(top, item.position) : [],
+    ledgerLines: isNote(item.event)
+      ? [...new Set([...ledgerLines(top, Math.min(...positions)), ...ledgerLines(top, Math.max(...positions))])]
+      : [],
+    ...(item.heads
+      ? {
+          heads: item.heads.map(({ position, dx, accidental, accidentalShift }) => ({
+            y: positionY(top, position),
+            dx,
+            accidental,
+            accidentalShift,
+          })),
+          chordTop,
+        }
+      : {}),
     accidental: item.accidental,
     ...(item.accidentalShift ? { accidentalShift: item.accidentalShift } : {}),
     ...(bar.polyphonic ? { curveSide: stemsDown(item.voice) ? ("below" as const) : ("above" as const) } : {}),

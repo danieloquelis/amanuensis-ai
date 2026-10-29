@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent, type RefObject } from "react";
 import type { BarScene, EngravedEvent, System } from "@/modules/engraving";
-import { LABEL_OFFSET_LIMIT, movePitch, scoreKey, type Pitch, type Score } from "@/modules/score";
+import { eventPitches, LABEL_OFFSET_LIMIT, movePitch, scoreKey, type Pitch, type Score } from "@/modules/score";
 import { clampMeasureWidth } from "../../application/bar-spacing";
 import { eventAfter, type GesturePreview } from "../../application/gesture-preview";
+import { grabbedHead, noteDragEdit } from "../../application/note-drag";
 import { canDragTo } from "../../application/note-edits";
 import type { CommitEdit } from "./use-score-editor";
 
@@ -17,7 +18,9 @@ type NoteDrag = {
   measureId: string;
   startX: number;
   startY: number;
+  /** The grabbed note's sounding pitch: in a chord, the head nearest the press. */
   pitch: Pitch | null;
+  head: number;
   delta: number;
   axis: "x" | "y" | null;
   beforeId: string | null;
@@ -97,10 +100,12 @@ export function useSheetGestures(options: Options) {
     const id = item.event.id;
     capturePointer(event);
     onSelect(id);
-    // The sheet may show a transposing part as written; sound and drags follow the stored, sounding pitch.
-    const sounding = item.sounds ?? item.event.pitch;
-    if (sounding) onAudition?.(id, sounding);
     const point = scenePoint(event.clientX, event.clientY);
+    // In a chord, the drag holds the note nearest the press. The sheet may show a transposing part
+    // as written; sound and drags follow the stored, sounding pitch.
+    const head = grabbedHead(item, point.y);
+    const sounding = item.sounds?.[head] ?? eventPitches(item.event)[head] ?? null;
+    if (sounding) onAudition?.(id, sounding);
     const beforeId = eventAfter(score, id);
     drag.current = {
       kind: "note",
@@ -109,6 +114,7 @@ export function useSheetGestures(options: Options) {
       startX: point.x,
       startY: point.y,
       pitch: sounding,
+      head,
       delta: 0,
       axis: null,
       beforeId,
@@ -135,7 +141,7 @@ export function useSheetGestures(options: Options) {
       if (!canDragTo(score, eventId, pitch)) return;
       if (delta !== gesture.delta) onAudition?.(eventId, pitch);
       gesture.delta = delta;
-      setPreview({ kind: "pitch", id: eventId, delta });
+      setPreview({ kind: "pitch", id: eventId, delta, head: gesture.head });
     } else if (gesture.axis === "x") {
       gesture.beforeId = gesture.positions.find((other) => point.x < other.x)?.id ?? null;
       setPreview({ kind: "order", id: eventId, measureId: gesture.measureId, beforeId: gesture.beforeId });
@@ -200,10 +206,8 @@ export function useSheetGestures(options: Options) {
       onCommand({ type: "moveAnnotation", id: gesture.id, offset: gesture.offset }, "Moved text", gesture.revision);
     }
     if (gesture?.kind === "note") {
-      if (gesture.axis === "y" && gesture.delta && gesture.pitch) {
-        const pitch = movePitch(gesture.pitch, gesture.delta, scoreKey(score));
-        onCommand({ type: "setPitch", eventId: gesture.id, pitch }, "Moved note pitch", gesture.revision);
-      }
+      const moved = gesture.axis === "y" ? noteDragEdit(score, gesture.id, gesture.head, gesture.delta) : null;
+      if (moved) onCommand(moved.operation, moved.receipt, gesture.revision);
       if (gesture.axis === "x" && gesture.beforeId !== gesture.originalBeforeId) {
         const operation = { type: "moveEvent", eventId: gesture.id, beforeEventId: gesture.beforeId } as const;
         onCommand(operation, "Moved note within bar", gesture.revision);

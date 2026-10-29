@@ -86,7 +86,7 @@ test("guitar is drawn an octave above its sound; the concert view draws the soun
   const score = edit(createExample(), { type: "setInstrument", instrument: "guitar" });
   const written = layoutScore(score).systems[0].events[0];
   assert.equal(pitchName(written.event.pitch), "C5");
-  assert.equal(pitchName(written.sounds!), "C4");
+  assert.equal(pitchName(written.sounds![0]), "C4");
   const concert = layoutScore(score, { concertPitch: true }).systems[0].events[0];
   assert.equal(pitchName(concert.event.pitch), "C4");
   assert.equal(concert.sounds, undefined);

@@ -58,8 +58,10 @@ export const eventSchema = z.strictObject({
   pitch: pitchSchema.nullable(),
   measureRest: z.literal(true).optional(),
   articulation: z.enum(ARTICULATIONS).optional(),
-  /** Tied to the next note of its voice (same pitch), across a barline too. */
+  /** Tied to the next event of its voice, across a barline too: the notes they share are held. */
   tie: z.literal(true).optional(),
+  /** Further notes on the same stem, above `pitch` (a chord within the voice), lowest first. */
+  stack: z.array(pitchSchema).min(1).max(5).optional(),
 });
 
 export const CLEFS = ["treble", "bass", "treble8vb", "percussion"] as const;

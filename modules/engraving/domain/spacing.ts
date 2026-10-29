@@ -23,7 +23,7 @@ export const LINE_START_REPEAT_INSET = 6;
 
 const NOTEHEAD_HALF = 8;
 const WHOLE_NOTEHEAD_HALF = 10;
-const ACCIDENTAL_SPACE = 18;
+export const ACCIDENTAL_SPACE = 18;
 const DOT_REACH = 17;
 const FLAG_REACH_UP = 24;
 const FLAG_REACH_DOWN = 14;

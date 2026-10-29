@@ -3,7 +3,7 @@ export { describeScore, SCORE_VOCABULARY, summarizeChange } from "./application/
 export { createSession, execute, executeAll, travel, type Session } from "./application/session";
 export { positionOf } from "./application/notation-positions";
 export { resolvePositions } from "./application/positions";
-export { durationCode, pitchText, SCORE_TEXT_GUIDE, scoreText } from "./application/score-text";
+export { durationCode, eventText, pitchText, SCORE_TEXT_GUIDE, scoreText } from "./application/score-text";
 export { parseBarsText } from "./application/score-text-parse";
 export { writeBars } from "./application/score-text-write";
 export {
@@ -54,6 +54,7 @@ export {
   isWithinPitchRange,
   midiPitch,
   movePitch,
+  samePitch,
   OCTAVE_RANGE,
   PITCH_RANGE,
   pitchName,
@@ -104,7 +105,8 @@ export {
   type Slur,
 } from "./domain/schema";
 export { legatoIds, slurEnds } from "./domain/slurs";
-export { nextEvent, samePitch, tieChain, tiePairs } from "./domain/ties";
+export { nextEvent, tieChain, tiePairs } from "./domain/ties";
+export { chordFrom, eventPitches, MAX_CHORD_NOTES, sameNotes, sharesNote } from "./domain/stacks";
 export { parseScore } from "./domain/validation";
 export {
   barEvents,

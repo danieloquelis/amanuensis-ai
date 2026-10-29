@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { idSchema, MEASURE_WIDTH, meterSchema, pitchSchema, SCORE_LIMITS } from "../schema";
 
+import { MAX_CHORD_NOTES } from "../stacks";
 import { durationSchema, measureId } from "./fields";
 
 const measureIdsSchema = z.array(idSchema).min(1).max(SCORE_LIMITS.measures);
@@ -15,12 +16,18 @@ export const measureOperationSchemas = [
         .array(
           z.strictObject({
             pitch: pitchSchema.nullable(),
+            stack: z
+              .array(pitchSchema)
+              .min(1)
+              .max(MAX_CHORD_NOTES - 1)
+              .optional()
+              .describe("Further notes on the same stem, sounding with pitch: a chord."),
             duration: durationSchema,
             tie: z
               .boolean()
               .optional()
               .describe(
-                "Tie into the next note, which must have the same pitch; the last note ties into the next bar.",
+                "Tie into the next note, which must share a pitch with it; the last note ties into the next bar.",
               ),
           }),
         )

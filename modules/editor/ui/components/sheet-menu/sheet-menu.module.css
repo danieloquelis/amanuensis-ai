@@ -75,6 +75,12 @@
   border-bottom: 1px solid var(--line);
 }
 
+/* The last group needs no divider under it. */
+.row:last-child,
+.meters:last-child {
+  border-bottom: 0;
+}
+
 .row button,
 .meters button {
   flex: 1;

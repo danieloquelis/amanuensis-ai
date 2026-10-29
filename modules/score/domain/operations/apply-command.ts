@@ -4,7 +4,7 @@ import { pruneSlurs } from "../slurs";
 import { pruneTies } from "../ties";
 import { parseScore } from "../validation";
 import type { Draft, OperationContext } from "./draft";
-import { moveEvent, removeEvent, setArticulation, setDuration, setPitch, setTie } from "./event-operations";
+import { moveEvent, removeEvent, setArticulation, setDuration, setNotes, setPitch, setTie } from "./event-operations";
 import {
   appendMeasure,
   clearMeasure,
@@ -18,6 +18,8 @@ import { setMeter } from "./meter-operations";
 import { newScore } from "./new-score";
 import { setClef, setInstrument } from "./part-operations";
 import { addVoiceBars, removeVoiceBars } from "./voice-operations";
+import { copyBars } from "./copy-bars";
+import { copyNotes } from "./copy-notes";
 import { putSlur, shapeSlur, transpose } from "./phrase-operations";
 import { putAnnotation, putRepeat, removeNotation, removeTempo, rename, setKey, setTempo } from "./notation-operations";
 import { commandSchema, type Command, type OperationOf, type OperationType } from "./schema";
@@ -28,6 +30,7 @@ type OperationHandlers = {
 
 const handlers: OperationHandlers = {
   setPitch,
+  setNotes,
   removeEvent,
   setDuration,
   moveEvent,
@@ -60,6 +63,8 @@ const handlers: OperationHandlers = {
   setClef,
   addVoiceBars,
   removeVoiceBars,
+  copyBars,
+  copyNotes,
 };
 
 /**

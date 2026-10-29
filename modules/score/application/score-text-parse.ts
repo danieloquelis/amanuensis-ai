@@ -1,11 +1,15 @@
 import { ARTICULATIONS, type Articulation } from "../domain/notation";
 import type { DurationValue } from "../domain/operations/schema";
 import type { Pitch } from "../domain/schema";
+import { chordFrom } from "../domain/stacks";
 import { DURATION_CODES } from "./score-text";
 
 /** One written note or rest, as parsed from score text. */
 export type WrittenEvent = {
+  /** The lowest note; null for a rest. */
   pitch: Pitch | null;
+  /** Further notes on the same stem ("<C4 E4 G4>q"), lowest first. */
+  stack: Pitch[];
   duration: DurationValue;
   tie: boolean;
   articulation: Articulation | null;
@@ -26,17 +30,29 @@ export type WrittenBar = {
 
 /** "bar 3:", "bar 3 (6/8):", "bar 3 v2:". */
 const BAR_LINE = /^bar\s+(\d+)\s*(?:\([^)]*\))?(?:\s*v(\d))?\s*:(.*)$/i;
-const TOKEN = /^(\(?)(?:([A-G])([#b]?)(\d)|(r))([whqes])(\.?)(~?)(?:!(staccato|accent|tenuto|fermata))?(\)?)$/;
+const TOKEN = /^(\(?)(?:<([^>]+)>|([A-G][#b]?\d)|(r))([whqes])(\.?)(~?)(?:!(staccato|accent|tenuto|fermata))?(\)?)$/;
+const PITCH = /^([A-G])([#b]?)(\d)$/;
+/** Tokens are split on spaces, except inside a chord's angle brackets. */
+const TOKENS = /\(?<[^>]*>\S*|\S+/g;
 const ALTERS: Record<string, -1 | 0 | 1> = { b: -1, "": 0, "#": 1 };
 const DOT = 1.5;
 
 function parseToken(token: string, bar: number): WrittenEvent {
   const match = TOKEN.exec(token);
   if (!match) throw new Error(`Bar ${bar}: "${token}" is not a note or rest (e.g. C4q, F#4e., rh).`);
-  const [, open, step, accidental, octave, , code, dot, tie, articulation, close] = match;
+  const [, open, chord, single, , code, dot, tie, articulation, close] = match;
   const base = DURATION_CODES[code as keyof typeof DURATION_CODES];
+  const names = chord ? chord.trim().split(/\s+/) : single ? [single] : [];
+  const pitches = names.map((name) => {
+    const note = PITCH.exec(name);
+    if (!note) throw new Error(`Bar ${bar}: "${name}" in "${token}" is not a note (e.g. C4, F#4, Bb3).`);
+    const [, step, accidental, octave] = note;
+    return { step: step as Pitch["step"], alter: ALTERS[accidental], octave: Number(octave) };
+  });
+  const notes = pitches.length ? chordFrom(pitches) : null;
   return {
-    pitch: step ? { step: step as Pitch["step"], alter: ALTERS[accidental], octave: Number(octave) } : null,
+    pitch: notes?.pitch ?? null,
+    stack: notes?.stack ?? [],
     duration: (dot ? base * DOT : base) as DurationValue,
     tie: tie === "~",
     articulation: (ARTICULATIONS as readonly string[]).includes(articulation) ? (articulation as Articulation) : null,
@@ -57,7 +73,7 @@ export function parseBarsText(text: string): WrittenBar[] {
     const bar = Number(match[1]);
     const voice = match[2] ? Number(match[2]) : 1;
     const [notes, ...parts] = match[3].split(";").map((part) => part.trim());
-    const tokens = notes.split(/\s+/).filter(Boolean);
+    const tokens = notes.match(TOKENS) ?? [];
     const remove = tokens.length === 1 && tokens[0] === "-";
     if (remove && voice === 1)
       throw new Error(`Bar ${bar}: the main line cannot be removed; write R for a whole-bar rest.`);

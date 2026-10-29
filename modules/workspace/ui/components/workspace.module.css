@@ -54,8 +54,10 @@
   pointer-events: auto;
 }
 
+/* Pinned to the top of the row: a banner under the toolbar makes the row taller, not this lower. */
 .topStart {
   grid-area: top-start;
+  align-self: start;
   align-items: center;
   gap: 10px;
 }

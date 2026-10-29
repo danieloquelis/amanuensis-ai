@@ -10,7 +10,19 @@ import { readFileSync } from "node:fs";
 /** Only the engraving is under test: this stylesheet hides the controls floating over it. */
 const HIDE_FLOATING_CONTROLS = "tests/e2e/hide-floating-controls.css";
 
-for (const name of ["dense", "keys", "long", "short", "leadsheet", "ties", "slurs", "trombone", "trumpet", "voices"]) {
+for (const name of [
+  "dense",
+  "keys",
+  "long",
+  "short",
+  "leadsheet",
+  "ties",
+  "slurs",
+  "trombone",
+  "trumpet",
+  "voices",
+  "stacks",
+]) {
   test(`engraves the ${name} fixture`, async ({ page }) => {
     const score = readFileSync(`tests/fixtures/engraving/${name}.json`, "utf8");
     await page.addInitScript((value) => localStorage.setItem("amanuensis.score.v1", value), score);

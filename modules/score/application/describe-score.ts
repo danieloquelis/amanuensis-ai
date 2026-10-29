@@ -1,3 +1,4 @@
+import { eventPitches } from "../domain/stacks";
 import { INSTRUMENT_IDS, INSTRUMENTS } from "../domain/instruments";
 import { CHORD_QUALITY_NAMES, formatChord } from "../domain/chords";
 import { keyName, scoreKey } from "../domain/key";
@@ -49,7 +50,7 @@ export function describeScore(score: Score) {
         events: barEvents(measure).map((event, i) => ({
           id: event.id,
           beat: onsets[i] + 1,
-          pitch: event.pitch ? pitchName(event.pitch) : "rest",
+          pitch: event.pitch ? eventPitches(event).map(pitchName).join(" ") : "rest",
           duration: durationName(event),
           beats: soundingBeats(event),
           ...(event.articulation ? { articulation: event.articulation } : {}),
@@ -101,6 +102,8 @@ export const SCORE_VOCABULARY = {
   chordExamples: ["C", "Am7", "F#m7b5", "Bbmaj7/D", "G7#9", "Dsus4", "Eø", "C6/9"],
   marks: MARK_KINDS.map((kind) => ({ kind, label: MARK_LABELS[kind] })),
   barStyles: ["notes", "slashes", "repeat"],
+  stackedNotes:
+    "Several notes on one stem, played together (a written-out chord): setNotes, or <C4 E4 G4>q in score text. Up to 6 notes; ties hold the notes the next chord repeats.",
   voices:
     'A staff may hold a second, independent line (voice 2, stems down): add it with addVoiceBars, write it with replaceMeasure voiceId "v2" or a "bar N v2:" line, remove it with removeVoiceBars.',
 };

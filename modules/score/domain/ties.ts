@@ -1,14 +1,13 @@
-import type { Pitch, Score, ScoreEvent } from "./schema";
+import type { Score, ScoreEvent } from "./schema";
+import { sharesNote } from "./stacks";
 import { barEvents, voiceIds, voiceOf } from "./voice-access";
 
 /**
  * A tie joins a note to the next event of its voice, across a barline too (when that voice plays
  * in the next bar), into one sound.
- * `event.tie` marks the first note of each tied pair; both notes always have the same pitch.
+ * `event.tie` marks the first note of each tied pair; the two share at least one note (a chord
+ * holds the notes the next chord repeats).
  */
-
-export const samePitch = (a: Pitch | null, b: Pitch | null) =>
-  !!a && !!b && a.step === b.step && a.alter === b.alter && a.octave === b.octave;
 
 /** A voice's runs of consecutive bars it plays in: a tie never jumps a bar where the voice is silent. */
 function runsOf(score: Score, voiceId: string): ScoreEvent[][] {
@@ -57,8 +56,9 @@ export function tiePairs(score: Score): [string, string][] {
   );
 }
 
-/** Whether the tie on `events[index]` joins two notes of the same pitch. */
-const holds = (events: ScoreEvent[], index: number) => samePitch(events[index].pitch, events[index + 1]?.pitch ?? null);
+/** Whether the tie on `events[index]` holds a note into the next event: they share one. */
+const holds = (events: ScoreEvent[], index: number) =>
+  !!events[index + 1] && sharesNote(events[index], events[index + 1]);
 
 /**
  * Drops ties an edit has broken: the note became a rest, or the next event is now a rest, a

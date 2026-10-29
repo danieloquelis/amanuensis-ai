@@ -1,5 +1,6 @@
 import {
   allStaves,
+  eventPitches,
   isPlayable,
   midiPitch,
   scoreKey,
@@ -51,7 +52,7 @@ export const CLEF_NAMES: Record<Clef, string> = {
  */
 export function writtenView(score: Score, concertPitch: boolean) {
   const outOfRange = new Set<string>();
-  const sounding = new Map<string, Pitch>();
+  const sounding = new Map<string, Pitch[]>();
   const view = structuredClone(score);
   const concertKey = scoreKey(score);
   const t = concertPitch ? null : transpositionOf(score.parts[0].instrument);
@@ -59,11 +60,13 @@ export function writtenView(score: Score, concertPitch: boolean) {
     for (const voiceBar of voiceBars(measure)) {
       const { instrument } = voiceInfo(score, voiceBar.voiceId)!.part;
       for (const event of voiceBar.events) {
-        if (!event.pitch) continue;
-        if (!isPlayable(midiPitch(event.pitch), instrument)) outOfRange.add(event.id);
+        const notes = eventPitches(event);
+        if (!notes.length) continue;
+        if (notes.some((p) => !isPlayable(midiPitch(p), instrument))) outOfRange.add(event.id);
         if (!t) continue;
-        sounding.set(event.id, event.pitch);
-        event.pitch = toWritten(event.pitch, t, concertKey);
+        sounding.set(event.id, notes);
+        event.pitch = toWritten(event.pitch!, t, concertKey);
+        if (event.stack) event.stack = event.stack.map((p) => toWritten(p, t, concertKey));
       }
     }
   if (t) view.key = writtenKey(concertKey, t);

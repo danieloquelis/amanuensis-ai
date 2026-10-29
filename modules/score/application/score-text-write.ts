@@ -86,7 +86,12 @@ export function writeBars(score: Score, text: string, requestId: string): { scor
       // Bars added at the end take the last bar's meter.
       const meter = (score.measures[bar - 1] ?? score.measures.at(-1)!).meter;
       const parts = spelled(events, meter);
-      const notes = parts.map(({ pitch, duration, tie }) => ({ pitch, duration, tie }));
+      const notes = parts.map(({ pitch, stack, duration, tie }) => ({
+        pitch,
+        ...(stack.length ? { stack } : {}),
+        duration,
+        tie,
+      }));
       operations.push({ type: "replaceMeasure", measureId, events: notes, ...(voice > 1 ? { voiceId } : {}) });
       parts.forEach((event, k) => written.push({ ...event, voice, id: createdNoteId(requestId, index, k) }));
     } else {

@@ -46,6 +46,11 @@ export function putVoiceBar(score: Score, measure: Measure, voiceId: string, eve
   measure.voices.sort((a, b) => order.indexOf(a.voiceId) - order.indexOf(b.voiceId));
 }
 
+/** Replaces every voice bar of a bar at once (a pasted bar); the caller keeps declared order. */
+export function replaceVoiceBars(measure: Measure, bars: VoiceBar[]) {
+  measure.voices = bars;
+}
+
 /** Takes a voice out of a bar (it falls silent there). A staff's main line cannot leave. */
 export function removeVoiceBar(measure: Measure, voiceId: string) {
   if (measure.voices[0]?.voiceId === voiceId) throw new Error("The main line of a bar cannot be removed.");

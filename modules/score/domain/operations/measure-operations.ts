@@ -1,5 +1,6 @@
 import { getMeasure, getStaff, resolveVoice } from "../queries";
 import { durationFromBeats } from "../rhythm";
+import { chordFrom } from "../stacks";
 import {
   allStaves,
   barEvents,
@@ -92,7 +93,7 @@ export function replaceMeasure(draft: Draft, op: OperationOf<"replaceMeasure">, 
   );
   const events = op.events.map((event, index) => ({
     id: `${idPrefix}-n${index}`,
-    pitch: event.pitch,
+    ...(event.pitch ? chordFrom([event.pitch, ...(event.stack ?? [])]) : { pitch: null }),
     duration: durationFromBeats(event.duration),
     ...(event.tie && event.pitch ? { tie: true as const } : {}),
   }));
