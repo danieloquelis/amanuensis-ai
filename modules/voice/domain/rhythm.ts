@@ -1,4 +1,4 @@
-import { measureCapacity, type Meter } from "@/modules/score";
+import { measureCapacity, spellRhythm, type Meter } from "@/modules/score";
 import type { SungNote } from "./notes";
 
 /** A note (MIDI) or rest (null) placed on the beat grid, in quarter-note beats from the first note. */
@@ -17,7 +17,6 @@ const MIN_REST = 0.5;
 const HOLD_TO_BEAT = 0.4;
 /** Sung phrases without a spoken tempo are read between these. */
 const TEMPO_RANGE = { min: 60, max: 160 };
-const WRITABLE = [4, 3, 2, 1.5, 1, 0.75, 0.5, 0.375, 0.25];
 
 /** Beat first, then eighth, then sixteenth: the coarsest grid point that is close enough. */
 const snap = (beats: number) => {
@@ -109,21 +108,10 @@ export function placeNotes(notes: SungNote[], onsets: number[], ends: number[]):
   return placed;
 }
 
-/** The fewest writable values adding up to `beats` (largest first). */
-function writableParts(beats: number): number[] {
-  const parts: number[] = [];
-  let remaining = beats;
-  while (remaining > 1e-9) {
-    const value = WRITABLE.find((v) => v <= remaining + 1e-9) ?? GRID;
-    parts.push(value);
-    remaining -= value;
-  }
-  return parts;
-}
-
 /**
- * Lays placed notes into bars of `meter`. A note crossing a barline, or with an unwritable
- * length, is written as tied notes. The last bar is completed with rests.
+ * Lays placed notes into bars of `meter`, written as a musician would (see `spellRhythm`): a note
+ * crossing a barline, hiding a strong beat or with an unwritable length becomes tied notes. The
+ * last bar is completed with rests.
  */
 export function toBars(placed: PlacedNote[], meter: Meter): BarEvent[][] {
   const capacity = measureCapacity(meter);
@@ -138,7 +126,7 @@ export function toBars(placed: PlacedNote[], meter: Meter): BarEvent[][] {
         used = 0;
       }
       const portion = Math.min(remaining, capacity - used);
-      for (const part of writableParts(portion)) {
+      for (const part of spellRhythm(used, portion, meter, item.midi === null)) {
         // Each written part continues the same sung note; rests are simply consecutive.
         if (previous && item.midi !== null) previous.tie = true;
         previous = { midi: item.midi, beats: part };
@@ -149,6 +137,7 @@ export function toBars(placed: PlacedNote[], meter: Meter): BarEvent[][] {
     }
   }
   if (used < capacity)
-    for (const part of writableParts(capacity - used)) bars[bars.length - 1].push({ midi: null, beats: part });
+    for (const part of spellRhythm(used, capacity - used, meter, true))
+      bars[bars.length - 1].push({ midi: null, beats: part });
   return bars;
 }

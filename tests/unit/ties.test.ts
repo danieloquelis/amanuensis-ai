@@ -4,6 +4,7 @@ import { layoutScore } from "@/modules/engraving";
 import { createPlaybackPlan } from "@/modules/playback";
 import {
   applyCommand,
+  beats,
   createExample,
   describeScore,
   findEvent,
@@ -28,10 +29,13 @@ test("a tie across the barline holds the note: the next note takes its pitch", (
   assert.equal(findEvent(untied, "note-0-3")!.event.tie, undefined);
 });
 
-test("tying into a rest turns the rest into the held note", () => {
+test("tying into a rest holds the note on, written as the one longer value it now is", () => {
   const withRest = edit(createExample(), { type: "removeEvent", eventId: "note-0-2" });
   const score = edit(withRest, { type: "setTie", eventId: "note-0-1", tied: true });
-  assert.equal(pitchOf(score, "note-0-2"), "E4");
+  // E4 on beat 2, held through beat 3: a half note, as a musician writes it (not q~q).
+  assert.equal(pitchOf(score, "note-0-1"), "E4");
+  assert.equal(beats(findEvent(score, "note-0-1")!.event.duration), 2);
+  assert.equal(findEvent(score, "note-0-2"), null);
 });
 
 test("tied notes change pitch together, from either end", () => {

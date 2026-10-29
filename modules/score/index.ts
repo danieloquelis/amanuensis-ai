@@ -97,3 +97,5 @@ export {
 export { legatoIds, slurEnds } from "./domain/slurs";
 export { nextEvent, samePitch, tieChain, tiePairs } from "./domain/ties";
 export { parseScore } from "./domain/validation";
+export { metricWeight, spellRhythm } from "./domain/rhythm-spelling";
+export { describeReadability, readability, type Readability } from "./domain/rhythm-readability";

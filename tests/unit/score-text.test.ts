@@ -10,7 +10,9 @@ import {
   scoreText,
   writeBars,
   type Operation,
+  type Score,
 } from "@/modules/score";
+import { createPlaybackPlan } from "@/modules/playback";
 
 const fixture = (name: string) => parseScore(JSON.parse(readFileSync(`tests/fixtures/engraving/${name}.json`, "utf8")));
 const barLines = (text: string) =>
@@ -25,12 +27,34 @@ test("score text reads a bar per line: notes, ties, slurs and chords", () => {
   assert.match(text, /^bar 2: D4q F4e G4e A4h$/m);
 });
 
+/** What is heard: each sounding note's start, pitch and written length, followed through its ties. */
+function heard(score: Score): string[] {
+  const events = createPlaybackPlan(score).events;
+  const byId = new Map(events.map((e) => [e.id, e]));
+  const length = (id: string | undefined): number => {
+    const event = id ? byId.get(id) : undefined;
+    return event ? event.beats + length(event.tiedTo) : 0;
+  };
+  return events
+    .filter((e) => e.frequency !== null)
+    .map((e) => `${e.start.toFixed(3)} ${e.frequency!.toFixed(2)} ${e.beats + length(e.tiedTo)}`);
+}
+
 test("writing back what was read changes nothing musical", () => {
   for (const name of ["long", "slurs", "ties", "keys"]) {
     const score = fixture(name);
-    const text = scoreText(score);
-    assert.equal(barLines(scoreText(writeBars(score, barLines(text), "rt").score)), barLines(text), name);
+    const written = writeBars(score, barLines(scoreText(score)), "rt").score;
+    assert.deepEqual(heard(written), heard(score), name);
   }
+  // Already written as a musician would, they come back exactly; ties a single value can say do not.
+  assert.equal(
+    barLines(scoreText(writeBars(fixture("long"), barLines(scoreText(fixture("long"))), "rt").score)),
+    barLines(scoreText(fixture("long"))),
+  );
+  assert.match(
+    scoreText(writeBars(fixture("ties"), barLines(scoreText(fixture("ties"))), "rt").score),
+    /^bar 1: G4q C5h E4q~$/m,
+  );
 });
 
 test("written bars replace notes and chords; bars past the end are added", () => {
@@ -102,4 +126,9 @@ test("chords, slurs, marks, repeats and indications are named by where they are"
   for (const [index, name] of names.entries()) {
     assert.equal(resolvePositions(score, { id: name }).id, items[index].id, name);
   }
+});
+
+test("written bars are spelled as a musician would: a hidden beat becomes a tie, marks stay on the note", () => {
+  const { score } = writeBars(createExample(), "bar 2: (C4e!accent D4h E4q.)", "spell");
+  assert.match(scoreText(score), /^bar 2: \(C4e!accent D4q\.~ D4e E4q\.\)$/m);
 });

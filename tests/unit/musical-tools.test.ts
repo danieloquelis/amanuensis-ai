@@ -62,7 +62,11 @@ test("preserve-duration meter changes never cut notes and batches roll back toge
     { type: "setMeter", measureIds: ["bar-1"], meter: { numerator: 6, denominator: 8 }, policy: "preserve" },
     "meter",
   );
-  assert.equal(changed.measures[0].events.length, 3);
+  // Three quarters in 6/8, written to show its dotted-quarter beats: q e~e q.
+  assert.deepEqual(
+    changed.measures[0].events.map((e) => beats(e.duration)),
+    [1, 0.5, 0.5, 1],
+  );
 });
 
 test("compound meter beams six eighths into two groups of three", () => {

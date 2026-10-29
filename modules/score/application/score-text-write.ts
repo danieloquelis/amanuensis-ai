@@ -1,7 +1,8 @@
 import { ARTICULATIONS, type Articulation } from "../domain/notation";
 import { applyCommand } from "../domain/operations/apply-command";
 import type { BasicOperation, Command, DurationValue } from "../domain/operations/schema";
-import type { Pitch, Score } from "../domain/schema";
+import { spellRhythm } from "../domain/rhythm-spelling";
+import type { Meter, Pitch, Score } from "../domain/schema";
 import { DURATION_CODES } from "./score-text";
 
 /** One written note or rest, as parsed from score text. */
@@ -74,6 +75,30 @@ export function parseBarsText(text: string): WrittenBar[] {
 }
 
 /**
+ * A bar's values spelled as a musician would at their place in it (see `spellRhythm`): "C4h"
+ * from the off-beat of 1 becomes "C4q.~ C4e". A split note keeps its articulation and slur start
+ * on its first part, its slur end and its own tie on its last.
+ */
+function spelled(events: WrittenEvent[], meter: Meter): WrittenEvent[] {
+  let at = 0;
+  return events.flatMap((event) => {
+    const parts = spellRhythm(at, event.duration, meter, event.pitch === null);
+    at += event.duration;
+    return parts.map((duration, k) => {
+      const [first, last] = [k === 0, k === parts.length - 1];
+      return {
+        ...event,
+        duration: duration as DurationValue,
+        tie: event.pitch !== null && (last ? event.tie : true),
+        articulation: first ? event.articulation : null,
+        opensSlur: first && event.opensSlur,
+        closesSlur: last && event.closesSlur,
+      };
+    });
+  });
+}
+
+/**
  * IDs that operation `index` of a command creates: `apply-command` gives each operation the prefix
  * "<requestId>-<index>", and bars and notes take it as below. Lets one batch refer to notes it writes.
  */
@@ -81,9 +106,10 @@ const createdBarId = (requestId: string, index: number) => `${requestId}-${index
 const createdNoteId = (requestId: string, index: number, note: number) => `${requestId}-${index}-n${note}`;
 
 /**
- * Writes whole bars given as score text: each listed bar is replaced by exactly what its line
- * says (notes, ties, slurs, articulations, chords, section); bars past the end are added. One
- * command, so one undo step; it is validated like any edit.
+ * Writes whole bars given as score text: each listed bar is replaced by what its line says
+ * (notes, ties, slurs, articulations, chords, section), each value spelled as a musician would at
+ * its place in the bar; bars past the end are added. One command, so one undo step; it is
+ * validated like any edit.
  */
 export function writeBars(score: Score, text: string, requestId: string): { score: Score; command: Command } {
   const bars = parseBarsText(text);
@@ -101,9 +127,12 @@ export function writeBars(score: Score, text: string, requestId: string): { scor
     if (!measureId) throw new Error(`There is no bar ${bar}.`);
     const index = operations.length;
     if (events) {
-      const notes = events.map(({ pitch, duration, tie }) => ({ pitch, duration, tie }));
+      // Bars added at the end take the last bar's meter.
+      const meter = (score.measures[bar - 1] ?? score.measures.at(-1)!).meter;
+      const parts = spelled(events, meter);
+      const notes = parts.map(({ pitch, duration, tie }) => ({ pitch, duration, tie }));
       operations.push({ type: "replaceMeasure", measureId, events: notes });
-      events.forEach((event, k) => written.push({ ...event, id: createdNoteId(requestId, index, k) }));
+      parts.forEach((event, k) => written.push({ ...event, id: createdNoteId(requestId, index, k) }));
     } else {
       operations.push({ type: "clearMeasure", measureId });
     }

@@ -1,5 +1,7 @@
 import {
+  describeReadability,
   measureCapacity,
+  readability,
   parseChordSymbol,
   durationCode,
   pitchName,
@@ -61,10 +63,16 @@ export function transcribeIntoScore(take: VoiceTake | null, raw: unknown, access
   // The score's tempo is the piece's tempo: a hint the singing is read around.
   const heardTempo = args.bpm === undefined ? tempoOfSinging(heardSpans, capacity, score?.tempo) : null;
   const bpm = args.bpm ?? heardTempo!.bpm;
-  const starts = barsInOrder(args.spans, heardSpans, firstBar, bpm, capacity);
-  const placed = heardSpans.map((span, i) => ({ ...span, bar: starts[i] }));
-  const results = transcribeSpans(placed, { bpm, meter, key, chords, snapToChordTones });
-  const kept = results.map((result, i) => keptBars(result.bars, placed[i], starts[i + 1]));
+  // The singing written at a tempo: where each span starts, what was heard, the bars it fills.
+  const readAt = (tempo: number) => {
+    const starts = barsInOrder(args.spans, heardSpans, firstBar, tempo, capacity);
+    const placed = heardSpans.map((span, i) => ({ ...span, bar: starts[i] }));
+    const results = transcribeSpans(placed, { bpm: tempo, meter, key, chords, snapToChordTones });
+    return { starts, results, kept: results.map((result, i) => keptBars(result.bars, placed[i], starts[i + 1])) };
+  };
+  // How each reading would look on the page, so the plainest of those that fit can be chosen.
+  const reads = (bars: WrittenBar[]) => describeReadability(readability(bars, meter));
+  const { starts, results, kept } = readAt(bpm);
   const written = kept.flatMap((bars, i) => bars.map((events, offset) => ({ bar: starts[i] + offset, events })));
   const spans = results.map((result, i) => {
     const { spanId } = args.spans[i];
@@ -93,7 +101,11 @@ export function transcribeIntoScore(take: VoiceTake | null, raw: unknown, access
     tempo: {
       bpm,
       readFrom: "the singing",
-      alternatives: heardTempo.alternatives.map((a) => `${a.bpm} BPM: ${a.fit} from the timing alone`),
+      reads: reads(kept.flat()),
+      alternatives: heardTempo.alternatives.map((a) => {
+        const looks = a.fit === "unlikely" ? "" : `; would read ${reads(readAt(a.bpm).kept.flat())}`;
+        return `${a.bpm} BPM: ${a.fit} from the timing alone${looks}`;
+      }),
     },
   };
   if (!args.write || !access) return { ok: true, ...tempo, ...transposed, spans, written: false };

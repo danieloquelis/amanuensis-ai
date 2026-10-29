@@ -60,7 +60,7 @@ const definitions: { name: ScoreToolName; description: string; schema: z.ZodType
   {
     name: "score_write",
     description:
-      "Write whole bars as score text: new music, a rewritten phrase, bars added at the end. Each listed bar becomes exactly what its line says (notes, ties, slurs, articulations, chords, section); bars not listed stay as they are, and numbers past the end add bars. One undoable edit. Rewriting bars just transcribed from singing needs `asked`.",
+      "Write whole bars as score text: new music, a rewritten phrase, bars added at the end. Each listed bar becomes what its line says (notes, ties, slurs, articulations, chords, section); bars not listed stay as they are, and numbers past the end add bars. Write each note's sounding length; it is spelled as a musician would read it (a half note from the off-beat becomes q.~e, showing beat 3), so a tie you read back afterwards is that spelling, not a change. One undoable edit. Rewriting bars just transcribed from singing needs `asked`.",
     schema: writeSchema.extend({ asked: askedField }),
   },
   {

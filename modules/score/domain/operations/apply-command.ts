@@ -1,3 +1,4 @@
+import { respellScore } from "../respell";
 import type { Score } from "../schema";
 import { pruneSlurs } from "../slurs";
 import { pruneTies } from "../ties";
@@ -73,6 +74,7 @@ export function applyCommand(score: Score, input: Command): Score {
     handler(draft, op, { idPrefix: `${command.requestId}-${index}` });
   });
   pruneTies(draft);
+  respellScore(draft, `${command.requestId}-spell`);
   pruneSlurs(draft);
   draft.revision++;
   return parseScore(draft);

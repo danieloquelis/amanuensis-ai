@@ -144,8 +144,13 @@ test("without a spoken tempo, transcription reads it from the singing and says s
   });
   const result = tools("voice_transcribe_melody", { spans: [{ spanId: "sung-1", bar: 2, bars: 2 }] });
   assert.ok(result.ok && result.written, JSON.stringify(result));
-  const tempo = result.tempo as { bpm: number; readFrom: string };
+  const tempo = result.tempo as { bpm: number; readFrom: string; reads: string; alternatives: string[] };
   assert.ok(Math.abs(tempo.bpm - 90) <= 3, `read ${tempo.bpm} BPM`);
+  // How the page would look at each tempo that fits, so the plainest can be chosen.
+  assert.match(tempo.reads, /^\d+ notes, all eighths or longer, no ties inside bars$/);
+  for (const alternative of tempo.alternatives.filter((a) => !a.includes("unlikely"))) {
+    assert.match(alternative, /would read \d+ notes/);
+  }
   const bars = describeScore(session.score).bars.map((bar) => bar.events.map((e) => e.pitch).join(" "));
   assert.deepEqual(bars.slice(1, 3), ["C4 E4 G4 E4", "D4 F4 A4"]);
 });
