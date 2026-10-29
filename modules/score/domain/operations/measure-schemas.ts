@@ -29,7 +29,9 @@ export const measureOperationSchemas = [
         .describe("New notes and rests; their beats must add up exactly to the bar's length."),
       voiceId: idSchema
         .optional()
-        .describe("Which line of the bar to write. Default: the main line; scores have one line per bar for now."),
+        .describe(
+          'Which line of the bar to write, e.g. "v2" for the second voice (add it with addVoiceBars first, in the same batch is fine). Default: the main line.',
+        ),
     })
     .describe(
       "Write a whole bar of new music, e.g. a sung phrase. A note held over the barline is written as tied notes. Indications on the old notes are removed.",
@@ -51,6 +53,9 @@ export const measureOperationSchemas = [
       type: z.literal("clearMeasure"),
       measureId,
       staffId: idSchema.optional().describe("Clear only this staff. Default: every staff."),
+      voiceId: idSchema
+        .optional()
+        .describe('Rest only this line, e.g. "v2", keeping the other voices. Default: the whole bar.'),
     })
     .describe("Replace a bar's notes with a whole-bar rest."),
   z

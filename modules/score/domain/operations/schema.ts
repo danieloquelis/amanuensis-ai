@@ -8,6 +8,7 @@ import { NEW_SCORE_DEFAULTS } from "./new-score";
 import { notationOperationSchemas } from "./notation-schemas";
 import { measureOperationSchemas } from "./measure-schemas";
 import { partOperationSchemas } from "./part-schemas";
+import { voiceOperationSchemas } from "./voice-schemas";
 import { phraseOperationSchemas } from "./phrase-schemas";
 
 /** Room for a whole score written at once: 32 bars, each added, written, with chords and a section. */
@@ -88,6 +89,7 @@ export const operationSchema = z.discriminatedUnion("type", [
   ...phraseOperationSchemas,
   ...measureOperationSchemas,
   ...partOperationSchemas,
+  ...voiceOperationSchemas,
 ]);
 
 const batchSchema = z

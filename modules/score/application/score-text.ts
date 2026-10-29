@@ -3,7 +3,7 @@ import { instrumentLines } from "./instrument-text";
 import { keyName, scoreKey } from "../domain/key";
 import { beats, eventOnsets, meterName } from "../domain/rhythm";
 import type { Pitch, Score, ScoreEvent } from "../domain/schema";
-import { barEvents, barStyle } from "../domain/voice-access";
+import { barStyle, voiceBars, voiceNumber } from "../domain/voice-access";
 
 /**
  * Score text: a compact, line-per-bar view of a score for language models, roughly a tenth the
@@ -23,6 +23,7 @@ Durations: w whole, h half, q quarter, e eighth, s sixteenth; add "." for dotted
 Each bar's durations must add up to its meter exactly (4/4: 4 quarter beats).
 After a note: ~ ties it into the next note (same pitch, may be in the next bar); !staccato, !accent, !tenuto or !fermata.
 Slurs: ( before the first note and ) after the last note of the phrase; may span bars.
+A staff may hold two voices: "bar 2 v2: …" is the second line of bar 2 (stems down, e.g. a bass under the melody), complete in itself; "bar 2 v2: -" removes it; its notes are 2v2#1, 2v2:3. Chords, section and marks belong to the bar's first line.
 Pitches are concert pitch (as they sound) for every instrument; an "instrument" line says when the sheet shows a part transposed, and an "out of range" line lists notes the instrument can't play comfortably.
 Parts after ";": chords C Am7@3 (beats from 1, @1 may be left out), section A, and read-only: shows slashes|repeat, tempo N, marks …, dynamics mf@2, text "…"@1.`;
 
@@ -47,38 +48,53 @@ function eventText(event: ScoreEvent): string {
 /** "@2.5" for a beat (0-based) inside the bar; nothing for the downbeat. */
 const at = (beat: number) => (beat ? `@${beat + 1}` : "");
 
-/** The whole score as text: a header, one line per bar, then repeats. */
+/** Indications on a bar or on these events, with their beat in the bar. */
+function labelParts(score: Score, measureId: string | null, onsets: Map<string, number>): string[] {
+  const anchored = (targetId: string) => (targetId === measureId ? 0 : onsets.get(targetId));
+  return score.annotations
+    .filter((a) => anchored(a.targetId) !== undefined)
+    .map((a) =>
+      a.kind === "dynamic"
+        ? `dynamics ${a.text}${at(anchored(a.targetId)!)}`
+        : `text "${a.text}"${at(anchored(a.targetId)!)}`,
+    );
+}
+
+/**
+ * The whole score as text: a header, one line per bar (then one per further voice in it, "bar 1
+ * v2: …"), then repeats. What belongs to the bar (chords, section, tempo, marks) is on its first line.
+ */
 export function scoreText(score: Score): string {
   const opens = new Set(score.slurs.map((s) => s.startEventId));
   const closes = new Set(score.slurs.map((s) => s.endEventId));
   const header = `revision ${score.revision}; title "${score.title}"; key ${keyName(scoreKey(score))}; tempo ${score.tempo}; meter ${meterName(score.measures[0].meter)}`;
-  const lines = score.measures.map((measure, index) => {
+  const lines = score.measures.flatMap((measure, index) => {
     const previous = score.measures[index - 1];
     const meterChange = previous && meterName(previous.meter) !== meterName(measure.meter);
-    const events = barEvents(measure);
-    const starts = eventOnsets(events);
-    const onsets = new Map(events.map((event, i) => [event.id, starts[i]]));
-    const notes = events.map((event) => {
-      return `${opens.has(event.id) ? "(" : ""}${eventText(event)}${closes.has(event.id) ? ")" : ""}`;
+    return voiceBars(measure).map((voiceBar, k) => {
+      const { events } = voiceBar;
+      const starts = eventOnsets(events);
+      const onsets = new Map(events.map((event, i) => [event.id, starts[i]]));
+      const notes = events.map((event) => {
+        return `${opens.has(event.id) ? "(" : ""}${eventText(event)}${closes.has(event.id) ? ")" : ""}`;
+      });
+      const main = k === 0;
+      const chords = score.chords.filter((c) => c.measureId === measure.id).sort((a, b) => a.beat - b.beat);
+      const marks = score.marks.filter((m) => m.measureId === measure.id);
+      const parts = main
+        ? [
+            chords.length ? `chords ${chords.map((c) => `${formatChord(c)}${at(c.beat)}`).join(" ")}` : null,
+            measure.section ? `section ${measure.section}` : null,
+            barStyle(measure) ? `shows ${barStyle(measure)}` : null,
+            measure.tempo ? `tempo ${measure.tempo}` : null,
+            marks.length ? `marks ${marks.map((m) => m.kind).join(" ")}` : null,
+          ]
+        : [];
+      const labels = labelParts(score, main ? measure.id : null, onsets);
+      const meter = main && meterChange ? ` (${meterName(measure.meter)})` : "";
+      const voice = main ? "" : ` v${voiceNumber(score, voiceBar.voiceId)}`;
+      return [`bar ${index + 1}${meter}${voice}: ${notes.join(" ")}`, ...parts.filter(Boolean), ...labels].join(" ; ");
     });
-    const anchored = (targetId: string) => (targetId === measure.id ? 0 : onsets.get(targetId));
-    const chords = score.chords.filter((c) => c.measureId === measure.id).sort((a, b) => a.beat - b.beat);
-    const marks = score.marks.filter((m) => m.measureId === measure.id);
-    const labels = score.annotations.filter((a) => anchored(a.targetId) !== undefined);
-    const parts = [
-      chords.length ? `chords ${chords.map((c) => `${formatChord(c)}${at(c.beat)}`).join(" ")}` : null,
-      measure.section ? `section ${measure.section}` : null,
-      barStyle(measure) ? `shows ${barStyle(measure)}` : null,
-      measure.tempo ? `tempo ${measure.tempo}` : null,
-      marks.length ? `marks ${marks.map((m) => m.kind).join(" ")}` : null,
-      ...labels.map((a) =>
-        a.kind === "dynamic"
-          ? `dynamics ${a.text}${at(anchored(a.targetId)!)}`
-          : `text "${a.text}"${at(anchored(a.targetId)!)}`,
-      ),
-    ].filter(Boolean);
-    const meter = meterChange ? ` (${meterName(measure.meter)})` : "";
-    return [`bar ${index + 1}${meter}: ${notes.join(" ")}`, ...parts].join(" ; ");
   });
   const repeats = score.repeats.map((r) => {
     const bar = (id: string) => score.measures.findIndex((m) => m.id === id) + 1;

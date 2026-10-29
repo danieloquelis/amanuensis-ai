@@ -15,20 +15,32 @@ const edit = (score: Score, operation: Operation) =>
   applyCommand(score, { expectedRevision: score.revision, requestId: "test", operation });
 const eventsOf = (scene: Scene) => scene.systems.flatMap((system) => system.events);
 
-test("no two events in a bar overlap, including accidentals, dots and flags", () => {
+/** A bar's events grouped by onset (every voice), in time order: the ink each onset spans. */
+function inkColumns(events: Scene["systems"][number]["events"]) {
+  const beats = [...new Set(events.map((e) => e.localBeat))].sort((a, b) => a - b);
+  return beats.map((beat) => {
+    const column = events.filter((e) => e.localBeat === beat);
+    return { left: Math.min(...column.map((e) => e.left)), right: Math.max(...column.map((e) => e.right)) };
+  });
+}
+
+test("no two onsets in a bar overlap, including accidentals, dots and flags, in every voice", () => {
   for (const score of allFixtures()) {
     for (const system of layoutScore(score).systems) {
       for (const bar of system.bars) {
-        const events = system.events.filter((e) => e.measure === bar.number - 1);
-        assert.ok(events[0].left > bar.x, `${score.id} bar ${bar.number}: first event clears the barline`);
+        const inBar = system.events.filter((e) => e.measure === bar.number - 1);
+        // A voice resting the whole bar beside another is centred under it, not in a column.
+        const polyphonic = new Set(inBar.map((e) => e.voice)).size > 1;
+        const columns = inkColumns(inBar.filter((e) => !(polyphonic && e.event.measureRest)));
+        assert.ok(columns[0].left > bar.x, `${score.id} bar ${bar.number}: first event clears the barline`);
         if (bar.meterX !== null && bar.x > system.bars[0].x) {
-          assert.ok(events[0].left > bar.meterX + 13, `${score.id} bar ${bar.number}: clears the time signature`);
+          assert.ok(columns[0].left > bar.meterX + 13, `${score.id} bar ${bar.number}: clears the time signature`);
         }
-        assert.ok(events.at(-1)!.right < bar.endX, `${score.id} bar ${bar.number}: last event clears the barline`);
-        for (let i = 1; i < events.length; i++) {
+        assert.ok(columns.at(-1)!.right < bar.endX, `${score.id} bar ${bar.number}: last event clears the barline`);
+        for (let i = 1; i < columns.length; i++) {
           assert.ok(
-            events[i].left >= events[i - 1].right - EPSILON,
-            `${score.id} bar ${bar.number}: events ${i - 1} and ${i} overlap`,
+            columns[i].left >= columns[i - 1].right - EPSILON,
+            `${score.id} bar ${bar.number}: onsets ${i - 1} and ${i} overlap`,
           );
         }
       }

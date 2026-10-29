@@ -4,13 +4,21 @@ import type { ChordContext } from "./musical-priors";
 import { segmentNotes } from "./notes";
 import { trackPitch, type PitchFrame, type Signal } from "./pitch-tracker";
 import { quantizeNotes } from "./rhythm";
-import { transcribeMelody, type MelodyTranscription } from "./transcribe-melody";
+import { transcribeMelody, type MelodyTranscription, type Register } from "./transcribe-melody";
 
 /**
  * One sung stretch and the bar it was meant for. `startBeat` is where it begins in that bar,
  * `bars` how many bars it fills (when said), `frames` its pitch from a better tracker.
  */
-export type PlacedSpan = { signal: Signal; bar: number; startBeat?: number; bars?: number; frames?: PitchFrame[] };
+export type PlacedSpan = {
+  signal: Signal;
+  bar: number;
+  startBeat?: number;
+  bars?: number;
+  frames?: PitchFrame[];
+  /** A lower line (a second voice under the melody) is written low; a melody near the treble staff. */
+  register?: Register;
+};
 
 export type SpansOptions = {
   bpm: number;
@@ -78,6 +86,7 @@ export function transcribeSpans(spans: PlacedSpan[], options: SpansOptions): Mel
       shift,
       bars: span.bars,
       frames: span.frames,
+      register: span.register,
     });
   });
 }

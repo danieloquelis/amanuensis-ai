@@ -14,7 +14,8 @@ const LINE_END_CLEARANCE = 2;
 
 /**
  * Places every tie on the systems that hold its notes. Ties curve away from the stems: under an
- * up-stem note, over a down-stem one. A tie across a line break is drawn as two open arcs, one
+ * up-stem note, over a down-stem one; where voices share a bar, toward their own side (the upper
+ * voice's over, the lower voice's under). A tie across a line break is drawn as two open arcs, one
  * to the end of the first line and one into the note on the next.
  */
 export function placeTies(score: Score, systems: System[]) {
@@ -26,7 +27,7 @@ export function placeTies(score: Score, systems: System[]) {
     const from = placed.get(fromId);
     const to = placed.get(toId);
     if (!from || !to || from.item.hidden || to.item.hidden) continue;
-    const above = from.item.stemDown;
+    const above = from.item.curveSide ? from.item.curveSide === "above" : from.item.stemDown;
     const yOf = (item: EngravedEvent) => item.y + (above ? -HEAD_OFFSET : HEAD_OFFSET);
     const x1 = from.item.x + (durationNotation(from.item.event.duration).dotted ? DOT_CLEARANCE : HEAD_CLEARANCE);
     const x2 = to.item.x - HEAD_CLEARANCE;

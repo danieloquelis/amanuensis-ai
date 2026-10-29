@@ -1,11 +1,14 @@
 import { durationNotation, isNote, type Articulation } from "@/modules/score";
-import { STAFF_GAP, stemX, type EngravedEvent } from "../../domain/scene";
+import { STAFF_GAP, STAFF_HEIGHT, stemX, type EngravedEvent } from "../../domain/scene";
 import { AccidentalGlyph } from "./AccidentalGlyph";
 
 const FLAG_PATH = "M 0 0 C 18 10 16 24 7 29 C 14 14 4 13 0 9 Z";
 const SECOND_FLAG_OFFSET = 7;
 /** Accidentals sit this far left of the notehead centre. */
 const ACCIDENTAL_OFFSET = 22;
+/** Articulations sit this far from the notehead, and at least this far outside the staff. */
+const ARTICULATION_GAP = 18;
+const ARTICULATION_CLEARANCE = 12;
 
 /**
  * Draws one engraved note or rest: ledger lines, accidental, notehead, stem, flags,
@@ -23,9 +26,21 @@ export function EventGlyph({ item, systemTop, beamed }: { item: EngravedEvent; s
       ))}
       {isNote(event) ? <NoteGlyph item={item} beamed={beamed} /> : <RestGlyph item={item} />}
       {notation.dotted && !event.measureRest && <AugmentationDot x={x} y={y} systemTop={systemTop} />}
-      {event.articulation && (
-        <ArticulationMark articulation={event.articulation} x={x} y={Math.min(y - 18, systemTop - 12)} />
-      )}
+      {event.articulation &&
+        (item.curveSide === "below" ? (
+          <ArticulationMark
+            articulation={event.articulation}
+            x={x}
+            y={Math.max(y + ARTICULATION_GAP, systemTop + STAFF_HEIGHT + ARTICULATION_CLEARANCE)}
+            below
+          />
+        ) : (
+          <ArticulationMark
+            articulation={event.articulation}
+            x={x}
+            y={Math.min(y - ARTICULATION_GAP, systemTop - ARTICULATION_CLEARANCE)}
+          />
+        ))}
     </>
   );
 }
@@ -39,7 +54,9 @@ function NoteGlyph({ item, beamed }: { item: EngravedEvent; beamed: boolean }) {
   const flagDirection = item.stemDown ? -1 : 1;
   return (
     <>
-      {item.accidental !== null && <AccidentalGlyph value={item.accidental} x={x - ACCIDENTAL_OFFSET} y={y} />}
+      {item.accidental !== null && (
+        <AccidentalGlyph value={item.accidental} x={x - ACCIDENTAL_OFFSET - (item.accidentalShift ?? 0)} y={y} />
+      )}
       <ellipse
         cx={x}
         cy={y}
@@ -102,9 +119,20 @@ function AugmentationDot({ x, y, systemTop }: { x: number; y: number; systemTop:
   return <circle cx={x + 14} cy={y - (onLine ? 5 : 0)} r="2" fill="currentColor" />;
 }
 
-function ArticulationMark({ articulation, x, y }: { articulation: Articulation; x: number; y: number }) {
+/** Below the staff a mark is mirrored (a fermata opens upwards). */
+function ArticulationMark({
+  articulation,
+  x,
+  y,
+  below = false,
+}: {
+  articulation: Articulation;
+  x: number;
+  y: number;
+  below?: boolean;
+}) {
   return (
-    <g transform={`translate(${x} ${y})`} aria-label={articulation}>
+    <g transform={`translate(${x} ${y})${below ? " scale(1 -1)" : ""}`} aria-label={articulation}>
       {articulation === "staccato" && <circle r="2.5" fill="currentColor" />}
       {articulation === "accent" && (
         <path d="M -7 -4 L 7 0 L -7 4" stroke="currentColor" fill="none" strokeWidth="1.5" />

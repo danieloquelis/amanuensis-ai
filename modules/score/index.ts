@@ -4,7 +4,8 @@ export { createSession, execute, executeAll, travel, type Session } from "./appl
 export { positionOf } from "./application/notation-positions";
 export { resolvePositions } from "./application/positions";
 export { durationCode, pitchText, SCORE_TEXT_GUIDE, scoreText } from "./application/score-text";
-export { parseBarsText, writeBars } from "./application/score-text-write";
+export { parseBarsText } from "./application/score-text-parse";
+export { writeBars } from "./application/score-text-write";
 export {
   CHORD_QUALITIES,
   CHORD_QUALITY_NAMES,
@@ -118,6 +119,8 @@ export {
   partOf,
   allStaves,
   voiceInfo,
+  voiceNumber,
+  numberedVoice,
   setBarEvents,
   setBarStyle,
   voiceBars,

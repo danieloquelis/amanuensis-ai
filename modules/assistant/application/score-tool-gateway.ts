@@ -18,7 +18,8 @@ import { applyPreviewSchema, readContextSchema, undoSchema, writeSchema, type Sc
 
 const PREVIEW_LIMIT = 128;
 const UNSUPPORTED_NOTATION = [
-  "polyphony and chords in the melody staff",
+  "more than two voices on a staff in the editor, and moving notes between voices",
+  "several notes on one stem (chords within a voice)",
   "tuplets",
   "hairpins",
   "nested repeats and alternate endings",

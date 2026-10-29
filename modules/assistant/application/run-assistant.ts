@@ -3,7 +3,7 @@ import { describeTake, type TakePart, type VoiceTake } from "@/modules/voice";
 import { ASK_TOOL, askSchema, assistantTools } from "./assistant-tools";
 import { createMusicTools, isMusicTool, musicToolSpecs } from "./music-tools";
 import type { ChatMessage, ModelPort, TokenUsage } from "./model-port";
-import { refuseHeardBarEdit, writtenMeasures } from "./heard-bars-guard";
+import { refuseHeardBarEdit, writtenLines } from "./heard-bars-guard";
 import { parseArguments, runScoreTool } from "./score-tool-call";
 import { createScoreToolGateway } from "./score-tool-gateway";
 import { SYSTEM_PROMPT } from "./system-prompt";
@@ -89,7 +89,8 @@ export async function runAssistant(
       };
       const result = tools("score_edit", command);
       if (result.ok) commands.push(commandSchema.parse(command));
-      if (result.ok && runningTool === TRANSCRIBE_TOOL) writtenMeasures(operation).forEach((id) => heard.add(id));
+      if (result.ok && runningTool === TRANSCRIBE_TOOL)
+        writtenLines(session.score, operation).forEach((key) => heard.add(key));
       return result;
     },
   });

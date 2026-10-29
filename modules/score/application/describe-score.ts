@@ -101,6 +101,8 @@ export const SCORE_VOCABULARY = {
   chordExamples: ["C", "Am7", "F#m7b5", "Bbmaj7/D", "G7#9", "Dsus4", "Eø", "C6/9"],
   marks: MARK_KINDS.map((kind) => ({ kind, label: MARK_LABELS[kind] })),
   barStyles: ["notes", "slashes", "repeat"],
+  voices:
+    'A staff may hold a second, independent line (voice 2, stems down): add it with addVoiceBars, write it with replaceMeasure voiceId "v2" or a "bar N v2:" line, remove it with removeVoiceBars.',
 };
 
 /** "Bar 2" or "Bars 1–4" for each run of consecutive bar numbers. */

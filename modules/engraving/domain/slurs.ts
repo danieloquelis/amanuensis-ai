@@ -69,7 +69,8 @@ export function placeSlurs(score: Score, systems: System[]) {
     const items = ids.flatMap((id) => (placed.has(id) ? [placed.get(id)!] : []));
     if (items.length < 2 || items.some(({ item }) => item.hidden)) continue;
     const notes = items.filter(({ item }) => isNote(item.event));
-    const above = !notes.every(({ item }) => !item.stemDown);
+    const side = notes[0]?.item.curveSide;
+    const above = side ? side === "above" : !notes.every(({ item }) => !item.stemDown);
     const bars: [number, number] = [items[0].item.measure + 1, items.at(-1)!.item.measure + 1];
     for (const system of new Set(items.map((i) => i.system))) {
       const segment = items.filter((i) => i.system === system).map((i) => i.item);

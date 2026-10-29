@@ -1,4 +1,4 @@
-import { getMeasure, getStaff } from "../queries";
+import { getMeasure, getStaff, resolveVoice } from "../queries";
 import { durationFromBeats } from "../rhythm";
 import {
   allStaves,
@@ -65,9 +65,19 @@ export function duplicateMeasure(draft: Draft, op: OperationOf<"duplicateMeasure
   draft.measures.splice(draft.measures.indexOf(measure) + 1, 0, copy);
 }
 
-/** Empties one staff of a bar, or every staff when none is named. */
+/** Empties one line of a bar, one staff, or every staff when neither is named. */
 export function clearMeasure(draft: Draft, op: OperationOf<"clearMeasure">, { idPrefix }: OperationContext) {
   const measure = getMeasure(draft, op.measureId);
+  if (op.voiceId) {
+    const voiceId = resolveVoice(draft, op.voiceId);
+    detachFrom(
+      draft,
+      barEvents(measure, voiceId).map((e) => e.id),
+    );
+    putVoiceBar(draft, measure, voiceId, fullMeasureRest(measure.meter, idPrefix));
+    setBarStyle(measure, undefined, voiceId);
+    return;
+  }
   const staves = op.staffId ? [getStaff(draft, op.staffId)] : allStaves(draft);
   staves.forEach((staff, index) => restStaff(draft, measure, staff, index === 0 ? idPrefix : `${idPrefix}-s${index}`));
 }
@@ -75,7 +85,7 @@ export function clearMeasure(draft: Draft, op: OperationOf<"clearMeasure">, { id
 /** Writes one line of a bar (the main line unless a voice is named), replacing what it held. */
 export function replaceMeasure(draft: Draft, op: OperationOf<"replaceMeasure">, { idPrefix }: OperationContext) {
   const measure = getMeasure(draft, op.measureId);
-  const voiceId = op.voiceId ?? primaryVoiceId(draft);
+  const voiceId = op.voiceId ? resolveVoice(draft, op.voiceId) : primaryVoiceId(draft);
   detachFrom(
     draft,
     barEvents(measure, voiceId).map((e) => e.id),

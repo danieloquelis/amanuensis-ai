@@ -8,7 +8,7 @@ import {
   type ModelPort,
   type ModelReply,
 } from "@/modules/assistant";
-import { createExample, createSession, executeAll } from "@/modules/score";
+import { barEvents, createExample, createSession, executeAll, midiPitch, numberedVoice } from "@/modules/score";
 import { createTake, type VoiceTake } from "@/modules/voice";
 import { midi, singMelody } from "../support/synthetic-voice";
 
@@ -271,5 +271,68 @@ test("the musician can still ask for changes to what they just sang, quoted from
   assert.deepEqual(
     result.trace.map((entry) => entry.ok),
     [true, false, true],
+  );
+});
+
+test("a second voice under what was just sung is another line, so writing it is allowed", async () => {
+  const sung = singMelody(
+    ["C4", "E4", "G4", "E4"].map((name) => ({ midi: midi(name), beats: 1 })),
+    { bpm: 120 },
+  );
+  const take = createTake(sung, []);
+  const bass = {
+    type: "batch",
+    operations: [
+      { type: "addVoiceBars", voice: 2, measureIds: ["bar-1"] },
+      {
+        type: "replaceMeasure",
+        measureId: "bar-1",
+        voiceId: "v2",
+        events: [{ duration: 4, pitch: { step: "C", alter: 0, octave: 3 } }],
+      },
+    ],
+  };
+  const { model } = scriptedModel([
+    {
+      content: null,
+      toolCalls: [call("voice_transcribe_melody", { spans: [{ spanId: "sung-1", bar: 1 }], bpm: 120 })],
+    },
+    { content: null, toolCalls: [call("score_edit", { requestId: "bass", expectedRevision: 1, operation: bass })] },
+    { content: "Done.", toolCalls: [] },
+  ]);
+  const result = await runAssistant(model, { ...request(""), take });
+  assert.deepEqual(
+    result.trace.map((entry) => entry.ok),
+    [true, true],
+  );
+});
+
+test("a sung span can be written into the second voice, under the melody", async () => {
+  const sung = singMelody(
+    ["C3", "G2", "A2", "E2"].map((name) => ({ midi: midi(name), beats: 1 })),
+    { bpm: 120 },
+  );
+  const take = createTake(sung, []);
+  const { model } = scriptedModel([
+    {
+      content: null,
+      toolCalls: [
+        call("voice_transcribe_melody", { spans: [{ spanId: "sung-1", bar: 1, bars: 1, voice: "v2" }], bpm: 120 }),
+      ],
+    },
+    { content: "Done.", toolCalls: [] },
+  ]);
+  const result = await runAssistant(model, { ...request(""), take });
+  assert.equal(result.trace[0].ok, true);
+  const { score } = executeAll(createSession(createExample()), result.commands);
+  const bass = barEvents(score.measures[0], numberedVoice(score, 2)!);
+  assert.ok(
+    bass.some((e) => e.pitch && midiPitch(e.pitch) < midi("C4")),
+    "the bass went into voice 2",
+  );
+  assert.deepEqual(
+    barEvents(score.measures[0]).map((e) => e.id),
+    barEvents(createExample().measures[0]).map((e) => e.id),
+    "the melody is untouched",
   );
 });

@@ -126,6 +126,7 @@
             "pitch": { "step": "C", "octave": 4, "alter": 0 },
             "duration": { "numerator": 1, "denominator": 1 }
           },
+          "voice": 1,
           "x": 136,
           "y": 150,
           "beat": 0,
@@ -145,6 +146,7 @@
             "pitch": { "step": "E", "octave": 4, "alter": 0 },
             "duration": { "numerator": 1, "denominator": 1 }
           },
+          "voice": 1,
           "x": 184.0680073289186,
           "y": 138,
           "beat": 1,
@@ -164,6 +166,7 @@
             "pitch": { "step": "G", "octave": 4, "alter": 0 },
             "duration": { "numerator": 1, "denominator": 1 }
           },
+          "voice": 1,
           "x": 232.13601465783722,
           "y": 126,
           "beat": 2,
@@ -183,6 +186,7 @@
             "pitch": { "step": "E", "octave": 4, "alter": 0 },
             "duration": { "numerator": 1, "denominator": 1 }
           },
+          "voice": 1,
           "x": 280.20402198675583,
           "y": 138,
           "beat": 3,
@@ -202,6 +206,7 @@
             "pitch": { "step": "D", "octave": 4, "alter": 0 },
             "duration": { "numerator": 1, "denominator": 1 }
           },
+          "voice": 1,
           "x": 348.27202931567444,
           "y": 144,
           "beat": 4,
@@ -221,6 +226,7 @@
             "pitch": { "step": "F", "octave": 4, "alter": 0 },
             "duration": { "numerator": 1, "denominator": 2 }
           },
+          "voice": 1,
           "x": 396.34003664459306,
           "y": 132,
           "beat": 5,
@@ -240,6 +246,7 @@
             "pitch": { "step": "G", "octave": 4, "alter": 0 },
             "duration": { "numerator": 1, "denominator": 2 }
           },
+          "voice": 1,
           "x": 433.8931673703107,
           "y": 126,
           "beat": 5.5,
@@ -259,6 +266,7 @@
             "pitch": { "step": "A", "octave": 4, "alter": 0 },
             "duration": { "numerator": 2, "denominator": 1 }
           },
+          "voice": 1,
           "x": 471.4462980960284,
           "y": 120,
           "beat": 6,
@@ -278,6 +286,7 @@
             "pitch": { "step": "G", "octave": 4, "alter": 0 },
             "duration": { "numerator": 1, "denominator": 1 }
           },
+          "voice": 1,
           "x": 552.9733474770442,
           "y": 126,
           "beat": 8,
@@ -297,6 +306,7 @@
             "pitch": { "step": "E", "octave": 4, "alter": 0 },
             "duration": { "numerator": 1, "denominator": 1 }
           },
+          "voice": 1,
           "x": 601.0413548059628,
           "y": 138,
           "beat": 9,
@@ -316,6 +326,7 @@
             "pitch": { "step": "D", "octave": 4, "alter": 0 },
             "duration": { "numerator": 1, "denominator": 1 }
           },
+          "voice": 1,
           "x": 649.1093621348814,
           "y": 144,
           "beat": 10,
@@ -335,6 +346,7 @@
             "pitch": { "step": "E", "octave": 4, "alter": 0 },
             "duration": { "numerator": 1, "denominator": 1 }
           },
+          "voice": 1,
           "x": 697.1773694638,
           "y": 138,
           "beat": 11,
@@ -354,6 +366,7 @@
             "pitch": { "step": "C", "octave": 4, "alter": 0 },
             "duration": { "numerator": 4, "denominator": 1 }
           },
+          "voice": 1,
           "x": 767.2453767927186,
           "y": 150,
           "beat": 12,

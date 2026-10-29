@@ -1,12 +1,13 @@
 import { isNote } from "@/modules/score";
 import { solveStretch } from "./justify";
+import { stemsDown } from "./voice-layout";
 import type { AnalyzedBar, AnalyzedEvent } from "./measure-analysis";
 import { MIDDLE_LINE, positionY, STEM_LENGTH, type BarScene, type BeatColumn, type EngravedEvent } from "./scene";
 import {
   BARLINE_PADDING,
   barLeadingSpace,
   barWidth,
-  eventGaps,
+  columnGaps,
   inlineMeterOffset,
   LINE_START_REPEAT_INSET,
   slashCount,
@@ -35,9 +36,12 @@ export function placeBar(bar: AnalyzedBar, placement: BarPlacement): { scene: Ba
   const { x, width, top, atLineStart } = placement;
   const endX = x + width;
   const contentStart = x + barLeadingSpace(bar, atLineStart);
-  const xs = bar.measureRest ? [(contentStart + endX) / 2] : eventXs(bar, contentStart, width, atLineStart);
+  const columnXs = bar.measureRest
+    ? [(contentStart + endX) / 2]
+    : columnPositions(bar, contentStart, width, atLineStart);
+  const xs = eventXs(bar, columnXs, (contentStart + endX) / 2);
   const events = bar.events.map((item, index) => engrave(item, xs[index], bar, top));
-  const notesX = bar.measureRest ? contentStart : xs[0];
+  const notesX = bar.measureRest ? contentStart : columnXs[0];
   const slashXs = bar.style === "slashes" ? evenlySpaced(slashCount(bar), contentStart, endX - BARLINE_PADDING) : [];
   const scene: BarScene = {
     id: bar.measure.id,
@@ -65,10 +69,10 @@ export function placeBar(bar: AnalyzedBar, placement: BarPlacement): { scene: Ba
   return { scene, events };
 }
 
-function eventXs(bar: AnalyzedBar, contentStart: number, width: number, atLineStart: boolean): number[] {
+function columnPositions(bar: AnalyzedBar, contentStart: number, width: number, atLineStart: boolean): number[] {
   const stretch = solveStretch((s) => barWidth(bar, s, atLineStart), width);
-  const gaps = eventGaps(bar, stretch);
-  let cursor = contentStart + bar.events[0].left;
+  const gaps = columnGaps(bar, stretch);
+  let cursor = contentStart + bar.columns[0].left;
   return gaps.map((gap) => {
     const x = cursor;
     cursor += gap;
@@ -76,13 +80,28 @@ function eventXs(bar: AnalyzedBar, contentStart: number, width: number, atLineSt
   });
 }
 
-function engrave(item: AnalyzedEvent, x: number, bar: AnalyzedBar, top: number): EngravedEvent {
+/**
+ * Each event at its column's x (a whole-bar rest's bar has one column). A voice resting for the
+ * whole bar beside another voice has its rest centred in the bar.
+ */
+function eventXs(bar: AnalyzedBar, columnXs: number[], centre: number): number[] {
+  const xs: number[] = [];
+  bar.columns.forEach((column, c) => column.events.forEach((index) => (xs[index] = columnXs[c] ?? columnXs[0])));
+  bar.events.forEach((item, index) => {
+    if (bar.polyphonic && item.event.measureRest) xs[index] = centre;
+  });
+  return xs;
+}
+
+function engrave(item: AnalyzedEvent, columnX: number, bar: AnalyzedBar, top: number): EngravedEvent {
+  const x = columnX + item.xShift;
   const y = positionY(top, item.position);
   const middleY = positionY(top, MIDDLE_LINE);
   // Stems reach at least the middle line, so notes on ledger lines don't get stubby stems.
   const stemEnd = item.stemDown ? Math.max(y + STEM_LENGTH, middleY) : Math.min(y - STEM_LENGTH, middleY);
   return {
     event: item.event,
+    voice: item.voice,
     x,
     y,
     beat: bar.beat + item.localBeat,
@@ -92,6 +111,8 @@ function engrave(item: AnalyzedEvent, x: number, bar: AnalyzedBar, top: number):
     stemEnd,
     ledgerLines: isNote(item.event) ? ledgerLines(top, item.position) : [],
     accidental: item.accidental,
+    ...(item.accidentalShift ? { accidentalShift: item.accidentalShift } : {}),
+    ...(bar.polyphonic ? { curveSide: stemsDown(item.voice) ? ("below" as const) : ("above" as const) } : {}),
     left: x - item.left,
     right: x + item.right,
     hidden: bar.style !== null,
@@ -126,5 +147,6 @@ function beatColumns(
     return [...slashXs.map((x, i) => ({ beat: bar.beat + i * beatLength, x })), end];
   }
   if (bar.measureRest) return [{ beat: bar.beat, x: notesX }, end];
-  return [...events.map((e) => ({ beat: e.beat, x: e.x })), end];
+  const byBeat = bar.columns.map((column) => events[column.events[0]]);
+  return [...byBeat.map((e) => ({ beat: e.beat, x: e.x })), end];
 }

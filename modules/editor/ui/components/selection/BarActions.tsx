@@ -1,12 +1,15 @@
-import { ColumnsPlusRight, Copy, Eraser, Trash } from "@phosphor-icons/react";
+import { ColumnsPlusRight, Copy, Eraser, StackMinus, StackPlus, Trash } from "@phosphor-icons/react";
 import type { Measure } from "@/modules/score";
 import { IconButton } from "@/shared/ui/IconButton";
+import { hasSecondVoice, secondVoiceEdit } from "../../../application/voice-edits";
 import type { ScoreEditor } from "../../hooks/use-score-editor";
 import styles from "./selection.module.css";
 
-/** The selected bar: insert one after it, duplicate, clear or delete it. */
+/** The selected bar: insert one after it, duplicate, add or remove a second voice, clear or delete it. */
 export function BarActions({ editor, measure }: { editor: ScoreEditor; measure: Measure }) {
   const { commit } = editor;
+  const voiceEdit = secondVoiceEdit(editor.score, measure.id);
+  const voiceLabel = hasSecondVoice(editor.score, measure.id) ? "Remove second voice" : "Add second voice";
   return (
     <div className={styles.actions} role="toolbar" aria-label="Selected bar actions">
       <IconButton
@@ -22,6 +25,13 @@ export function BarActions({ editor, measure }: { editor: ScoreEditor; measure: 
         onClick={() => commit({ type: "duplicateMeasure", measureId: measure.id }, "Duplicated bar")}
       >
         <Copy size={19} />
+      </IconButton>
+      <IconButton
+        label={voiceLabel}
+        tooltip={voiceLabel}
+        onClick={() => commit(voiceEdit.operation, voiceEdit.receipt)}
+      >
+        {hasSecondVoice(editor.score, measure.id) ? <StackMinus size={19} /> : <StackPlus size={19} />}
       </IconButton>
       <IconButton
         label="Clear bar"

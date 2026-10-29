@@ -51,6 +51,13 @@ export const transcribeSchema = z.strictObject({
           .describe(
             'Only when they said how many bars ("in the first bar" = 1). Default: worked out from its length at the tempo.',
           ),
+        voice: z
+          .string()
+          .regex(/^v[1-4]$/)
+          .optional()
+          .describe(
+            'Which line to write it into: "v2" is a second voice on the staff, stems down, e.g. a bass line under the melody (guitar thumb and fingers). Default: the main line.',
+          ),
       }),
     )
     .min(1)

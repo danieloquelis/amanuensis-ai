@@ -1,23 +1,9 @@
-import {
-  barEvents,
-  soundingBeats,
-  legatoIds,
-  measureStarts,
-  midiPitch,
-  nextEvent,
-  type InstrumentId,
-  type Score,
-  type ScoreEvent,
-} from "@/modules/score";
+import { primaryVoiceId, type InstrumentId, type Score } from "@/modules/score";
 import { voiceChord, writtenChordSegments } from "./chord-track";
-import { accented, CHORD_VELOCITY, DEFAULT_VELOCITY, DYNAMIC_VELOCITY } from "./dynamics";
-import { performanceOrder, soundingSource } from "./performance-order";
+import { CHORD_VELOCITY } from "./dynamics";
+import { performanceOrder } from "./performance-order";
 import { joinTies, startingAt } from "./tie-join";
-
-/** Documented reference hold for a fermata, not an interpretation. */
-const FERMATA_STRETCH = 1.5;
-/** Fraction of the written length that sounds. */
-const GATE = { staccato: 0.45, tenuto: 1, normal: 0.93 };
+import { resolveWrittenEvents } from "./written-events";
 
 export type PlaybackEvent = {
   id: string;
@@ -33,6 +19,8 @@ export type PlaybackEvent = {
   velocity: number;
   /** What plays it: the instrument of the event's part. */
   instrument: InstrumentId;
+  /** The voice it belongs to; ties join events of one voice. */
+  voice: string;
   /** Fraction of `duration` that sounds; above 1 when a tie holds the note into the next events. */
   gate: number;
   /** The event this note is tied into, when it is tied. */
@@ -43,20 +31,14 @@ export type PlaybackEvent = {
 export type ChordSound = { start: number; duration: number; notes: number[]; velocity: number };
 
 export type PlaybackPlan = {
+  /** Every voice's events; each bar's voices start together. */
   events: PlaybackEvent[];
+  /** The voice whose events the playhead follows: the main line, which plays in every bar. */
+  primaryVoice: string;
   chords: ChordSound[];
   duration: number;
   secondsPerBeat: number;
 };
-
-const notesOf = (event: ScoreEvent) => (event.pitch ? [midiPitch(event.pitch)] : []);
-
-/** A slurred note runs into the next, like tenuto; staccato under a slur stays short. */
-function gateOf(event: ScoreEvent, slurred: boolean) {
-  if (event.articulation === "staccato") return GATE.staccato;
-  if (event.articulation === "tenuto" || slurred) return GATE.tenuto;
-  return GATE.normal;
-}
 
 /**
  * Compiles a score revision into timed sound. Written tempo and dynamics are resolved in score
@@ -75,14 +57,20 @@ export function createPlaybackPlan(score: Score, fromMeasureId?: string): Playba
   let time = 0;
   let offset: number | null = null;
   for (const measureIndex of performanceOrder(score)) {
-    const barEvents = written[measureIndex];
+    const voices = written[measureIndex];
     const barStart = time;
     if (offset === null && measureIndex === startIndex) offset = barStart;
-    for (const event of barEvents) {
-      events.push({ ...event, start: time });
-      time += event.duration;
+    for (const line of voices) {
+      let at = barStart;
+      for (const event of line) {
+        events.push({ ...event, start: at });
+        at += event.duration;
+      }
     }
-    const at = (localBeat: number) => barStart + secondsInto(barEvents, localBeat);
+    // The main line sets the bar's length (another voice's fermata may hold a little longer).
+    const main = voices[0];
+    time = barStart + main.reduce((sum, event) => sum + event.duration, 0);
+    const at = (localBeat: number) => barStart + secondsInto(main, localBeat);
     const segments = harmony[measureIndex];
     segments.forEach(({ beat, chord }, i) => {
       const end = i + 1 < segments.length ? at(segments[i + 1].beat) : time;
@@ -94,7 +82,13 @@ export function createPlaybackPlan(score: Score, fromMeasureId?: string): Playba
       });
     });
   }
-  const plan = { events, chords, duration: time, secondsPerBeat: 60 / score.tempo };
+  const plan = {
+    events,
+    primaryVoice: primaryVoiceId(score),
+    chords,
+    duration: time,
+    secondsPerBeat: 60 / score.tempo,
+  };
   // Ties are joined after the start is cut, so starting on a held note still sounds it.
   return joinTies(offset ? startingAt(plan, offset) : plan);
 }
@@ -109,43 +103,4 @@ function secondsInto(barEvents: Omit<PlaybackEvent, "start">[], localBeat: numbe
     beat += event.beats;
   }
   return seconds;
-}
-
-/** Events per measure with tempo, dynamics, articulation and slurs applied; times not yet placed. */
-function resolveWrittenEvents(score: Score): Omit<PlaybackEvent, "start">[][] {
-  const starts = measureStarts(score);
-  const dynamicAt = (targetId: string) =>
-    score.annotations.find((a) => a.targetId === targetId && a.kind === "dynamic");
-  const legato = legatoIds(score);
-  let tempo = score.tempo;
-  let velocity = DEFAULT_VELOCITY;
-  // Playback follows the primary voice, played by the first part.
-  const instrument = score.parts[0].instrument;
-  return score.measures.map((measure, measureIndex) => {
-    tempo = measure.tempo ?? tempo;
-    // A repeat (%) bar plays its source bar's notes in its own written place and tempo.
-    const sounding = barEvents(score.measures[soundingSource(score, measureIndex)]);
-    const measureDynamic = dynamicAt(measure.id);
-    if (measureDynamic) velocity = DYNAMIC_VELOCITY[measureDynamic.text];
-    let localBeat = 0;
-    return sounding.map((event) => {
-      const eventDynamic = dynamicAt(event.id);
-      if (eventDynamic) velocity = DYNAMIC_VELOCITY[eventDynamic.text];
-      const length = soundingBeats(event);
-      const stretch = event.articulation === "fermata" ? FERMATA_STRETCH : 1;
-      const entry = {
-        id: event.id,
-        beat: starts[measureIndex] + localBeat,
-        beats: length,
-        duration: ((length * 60) / tempo) * stretch,
-        notes: notesOf(event),
-        velocity: accented(velocity, event.articulation === "accent"),
-        instrument,
-        gate: gateOf(event, legato.has(event.id)),
-        ...(event.tie ? { tiedTo: nextEvent(score, event.id)?.id } : {}),
-      };
-      localBeat += length;
-      return entry;
-    });
-  });
 }

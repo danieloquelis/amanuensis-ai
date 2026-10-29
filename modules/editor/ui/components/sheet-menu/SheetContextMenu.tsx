@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { findEvent, formatChord, scoreKey, SECTION_LABEL_MAX, type Operation, type Score } from "@/modules/score";
+import { findEvent, formatChord, SECTION_LABEL_MAX, type Operation, type Score } from "@/modules/score";
 import { useDismissableLayer } from "@/shared/ui/hooks/use-dismissable-layer";
 import { moveMenuFocus } from "@/shared/ui/menu-keyboard";
 import { checkOperation } from "../../../application/operation-check";
@@ -59,7 +59,7 @@ export function SheetContextMenu({ target, score, onCommand, onClose }: SheetCon
 
   const content = () => {
     if (target.kind === "note" && location) {
-      return <NoteMenuSection event={location.event} keySignature={scoreKey(score)} commit={commit} />;
+      return <NoteMenuSection score={score} event={location.event} commit={commit} />;
     }
     if (target.kind === "bar" && measure) return <BarMenuSection score={score} measure={measure} commit={commit} />;
     if (target.kind === "meter" && measure) {

@@ -1,6 +1,7 @@
+import { findEvent } from "../domain/queries";
 import { eventOnsets } from "../domain/rhythm";
 import type { Score } from "../domain/schema";
-import { barEvents } from "../domain/voice-access";
+import { barEvents, numberedVoice, voiceBars, voiceNumber } from "../domain/voice-access";
 
 /**
  * Positions for things other than notes, as score text shows them: "chord 2:3" (the chord in
@@ -8,32 +9,28 @@ import { barEvents } from "../domain/voice-access";
  * "repeat 1" (the repeat starting at bar 1), "dynamic 2:1" and "text 2:1" (on bar 2, beat 1).
  */
 const HANDLE = /^(chord|slur|mark|repeat|dynamic|text)\s+(.+)$/;
-const AT_BEAT = /^(\d+):(\d+(?:\.\d+)?)$/;
-const AT_ORDER = /^(\d+)#(\d+)$/;
+const AT_BEAT = /^(\d+)(?:v(\d))?:(\d+(?:\.\d+)?)$/;
+const AT_ORDER = /^(\d+)(?:v(\d))?#(\d+)$/;
 const EPSILON = 1e-9;
 
 export const isNotationHandle = (value: unknown): value is string => typeof value === "string" && HANDLE.test(value);
 
-/** Onset (0-based beats) of each event in a bar, by ID. */
-function onsets(score: Score, barIndex: number): Map<string, number> {
-  const measure = score.measures[barIndex];
-  const events = measure ? barEvents(measure) : [];
-  const starts = eventOnsets(events);
-  return new Map(events.map((event, i) => [event.id, starts[i]]));
-}
-
-/** The note an "n:beat" or "n#k" position names, or null. */
+/** The note an "n:beat" or "n#k" position names (with "vK" for another voice: "2v2#1"), or null. */
 function eventAt(score: Score, where: string): { id: string; bar: number; beat: number } | null {
-  const order = AT_ORDER.exec(where);
-  const at = AT_BEAT.exec(where);
-  const bar = Number((order ?? at)?.[1]) - 1;
+  const match = AT_ORDER.exec(where) ?? AT_BEAT.exec(where);
+  if (!match) return null;
+  const [, barText, voice, place] = match;
+  const bar = Number(barText) - 1;
   const measure = score.measures[bar];
-  if (!measure) return null;
-  const events = barEvents(measure);
-  const event = order
-    ? events[Number(order[2]) - 1]
-    : events.find((e) => Math.abs(onsets(score, bar).get(e.id)! - (Number(at?.[2]) - 1)) < EPSILON);
-  return event ? { id: event.id, bar, beat: onsets(score, bar).get(event.id)! } : null;
+  const voiceId = voice ? numberedVoice(score, Number(voice)) : undefined;
+  if (!measure || voiceId === null) return null;
+  const events = barEvents(measure, voiceId);
+  const onsets = eventOnsets(events);
+  const index = AT_ORDER.test(where)
+    ? Number(place) - 1
+    : onsets.findIndex((onset) => Math.abs(onset - (Number(place) - 1)) < EPSILON);
+  const event = events[index];
+  return event ? { id: event.id, bar, beat: onsets[index] } : null;
 }
 
 /** The ID of the chord, slur, mark, repeat or indication a handle names; throws when there is none. */
@@ -46,7 +43,7 @@ export function notationAt(score: Score, handle: string): string {
         const at = AT_BEAT.exec(where);
         const measure = at && bar(at[1]);
         return score.chords.find(
-          (c) => c.measureId === measure?.id && Math.abs(c.beat - (Number(at![2]) - 1)) < EPSILON,
+          (c) => c.measureId === measure?.id && Math.abs(c.beat - (Number(at![3]) - 1)) < EPSILON,
         );
       }
       case "slur":
@@ -76,8 +73,11 @@ export function positionOf(score: Score, id: string): string {
   const barOf = (measureId: string) => score.measures.findIndex((m) => m.id === measureId) + 1;
   for (const [index, measure] of score.measures.entries()) {
     if (measure.id === id) return `${index + 1}`;
-    const order = barEvents(measure).findIndex((e) => e.id === id);
-    if (order !== -1) return `${index + 1}#${order + 1}`;
+    for (const bar of voiceBars(measure)) {
+      const order = bar.events.findIndex((e) => e.id === id);
+      const voice = voiceNumber(score, bar.voiceId);
+      if (order !== -1) return `${index + 1}${voice > 1 ? `v${voice}` : ""}#${order + 1}`;
+    }
   }
   const chord = score.chords.find((c) => c.id === id);
   if (chord) return `chord ${barOf(chord.measureId)}:${chord.beat + 1}`;
@@ -90,8 +90,9 @@ export function positionOf(score: Score, id: string): string {
   const annotation = score.annotations.find((a) => a.id === id);
   if (annotation) {
     const target = positionOf(score, annotation.targetId);
-    const [bar, order] = target.split("#");
-    const beat = order ? onsets(score, Number(bar) - 1).get(annotation.targetId)! + 1 : 1;
+    const [bar] = target.split("#");
+    const found = findEvent(score, annotation.targetId);
+    const beat = found ? eventOnsets(found.voiceBar.events)[found.eventIndex] + 1 : 1;
     return `${annotation.kind === "dynamic" ? "dynamic" : "text"} ${bar}:${beat}`;
   }
   return id;

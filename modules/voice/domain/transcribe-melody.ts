@@ -23,7 +23,11 @@ export type MelodyOptions = {
   bars?: number;
   /** Pitch frames for the signal from a better tracker; YIN's own are used otherwise. */
   frames?: PitchFrame[];
+  /** Where the line is written: a melody near the treble staff's middle, or a lower line (a bass voice). */
+  register?: Register;
 };
+
+export type Register = "melody" | "low";
 
 export type MelodyTranscription = {
   /** Detected notes with their real timing, for evidence and review. */
@@ -54,21 +58,27 @@ export type MelodyTranscription = {
 };
 
 const FOUR_FOUR: Meter = { numerator: 4, denominator: 4 };
-/** The treble staff's comfortable middle (G4): melodies are written by whole octaves near it. */
-const TREBLE_CENTRE = 67;
-const OCTAVE_LIMITS = { low: 48, high: 95 };
+/**
+ * Where each kind of line is written (MIDI): a melody near the treble staff's comfortable middle
+ * (G4), a lower line (a bass under the melody) near C3; never outside its limits.
+ */
+const REGISTERS: Record<Register, { centre: number; low: number; high: number }> = {
+  melody: { centre: 67, low: 48, high: 95 },
+  low: { centre: 48, low: 28, high: 72 },
+};
 
 /**
- * Whole octaves that move the melody's median toward G4 (men often sing an octave below where
- * a treble staff writes the tune), never pushing a note outside the score's range.
+ * Whole octaves that move the line's median toward its register's centre (men often sing an
+ * octave below where a treble staff writes the tune), never pushing a note outside its limits.
  */
-function octaveShiftFor(notes: SungNote[]): number {
+function octaveShiftFor(notes: SungNote[], register: Register): number {
   if (!notes.length) return 0;
+  const { centre, low, high } = REGISTERS[register];
   const pitches = notes.map((n) => Math.round(n.midi)).sort((a, b) => a - b);
   const median = pitches[Math.floor(pitches.length / 2)];
-  let shift = Math.round((TREBLE_CENTRE - median) / 12);
-  while (shift > 0 && pitches.at(-1)! + shift * 12 > OCTAVE_LIMITS.high) shift--;
-  while (shift < 0 && pitches[0] + shift * 12 < OCTAVE_LIMITS.low) shift++;
+  let shift = Math.round((centre - median) / 12);
+  while (shift > 0 && pitches.at(-1)! + shift * 12 > high) shift--;
+  while (shift < 0 && pitches[0] + shift * 12 < low) shift++;
   return shift;
 }
 
@@ -128,7 +138,7 @@ export function transcribeMelody(signal: Signal, options: MelodyOptions = {}): M
         notes: tuneToScale(raw),
       };
   const key = options.key ?? estimateKey(fit.notes);
-  const octaveShift = octaveShiftFor(fit.notes);
+  const octaveShift = octaveShiftFor(fit.notes, options.register ?? "melody");
   const resolved = resolvePitches(fit.notes, key).map((note) => ({
     ...note,
     midi: note.midi + octaveShift * 12,

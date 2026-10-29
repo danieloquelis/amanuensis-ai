@@ -2,9 +2,10 @@ import { beatGroupLength, durationNotation, isRest } from "@/modules/score";
 import type { AnalyzedBar, AnalyzedEvent } from "./measure-analysis";
 
 /**
- * Horizontal spacing model. Each event has a spring (ideal space to the next event, growing by a
- * factor of ~1.28 per doubling of duration, as in traditional engraving) and a minimum gap so
- * accidentals, dots and flags never collide. At stretch `s` a gap is `max(spring * s, minimum)`.
+ * Horizontal spacing model. Each onset column (the events starting on one beat, see columns.ts)
+ * has a spring (ideal space to the next column, growing by a factor of ~1.28 per doubling of
+ * duration, as in traditional engraving) and a minimum gap so accidentals, dots and flags never
+ * collide. At stretch `s` a gap is `max(spring * s, minimum)`.
  */
 const QUARTER_SPACE = 36;
 const SPACE_EXPONENT = Math.log2(1.28);
@@ -53,12 +54,12 @@ export function barLeadingSpace(bar: AnalyzedBar, atLineStart: boolean): number 
   return BAR_LEFT_PADDING + inlineMeter + repeat;
 }
 
-/** Gap after each event (to the next event, or to the closing barline) at stretch `s`. */
-export function eventGaps(bar: AnalyzedBar, s: number): number[] {
-  return bar.events.map((item, index) => {
-    const next = bar.events[index + 1];
-    const minimum = item.right + (next ? next.left + PADDING : BARLINE_PADDING);
-    return Math.max(item.spring * s, minimum);
+/** Gap after each onset column (to the next column, or to the closing barline) at stretch `s`. */
+export function columnGaps(bar: AnalyzedBar, s: number): number[] {
+  return bar.columns.map((column, index) => {
+    const next = bar.columns[index + 1];
+    const minimum = column.right + (next ? next.left + PADDING : BARLINE_PADDING);
+    return Math.max(column.spring * s, minimum);
   });
 }
 
@@ -71,7 +72,7 @@ export function barWidth(bar: AnalyzedBar, s: number, atLineStart: boolean): num
     return leading + Math.max(count * springFor(beat) * s, count * SLASH_MIN);
   }
   if (bar.measureRest) return leading + Math.max(MEASURE_REST_SPACE * s, MEASURE_REST_MIN);
-  return leading + bar.events[0].left + eventGaps(bar, s).reduce((sum, gap) => sum + gap, 0);
+  return leading + bar.columns[0].left + columnGaps(bar, s).reduce((sum, gap) => sum + gap, 0);
 }
 
 /** One rhythm slash per beat (a dotted quarter in compound time). */

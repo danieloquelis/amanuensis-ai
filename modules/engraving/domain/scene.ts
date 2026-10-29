@@ -3,6 +3,8 @@ import type { Clef, MarkKind, Meter, Pitch, ScoreEvent } from "@/modules/score";
 /** One placed note, rest or space. Coordinates are SVG scene units (12 per staff space). */
 export type EngravedEvent = {
   event: ScoreEvent;
+  /** Its voice on the staff, from 1 (the main line). */
+  voice: number;
   x: number;
   y: number;
   /** Absolute beat in the score. */
@@ -16,6 +18,13 @@ export type EngravedEvent = {
   ledgerLines: number[];
   /** Accidental to draw (-1, 0 for natural, 1), or null when the key and bar already imply it. */
   accidental: number | null;
+  /** How much further left the accidental sits, beside another one in the same column. */
+  accidentalShift?: number;
+  /**
+   * Where its ties, slurs and articulations go when voices share the bar: the upper voice's above,
+   * the lower voice's below (on the stem side). Absent with one voice, where they follow the stems.
+   */
+  curveSide?: "above" | "below";
   /** Horizontal ink extent, including accidental, dot and flag. Used for collision checks. */
   left: number;
   right: number;

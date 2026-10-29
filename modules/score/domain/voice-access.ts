@@ -104,6 +104,16 @@ export function partOf(score: Score, eventId: string): Part {
   return (voiceId && voiceInfo(score, voiceId)?.part) || score.parts[0];
 }
 
+/** The number of a voice on its staff, from 1 (the staff's main line); 1 when it is not declared. */
+export const voiceNumber = (score: Pick<Score, "parts">, voiceId: string): number =>
+  (voiceInfo(score, voiceId)?.voiceIndex ?? 0) + 1;
+
+/** The ID of voice `number` (from 1) on a staff (the first staff when omitted), or null when it is not declared. */
+export function numberedVoice(score: Pick<Score, "parts">, number: number, staffId?: string): string | null {
+  const staff = staffId ? allStaves(score).find((s) => s.id === staffId) : allStaves(score)[0];
+  return staff?.voices[number - 1]?.id ?? null;
+}
+
 /** One voice's events across the whole score, bar by bar: the order ties and slurs follow. */
 export const voiceEvents = (score: Score, voiceId?: string): ScoreEvent[] =>
   score.measures.flatMap((measure) => barEvents(measure, voiceId ?? primaryVoiceId(score)));

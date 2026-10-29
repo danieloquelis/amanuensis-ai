@@ -47,7 +47,7 @@ export function SheetEvent({ item, system, selected, playBeat, interactions }: S
       )}
       role="button"
       tabIndex={0}
-      aria-label={`Bar ${item.measure + 1}, beat ${item.localBeat + 1}, ${pitchLabel(item)}, ${length} beats`}
+      aria-label={`Bar ${item.measure + 1}, beat ${item.localBeat + 1}, ${item.voice > 1 ? `voice ${item.voice}, ` : ""}${pitchLabel(item)}, ${length} beats`}
       aria-pressed={selected}
       onFocus={() => focusEvent(event.id)}
       // A Shift/⌘ click adds to the selection without moving focus (which would select only this).

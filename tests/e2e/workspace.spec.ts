@@ -731,3 +731,24 @@ test("pinching (Ctrl + wheel) zooms the sheet, not the page", async ({ page }) =
   await page.keyboard.up("Control");
   await expect.poll(async () => (await paper.boundingBox())!.width).toBeLessThan(before);
 });
+
+test("a bar gets a second voice, its rest becomes a note, and undo takes it away", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true })).toBeEnabled();
+  await page.getByRole("button", { name: "Select bar 1", exact: true }).click();
+  await page
+    .getByRole("toolbar", { name: "Selected bar actions" })
+    .getByRole("button", { name: "Add second voice" })
+    .click();
+  const rest = page.getByRole("button", { name: "Bar 1, beat 1, voice 2, Rest, 4 beats", exact: true });
+  await expect(rest).toBeVisible();
+  await rest.click();
+  await page.keyboard.press("e");
+  await expect(page.getByRole("button", { name: /^Bar 1, beat 1, voice 2, E\d, 1 beats$/ })).toBeVisible();
+  // The main line is untouched.
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(page.getByRole("button", { name: /voice 2/ })).toHaveCount(0);
+});

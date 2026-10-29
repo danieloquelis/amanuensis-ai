@@ -1,21 +1,23 @@
-import type { PlaybackPlan } from "./plan";
+import type { PlaybackEvent, PlaybackPlan } from "./plan";
 
 /**
- * A tied note sounds once, for its whole held length: it keeps sounding through each event it is
- * tied into (when that event is performed next), and those events fall silent.
+ * A tied note sounds once, for its whole held length: it keeps sounding through each event of its
+ * voice it is tied into (when that event is performed next), and those events fall silent.
  */
 export function joinTies(plan: PlaybackPlan): PlaybackPlan {
   const events = plan.events.map((event) => ({ ...event }));
-  let head: (typeof events)[number] | null = null;
-  events.forEach((event, i) => {
-    const previous = events[i - 1];
-    if (head && previous?.tiedTo === event.id) {
+  const heads = new Map<string, PlaybackEvent>();
+  const previous = new Map<string, PlaybackEvent>();
+  for (const event of events) {
+    const head = heads.get(event.voice);
+    if (head && previous.get(event.voice)?.tiedTo === event.id) {
       head.gate = (event.start + event.duration * event.gate - head.start) / head.duration;
       event.notes = [];
     } else {
-      head = event;
+      heads.set(event.voice, event);
     }
-  });
+    previous.set(event.voice, event);
+  }
   return { ...plan, events };
 }
 

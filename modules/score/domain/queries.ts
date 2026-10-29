@@ -1,6 +1,6 @@
 import { measureCapacity } from "./rhythm";
 import type { Measure, Score, Staff } from "./schema";
-import { allStaves, measureEvents, voiceBars } from "./voice-access";
+import { allStaves, measureEvents, numberedVoice, voiceBars, voiceInfo } from "./voice-access";
 
 /** Where an event is: its bar, its voice there, and its index within that voice bar. */
 export function findEvent(score: Score, id: string) {
@@ -27,6 +27,18 @@ export function getMeasure(score: Score, id: string): Measure {
   const measure = score.measures.find((m) => m.id === id);
   if (!measure) throw new Error("That measure is no longer in the score.");
   return measure;
+}
+
+/** "v2": voice 2 of the first staff, as score text names it. */
+const VOICE_HANDLE = /^v(\d)$/;
+
+/** A voice by ID or by handle ("v2"), resolved when the operation runs; throws when there is none. */
+export function resolveVoice(score: Score, voiceId: string): string {
+  if (voiceInfo(score, voiceId)) return voiceId;
+  const handle = VOICE_HANDLE.exec(voiceId);
+  const id = handle && numberedVoice(score, Number(handle[1]));
+  if (!id) throw new Error(`There is no voice ${voiceId}; add it with addVoiceBars first.`);
+  return id;
 }
 
 /** A staff by ID; the first staff when omitted. */

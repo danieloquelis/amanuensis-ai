@@ -1,6 +1,4 @@
 import {
-  isNote,
-  barEvents,
   describeReadability,
   measureCapacity,
   readability,
@@ -8,10 +6,8 @@ import {
   durationCode,
   pitchName,
   pitchText,
-  type BasicOperation,
   type Meter,
   type Operation,
-  type Pitch,
   type Score,
 } from "@/modules/score";
 import {
@@ -27,6 +23,15 @@ import {
   type VoiceTake,
 } from "@/modules/voice";
 import { transcribeSchema } from "./music-tool-schemas";
+import {
+  barsInOrder,
+  keptBars,
+  lastBarWithNotes,
+  lineOf,
+  nextStartsOfLine,
+  writeBars,
+  type WrittenBar,
+} from "./transcription-placement";
 
 type ToolResult = { ok: true; [key: string]: unknown } | { ok: false; error: string };
 
@@ -34,7 +39,9 @@ type ToolResult = { ok: true; [key: string]: unknown } | { ok: false; error: str
 export type ScoreAccess = { getScore: () => Score; commit: (operation: Operation) => ToolResult };
 
 const FOUR_FOUR: Meter = { numerator: 4, denominator: 4 };
-type WrittenBar = { pitch: Pitch | null; duration: number; tie?: boolean }[];
+
+/** " v2" after a bar number for a line other than the main one, as score text names it. */
+const lineName = (voice: string | undefined) => (lineOf(voice) > 1 ? ` ${voice}` : "");
 
 /** "re E4e G4q~": a bar in score text, as the agent reads and writes the score. */
 const barText = (bar: WrittenBar) =>
@@ -48,7 +55,8 @@ const barText = (bar: WrittenBar) =>
 export function transcribeIntoScore(take: VoiceTake | null, raw: unknown, access: ScoreAccess | null): ToolResult {
   const args = transcribeSchema.parse(raw);
   const score = access?.getScore();
-  const firstBar = args.spans[0].bar ?? (score ? lastBarWithNotes(score) + 1 : 1);
+  const firstLine = lineOf(args.spans[0].voice);
+  const firstBar = args.spans[0].bar ?? (score ? lastBarWithNotes(score, firstLine) + 1 : 1);
   const meter = args.meter ?? score?.measures[firstBar - 1]?.meter ?? score?.measures.at(-1)?.meter ?? FOUR_FOUR;
   const capacity = measureCapacity(meter);
   const chords = (args.chords ?? []).map(({ bar, beat, symbol }): ChordContext => {
@@ -67,22 +75,32 @@ export function transcribeIntoScore(take: VoiceTake | null, raw: unknown, access
   const bpm = args.bpm ?? heardTempo!.bpm;
   // The singing written at a tempo: where each span starts, what was heard, the bars it fills.
   const readAt = (tempo: number) => {
-    const starts = barsInOrder(args.spans, heardSpans, firstBar, tempo, capacity);
-    const placed = heardSpans.map((span, i) => ({ ...span, bar: starts[i] }));
+    const starts = barsInOrder(args.spans, heardSpans, { firstBar, score }, tempo, capacity);
+    // A second voice is a lower line (a bass under the melody): it is written low.
+    const placed = heardSpans.map((span, i) => ({
+      ...span,
+      bar: starts[i],
+      register: lineOf(args.spans[i].voice) > 1 ? ("low" as const) : ("melody" as const),
+    }));
     const results = transcribeSpans(placed, { bpm: tempo, meter, key, chords, snapToChordTones });
-    return { starts, results, kept: results.map((result, i) => keptBars(result.bars, placed[i], starts[i + 1])) };
+    const nexts = nextStartsOfLine(args.spans, starts);
+    return { starts, results, kept: results.map((result, i) => keptBars(result.bars, placed[i], nexts[i])) };
   };
   // How each reading would look on the page, so the plainest of those that fit can be chosen.
   const reads = (bars: WrittenBar[]) => describeReadability(readability(bars, meter));
   const { starts, results, kept } = readAt(bpm);
-  const written = kept.flatMap((bars, i) => bars.map((events, offset) => ({ bar: starts[i] + offset, events })));
+  const written = kept.flatMap((bars, i) =>
+    bars.map((events, offset) => ({ bar: starts[i] + offset, line: lineOf(args.spans[i].voice), events })),
+  );
   const spans = results.map((result, i) => {
     const { spanId } = args.spans[i];
     const bar = starts[i];
     const at = (relative: number) => relative + bar - 1;
     return {
       spanId,
-      bars: Object.fromEntries(kept[i].map((events, offset) => [`bar ${bar + offset}`, barText(events)])),
+      bars: Object.fromEntries(
+        kept[i].map((events, offset) => [`bar ${bar + offset}${lineName(args.spans[i].voice)}`, barText(events)]),
+      ),
       ...(kept[i].length < result.bars.length ? { trimmedBars: result.bars.length - kept[i].length } : {}),
       heard: describeHearing(hearingOf(result.notes)),
       startBeat: result.startBeat,
@@ -126,66 +144,6 @@ function tempoOfSinging(spans: { frames: PitchFrame[]; bars?: number }[], barBea
   return reportTempo(onsets, { barBeats, bpm: hint, bars: spans.length === 1 ? bars : undefined });
 }
 
-/** The last bar (from 1) that has a note in it; 0 for a score of rests. */
-const lastBarWithNotes = (score: Score) =>
-  score.measures.findLastIndex((measure) => barEvents(measure).some(isNote)) + 1;
-
-/**
- * Where each span starts: the bar asked for, or right after the previous span. A span fills the
- * bars it was said to, or as many as its length takes at the tempo.
- */
-function barsInOrder(
-  asked: { bar?: number; bars?: number }[],
-  spans: { signal: { samples: Float32Array; sampleRate: number } }[],
-  firstBar: number,
-  bpm: number,
-  barBeats: number,
-): number[] {
-  let next = firstBar;
-  return asked.map((span, i) => {
-    const bar = span.bar ?? next;
-    const seconds = spans[i].signal.samples.length / spans[i].signal.sampleRate;
-    next = bar + (span.bars ?? Math.max(1, Math.round((seconds * bpm) / 60 / barBeats)));
-    return bar;
-  });
-}
-
 /** "clear", or "hard to hear (11 of 21 notes unclear)" when the agent should not trust it. */
 const describeHearing = ({ quality, unclear, notes }: Hearing) =>
   quality === "clear" ? quality : `${quality} (${unclear} of ${notes} notes unclear)`;
-
-/** A trailing bar with less than this many beats of notes is the voice trailing off, not music. */
-const TAIL_BEATS = 1;
-
-/**
- * The bars a span may fill: as many as the agent said, else up to the next span's bar. A last
- * bar holding only a scrap of sound is dropped.
- */
-function keptBars(bars: WrittenBar[], span: { bar: number; bars?: number }, nextBar?: number): WrittenBar[] {
-  const limit = span.bars ?? (nextBar !== undefined ? nextBar - span.bar : bars.length);
-  const kept = bars.slice(0, Math.max(1, limit));
-  const noteBeats = (bar: WrittenBar) => bar.reduce((sum, e) => sum + (e.pitch ? e.duration : 0), 0);
-  while (kept.length > 1 && noteBeats(kept.at(-1)!) < TAIL_BEATS) kept.pop();
-  // The sound ends with the kept bars: a tie must not reach into whatever the score holds next.
-  const last = kept.at(-1)!.map((e, i, bar) => (i === bar.length - 1 ? { pitch: e.pitch, duration: e.duration } : e));
-  return [...kept.slice(0, -1), last];
-}
-
-/** Appends bars the take needs, then replaces each target bar with what was heard. */
-function writeBars(access: ScoreAccess, bars: { bar: number; events: WrittenBar }[]): ToolResult {
-  const needed = Math.max(...bars.map((b) => b.bar)) - access.getScore().measures.length;
-  if (needed > 0) {
-    const appended = access.commit({
-      type: "batch",
-      operations: Array.from({ length: needed }, (): BasicOperation => ({ type: "appendMeasure" })),
-    });
-    if (!appended.ok) return appended;
-  }
-  const measures = access.getScore().measures;
-  return access.commit({
-    type: "batch",
-    operations: bars.map(
-      ({ bar, events }) => ({ type: "replaceMeasure", measureId: measures[bar - 1].id, events }) as BasicOperation,
-    ),
-  });
-}

@@ -147,7 +147,9 @@ const instrumentsOf = (plan: PlaybackPlan): SoundId[] => [
 
 /** The written beat sounding `elapsed` seconds into the plan. */
 function playheadBeat(plan: PlaybackPlan, elapsed: number) {
+  // The main line plays in every bar, so it gives the time.
+  const timeline = plan.events.filter((event) => event.voice === plan.primaryVoice);
   const current =
-    plan.events.find((event) => elapsed >= event.start && elapsed < event.start + event.duration) ?? plan.events[0];
+    timeline.find((event) => elapsed >= event.start && elapsed < event.start + event.duration) ?? timeline[0];
   return current ? current.beat + Math.max(0, (elapsed - current.start) / current.duration) * current.beats : 0;
 }

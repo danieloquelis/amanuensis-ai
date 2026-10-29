@@ -1,20 +1,22 @@
 import { eventOnsets } from "../domain/rhythm";
 import type { Score } from "../domain/schema";
 import { isNotationHandle, notationAt } from "./notation-positions";
-import { barEvents } from "../domain/voice-access";
+import { barEvents, numberedVoice } from "../domain/voice-access";
 
 /**
  * Musical addresses for operations, so an agent reading score text can target what it sees:
  * a note or rest is "bar:beat" ("2:3" is bar 2, beat 3; beats count from 1 and may be fractional,
- * "2:2.5") or "bar#n" ("2#5" is the fifth note or rest of bar 2), a bar is its number ("2"), and
+ * "2:2.5") or "bar#n" ("2#5" is the fifth note or rest of bar 2), with "vK" after the bar for
+ * another voice ("2v2#1"), a bar is its number ("2"), and
  * a chord, slur, mark, repeat or indication is named as in `notation-positions` ("chord 2:3"). `resolvePositions` swaps them for IDs before validation.
  */
 
 /** Operation fields that name a note or rest, and those that name a bar (`targetId` may be either). */
 const EVENT_KEYS = new Set(["eventId", "startEventId", "endEventId", "beforeEventId", "targetId", "eventIds"]);
 const BAR_KEYS = new Set(["measureId", "afterMeasureId", "startMeasureId", "endMeasureId", "measureIds", "targetId"]);
-const EVENT_POSITION = /^(\d+):(\d+(?:\.\d+)?)$/;
-const EVENT_ORDER = /^(\d+)#(\d+)$/;
+/** "2:3" or "2v2:3" (bar 2, voice 2, beat 3); "2#5" or "2v2#5" (its fifth note or rest). */
+const EVENT_POSITION = /^(\d+)(?:v(\d))?:(\d+(?:\.\d+)?)$/;
+const EVENT_ORDER = /^(\d+)(?:v(\d))?#(\d+)$/;
 const BAR_POSITION = /^\d+$/;
 const EPSILON = 1e-9;
 
@@ -29,18 +31,25 @@ function measureAt(score: Score, value: string | number): string {
   return measure.id;
 }
 
+/** The events of voice `number` (the main line when absent) in a bar. */
+function voiceEventsAt(score: Score, bar: string, number: string | undefined) {
+  const measure = score.measures[Number(bar) - 1];
+  if (!measure) throw new Error(`There is no bar ${bar}.`);
+  const voiceId = number ? numberedVoice(score, Number(number)) : undefined;
+  if (number && !voiceId) throw new Error(`There is no voice ${number}.`);
+  return barEvents(measure, voiceId ?? undefined);
+}
+
 function eventAt(score: Score, position: string): string {
   const order = EVENT_ORDER.exec(position);
   if (order) {
-    const measure = score.measures[Number(order[1]) - 1];
-    const event = measure && barEvents(measure)[Number(order[2]) - 1];
-    if (!event) throw new Error(`Bar ${order[1]} has no note or rest number ${order[2]}.`);
+    const event = voiceEventsAt(score, order[1], order[2])[Number(order[3]) - 1];
+    const where = order[2] ? `Bar ${order[1]} voice ${order[2]}` : `Bar ${order[1]}`;
+    if (!event) throw new Error(`${where} has no note or rest number ${order[3]}.`);
     return event.id;
   }
-  const [, bar, beat] = EVENT_POSITION.exec(position)!;
-  const measure = score.measures[Number(bar) - 1];
-  if (!measure) throw new Error(`There is no bar ${bar}.`);
-  const events = barEvents(measure);
+  const [, bar, voice, beat] = EVENT_POSITION.exec(position)!;
+  const events = voiceEventsAt(score, bar, voice);
   const onsets = eventOnsets(events);
   const at = onsets.findIndex((onset) => Math.abs(onset + 1 - Number(beat)) < EPSILON);
   if (at !== -1) return events[at].id;

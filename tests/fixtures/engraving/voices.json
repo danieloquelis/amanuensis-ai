@@ -1,0 +1,567 @@
+{
+  "schemaVersion": 3,
+  "id": "voices",
+  "revision": 0,
+  "title": "Thumb and fingers",
+  "tempo": 76,
+  "key": {
+    "fifths": 1,
+    "mode": "minor"
+  },
+  "parts": [
+    {
+      "id": "guitar",
+      "instrument": "guitar",
+      "name": "Guitar",
+      "staves": [
+        {
+          "id": "staff",
+          "clef": "treble8vb",
+          "voices": [
+            {
+              "id": "fingers"
+            },
+            {
+              "id": "thumb"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "measures": [
+    {
+      "id": "m1",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "voices": [
+        {
+          "voiceId": "fingers",
+          "events": [
+            {
+              "id": "a1",
+              "pitch": {
+                "step": "E",
+                "octave": 3,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              }
+            },
+            {
+              "id": "a2",
+              "pitch": {
+                "step": "G",
+                "octave": 3,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              }
+            },
+            {
+              "id": "a3",
+              "pitch": {
+                "step": "B",
+                "octave": 3,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              }
+            },
+            {
+              "id": "a4",
+              "pitch": {
+                "step": "G",
+                "octave": 3,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              }
+            },
+            {
+              "id": "a5",
+              "pitch": {
+                "step": "E",
+                "octave": 3,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              }
+            },
+            {
+              "id": "a6",
+              "pitch": {
+                "step": "G",
+                "octave": 3,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              }
+            },
+            {
+              "id": "a7",
+              "pitch": {
+                "step": "B",
+                "octave": 3,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              }
+            },
+            {
+              "id": "a8",
+              "pitch": {
+                "step": "G",
+                "octave": 3,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              }
+            }
+          ]
+        },
+        {
+          "voiceId": "thumb",
+          "events": [
+            {
+              "id": "b1",
+              "pitch": {
+                "step": "E",
+                "octave": 2,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 2,
+                "denominator": 1
+              }
+            },
+            {
+              "id": "b2",
+              "pitch": {
+                "step": "B",
+                "octave": 2,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 2,
+                "denominator": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m2",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "voices": [
+        {
+          "voiceId": "fingers",
+          "events": [
+            {
+              "id": "c1",
+              "pitch": {
+                "step": "A",
+                "octave": 3,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              }
+            },
+            {
+              "id": "c2",
+              "pitch": {
+                "step": "C",
+                "octave": 4,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              }
+            },
+            {
+              "id": "c3",
+              "pitch": {
+                "step": "E",
+                "octave": 4,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 2,
+                "denominator": 1
+              }
+            }
+          ]
+        },
+        {
+          "voiceId": "thumb",
+          "events": [
+            {
+              "id": "d1",
+              "pitch": {
+                "step": "A",
+                "octave": 3,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              }
+            },
+            {
+              "id": "d2",
+              "pitch": {
+                "step": "E",
+                "octave": 3,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              }
+            },
+            {
+              "id": "d3",
+              "pitch": {
+                "step": "A",
+                "octave": 2,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 2,
+                "denominator": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m3",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "voices": [
+        {
+          "voiceId": "fingers",
+          "events": [
+            {
+              "id": "e1",
+              "pitch": {
+                "step": "D",
+                "octave": 4,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 2,
+                "denominator": 1
+              }
+            },
+            {
+              "id": "e2",
+              "pitch": {
+                "step": "F",
+                "octave": 4,
+                "alter": 1
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              }
+            },
+            {
+              "id": "e3",
+              "pitch": {
+                "step": "E",
+                "octave": 4,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              }
+            }
+          ]
+        },
+        {
+          "voiceId": "thumb",
+          "events": [
+            {
+              "id": "f1",
+              "pitch": {
+                "step": "C",
+                "octave": 4,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 2,
+                "denominator": 1
+              }
+            },
+            {
+              "id": "f2",
+              "pitch": {
+                "step": "D",
+                "octave": 3,
+                "alter": 1
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              }
+            },
+            {
+              "id": "f3",
+              "pitch": {
+                "step": "B",
+                "octave": 2,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "tie": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m4",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "voices": [
+        {
+          "voiceId": "fingers",
+          "events": [
+            {
+              "id": "g1",
+              "pitch": null,
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              }
+            },
+            {
+              "id": "g2",
+              "pitch": {
+                "step": "B",
+                "octave": 3,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              }
+            },
+            {
+              "id": "g3",
+              "pitch": {
+                "step": "G",
+                "octave": 3,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 2,
+                "denominator": 1
+              }
+            }
+          ]
+        },
+        {
+          "voiceId": "thumb",
+          "events": [
+            {
+              "id": "h1",
+              "pitch": {
+                "step": "B",
+                "octave": 2,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              }
+            },
+            {
+              "id": "h2",
+              "pitch": null,
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              }
+            },
+            {
+              "id": "h3",
+              "pitch": {
+                "step": "E",
+                "octave": 2,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 2,
+                "denominator": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m5",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "voices": [
+        {
+          "voiceId": "fingers",
+          "events": [
+            {
+              "id": "i1",
+              "pitch": {
+                "step": "E",
+                "octave": 3,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 4,
+                "denominator": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m6",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "voices": [
+        {
+          "voiceId": "fingers",
+          "events": [
+            {
+              "id": "j1",
+              "pitch": {
+                "step": "G",
+                "octave": 3,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "articulation": "accent"
+            },
+            {
+              "id": "j2",
+              "pitch": {
+                "step": "A",
+                "octave": 3,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              }
+            },
+            {
+              "id": "j3",
+              "pitch": {
+                "step": "B",
+                "octave": 3,
+                "alter": 0
+              },
+              "duration": {
+                "numerator": 2,
+                "denominator": 1
+              },
+              "articulation": "fermata"
+            }
+          ]
+        },
+        {
+          "voiceId": "thumb",
+          "events": [
+            {
+              "id": "k1",
+              "pitch": null,
+              "duration": {
+                "numerator": 4,
+                "denominator": 1
+              },
+              "measureRest": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "annotations": [
+    {
+      "id": "dyn",
+      "targetId": "m1",
+      "kind": "dynamic",
+      "text": "p",
+      "staffId": "staff"
+    },
+    {
+      "id": "dyn2",
+      "targetId": "d3",
+      "kind": "dynamic",
+      "text": "mf"
+    }
+  ],
+  "repeats": [],
+  "chords": [
+    {
+      "id": "ch1",
+      "measureId": "m1",
+      "beat": 0,
+      "root": {
+        "step": "E",
+        "alter": 0
+      },
+      "quality": "m"
+    }
+  ],
+  "marks": [],
+  "slurs": [
+    {
+      "id": "sl",
+      "startEventId": "b1",
+      "endEventId": "b2"
+    }
+  ]
+}
