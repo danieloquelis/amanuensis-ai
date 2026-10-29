@@ -713,3 +713,21 @@ test("the instrument sets the clef, the written pitch and the sound, and survive
   expect((await heardNotes(page))[0]).toBe(60);
   await page.getByRole("button", { name: "Stop playback" }).click();
 });
+
+test("pinching (Ctrl + wheel) zooms the sheet, not the page", async ({ page }) => {
+  await page.goto("/");
+  const paper = page.getByRole("article", { name: "Music sheet" });
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true })).toBeEnabled();
+  const before = (await paper.boundingBox())!.width;
+  const box = (await paper.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + 200);
+  await page.keyboard.down("Control");
+  await page.mouse.wheel(0, -60);
+  await page.keyboard.up("Control");
+  await expect.poll(async () => (await paper.boundingBox())!.width).toBeGreaterThan(before * 1.3);
+  expect(await page.evaluate(() => visualViewport?.scale ?? 1)).toBe(1);
+  await page.keyboard.down("Control");
+  await page.mouse.wheel(0, 120);
+  await page.keyboard.up("Control");
+  await expect.poll(async () => (await paper.boundingBox())!.width).toBeLessThan(before);
+});

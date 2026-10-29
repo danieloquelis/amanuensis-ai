@@ -114,15 +114,6 @@
   mask: url("/brand/mark.svg") center / contain no-repeat;
 }
 
-/* Document controls */
-
-.zoomValue {
-  min-width: 52px;
-  font-size: 13px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
 /* "New song" confirmation, under its button at the top left */
 
 .confirm {
@@ -305,12 +296,18 @@
 
 /* Canvas and paper */
 
+/* An open canvas: it still scrolls (trackpad, wheel, keyboard), but shows no scrollbars. */
 .canvas {
   position: absolute;
   inset: 0;
   overflow: auto;
+  scrollbar-width: none;
   padding: 104px 48px 220px;
   transition: padding 420ms var(--ease-in-out);
+}
+
+.canvas::-webkit-scrollbar {
+  display: none;
 }
 
 /*
@@ -325,17 +322,19 @@
   padding-left: calc(416px + 48px);
 }
 
-/* Not much room beside the docked chat: the zoom steps step aside until the chat is closed. */
+/* Not much room beside the docked chat: the tempo's name steps aside until the chat is closed. */
 @media (max-width: 1400px) {
-  .studio[data-chat="sidebar"] .zoomPart,
   .studio[data-chat="sidebar"] .tempoLabel {
     display: none;
   }
 }
 
+/* --zoom (1 = 100%) scales the whole sheet, its limits included, so zooming in grows past the window. */
 .paper {
-  min-width: 580px;
-  max-width: 1100px;
+  --zoom: 1;
+  width: calc(100% * var(--zoom));
+  min-width: calc(580px * var(--zoom));
+  max-width: calc(1100px * var(--zoom));
   margin: 0 auto;
   padding: 30px 27px 22px;
   border-radius: var(--r-lg);
@@ -526,10 +525,6 @@
   .topCenter > [role="group"] {
     overflow-x: auto;
     scrollbar-width: none;
-  }
-
-  .zoomPart {
-    display: none !important;
   }
 
   .bottomCenter {

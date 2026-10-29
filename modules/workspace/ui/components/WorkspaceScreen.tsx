@@ -11,6 +11,7 @@ import { localProjectRepository } from "@/modules/projects";
 import { useAnchorRect } from "@/shared/ui/hooks/use-anchor-rect";
 import { useBottomInset } from "@/shared/ui/hooks/use-bottom-inset";
 import { useNoteAudition } from "../hooks/use-note-audition";
+import { ZOOM_RANGE } from "../hooks/use-pinch-zoom";
 import { useWorkspaceShortcuts } from "../hooks/use-workspace-shortcuts";
 import { BrandMark } from "./BrandMark";
 import { DocumentControls } from "./DocumentControls";
@@ -29,7 +30,7 @@ import styles from "./workspace.module.css";
  * each other. Holds no rules itself.
  */
 export function WorkspaceScreen() {
-  const [zoom, setZoom] = useState(100);
+  const [zoom, setZoom] = useState<number>(ZOOM_RANGE.initial);
   // A right-click menu on the sheet replaces the selection card while it is open.
   const [menuOpen, setMenuOpen] = useState(false);
   const playback = usePlayback();
@@ -88,6 +89,7 @@ export function WorkspaceScreen() {
           editor={editor}
           playBeat={playback.playBeat}
           zoom={zoom}
+          onZoom={setZoom}
           onMenuOpenChange={setMenuOpen}
           onAudition={audition}
           onPress={dock.dismissChat}
@@ -121,7 +123,7 @@ export function WorkspaceScreen() {
             {editor.error && <ErrorBanner message={editor.error} onDismiss={() => editor.setError(null)} />}
           </div>
           <div className={styles.topEnd}>
-            <DocumentControls editor={editor} zoom={zoom} onZoom={setZoom} />
+            <DocumentControls editor={editor} />
           </div>
           <div ref={bottomDock} className={styles.bottomCenter}>
             {!chatDocked && composeDock}

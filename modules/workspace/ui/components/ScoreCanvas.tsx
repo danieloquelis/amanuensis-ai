@@ -1,6 +1,8 @@
+import { useRef, type CSSProperties } from "react";
 import { sheetHeading } from "@/modules/editor";
 import { ScoreSurface, type ScoreEditor } from "@/modules/editor/ui";
 import type { Pitch } from "@/modules/score";
+import { usePinchZoom } from "../hooks/use-pinch-zoom";
 import styles from "./workspace.module.css";
 
 /** The paper: title, tempo marking, the editable sheet and footer. */
@@ -8,13 +10,16 @@ export function ScoreCanvas({
   editor,
   playBeat,
   zoom,
+  onZoom,
   onMenuOpenChange,
   onAudition,
   onPress,
 }: {
   editor: ScoreEditor;
   playBeat: number | null;
+  /** Sheet size in percent; pinching the trackpad (or Ctrl/⌘ + wheel) changes it. */
   zoom: number;
+  onZoom: (zoom: number) => void;
   onMenuOpenChange: (open: boolean) => void;
   onAudition: (eventId: string, pitch: Pitch) => void;
   /** Any press on the paper or around it, e.g. to fold the chat away. */
@@ -22,9 +27,11 @@ export function ScoreCanvas({
 }) {
   const { score, ready, commit } = editor;
   const barCount = score.measures.length;
+  const canvas = useRef<HTMLDivElement>(null);
+  usePinchZoom(canvas, zoom, onZoom);
   return (
-    <div className={styles.canvas} onPointerDown={onPress}>
-      <article className={styles.paper} style={{ width: `${zoom}%` }} aria-label="Music sheet">
+    <div ref={canvas} className={styles.canvas} onPointerDown={onPress}>
+      <article className={styles.paper} style={{ "--zoom": zoom / 100 } as CSSProperties} aria-label="Music sheet">
         <div className={styles.scoreHeading}>
           <input
             key={`${score.id}-${score.title}`}
