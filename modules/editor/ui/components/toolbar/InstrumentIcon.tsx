@@ -39,6 +39,18 @@ function Trombone({ size }: { size: number }) {
   );
 }
 
+/** A snare drum seen from the side, with two sticks crossed over it. */
+function Drums({ size }: { size: number }) {
+  return (
+    <LineIcon size={size}>
+      <ellipse cx="128" cy="128" rx="88" ry="28" />
+      <path d="M40 128v56c0 15 39 28 88 28s88-13 88-28v-56" />
+      <path d="M68 152v34M128 156v40M188 152v34" />
+      <path d="M84 36l64 72M188 36l-64 72" />
+    </LineIcon>
+  );
+}
+
 /** The icon of an instrument, at the toolbar's icon size. */
 export function InstrumentIcon({ instrument, size }: { instrument: InstrumentId; size: number }) {
   switch (instrument) {
@@ -52,5 +64,7 @@ export function InstrumentIcon({ instrument, size }: { instrument: InstrumentId;
       return <Flute size={size} />;
     case "trombone":
       return <Trombone size={size} />;
+    case "drums":
+      return <Drums size={size} />;
   }
 }

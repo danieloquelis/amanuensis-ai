@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CHORD_QUALITY_NAMES, type ChordQuality } from "./chords";
+import { DRUM_PIECE_CODES, MAX_DRUM_HITS } from "./drums";
 import { INSTRUMENT_IDS } from "./instruments";
 import { KEY_FIFTHS } from "./key";
 import { MARK_KINDS, SECTION_LABEL_MAX } from "./navigation";
@@ -62,6 +63,8 @@ export const eventSchema = z.strictObject({
   tie: z.literal(true).optional(),
   /** Further notes on the same stem, above `pitch` (a chord within the voice), lowest first. */
   stack: z.array(pitchSchema).min(1).max(5).optional(),
+  /** A drum hit: the kit pieces struck together, lowest on the staff first; `pitch` is then null. */
+  drums: z.array(z.enum(DRUM_PIECE_CODES)).min(1).max(MAX_DRUM_HITS).optional(),
 });
 
 export const CLEFS = ["treble", "bass", "treble8vb", "percussion"] as const;

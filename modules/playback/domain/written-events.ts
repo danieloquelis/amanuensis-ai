@@ -12,6 +12,7 @@ import {
   type Score,
   type ScoreEvent,
 } from "@/modules/score";
+import { drumGate, drumNotes } from "./drum-sound";
 import { accented, DEFAULT_VELOCITY, DYNAMIC_VELOCITY } from "./dynamics";
 import { soundingSource } from "./performance-order";
 import type { PlaybackEvent } from "./plan";
@@ -24,8 +25,8 @@ const GATE = { staccato: 0.45, tenuto: 1, normal: 0.93 };
 /** One voice's events in one bar, with everything but their start time. */
 export type WrittenLine = Omit<PlaybackEvent, "start">[];
 
-/** Every note the event sounds: one, or a chord's. */
-const notesOf = (event: ScoreEvent) => eventPitches(event).map(midiPitch);
+/** Every note the event sounds: one, a chord's, or the kit pieces of a drum hit. */
+const notesOf = (event: ScoreEvent) => (event.drums ? drumNotes(event) : eventPitches(event).map(midiPitch));
 
 /** A slurred note runs into the next, like tenuto; staccato under a slur stays short. */
 function gateOf(event: ScoreEvent, slurred: boolean) {
@@ -82,16 +83,17 @@ export function resolveWrittenEvents(score: Score): WrittenLine[][] {
         const velocity = velocities.get(voiceId) ?? staffVelocity.get(staff.id) ?? DEFAULT_VELOCITY;
         const length = soundingBeats(event);
         const stretch = event.articulation === "fermata" ? FERMATA_STRETCH : 1;
+        const duration = ((length * 60) / tempo) * stretch;
         const entry = {
           id: event.id,
           beat: starts[measureIndex] + localBeat,
           beats: length,
-          duration: ((length * 60) / tempo) * stretch,
+          duration,
           notes: part.muted ? [] : notesOf(event),
           velocity: mixed(accented(velocity, event.articulation === "accent"), part),
           instrument: part.instrument,
           voice: voiceId,
-          gate: gateOf(event, legato.has(event.id)),
+          gate: event.drums ? drumGate(duration) : gateOf(event, legato.has(event.id)),
           ...(event.tie ? { tiedTo: nextEvent(score, event.id)?.id } : {}),
         };
         localBeat += length;

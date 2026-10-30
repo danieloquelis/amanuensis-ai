@@ -73,18 +73,25 @@ export function copyNotes(draft: Draft, op: OperationOf<"copyNotes">, { idPrefix
       parts.forEach((part, k) => {
         const lastPart = finishes && k === parts.length - 1;
         const id = `${idPrefix}-n${created++}`;
-        const { pitch, stack, tie, articulation } = piece.event;
+        const { pitch, stack, tie, articulation, drums } = piece.event;
         const isFirst = !map.first.has(piece.event.id);
         if (isFirst) map.first.set(piece.event.id, id);
         map.last.set(piece.event.id, id);
-        // A note split at a barline is tied through; the articulation stays on its first part.
+        // A note split at a barline is tied through; the articulation stays on its first part. A
+        // drum hit sounds once: the rest of its length is silence.
+        if (drums && !isFirst) {
+          written.push({ id, pitch: null, duration: durationFromBeats(part) });
+          at += part;
+          return;
+        }
         written.push({
           id,
           pitch,
           ...(stack ? { stack } : {}),
+          ...(drums ? { drums } : {}),
           duration: durationFromBeats(part),
           ...(isFirst && articulation ? { articulation } : {}),
-          ...((lastPart ? tie : !isRest(piece.event)) ? { tie: true as const } : {}),
+          ...(!drums && (lastPart ? tie : !isRest(piece.event)) ? { tie: true as const } : {}),
         });
         at += part;
       });

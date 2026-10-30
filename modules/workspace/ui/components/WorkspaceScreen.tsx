@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { partOf, type Pitch } from "@/modules/score";
+import { partOf } from "@/modules/score";
 import { localChatRepository } from "@/modules/assistant";
 import { ComposeDock, useAssistant, useComposeDock } from "@/modules/assistant/ui";
 import { playbackStart, selectionAnchors } from "@/modules/editor";
@@ -60,7 +60,7 @@ export function WorkspaceScreen() {
   const { getScore } = editor;
   // A note sounds on its own part's instrument.
   const soundNote = useCallback(
-    (pitch: Pitch, eventId: string) => soundPitch(pitch, partOf(getScore(), eventId).instrument),
+    (midi: number, eventId: string) => soundPitch(midi, partOf(getScore(), eventId).instrument),
     [soundPitch, getScore],
   );
   const audition = useNoteAudition(editor.selection?.event ?? null, soundNote);

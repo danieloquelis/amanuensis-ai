@@ -9,15 +9,27 @@ import { parseBarsText, type WrittenBar, type WrittenEvent } from "./score-text-
 /**
  * A bar's values spelled as a musician would at their place in it (see `spellRhythm`): "C4h"
  * from the off-beat of 1 becomes "C4q.~ C4e". A split note keeps its articulation and slur start
- * on its first part, its slur end and its own tie on its last.
+ * on its first part, its slur end and its own tie on its last; a split drum hit is followed by rests.
  */
 function spelled(events: WrittenEvent[], meter: Meter): WrittenEvent[] {
   let at = 0;
   return events.flatMap((event) => {
-    const parts = spellRhythm(at, event.duration, meter, event.pitch === null);
+    const silent = event.pitch === null && !event.drums.length;
+    const parts = spellRhythm(at, event.duration, meter, silent);
     at += event.duration;
     return parts.map((duration, k) => {
       const [first, last] = [k === 0, k === parts.length - 1];
+      // A drum hit sounds once: past its first part, its length is silence.
+      if (event.drums.length && !first)
+        return {
+          ...event,
+          duration: duration as DurationValue,
+          drums: [],
+          tie: false,
+          articulation: null,
+          opensSlur: false,
+          closesSlur: false,
+        };
       return {
         ...event,
         duration: duration as DurationValue,
@@ -93,9 +105,10 @@ export function writeBars(score: Score, text: string, requestId: string): { scor
       // Bars added at the end take the last bar's meter.
       const meter = (score.measures[bar - 1] ?? score.measures.at(-1)!).meter;
       const parts = spelled(events, meter);
-      const notes = parts.map(({ pitch, stack, duration, tie }) => ({
+      const notes = parts.map(({ pitch, stack, drums, duration, tie }) => ({
         pitch,
         ...(stack.length ? { stack } : {}),
+        ...(drums.length ? { drums } : {}),
         duration,
         tie,
       }));

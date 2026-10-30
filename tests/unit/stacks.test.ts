@@ -102,10 +102,10 @@ test("playback sounds every note of a chord", () => {
 
 test("Shift + a letter adds that note above the chord's top note", () => {
   const score = createExample();
-  const op = typedLetterEdit(score, "note-0-0", "E", true).operation as { pitches: Pitch[] };
+  const op = typedLetterEdit(score, "note-0-0", "E", true)!.operation as { pitches: Pitch[] };
   assert.deepEqual(op.pitches.map(pitchName), ["C4", "E4"]);
   const higher = edit(score, op as Operation);
-  const again = typedLetterEdit(higher, "note-0-0", "C", true).operation as { pitches: Pitch[] };
+  const again = typedLetterEdit(higher, "note-0-0", "C", true)!.operation as { pitches: Pitch[] };
   assert.deepEqual(again.pitches.map(pitchName), ["C4", "E4", "C5"]);
 });
 

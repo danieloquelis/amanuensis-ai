@@ -23,6 +23,7 @@ for (const name of [
   "voices",
   "stacks",
   "ensemble",
+  "drums",
 ]) {
   test(`engraves the ${name} fixture`, async ({ page }) => {
     const score = readFileSync(`tests/fixtures/engraving/${name}.json`, "utf8");

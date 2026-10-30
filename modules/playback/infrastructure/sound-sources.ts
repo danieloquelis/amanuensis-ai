@@ -1,4 +1,5 @@
 import { LAYERS, type SmplrPreset } from "smplr";
+import { DRUM_PIECE_CODES, DRUM_PIECES, type DrumPiece } from "@/modules/score";
 import type { SoundId } from "../application/sound-port";
 
 /** Self-hosted samples. A new sample set goes in a new folder (v2), so cached files never go stale. */
@@ -63,7 +64,8 @@ export function pianoPreset(): SmplrPreset {
  * The other instruments: FluidR3 General MIDI sounds (one file per instrument, every note as
  * base64 MP3), as published by gleitz/midi-js-soundfonts.
  */
-const FLUID_R3: Record<Exclude<SoundId, "piano">, string> = {
+type FluidSound = Exclude<SoundId, "piano" | "drums">;
+const FLUID_R3: Record<FluidSound, string> = {
   guitar: "acoustic_guitar_nylon",
   trumpet: "trumpet",
   flute: "flute",
@@ -73,10 +75,10 @@ const FLUID_R3_REMOTE = "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM"
 const PIANO_REMOTE = "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples";
 
 /** Where an instrument's FluidR3 file is served. */
-export const soundfontUrl = (id: Exclude<SoundId, "piano">) => `${SOUNDS_BASE}/fluidr3/${FLUID_R3[id]}-mp3.js`;
+export const soundfontUrl = (id: FluidSound) => `${SOUNDS_BASE}/fluidr3/${FLUID_R3[id]}-mp3.js`;
 
 /** A file served under `SOUNDS_BASE`, where it comes from, and which source it belongs to (for the fetch script). */
-export type SampleFile = { file: string; url: string; source: "splendid-grand-piano" | "fluidr3-gm" };
+export type SampleFile = { file: string; url: string; source: "splendid-grand-piano" | "fluidr3-gm" | "vcsl" };
 
 /** Every sample file the instruments request, relative to `SOUNDS_BASE`. */
 export function sampleFiles(): SampleFile[] {
@@ -94,5 +96,86 @@ export function sampleFiles(): SampleFile[] {
     url: `${FLUID_R3_REMOTE}/${name}-mp3.js`,
     source: "fluidr3-gm" as const,
   }));
-  return [...piano, ...others];
+  const drums = [...new Set(Object.values(DRUM_SAMPLES).flatMap(({ soft, loud }) => [soft, loud]))].flatMap((path) =>
+    SOUND_FORMATS.map((format) => ({
+      file: `drums/${sampleName(path)}.${format}`,
+      url: `${VCSL_REMOTE}/${path.split("/").map(encodeURIComponent).join("/")}.${format}`,
+      source: "vcsl" as const,
+    })),
+  );
+  return [...piano, ...others, ...drums];
+}
+
+/**
+ * The drum kit: one-shots from the Versilian Community Sample Library (CC0), a soft and a loud
+ * hit per piece where VCSL has both. There is no third tom, so the floor tom is the low tom
+ * tuned down. Each piece plays on its General MIDI drum note.
+ */
+const VCSL_REMOTE = "https://smpldsnds.github.io/sgossner-vcsl";
+const KIT = "Membranophones/Struck Membranophones";
+const CYMBALS = "Idiophones/Struck Idiophones";
+const DRUM_SAMPLES: Record<DrumPiece, { soft: string; loud: string; semitones?: number }> = {
+  kick: { soft: `${KIT}/Bass Drum 1/BDrumNew_hit_v3_rr1_Sum`, loud: `${KIT}/Bass Drum 1/BDrumNew_hit_v7_rr1_Sum` },
+  snare: {
+    soft: `${KIT}/Snare Drum, Modern 1/Snare2_HitSN_v5_rr1_Mid`,
+    loud: `${KIT}/Snare Drum, Modern 1/Snare2_HitSN_v9_rr1_Mid`,
+  },
+  stick: {
+    soft: `${KIT}/Snare Drum, Modern 2/Snare3M_Xstick_v2_rr1_Mid`,
+    loud: `${KIT}/Snare Drum, Modern 2/Snare3M_Xstick_v2_rr1_Mid`,
+  },
+  tom1: { soft: `${KIT}/Tom 1/Stick/TomH_HitS_v2_rr1_Mid`, loud: `${KIT}/Tom 1/Stick/TomH_HitS_v4_rr1_Mid` },
+  tom2: { soft: `${KIT}/Tom 2/Stick/TomL_HitS_v2_rr1_Mid`, loud: `${KIT}/Tom 2/Stick/TomL_HitS_v4_rr1_Mid` },
+  tom3: {
+    soft: `${KIT}/Tom 2/Stick/TomL_HitS_v2_rr1_Mid`,
+    loud: `${KIT}/Tom 2/Stick/TomL_HitS_v4_rr1_Mid`,
+    semitones: -3,
+  },
+  hat: {
+    soft: `${CYMBALS}/Hi-Hat Cymbal/HiHat_HitC_v2_rr1_Mid`,
+    loud: `${CYMBALS}/Hi-Hat Cymbal/HiHat_HitC_v4_rr1_Mid`,
+  },
+  hatopen: { soft: `${CYMBALS}/Hi-Hat Cymbal/HiHat_HitO_rr1_Mid`, loud: `${CYMBALS}/Hi-Hat Cymbal/HiHat_HitO_rr1_Mid` },
+  hatfoot: {
+    soft: `${CYMBALS}/Hi-Hat Cymbal/HiHat_Close_rr1_Mid`,
+    loud: `${CYMBALS}/Hi-Hat Cymbal/HiHat_Close_rr1_Mid`,
+  },
+  crash: {
+    soft: `${CYMBALS}/Suspended Cymbal 1/susCymb1_hit_stick_f1`,
+    loud: `${CYMBALS}/Suspended Cymbal 1/susCymb1_hit_stick_f1`,
+  },
+  ride: {
+    soft: `${CYMBALS}/Suspended Cymbal 1/susCymb1_hit_stick_mp1`,
+    loud: `${CYMBALS}/Suspended Cymbal 1/susCymb1_hit_stick_mp1`,
+  },
+  bell: {
+    soft: `${CYMBALS}/Suspended Cymbal 1/susCymb1_hit_bell_mf1`,
+    loud: `${CYMBALS}/Suspended Cymbal 1/susCymb1_hit_bell_mf1`,
+  },
+};
+/** Hits up to mf use the soft samples; f and above the loud ones (see DYNAMIC_VELOCITY). */
+const DRUM_LAYERS = [
+  { layer: "soft", velRange: [1, 88] },
+  { layer: "loud", velRange: [89, 127] },
+] as const;
+
+const sampleName = (path: string) => path.split("/").at(-1)!;
+
+export function drumsPreset(): SmplrPreset {
+  return {
+    samples: { baseUrl: `${SOUNDS_BASE}/drums`, formats: SOUND_FORMATS },
+    groups: DRUM_LAYERS.map(({ layer, velRange }) => ({
+      velRange: [...velRange] as [number, number],
+      regions: DRUM_PIECE_CODES.map((piece) => {
+        const { midi } = DRUM_PIECES[piece];
+        const sample = DRUM_SAMPLES[piece];
+        // A sample tuned down plays from a root above the note it answers.
+        return {
+          sample: sampleName(sample[layer]),
+          pitch: midi - (sample.semitones ?? 0),
+          keyRange: [midi, midi] as [number, number],
+        };
+      }),
+    })),
+  };
 }

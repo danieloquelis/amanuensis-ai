@@ -1,22 +1,18 @@
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { findEvent, formatChord, SECTION_LABEL_MAX, type Operation, type Score } from "@/modules/score";
+import { formatChord, SECTION_LABEL_MAX, type Operation, type Score } from "@/modules/score";
 import { useDismissableLayer } from "@/shared/ui/hooks/use-dismissable-layer";
 import { moveMenuFocus } from "@/shared/ui/menu-keyboard";
 import { checkOperation } from "../../../application/operation-check";
 import type { CommitEdit } from "../../hooks/use-score-editor";
 import type { SheetMenuTarget } from "../surface/sheet-interactions";
-import { BarMenuSection } from "./BarMenuSection";
 import { MeterGrid } from "../toolbar/MeterGrid";
 import { IndicationMenuSection } from "./IndicationMenuSection";
 import { LabelMenuSection } from "./LabelMenuSection";
-import { NoteMenuSection } from "./NoteMenuSection";
 import styles from "./sheet-menu.module.css";
 
 const MENU_SIZE = { width: 272, height: 260 };
 const MENU_LABELS = {
-  note: "Note actions",
-  bar: "Bar actions",
   meter: "Time signature",
   annotation: "Indication actions",
   chord: "Chord actions",
@@ -40,8 +36,7 @@ export function SheetContextMenu({ target, score, onCommand, onClose }: SheetCon
   const [message, setMessage] = useState("");
   useDismissableLayer(menuRef, onClose);
 
-  const location = findEvent(score, target.id);
-  const measure = location?.measure ?? score.measures.find((m) => m.id === target.id);
+  const measure = score.measures.find((m) => m.id === target.id);
   const annotation = score.annotations.find((a) => a.id === target.id);
   const chord = score.chords.find((c) => c.id === target.id);
   if (!measure && !annotation && !chord) return null;
@@ -58,10 +53,6 @@ export function SheetContextMenu({ target, score, onCommand, onClose }: SheetCon
   };
 
   const content = () => {
-    if (target.kind === "note" && location) {
-      return <NoteMenuSection score={score} event={location.event} commit={commit} />;
-    }
-    if (target.kind === "bar" && measure) return <BarMenuSection score={score} measure={measure} commit={commit} />;
     if (target.kind === "meter" && measure) {
       return (
         <MeterGrid

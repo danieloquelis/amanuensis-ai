@@ -1,6 +1,7 @@
 import { ARTICULATIONS, type Articulation } from "../domain/notation";
 import type { DurationValue } from "../domain/operations/schema";
 import type { Pitch } from "../domain/schema";
+import { DRUM_PIECE_CODES, sortDrums, type DrumPiece } from "../domain/drums";
 import { chordFrom } from "../domain/stacks";
 import { DURATION_CODES } from "./score-text";
 
@@ -10,6 +11,8 @@ export type WrittenEvent = {
   pitch: Pitch | null;
   /** Further notes on the same stem ("<C4 E4 G4>q"), lowest first. */
   stack: Pitch[];
+  /** A drum hit's pieces ("<hat kick>e"); empty for notes and rests. */
+  drums: DrumPiece[];
   duration: DurationValue;
   tie: boolean;
   articulation: Articulation | null;
@@ -45,9 +48,16 @@ function parseToken(token: string, bar: number): WrittenEvent {
   const [, open, chord, single, , code, dot, tie, articulation, close] = match;
   const base = DURATION_CODES[code as keyof typeof DURATION_CODES];
   const names = chord ? chord.trim().split(/\s+/) : single ? [single] : [];
-  const pitches = names.map((name) => {
+  // Drum pieces in angle brackets are a hit ("<snare hat>e"); pitches and pieces do not mix.
+  const drums = names.filter((name): name is DrumPiece => (DRUM_PIECE_CODES as readonly string[]).includes(name));
+  if (drums.length && drums.length < names.length) {
+    throw new Error(`Bar ${bar}: "${token}" mixes drum pieces and notes.`);
+  }
+  if (drums.length && tie) throw new Error(`Bar ${bar}: "${token}": a drum hit sounds once; it cannot be tied.`);
+  const pitches = (drums.length ? [] : names).map((name) => {
     const note = PITCH.exec(name);
-    if (!note) throw new Error(`Bar ${bar}: "${name}" in "${token}" is not a note (e.g. C4, F#4, Bb3).`);
+    if (!note)
+      throw new Error(`Bar ${bar}: "${name}" in "${token}" is not a note (e.g. C4, F#4, Bb3) or a drum (e.g. snare).`);
     const [, step, accidental, octave] = note;
     return { step: step as Pitch["step"], alter: ALTERS[accidental], octave: Number(octave) };
   });
@@ -55,6 +65,7 @@ function parseToken(token: string, bar: number): WrittenEvent {
   return {
     pitch: notes?.pitch ?? null,
     stack: notes?.stack ?? [],
+    drums: drums.length ? sortDrums(drums) : [],
     duration: (dot ? base * DOT : base) as DurationValue,
     tie: tie === "~",
     articulation: (ARTICULATIONS as readonly string[]).includes(articulation) ? (articulation as Articulation) : null,

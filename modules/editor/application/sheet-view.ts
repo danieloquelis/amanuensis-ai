@@ -1,6 +1,7 @@
 import { CLEF_NAMES } from "@/modules/engraving";
 import {
   allStaves,
+  isDrumKit,
   keyName,
   scoreKey,
   transpositionOf,
@@ -19,6 +20,7 @@ export function sheetHeading(score: Score): string {
     const names = score.parts.map((part) => part.name).join(", ");
     return `${names.replace(/, ([^,]+)$/, " and $1")}, ${keyName(scoreKey(score))}`;
   }
+  if (isDrumKit(score.parts[0].instrument)) return "Drums, percussion clef";
   const t = transpositionOf(score.parts[0].instrument);
   const key = t ? writtenKey(scoreKey(score), t) : scoreKey(score);
   return `${CLEF_NAMES[allStaves(score)[0].clef]} clef, ${keyName(key)}`;

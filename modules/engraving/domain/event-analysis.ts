@@ -1,5 +1,7 @@
 import {
+  DRUM_PIECES,
   eventOnsets,
+  isDrumKit,
   eventPitches,
   keyAlter,
   scoreKey,
@@ -33,19 +35,22 @@ export function analyzeEvents(score: Score, measure: Measure, staffKeys: Map<str
   const voicesOnStaff = (staffIndex: number) => bars.filter(({ info }) => info.staffIndex === staffIndex).length;
   const events = bars.flatMap(({ bar, info }) => {
     const voice = info.voiceIndex + 1;
-    const shared = voicesOnStaff(info.staffIndex) > 1;
+    // On a drum staff the hands always stem up and the feet down, as drum music is written; rests
+    // move apart only when another voice is really there.
+    const together = voicesOnStaff(info.staffIndex) > 1;
+    const shared = together || isDrumKit(info.part.instrument);
     const bottomLine = CLEF_BOTTOM_LINE[info.staff.clef];
     const onsets = eventOnsets(bar.events);
     return bar.events.map((event, index): AnalyzedEvent => {
-      const position = event.pitch ? staffPosition(event.pitch) - bottomLine : restPosition(event, voice, shared);
-      const chord = event.stack
-        ? eventPitches(event).map((p) => ({
-            position: staffPosition(p) - bottomLine,
-            accidental: null,
-            dx: 0,
-            accidentalShift: 0,
-          }))
-        : undefined;
+      // A drum hit sits where its pieces are written; several pieces stack on one stem.
+      const positions = event.drums
+        ? event.drums.map((piece) => DRUM_PIECES[piece].position)
+        : eventPitches(event).map((p) => staffPosition(p) - bottomLine);
+      const position = positions.length ? positions[0] : restPosition(event, voice, together);
+      const chord =
+        positions.length > 1
+          ? positions.map((at) => ({ position: at, accidental: null, dx: 0, accidentalShift: 0 }))
+          : undefined;
       const extremes = chord ? chord.map((h) => h.position) : [position];
       return {
         event,

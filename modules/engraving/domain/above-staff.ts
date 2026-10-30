@@ -1,4 +1,5 @@
 import { formatChord, isNote, type Score } from "@/modules/score";
+import { ARTICULATION_HALF_HEIGHT, articulationPlace } from "./articulation";
 import { beatX, type EngravedEvent, type System } from "./scene";
 import { staffOf } from "./staff-layout";
 
@@ -9,13 +10,15 @@ const CHORD_NUDGE_LEFT = 4;
 /** Text sizes above the staff, to estimate how far up a system reaches. */
 const ROW_TEXT_HEIGHT = 16;
 const BAR_NUMBER_TOP = 44;
+const BAR_NUMBER_HEIGHT = 10;
 
 /** Highest ink of one event: notehead, up-stem, or articulation. */
 function eventTop(item: EngravedEvent, systemTop: number): number {
   if (item.hidden) return systemTop;
   const head = item.y - 8;
   const stem = isNote(item.event) && !item.stemDown ? item.stemEnd : head;
-  const articulation = item.event.articulation ? Math.min(item.y - 18, systemTop - 12) - 6 : head;
+  const mark = item.event.articulation ? articulationPlace(item, systemTop) : null;
+  const articulation = mark && !mark.below ? mark.y - ARTICULATION_HALF_HEIGHT : head;
   return Math.min(head, stem, articulation);
 }
 
@@ -40,11 +43,15 @@ export function placeAboveStaff(system: System, score: Score): void {
   system.markY = system.chords.length ? system.chordY - ROW_GAP : system.chordY;
 }
 
+/** Top of the line's first bar number, which stands on the marks row left of the staff. */
+export const barNumberTop = (system: System) => system.markY - BAR_NUMBER_HEIGHT;
+
 /** The highest point anything in the system reaches, to keep clear of the system above. */
 export function systemCeiling(system: System): number {
   const hasMarks = system.bars.some((b) => b.section || b.marks.length || b.tempo);
   return Math.min(
     system.top - BAR_NUMBER_TOP,
+    barNumberTop(system),
     system.chords.length ? system.chordY - ROW_TEXT_HEIGHT : Infinity,
     hasMarks ? system.markY - ROW_TEXT_HEIGHT : Infinity,
     ...system.labels.filter((l) => l.kind === "text").map((l) => l.y - 12),

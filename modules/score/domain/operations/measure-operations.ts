@@ -1,4 +1,5 @@
 import { getMeasure, getStaff, resolveVoice } from "../queries";
+import { sortDrums } from "../drums";
 import { durationFromBeats } from "../rhythm";
 import { chordFrom } from "../stacks";
 import {
@@ -96,6 +97,7 @@ export function replaceMeasure(draft: Draft, op: OperationOf<"replaceMeasure">, 
     ...(event.pitch ? chordFrom([event.pitch, ...(event.stack ?? [])]) : { pitch: null }),
     duration: durationFromBeats(event.duration),
     ...(event.tie && event.pitch ? { tie: true as const } : {}),
+    ...(event.drums && !event.pitch ? { drums: sortDrums(event.drums) } : {}),
   }));
   putVoiceBar(draft, measure, voiceId, events);
   setBarStyle(measure, undefined, voiceId);

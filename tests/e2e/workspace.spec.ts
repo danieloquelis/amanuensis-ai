@@ -154,8 +154,8 @@ test("mixed meters, expressive indications and repeats are editable musical stat
 test("empty measures become full-bar rests and allow note entry", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Change time signature" })).toBeEnabled();
-  await page.getByRole("button", { name: "Select bar 1", exact: true }).click({ button: "right" });
-  await page.getByRole("dialog", { name: "Bar actions" }).getByRole("button", { name: "Clear", exact: true }).click();
+  await page.getByRole("button", { name: "Select bar 1", exact: true }).click();
+  await page.getByRole("toolbar", { name: "Selected bar actions" }).getByRole("button", { name: "Clear bar" }).click();
   await page.getByRole("button", { name: "Change time signature" }).click();
   await page.getByRole("group", { name: "Time signature" }).getByRole("button", { name: "6/8", exact: true }).click();
   await page.getByRole("button", { name: "Bar 1, beat 1, Rest, 3 beats", exact: true }).click();
@@ -168,26 +168,28 @@ test("empty measures become full-bar rests and allow note entry", async ({ page 
   await page.getByRole("button", { name: "Undo", exact: true }).click();
   await expect(page.getByRole("button", { name: "Bar 1, beat 1, Rest, 3 beats", exact: true })).toBeVisible();
 });
-test("the right-click menu offers what the card does not: chord notes, rest, second voice", async ({ page }) => {
+test("the card stacks notes on a stem, and one note of a chord can be picked and deleted", async ({ page }) => {
   await page.goto("/");
   const note = page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true });
-  await note.click();
-  await expect(page.getByRole("toolbar", { name: "Selected note actions" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Edit selected note", exact: true })).toHaveCount(0);
+  // A right-click selects, like a click: there is no menu, the card has the actions.
   await note.click({ button: "right" });
-  const menu = page.getByRole("dialog", { name: "Note actions" });
-  await expect(menu).toBeVisible();
-  await expect(menu.getByRole("button", { name: "Sharp", exact: true })).toHaveCount(0);
-  await menu.getByRole("button", { name: "Add note to chord", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4 and E4, 1 beats", exact: true })).toBeVisible();
-  await expect(menu).toHaveCount(0);
-  await page.getByRole("button", { name: "Bar 1, beat 1, C4 and E4, 1 beats", exact: true }).click({ button: "right" });
-  await page.getByRole("dialog", { name: "Note actions" }).getByRole("button", { name: "Remove top note" }).click();
+  const card = page.getByRole("toolbar", { name: "Selected note actions" });
+  await expect(card).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await card.getByRole("button", { name: "Add a note on this stem", exact: true }).click();
+  const chord = page.getByRole("button", { name: "Bar 1, beat 1, C4 and E4, 1 beats", exact: true });
+  await expect(chord).toBeVisible();
+  // Pick the upper head (E4) alone: the card names it, and Delete takes only it off the stem.
+  const box = (await chord.locator("rect").boundingBox())!;
+  const svg = (await page.locator("svg[aria-label$='Select a note to edit.']").boundingBox())!;
+  const scale = svg.width / 900;
+  await page.mouse.click(box.x + box.width / 2, box.y + 22 * scale);
+  await expect(page.getByRole("region", { name: "Selection" })).toContainText("E4 · bar 1");
+  await page.keyboard.press("Delete");
   const single = page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true });
   await expect(single).toBeVisible();
-  // Accidentals and articulations live in the card beside the selected note.
+  // Articulations live in the card beside the selected note.
   await single.click();
-  const card = page.getByRole("toolbar", { name: "Selected note actions" });
   await card.getByRole("button", { name: "staccato", exact: true }).click();
   await expect(card.getByRole("button", { name: "staccato", exact: true })).toHaveAttribute("aria-pressed", "true");
   await page.screenshot({ path: "test-results/direct-sheet-editing.png", fullPage: true });
@@ -245,11 +247,8 @@ test("drag a bar divider, undo it, and restore persisted spacing", async ({ page
   await expect(divider).toHaveAttribute("aria-valuenow", String(natural + 32));
   await page.getByRole("button", { name: "Undo", exact: true }).click();
   await expect(divider).toHaveAttribute("aria-valuenow", String(natural + 40));
-  await divider.click({ button: "right" });
-  await page
-    .getByRole("dialog", { name: "Bar actions" })
-    .getByRole("button", { name: "Reset spacing", exact: true })
-    .click();
+  // A double-click on the barline puts the spacing back.
+  await divider.dblclick();
   await expect(divider).toHaveAttribute("aria-valuenow", String(natural));
 });
 
@@ -765,6 +764,39 @@ test("an added instrument gets its own staff, and the mixer mutes it", async ({ 
   );
   await page.getByRole("button", { name: "Flute", exact: true }).click();
   await expect(sheet).toHaveAttribute("aria-label", /Piano and Flute/);
+});
+
+test("a drum hit is dragged through the kit, sounding each piece, and plays on the kit", async ({ page }) => {
+  await installSoundProbe(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: "Instruments", exact: true }).click();
+  await page.getByRole("button", { name: "Add Drums", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: /^Drums, bar 1, beat 1, Rest/ }).click();
+  await page.getByRole("toolbar", { name: "Selected note actions" }).getByRole("button", { name: "Add note" }).click();
+  const snare = page.getByRole("button", { name: /^Drums, bar 1, beat 1, Snare, 1 beats/ });
+  await expect(snare).toBeVisible();
+  await page.keyboard.press("Escape");
+  // Two steps up: the side stick on the snare's line, then the mid tom, each heard on the way.
+  await page.evaluate(() => {
+    const probe = window as unknown as { heard: number[] };
+    probe.heard.length = 0;
+  });
+  const box = (await snare.locator("rect").boundingBox())!;
+  const svg = (await page.locator("svg[aria-label$='Select a note to edit.']").boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - (12 * svg.width) / 900, { steps: 8 });
+  await page.mouse.up();
+  await expect(page.getByRole("button", { name: /^Drums, bar 1, beat 1, Mid tom, 1 beats/ })).toBeVisible();
+  await expect.poll(() => heardNotes(page)).toEqual([38, 37, 47]);
+
+  await page.getByRole("button", { name: /^Play (score|from bar 1)$/ }).click();
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { instruments: string[] }).instruments.includes("drums")))
+    .toBe(true);
+  expect(await heardNotes(page)).toContain(47);
+  await page.getByRole("button", { name: "Stop playback" }).click();
 });
 
 test("pinching (Ctrl + wheel) zooms the sheet, not the page", async ({ page }) => {

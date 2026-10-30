@@ -1,14 +1,13 @@
 import { durationNotation, isNote, type Articulation } from "@/modules/score";
-import { STAFF_GAP, STAFF_HEIGHT, stemX, type EngravedEvent } from "../../domain/scene";
+import { articulationPlace } from "../../domain/articulation";
+import { STAFF_GAP, stemX, type EngravedEvent } from "../../domain/scene";
 import { AccidentalGlyph } from "./AccidentalGlyph";
+import { headShapes, NoteHead, OpenHatMark } from "./NoteHead";
 
 const FLAG_PATH = "M 0 0 C 18 10 16 24 7 29 C 14 14 4 13 0 9 Z";
 const SECOND_FLAG_OFFSET = 7;
 /** Accidentals sit this far left of the notehead centre. */
 const ACCIDENTAL_OFFSET = 22;
-/** Articulations sit this far from the notehead, and at least this far outside the staff. */
-const ARTICULATION_GAP = 18;
-const ARTICULATION_CLEARANCE = 12;
 
 /**
  * Draws one engraved note or rest: ledger lines, accidental, notehead, stem, flags,
@@ -26,21 +25,9 @@ export function EventGlyph({ item, systemTop, beamed }: { item: EngravedEvent; s
       ))}
       {isNote(event) ? <NoteGlyph item={item} beamed={beamed} /> : <RestGlyph item={item} />}
       {notation.dotted && !event.measureRest && <AugmentationDot x={x} y={y} systemTop={systemTop} />}
-      {event.articulation &&
-        (item.curveSide === "below" ? (
-          <ArticulationMark
-            articulation={event.articulation}
-            x={x}
-            y={Math.max(y + ARTICULATION_GAP, systemTop + STAFF_HEIGHT + ARTICULATION_CLEARANCE)}
-            below
-          />
-        ) : (
-          <ArticulationMark
-            articulation={event.articulation}
-            x={x}
-            y={Math.min(y - ARTICULATION_GAP, systemTop - ARTICULATION_CLEARANCE)}
-          />
-        ))}
+      {event.articulation && (
+        <ArticulationMark articulation={event.articulation} x={x} {...articulationPlace(item, systemTop)} />
+      )}
     </>
   );
 }
@@ -55,25 +42,20 @@ function NoteGlyph({ item, beamed }: { item: EngravedEvent; beamed: boolean }) {
   const heads = item.heads ?? [{ y, dx: 0, accidental: item.accidental, accidentalShift: item.accidentalShift ?? 0 }];
   // The stem runs from the head farthest from its end, through every head of a chord.
   const stemStart = item.stemDown ? (item.chordTop ?? y) : y;
+  const shapes = headShapes(item.event, heads.length);
   return (
     <>
-      {heads.map((head) => (
-        <g key={head.y}>
+      {heads.map((head, k) => (
+        <g key={`${head.y}-${k}`}>
           {head.accidental !== null && (
             <AccidentalGlyph value={head.accidental} x={x - ACCIDENTAL_OFFSET - head.accidentalShift} y={head.y} />
           )}
-          <ellipse
-            cx={x + head.dx}
-            cy={head.y}
-            rx={base === 4 ? 9 : 7.5}
-            ry="5.1"
-            transform={`rotate(-20 ${x + head.dx} ${head.y})`}
-            fill={hollow ? "var(--paper)" : "currentColor"}
-            stroke="currentColor"
-            strokeWidth={hollow ? 2.1 : 0.8}
-          />
+          <NoteHead shape={shapes[k]} x={x + head.dx} y={head.y} hollow={hollow} whole={base === 4} />
         </g>
       ))}
+      {item.event.drums?.includes("hatopen") && (
+        <OpenHatMark x={x} y={item.stemDown ? Math.min(...heads.map((h) => h.y)) : Math.min(item.stemEnd, y)} />
+      )}
       {base < 4 && (
         <line x1={stem} x2={stem} y1={stemStart} y2={item.stemEnd} stroke="currentColor" strokeWidth="1.5" />
       )}

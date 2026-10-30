@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { drumHitSchema } from "./drum-schemas";
 import { idSchema, MEASURE_WIDTH, meterSchema, pitchSchema, SCORE_LIMITS } from "../schema";
 
 import { MAX_CHORD_NOTES } from "../stacks";
@@ -29,6 +30,7 @@ export const measureOperationSchemas = [
               .describe(
                 "Tie into the next note, which must share a pitch with it; the last note ties into the next bar.",
               ),
+            drums: drumHitSchema.optional().describe("On a drum part: the pieces struck (pitch is then null)."),
           }),
         )
         .min(1)

@@ -1,7 +1,6 @@
 import { useRef, type CSSProperties } from "react";
 import { sheetHeading } from "@/modules/editor";
 import { ScoreSurface, type ScoreEditor } from "@/modules/editor/ui";
-import type { Pitch } from "@/modules/score";
 import { usePinchZoom } from "../hooks/use-pinch-zoom";
 import styles from "./workspace.module.css";
 
@@ -21,7 +20,7 @@ export function ScoreCanvas({
   zoom: number;
   onZoom: (zoom: number) => void;
   onMenuOpenChange: (open: boolean) => void;
-  onAudition: (eventId: string, pitch: Pitch) => void;
+  onAudition: (eventId: string, midi: number) => void;
   /** Any press on the paper or around it, e.g. to fold the chat away. */
   onPress: () => void;
 }) {
@@ -71,7 +70,7 @@ export function ScoreCanvas({
           onCommand={commit}
           interactive={ready}
           onStep={editor.stepPitch}
-          onDelete={(id) => commit({ type: "removeEvent", eventId: id }, "Removed note")}
+          onDelete={editor.removeNote}
           onEnterLetter={editor.enterLetter}
           onToggleRest={editor.toggleRest}
           picked={editor.picked}

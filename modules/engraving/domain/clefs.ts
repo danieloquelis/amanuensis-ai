@@ -1,6 +1,7 @@
 import {
   allStaves,
   eventPitches,
+  isDrumKit,
   isPlayable,
   midiPitch,
   scoreKey,
@@ -29,6 +30,8 @@ export const CLEF_BOTTOM_LINE: Record<Clef, number> = {
   bass: G2,
   percussion: E4,
 };
+
+const NO_KEY: KeySignature = { fifths: 0, mode: "major" };
 
 /** Any octave will do for spelling a chord root. */
 const CHORD_OCTAVE = 4;
@@ -66,7 +69,9 @@ export function writtenView(score: Score, concertPitch: boolean) {
   const staffKeys = new Map<string, KeySignature>();
   for (const part of score.parts) {
     const t = transposition(part.instrument);
-    for (const staff of part.staves) staffKeys.set(staff.id, t ? writtenKey(concertKey, t) : concertKey);
+    // A drum staff has no key: its hits have no pitch.
+    const key = isDrumKit(part.instrument) ? NO_KEY : t ? writtenKey(concertKey, t) : concertKey;
+    for (const staff of part.staves) staffKeys.set(staff.id, key);
   }
   for (const measure of view.measures)
     for (const voiceBar of voiceBars(measure)) {

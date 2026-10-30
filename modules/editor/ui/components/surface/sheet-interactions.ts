@@ -7,7 +7,7 @@ import type { useSheetGestures } from "../../hooks/use-sheet-gestures";
 import type { useSlurDrag } from "../../hooks/use-slur-drag";
 
 export type SheetMenuTarget = {
-  kind: "note" | "bar" | "meter" | "annotation" | "chord" | "section";
+  kind: "meter" | "annotation" | "chord" | "section";
   id: string;
   x: number;
   y: number;
@@ -16,7 +16,7 @@ export type SheetMenuTarget = {
 /** Callbacks shared by every interactive element on the sheet. */
 export type SheetInteractions = {
   interactive: boolean;
-  select: (id: string | null) => void;
+  select: (id: string | null, head?: number) => void;
   selectedBarId: string | null;
   /** Selects a bar: in one instrument's lane with `staffId`, else the whole bar. */
   selectBar: (measureId: string | null, staffId?: string) => void;
@@ -34,6 +34,8 @@ export type SheetInteractions = {
   slur: (eventId: string) => void;
   /** Whether an item is part of the selection (one of several, or the only one). */
   isPicked: (ref: SheetRef) => boolean;
+  /** The head picked on a note's stem, or null when the whole stem (or nothing) is picked. */
+  pickedHead: (eventId: string) => number | null;
   /** Several things are picked: single-item quick actions stay out of the way. */
   multiple: boolean;
   pick: (ref: SheetRef, mode: PickMode) => void;

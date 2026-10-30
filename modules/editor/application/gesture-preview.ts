@@ -8,6 +8,7 @@ import {
   setBarEvents,
   type Score,
 } from "@/modules/score";
+import { movedDrums } from "./drum-edits";
 import { withMovedNote } from "./note-drag";
 
 /** A drag in progress, drawn on the sheet but not yet committed. */
@@ -30,6 +31,10 @@ export function applyGesturePreview(score: Score, preview: GesturePreview | null
   const draft = structuredClone(score);
   if (preview.kind === "pitch") {
     const event = everyEvent(draft).find((e) => e.id === preview.id);
+    // A drum hit's grabbed piece steps through the kit, as the drag will commit.
+    if (event?.drums && preview.delta) {
+      event.drums = movedDrums(score, preview.id, preview.head, preview.delta)?.drums ?? event.drums;
+    }
     // A single note moves; in a chord only the grabbed note, as the drag will commit.
     if (event?.pitch && preview.delta) {
       const notes = eventPitches(event);

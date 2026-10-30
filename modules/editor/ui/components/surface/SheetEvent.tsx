@@ -1,6 +1,6 @@
 import { staffOf, staffTop, type EngravedEvent, type System } from "@/modules/engraving";
 import { EventGlyph } from "@/modules/engraving/ui";
-import { eventPitches, pitchName, soundingBeats, type Pitch } from "@/modules/score";
+import { drumNames, eventPitches, pitchName, soundingBeats, type Pitch } from "@/modules/score";
 import { classNames } from "@/shared/ui/class-names";
 import styles from "./score-surface.module.css";
 import {
@@ -31,18 +31,21 @@ const notesName = (pitches: Pitch[]) =>
         .replace(/, ([^,]+)$/, " and $1")
     : "Rest";
 
-/** The notes as the sheet shows them, with their sound when written transposed and a range warning. */
+/** The notes as the sheet shows them (a drum hit's pieces), with their sound when written transposed and a range warning. */
 function pitchLabel({ event, sounds, outOfRange }: EngravedEvent) {
+  if (event.drums) return drumNames(event.drums).replace(/^./, (c) => c.toUpperCase());
   const shown = notesName(eventPitches(event)) + (sounds ? ` (sounds ${notesName(sounds)})` : "");
   return outOfRange ? `${shown}, out of range` : shown;
 }
 
 /**
- * A selectable, draggable note or rest; Shift/⌘-click adds it to the selection. Keyboard: ↑/↓ step the pitch, A–G enter a note (Shift+A–G adds it to the chord),
- * Delete turns a note into a rest, S slurs, Enter opens its menu.
+ * A selectable, draggable note or rest; Shift/⌘-click adds it to the selection. A press on one head
+ * of a chord or drum hit picks that head alone. Keyboard: ↑/↓ step the pitch, A–G enter a note
+ * (Shift+A–G adds it to the chord), Delete turns a note into a rest (a picked head comes off its
+ * stem), S slurs, Space or Enter selects it.
  */
 export function SheetEvent({ item, system, partName, selected, playBeat, interactions }: SheetEventProps) {
-  const { select, stepPitch, removeEvent, enterLetter, openMenu, gestures, pick, focusEvent } = interactions;
+  const { select, stepPitch, removeEvent, enterLetter, gestures, pick, focusEvent } = interactions;
   const { event, x, y } = item;
   const length = soundingBeats(event);
   const sounding = playBeat !== null && playBeat >= item.beat && playBeat < item.beat + length;
@@ -65,10 +68,10 @@ export function SheetEvent({ item, system, partName, selected, playBeat, interac
       onMouseDown={(e) => {
         if (pickModeOf(e)) e.preventDefault();
       }}
+      // A right-click selects the note, like a click: its actions are in the selection card.
       onContextMenu={(e) => {
         e.preventDefault();
         select(event.id);
-        openMenu("note", event.id, e.clientX, e.clientY);
       }}
       onKeyDown={(e) => {
         if (e.key === "ArrowUp" || e.key === "ArrowDown") {
@@ -88,13 +91,7 @@ export function SheetEvent({ item, system, partName, selected, playBeat, interac
           e.preventDefault();
           interactions.slur(event.id);
         }
-        if (isMenuKey(e)) {
-          e.preventDefault();
-          select(event.id);
-          const rect = e.currentTarget.getBoundingClientRect();
-          openMenu("note", event.id, rect.right, rect.top);
-        }
-        if (e.key === " ") {
+        if (e.key === " " || isMenuKey(e)) {
           e.preventDefault();
           select(event.id);
         }
@@ -123,7 +120,7 @@ export function SheetEvent({ item, system, partName, selected, playBeat, interac
         rx="7"
       />
       <g pointerEvents="none">
-        {selected && <ellipse className={styles.halo} cx={x} cy={y} rx="18" ry="15" />}
+        {selected && <Halo item={item} head={interactions.pickedHead(event.id)} />}
         <EventGlyph
           item={item}
           systemTop={staffTop(system, staffOf(item))}
@@ -132,4 +129,11 @@ export function SheetEvent({ item, system, partName, selected, playBeat, interac
       </g>
     </g>
   );
+}
+
+/** The selection halo: round the whole stem, or round the one head picked on it. */
+function Halo({ item, head }: { item: EngravedEvent; head: number | null }) {
+  const picked = head !== null ? item.heads?.[head] : undefined;
+  if (picked) return <ellipse className={styles.halo} cx={item.x + picked.dx} cy={picked.y} rx="13" ry="10" />;
+  return <ellipse className={styles.halo} cx={item.x} cy={item.y} rx="18" ry="15" />;
 }

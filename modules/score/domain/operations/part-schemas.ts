@@ -15,7 +15,7 @@ export const partOperationSchemas = [
       name: z.string().trim().min(1).max(40).optional().describe("Shown name. Default: the instrument's name."),
     })
     .describe(
-      "Change what a part is played on. Notes keep their sound (pitches are concert pitch); the clef follows the instrument; notes outside its range are flagged, not changed.",
+      "Change what a part is played on. Notes keep their sound (pitches are concert pitch); the clef follows the instrument; notes outside its range are flagged, not changed. An empty part can become drums (or back); a part with notes cannot: add drums with addPart.",
     ),
   z
     .strictObject({

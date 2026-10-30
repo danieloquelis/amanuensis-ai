@@ -1,7 +1,7 @@
 import type { Clef, Part } from "./schema";
 
-/** The instruments a part can be played on. Drums come later, with the percussion staff. */
-export const INSTRUMENT_IDS = ["piano", "guitar", "trumpet", "flute", "trombone"] as const;
+/** The instruments a part can be played on. */
+export const INSTRUMENT_IDS = ["piano", "guitar", "trumpet", "flute", "trombone", "drums"] as const;
 
 export type InstrumentId = (typeof INSTRUMENT_IDS)[number];
 
@@ -38,7 +38,12 @@ export const INSTRUMENTS: Record<InstrumentId, Instrument> = {
   },
   flute: { name: "Flute", abbreviation: "Fl.", clef: "treble", range: { low: 60, high: 96 } },
   trombone: { name: "Trombone", abbreviation: "Tbn.", clef: "bass", range: { low: 40, high: 77 } },
+  // A drum kit has no pitches: its hits name kit pieces (see drums.ts).
+  drums: { name: "Drums", abbreviation: "Dr.", clef: "percussion", range: { low: 0, high: 127 } },
 };
+
+/** Whether an instrument plays drum hits rather than pitches. */
+export const isDrumKit = (instrument: InstrumentId) => instrument === "drums";
 
 /** Whether a sounding pitch is inside the instrument's comfortable range. */
 export function isPlayable(midi: number, instrument: InstrumentId): boolean {
@@ -46,12 +51,16 @@ export function isPlayable(midi: number, instrument: InstrumentId): boolean {
   return midi >= low && midi <= high;
 }
 
-/** A one-staff part in the instrument's clef, with one voice, the given IDs and the instrument's name. */
+/**
+ * A one-staff part in the instrument's clef, with the given IDs and the instrument's name: one
+ * voice, or for drums two (hands, then feet).
+ */
 export function createPart(instrument: InstrumentId, ids: { part: string; staff: string; voice: string }): Part {
+  const voices = isDrumKit(instrument) ? [{ id: ids.voice }, { id: `${ids.voice}-feet` }] : [{ id: ids.voice }];
   return {
     id: ids.part,
     instrument,
     name: INSTRUMENTS[instrument].name,
-    staves: [{ id: ids.staff, clef: INSTRUMENTS[instrument].clef, voices: [{ id: ids.voice }] }],
+    staves: [{ id: ids.staff, clef: INSTRUMENTS[instrument].clef, voices }],
   };
 }

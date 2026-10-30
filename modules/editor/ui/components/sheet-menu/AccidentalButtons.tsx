@@ -1,4 +1,4 @@
-import type { Operation, ScoreEvent } from "@/modules/score";
+import { eventPitches, type Operation, type ScoreEvent } from "@/modules/score";
 import styles from "./sheet-menu.module.css";
 
 const ACCIDENTALS = [
@@ -7,16 +7,23 @@ const ACCIDENTALS = [
   { alter: 1, label: "Sharp", symbol: "♯" },
 ] as const;
 
-/** ♭ ♮ ♯ for a pitched note; renders nothing for a rest. */
+/** ♭ ♮ ♯ for a pitched note (with `head`, that note of a chord); renders nothing for a rest. */
 export function AccidentalButtons({
   event,
+  head = null,
   onCommand,
 }: {
   event: ScoreEvent;
+  head?: number | null;
   onCommand: (operation: Operation, receipt: string) => unknown;
 }) {
-  const pitch = event.pitch;
+  const notes = eventPitches(event);
+  const pitch = head !== null && notes.length > 1 ? notes[head] : event.pitch;
   if (!pitch) return null;
+  const change = (alter: -1 | 0 | 1): Operation =>
+    head !== null && notes.length > 1
+      ? { type: "setNotes", eventId: event.id, pitches: notes.map((p, k) => (k === head ? { ...p, alter } : p)) }
+      : { type: "setPitch", eventId: event.id, pitch: { ...pitch, alter } };
   return (
     <div className={styles.row} role="group" aria-label="Accidental">
       {ACCIDENTALS.map(({ alter, label, symbol }) => (
@@ -24,9 +31,7 @@ export function AccidentalButtons({
           key={alter}
           aria-label={label}
           aria-pressed={pitch.alter === alter}
-          onClick={() =>
-            onCommand({ type: "setPitch", eventId: event.id, pitch: { ...pitch, alter } }, "Changed accidental")
-          }
+          onClick={() => onCommand(change(alter), "Changed accidental")}
         >
           {symbol}
         </button>

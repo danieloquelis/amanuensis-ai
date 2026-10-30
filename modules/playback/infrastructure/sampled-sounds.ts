@@ -1,6 +1,6 @@
 import { HttpStorage, Sampler, Soundfont, type Smplr, type Storage } from "smplr";
 import type { SoundId, SoundOutput, SoundRequest } from "../application/sound-port";
-import { pianoPreset, soundfontUrl } from "./sound-sources";
+import { drumsPreset, pianoPreset, soundfontUrl } from "./sound-sources";
 
 /** Give up on samples after this long and fall back to reference tones. */
 export const SOUND_LOAD_TIMEOUT_MS = 10_000;
@@ -54,8 +54,8 @@ export class SampledSounds implements SoundOutput {
     let loading = this.loading.get(id);
     if (!loading) {
       const sampler =
-        id === "piano"
-          ? Sampler(this.context, { preset: pianoPreset(), storage: strictStorage })
+        id === "piano" || id === "drums"
+          ? Sampler(this.context, { preset: id === "piano" ? pianoPreset() : drumsPreset(), storage: strictStorage })
           : Soundfont(this.context, { instrumentUrl: soundfontUrl(id), storage: strictStorage });
       loading = withTimeout(sampler.ready, SOUND_LOAD_TIMEOUT_MS).then(
         () => void this.samplers.set(id, sampler),

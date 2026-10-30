@@ -1,3 +1,5 @@
+import { DRUM_PIECE_CODES, DRUM_PIECES, drumNames } from "../domain/drums";
+import { GROOVE_NAMES, GROOVES } from "../domain/grooves";
 import { eventPitches } from "../domain/stacks";
 import { INSTRUMENT_IDS, INSTRUMENTS } from "../domain/instruments";
 import { CHORD_QUALITY_NAMES, formatChord } from "../domain/chords";
@@ -51,7 +53,11 @@ export function describeScore(score: Score) {
         events: barEvents(measure).map((event, i) => ({
           id: event.id,
           beat: onsets[i] + 1,
-          pitch: event.pitch ? eventPitches(event).map(pitchName).join(" ") : "rest",
+          pitch: event.drums
+            ? drumNames(event.drums)
+            : event.pitch
+              ? eventPitches(event).map(pitchName).join(" ")
+              : "rest",
           duration: durationName(event),
           beats: soundingBeats(event),
           ...(event.articulation ? { articulation: event.articulation } : {}),
@@ -107,6 +113,12 @@ export const SCORE_VOCABULARY = {
     "Several notes on one stem, played together (a written-out chord): setNotes, or <C4 E4 G4>q in score text. Up to 6 notes; ties hold the notes the next chord repeats.",
   voices:
     'A staff may hold a second, independent line (voice 2, stems down): add it with addVoiceBars, write it with replaceMeasure voiceId "v2" or a "bar N v2:" line, remove it with removeVoiceBars.',
+  drums: DRUM_PIECE_CODES.map((code) => ({
+    code,
+    piece: DRUM_PIECES[code].name,
+    voice: DRUM_PIECES[code].voice === 1 ? "hands (v1)" : "feet (v2)",
+  })),
+  grooves: GROOVE_NAMES.map((name) => `${name} (${Object.keys(GROOVES[name]).join(", ")})`),
   parts:
     'Several instruments, each a part with its own staff (piano: two with setStaffCount): addPart, renamePart, movePart, removePart, setPartMix (volume, mute). Its score text lines are "bar 3 trumpet: …", its notes "trumpet/3#2".',
 };

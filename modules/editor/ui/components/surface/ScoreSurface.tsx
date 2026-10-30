@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { layoutScore } from "@/modules/engraving";
-import { everyEvent, meterName, type Pitch, type Score, type Step } from "@/modules/score";
+import { everyEvent, meterName, type Score, type Step } from "@/modules/score";
 import { applyGesturePreview } from "../../../application/gesture-preview";
 import { slurKeyEdit } from "../../../application/range-edits";
 import { eventPartNames, laneNames, sheetHeading } from "../../../application/sheet-view";
@@ -18,7 +18,8 @@ type ScoreSurfaceProps = {
   score: Score;
   playBeat: number | null;
   interactive: boolean;
-  onSelect: (id: string | null) => void;
+  /** Selects a note or rest; with `head`, one head of its stem (a note of a chord, a drum piece). */
+  onSelect: (id: string | null, head?: number) => void;
   selectedBarId: string | null;
   onSelectBar: (measureId: string | null, staffId?: string) => void;
   onDeleteBar: (measureId: string, staffId?: string) => void;
@@ -37,7 +38,8 @@ type ScoreSurfaceProps = {
   /** Told when a context menu opens or closes, so other floating panels can step aside. */
   onMenuOpenChange?: (open: boolean) => void;
   /** Sounds a note that is pressed or dragged to a new pitch. */
-  onAudition?: (eventId: string, pitch: Pitch) => void;
+  /** Sounds a note as a MIDI note (a pitch, or a drum piece). */
+  onAudition?: (eventId: string, midi: number) => void;
 };
 
 /** The editable sheet: engraved score plus selection, drag gestures and context menus. */
@@ -99,6 +101,10 @@ export function ScoreSurface({
       if (edit) onCommand(edit.operation, edit.receipt);
     },
     isPicked: (ref) => picked.some((p) => sameRef(p, ref)),
+    pickedHead: (eventId) => {
+      const ref = picked.find((p) => p.kind === "event" && p.id === eventId);
+      return ref?.kind === "event" ? (ref.head ?? null) : null;
+    },
     multiple: picked.length > 1,
     pick: onPick,
     focusEvent: onFocusEvent,

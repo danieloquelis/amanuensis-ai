@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent, type RefObject } from "react";
 import type { BarScene, EngravedEvent, System } from "@/modules/engraving";
-import { eventPitches, LABEL_OFFSET_LIMIT, movePitch, scoreKey, type Pitch, type Score } from "@/modules/score";
+import { DRUM_PIECES, eventPitches, LABEL_OFFSET_LIMIT, midiPitch, type Pitch, type Score } from "@/modules/score";
 import { clampMeasureWidth } from "../../application/bar-spacing";
 import { eventAfter, type GesturePreview } from "../../application/gesture-preview";
-import { grabbedHead, noteDragEdit } from "../../application/note-drag";
-import { canDragTo } from "../../application/note-edits";
+import { draggedSound, grabbedHead, noteDragEdit, pressedHead } from "../../application/note-drag";
 import type { CommitEdit } from "./use-score-editor";
 
 /** Pointer travel (scene units) before a drag commits to an axis. */
@@ -18,7 +17,7 @@ type NoteDrag = {
   measureId: string;
   startX: number;
   startY: number;
-  /** The grabbed note's sounding pitch: in a chord, the head nearest the press. */
+  /** The grabbed note's sounding pitch: in a chord, the head nearest the press (null for a drum hit). */
   pitch: Pitch | null;
   head: number;
   delta: number;
@@ -47,10 +46,10 @@ type Options = {
   score: Score;
   interactive: boolean;
   onCommand: CommitEdit;
-  onSelect: (id: string | null) => void;
+  onSelect: (id: string | null, head?: number) => void;
   closeContextMenu: () => void;
-  /** Sounds a note: when it is pressed, and at each new pitch while it is dragged. */
-  onAudition?: (eventId: string, pitch: Pitch) => void;
+  /** Sounds a note (a MIDI note: a pitch, or a drum piece): when it is pressed, and at each new step while it is dragged. */
+  onAudition?: (eventId: string, midi: number) => void;
 };
 
 /**
@@ -99,13 +98,16 @@ export function useSheetGestures(options: Options) {
     if (!interactive || event.button !== 0) return;
     const id = item.event.id;
     capturePointer(event);
-    onSelect(id);
     const point = scenePoint(event.clientX, event.clientY);
     // In a chord, the drag holds the note nearest the press. The sheet may show a transposing part
     // as written; sound and drags follow the stored, sounding pitch.
     const head = grabbedHead(item, point.y);
+    // A press on one head of a stem picks that head alone; a press on the stem, the whole stem.
+    onSelect(id, pressedHead(item, point.y) ?? undefined);
     const sounding = item.sounds?.[head] ?? eventPitches(item.event)[head] ?? null;
-    if (sounding) onAudition?.(id, sounding);
+    const piece = item.event.drums?.[head];
+    const pressed = piece ? DRUM_PIECES[piece].midi : sounding && midiPitch(sounding);
+    if (pressed) onAudition?.(id, pressed);
     const beforeId = eventAfter(score, id);
     drag.current = {
       kind: "note",
@@ -135,11 +137,11 @@ export function useSheetGestures(options: Options) {
     if (!gesture.axis && Math.max(Math.abs(dx), Math.abs(dy)) > AXIS_LOCK_DISTANCE) {
       gesture.axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
     }
-    if (gesture.axis === "y" && gesture.pitch) {
+    if (gesture.axis === "y") {
       const delta = Math.round(-dy / PITCH_DRAG_STEP);
-      const pitch = movePitch(gesture.pitch, delta, scoreKey(score));
-      if (!canDragTo(score, eventId, pitch)) return;
-      if (delta !== gesture.delta) onAudition?.(eventId, pitch);
+      const midi = draggedSound(score, eventId, gesture.head, delta, gesture.pitch);
+      if (midi === null) return;
+      if (delta !== gesture.delta) onAudition?.(eventId, midi);
       gesture.delta = delta;
       setPreview({ kind: "pitch", id: eventId, delta, head: gesture.head });
     } else if (gesture.axis === "x") {

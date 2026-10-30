@@ -1,5 +1,5 @@
 import type { Score } from "@/modules/score";
-import { systemCeiling } from "./above-staff";
+import { barNumberTop, systemCeiling } from "./above-staff";
 import { writtenView } from "./clefs";
 import { headerEnd } from "./header";
 import { DYNAMIC_ROW_HEIGHT } from "./labels";
@@ -15,6 +15,8 @@ const FIRST_SYSTEM_TOP = 90;
 const SCENE_BOTTOM_TRIM = 15;
 /** How far above its staff a system may reach before it is moved down. */
 const HEADROOM = 82;
+/** The first line's bar number, at the left edge, keeps below the tempo line drawn over the top of the sheet. */
+const FIRST_BAR_NUMBER_CEILING = 22;
 
 /** How the sheet is shown: `concertPitch` draws transposing parts as they sound rather than as written. */
 export type LayoutOptions = { concertPitch?: boolean };
@@ -49,7 +51,10 @@ export function layoutScore(stored: Score, { concertPitch = false }: LayoutOptio
       tops = spacedTops(laid.system, staves, tops);
       laid = layoutSystem(context, line, tops, isLast);
     }
-    const overflow = nextTop - HEADROOM - systemCeiling(laid.system);
+    const overflow = Math.max(
+      nextTop - HEADROOM - systemCeiling(laid.system),
+      index === 0 ? FIRST_BAR_NUMBER_CEILING - barNumberTop(laid.system) : 0,
+    );
     if (overflow > 0)
       laid = layoutSystem(
         context,

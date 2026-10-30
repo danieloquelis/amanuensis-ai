@@ -32,6 +32,13 @@ const SOURCES: Source[] = [
     license: "CC BY 3.0 as published by midi-js-soundfonts; Fluid R3 itself is MIT",
     url: "https://github.com/gleitz/midi-js-soundfonts",
   },
+  {
+    id: "vcsl",
+    name: "Versilian Community Sample Library (drum kit)",
+    author: "Versilian Studios (Samuel Gossner); ogg/m4a conversion by smpldsnds",
+    license: "CC0 1.0 (public domain dedication)",
+    url: "https://github.com/sgossner/VCSL",
+  },
 ];
 
 const sha256 = (data: Uint8Array) => createHash("sha256").update(data).digest("hex");

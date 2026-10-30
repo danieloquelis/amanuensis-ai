@@ -1,4 +1,5 @@
-import { SCORE_LIMITS, type Score } from "./schema";
+import { isDrumKit } from "./instruments";
+import { SCORE_LIMITS, type Measure, type Score } from "./schema";
 import type { IdRegistry } from "./validation";
 import { allStaves, barEvents, everyEvent, voiceBars, voiceIds, voiceInfo } from "./voice-access";
 
@@ -9,7 +10,7 @@ import { allStaves, barEvents, everyEvent, voiceBars, voiceIds, voiceInfo } from
  * - every staff's first voice has a bar in every measure;
  * - a slash or repeat style sits only on a staff's first voice, when that staff has no other
  *   voice there (the whole-bar rest under it is checked with the bar marks);
- * - a percussion clef only with drums (no drum part exists yet);
+ * - a drum part is on a percussion staff, and only a drum part is (see also `validateDrumHits`);
  * - the score holds at most `SCORE_LIMITS.events` events in all.
  */
 export function validateStructure(score: Score, ids: IdRegistry) {
@@ -18,7 +19,12 @@ export function validateStructure(score: Score, ids: IdRegistry) {
     for (const staff of part.staves) {
       ids.add(staff.id);
       for (const voice of staff.voices) ids.add(voice.id);
-      if (staff.clef === "percussion") throw new Error("A percussion staff is only for drums.");
+      if (staff.clef === "percussion" && !isDrumKit(part.instrument)) {
+        throw new Error("A percussion staff is only for drums.");
+      }
+      if (staff.clef !== "percussion" && isDrumKit(part.instrument)) {
+        throw new Error("Drums are written on a percussion staff.");
+      }
     }
   }
   const order = voiceIds(score);
@@ -36,6 +42,7 @@ export function validateStructure(score: Score, ids: IdRegistry) {
         throw new Error(`Bar ${index + 1} is missing the main line of a staff.`);
       }
     }
+    validateDrumHits(score, measure, index + 1);
     for (const bar of voiceBars(measure)) {
       if (!bar.style) continue;
       const staff = voiceInfo(score, bar.voiceId)!.staff;
@@ -46,6 +53,20 @@ export function validateStructure(score: Score, ids: IdRegistry) {
   });
   if (everyEvent(score).length > SCORE_LIMITS.events) {
     throw new Error(`A score holds at most ${SCORE_LIMITS.events} notes and rests in all.`);
+  }
+}
+
+/** Drum hits only on a drum part, which holds no pitches; a hit sounds once, so it is never tied or slurred. */
+function validateDrumHits(score: Score, measure: Measure, bar: number) {
+  const slurred = new Set(score.slurs.flatMap((slur) => [slur.startEventId, slur.endEventId]));
+  for (const voiceBar of voiceBars(measure)) {
+    const kit = isDrumKit(voiceInfo(score, voiceBar.voiceId)!.part.instrument);
+    for (const event of voiceBar.events) {
+      if (event.drums && !kit) throw new Error(`Bar ${bar}: drum hits go on a drum part.`);
+      if (kit && event.pitch) throw new Error(`Bar ${bar}: a drum part holds hits, not pitches (e.g. <snare>q).`);
+      if (event.drums && event.tie) throw new Error(`Bar ${bar}: a drum hit sounds once; it cannot be tied.`);
+      if (event.drums && slurred.has(event.id)) throw new Error(`Bar ${bar}: slurs join notes, not drum hits.`);
+    }
   }
 }
 

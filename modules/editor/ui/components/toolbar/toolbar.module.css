@@ -115,7 +115,7 @@
 }
 
 .wideGrid {
-  grid-template-columns: repeat(5, minmax(48px, auto));
+  grid-template-columns: repeat(6, minmax(48px, auto));
 }
 
 .grid button,

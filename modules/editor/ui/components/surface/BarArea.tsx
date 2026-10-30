@@ -58,6 +58,10 @@ export function BarArea({ bar, top, bottom = top + STAFF_HEIGHT, staffId, laneNa
         e.currentTarget.focus();
       }}
       onKeyDown={onKeyDown}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        selectBar(bar.id, staffId);
+      }}
     />
   );
 }

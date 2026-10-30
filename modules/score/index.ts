@@ -148,6 +148,7 @@ export {
   createPart,
   INSTRUMENT_IDS,
   INSTRUMENTS,
+  isDrumKit,
   isPlayable,
   type Instrument,
   type InstrumentId,
@@ -155,3 +156,15 @@ export {
 } from "./domain/instruments";
 export { metricWeight, spellRhythm } from "./domain/rhythm-spelling";
 export { describeReadability, readability, type Readability } from "./domain/rhythm-readability";
+export {
+  CHOKES_OPEN_HAT,
+  DRUM_PIECE_CODES,
+  DRUM_PIECES,
+  drumNames,
+  drumsOf,
+  MAX_DRUM_HITS,
+  sortDrums,
+  type DrumHead,
+  type DrumPiece,
+} from "./domain/drums";
+export { GROOVE_NAMES, grooveBar, groovesFor, type GrooveName } from "./domain/grooves";

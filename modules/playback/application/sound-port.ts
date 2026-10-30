@@ -1,6 +1,6 @@
 import type { InstrumentId } from "@/modules/score";
 
-/** A sound set the player can load: one per instrument (drums come later). */
+/** A sound set the player can load: one per instrument (the drum kit is one). */
 export type SoundId = InstrumentId;
 
 /** One note on the audio clock: `time` and `duration` are in AudioContext seconds. */

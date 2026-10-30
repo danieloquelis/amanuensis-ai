@@ -959,6 +959,262 @@
       "sha256": "670c03635d7147847d029f09d9bb2d8c8e902852192713dce3750d16d7265abd",
       "source": "fluidr3-gm",
       "license": "CC BY 3.0 as published by midi-js-soundfonts; Fluid R3 itself is MIT"
+    },
+    {
+      "file": "drums/BDrumNew_hit_v3_rr1_Sum.ogg",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Membranophones/Struck%20Membranophones/Bass%20Drum%201/BDrumNew_hit_v3_rr1_Sum.ogg",
+      "bytes": 19860,
+      "sha256": "16c4cf88721807c85467a90b6fa34add8489e5b5aa05dab6333e904225b12061",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/BDrumNew_hit_v3_rr1_Sum.m4a",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Membranophones/Struck%20Membranophones/Bass%20Drum%201/BDrumNew_hit_v3_rr1_Sum.m4a",
+      "bytes": 32185,
+      "sha256": "c965726297c40290cd9a44ea3d8b15f175d5f29f7a9e5ca37ca9c501e15a8bcd",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/BDrumNew_hit_v7_rr1_Sum.ogg",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Membranophones/Struck%20Membranophones/Bass%20Drum%201/BDrumNew_hit_v7_rr1_Sum.ogg",
+      "bytes": 57999,
+      "sha256": "bdc5fe4ec68b5d117022fc35e936062b6c3e31f591b014425178e12c337b210b",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/BDrumNew_hit_v7_rr1_Sum.m4a",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Membranophones/Struck%20Membranophones/Bass%20Drum%201/BDrumNew_hit_v7_rr1_Sum.m4a",
+      "bytes": 94646,
+      "sha256": "f096ffb70e31bc048f60b574a432b543a353503bddddcb244221846d0dcc697d",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/Snare2_HitSN_v5_rr1_Mid.ogg",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Membranophones/Struck%20Membranophones/Snare%20Drum%2C%20Modern%201/Snare2_HitSN_v5_rr1_Mid.ogg",
+      "bytes": 13084,
+      "sha256": "4d0d194cab6e591864fb0da942382f753137b0aefe5e6b3e7e66e4afd2c10fc3",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/Snare2_HitSN_v5_rr1_Mid.m4a",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Membranophones/Struck%20Membranophones/Snare%20Drum%2C%20Modern%201/Snare2_HitSN_v5_rr1_Mid.m4a",
+      "bytes": 23040,
+      "sha256": "13fc72d37b9c828578120eac4eb1d52a83a6e92c45180a9ca92e927c1d45fc91",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/Snare2_HitSN_v9_rr1_Mid.ogg",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Membranophones/Struck%20Membranophones/Snare%20Drum%2C%20Modern%201/Snare2_HitSN_v9_rr1_Mid.ogg",
+      "bytes": 15843,
+      "sha256": "7149763a4d8ab1ca6e4acba0ee64edce7e8b376d47274bc1fc73088cb94cfb1d",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/Snare2_HitSN_v9_rr1_Mid.m4a",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Membranophones/Struck%20Membranophones/Snare%20Drum%2C%20Modern%201/Snare2_HitSN_v9_rr1_Mid.m4a",
+      "bytes": 27662,
+      "sha256": "e54a7101f24e6f5e4f8282931235092f610c57205e26ac8e2a427c8f8909eaac",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/Snare3M_Xstick_v2_rr1_Mid.ogg",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Membranophones/Struck%20Membranophones/Snare%20Drum%2C%20Modern%202/Snare3M_Xstick_v2_rr1_Mid.ogg",
+      "bytes": 12240,
+      "sha256": "15df7cbbae995b14afa8c198485c0752236b5e98737728975f809bd9fd01b6b8",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/Snare3M_Xstick_v2_rr1_Mid.m4a",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Membranophones/Struck%20Membranophones/Snare%20Drum%2C%20Modern%202/Snare3M_Xstick_v2_rr1_Mid.m4a",
+      "bytes": 19098,
+      "sha256": "b598fd8db5964a72f89aba136d71f5dd8f3b63f8b3e05a9c1ccaa4d603231734",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/TomH_HitS_v2_rr1_Mid.ogg",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Membranophones/Struck%20Membranophones/Tom%201/Stick/TomH_HitS_v2_rr1_Mid.ogg",
+      "bytes": 30910,
+      "sha256": "b30e69808fbe35936e6b0bc635a808d09ffc630e181cfeab162c6356104f189e",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/TomH_HitS_v2_rr1_Mid.m4a",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Membranophones/Struck%20Membranophones/Tom%201/Stick/TomH_HitS_v2_rr1_Mid.m4a",
+      "bytes": 38548,
+      "sha256": "1c9c89f29172fe62f2f76946d9b1ff4856feed48877faa4993c29caed778edb5",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/TomH_HitS_v4_rr1_Mid.ogg",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Membranophones/Struck%20Membranophones/Tom%201/Stick/TomH_HitS_v4_rr1_Mid.ogg",
+      "bytes": 34740,
+      "sha256": "535bc98f5de397257fcd627acaf4643c1ded79971ad97d8f31356ee39743a94c",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/TomH_HitS_v4_rr1_Mid.m4a",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Membranophones/Struck%20Membranophones/Tom%201/Stick/TomH_HitS_v4_rr1_Mid.m4a",
+      "bytes": 48902,
+      "sha256": "294f627a5f6bf5bf530dd6effb89a9e29394cf53531696d0d3f7e8ec28cb3cb2",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/TomL_HitS_v2_rr1_Mid.ogg",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Membranophones/Struck%20Membranophones/Tom%202/Stick/TomL_HitS_v2_rr1_Mid.ogg",
+      "bytes": 31678,
+      "sha256": "c3196f29b6c77b2b113930f916148df360e1106eb8a34904ec4ef4483a9a6ef2",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/TomL_HitS_v2_rr1_Mid.m4a",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Membranophones/Struck%20Membranophones/Tom%202/Stick/TomL_HitS_v2_rr1_Mid.m4a",
+      "bytes": 38451,
+      "sha256": "cc59a3b46dcdf2cf86eabc6328bfabb202ba1728ed8aa2abd179e3ad4b526b71",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/TomL_HitS_v4_rr1_Mid.ogg",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Membranophones/Struck%20Membranophones/Tom%202/Stick/TomL_HitS_v4_rr1_Mid.ogg",
+      "bytes": 42430,
+      "sha256": "ef739ba5cb0621d9f79540fac46cc99e329106d3445cefea1318e2c6dbf5e4bd",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/TomL_HitS_v4_rr1_Mid.m4a",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Membranophones/Struck%20Membranophones/Tom%202/Stick/TomL_HitS_v4_rr1_Mid.m4a",
+      "bytes": 56118,
+      "sha256": "68349060fd8302a43ede61a751c5c8989e33a7378f4e6fa784e130d94a253cd8",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/HiHat_HitC_v2_rr1_Mid.ogg",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Idiophones/Struck%20Idiophones/Hi-Hat%20Cymbal/HiHat_HitC_v2_rr1_Mid.ogg",
+      "bytes": 13075,
+      "sha256": "7363f127392c2c5b29683e02f92620b2d1c19deebd0a2e9c4455e2624f4b2dca",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/HiHat_HitC_v2_rr1_Mid.m4a",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Idiophones/Struck%20Idiophones/Hi-Hat%20Cymbal/HiHat_HitC_v2_rr1_Mid.m4a",
+      "bytes": 20408,
+      "sha256": "735852328163b22a3133a4fd0f6c686115f11b0eec7896781fa99ef7e24befec",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/HiHat_HitC_v4_rr1_Mid.ogg",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Idiophones/Struck%20Idiophones/Hi-Hat%20Cymbal/HiHat_HitC_v4_rr1_Mid.ogg",
+      "bytes": 13353,
+      "sha256": "9a926e3ec3e308f43f8a52f732509633289e5a7fa37b2f860a0dfb7c3aff61cd",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/HiHat_HitC_v4_rr1_Mid.m4a",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Idiophones/Struck%20Idiophones/Hi-Hat%20Cymbal/HiHat_HitC_v4_rr1_Mid.m4a",
+      "bytes": 21871,
+      "sha256": "4164fbfdb427573226d697eadb12033630ce820668de0197f04db40ec15f3bc1",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/HiHat_HitO_rr1_Mid.ogg",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Idiophones/Struck%20Idiophones/Hi-Hat%20Cymbal/HiHat_HitO_rr1_Mid.ogg",
+      "bytes": 58705,
+      "sha256": "012ea4748927e5b5d2b86c104a3a52b509469eaf0a7aeb64aadca92a4d183790",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/HiHat_HitO_rr1_Mid.m4a",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Idiophones/Struck%20Idiophones/Hi-Hat%20Cymbal/HiHat_HitO_rr1_Mid.m4a",
+      "bytes": 81223,
+      "sha256": "a5d8ecb2084cb43c260b4836b4fc7279de2f2585438d6bf2e4de8408460aa2b2",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/HiHat_Close_rr1_Mid.ogg",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Idiophones/Struck%20Idiophones/Hi-Hat%20Cymbal/HiHat_Close_rr1_Mid.ogg",
+      "bytes": 12589,
+      "sha256": "fe8e2cdf971ed340490feec88e4859ab5612f152928d01c08cf8c9c9745d774c",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/HiHat_Close_rr1_Mid.m4a",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Idiophones/Struck%20Idiophones/Hi-Hat%20Cymbal/HiHat_Close_rr1_Mid.m4a",
+      "bytes": 18831,
+      "sha256": "ad84d3155e18f7efc310e3004f52d3eac091890ea870b771823ea4cd59498cf9",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/susCymb1_hit_stick_f1.ogg",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Idiophones/Struck%20Idiophones/Suspended%20Cymbal%201/susCymb1_hit_stick_f1.ogg",
+      "bytes": 92212,
+      "sha256": "6c74cf96addd654217aaf555ca6cc65fc4d92d743d333aa78424c6b5c1212d88",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/susCymb1_hit_stick_f1.m4a",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Idiophones/Struck%20Idiophones/Suspended%20Cymbal%201/susCymb1_hit_stick_f1.m4a",
+      "bytes": 112535,
+      "sha256": "212ebcb6b3d739d9b4e1d0c7e2726d1635488f13f1ff0c805c7320d3994ca005",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/susCymb1_hit_stick_mp1.ogg",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Idiophones/Struck%20Idiophones/Suspended%20Cymbal%201/susCymb1_hit_stick_mp1.ogg",
+      "bytes": 104848,
+      "sha256": "2f503877ba43ef3f228e0cfc4b5eb03d386ee79117cfae1b268c045c23055f9d",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/susCymb1_hit_stick_mp1.m4a",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Idiophones/Struck%20Idiophones/Suspended%20Cymbal%201/susCymb1_hit_stick_mp1.m4a",
+      "bytes": 129266,
+      "sha256": "7a4660509eba293f60eb6b994abd5ee5aecd43ae3facc35294db53a6c0e77baf",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/susCymb1_hit_bell_mf1.ogg",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Idiophones/Struck%20Idiophones/Suspended%20Cymbal%201/susCymb1_hit_bell_mf1.ogg",
+      "bytes": 96617,
+      "sha256": "cbbd574a4c8f7f384e8ceb9b05ea68c091cda909e9e7bc718e7523189f002d1f",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
+    },
+    {
+      "file": "drums/susCymb1_hit_bell_mf1.m4a",
+      "url": "https://smpldsnds.github.io/sgossner-vcsl/Idiophones/Struck%20Idiophones/Suspended%20Cymbal%201/susCymb1_hit_bell_mf1.m4a",
+      "bytes": 118386,
+      "sha256": "949a95de0c05dab47d7fff89f6abfa91dc0421f8452cfa3c75c6c2426bb5da75",
+      "source": "vcsl",
+      "license": "CC0 1.0 (public domain dedication)"
     }
   ]
 }

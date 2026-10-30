@@ -46,6 +46,7 @@ function writeEventNotes(draft: Draft, eventId: string, pitches: Pitch[] | null)
   else {
     event.pitch = null;
     delete event.stack;
+    delete event.drums;
   }
   // Writing a note into a slash or repeat bar turns it back into a normal bar.
   if (isNote(event)) setBarStyle(measure, undefined);

@@ -5,8 +5,8 @@ import type { CommitEdit } from "../../hooks/use-score-editor";
 import styles from "./sheet-menu.module.css";
 
 /**
- * Note values and the dot, drawn as rests when the event is a rest; `children` (the tie) joins
- * the group after them.
+ * Note values, drawn as rests when the event is a rest; then the dot, with `children` (the tie)
+ * in the same group.
  */
 export function DurationButtons({
   event,
@@ -19,27 +19,31 @@ export function DurationButtons({
 }) {
   const { dotted } = durationNotation(event.duration);
   return (
-    <div className={styles.durations} role="group" aria-label="Note duration">
-      {NOTE_DURATION_CHOICES.map(({ value, label }) => (
+    <>
+      <div className={styles.durations} role="group" aria-label="Note duration">
+        {NOTE_DURATION_CHOICES.map(({ value, label }) => (
+          <button
+            key={value}
+            aria-label={`${label} duration`}
+            aria-pressed={!event.measureRest && beats(event.duration) === value}
+            onClick={() => onCommand({ type: "setDuration", eventId: event.id, duration: value }, `${label} duration`)}
+          >
+            {isNote(event) ? <DurationIcon value={value} /> : <RestDurationIcon value={value} />}
+          </button>
+        ))}
+      </div>
+      <div className={styles.durations} role="group" aria-label="Dot and tie">
         <button
-          key={value}
-          aria-label={`${label} duration`}
-          aria-pressed={!event.measureRest && beats(event.duration) === value}
-          onClick={() => onCommand({ type: "setDuration", eventId: event.id, duration: value }, `${label} duration`)}
+          aria-label="Dotted duration"
+          aria-pressed={dotted && !event.measureRest}
+          disabled={event.measureRest}
+          onClick={() => onCommand(toggleDotOperation(event), "Changed dotted duration")}
         >
-          {isNote(event) ? <DurationIcon value={value} /> : <RestDurationIcon value={value} />}
+          <span className={styles.dot}>·</span>
         </button>
-      ))}
-      <button
-        aria-label="Dotted duration"
-        aria-pressed={dotted && !event.measureRest}
-        disabled={event.measureRest}
-        onClick={() => onCommand(toggleDotOperation(event), "Changed dotted duration")}
-      >
-        <span className={styles.dot}>·</span>
-      </button>
-      {children}
-    </div>
+        {children}
+      </div>
+    </>
   );
 }
 

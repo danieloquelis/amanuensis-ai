@@ -43,9 +43,10 @@ export function SheetBar({ bar, system, isFirstInSystem, isLastInSystem, interac
     }
     if (e.key === "Escape") selectBarById(null);
   };
-  const openBarMenu = (e: MouseEvent) => {
+  /** A right-click selects the bar, like a click: its actions are in the selection card. */
+  const selectOnContextMenu = (e: MouseEvent) => {
     e.preventDefault();
-    openMenu("bar", bar.id, e.clientX, e.clientY);
+    selectBar();
   };
   const setWidth = (width: number | null) =>
     commit(
@@ -54,7 +55,7 @@ export function SheetBar({ bar, system, isFirstInSystem, isLastInSystem, interac
     );
 
   return (
-    <g onContextMenu={openBarMenu}>
+    <g onContextMenu={selectOnContextMenu}>
       <BarNumber
         bar={bar}
         // Line-start numbers sit left of the staff, clear of section boxes and chords.
@@ -64,7 +65,7 @@ export function SheetBar({ bar, system, isFirstInSystem, isLastInSystem, interac
         role="button"
         tabIndex={0}
         aria-label={`Select bar ${bar.number}`}
-        onContextMenu={openBarMenu}
+        onContextMenu={selectOnContextMenu}
         onClick={(e) => {
           const mode = pickModeOf(e);
           if (mode) interactions.pick({ kind: "bar", id: bar.id }, mode);
@@ -94,7 +95,7 @@ export function SheetBar({ bar, system, isFirstInSystem, isLastInSystem, interac
             selectBar();
             openMenu("meter", bar.id, e.clientX, e.clientY);
           }}
-          onContextMenu={openBarMenu}
+          onContextMenu={selectOnContextMenu}
           onKeyDown={(e) => {
             if (e.key !== "Enter") return;
             const rect = e.currentTarget.getBoundingClientRect();
@@ -117,17 +118,15 @@ export function SheetBar({ bar, system, isFirstInSystem, isLastInSystem, interac
         aria-valuemin={resizable ? MEASURE_WIDTH.min : undefined}
         aria-valuemax={resizable ? MEASURE_WIDTH.max : undefined}
         aria-valuenow={resizable ? width : undefined}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          selectBar();
-          openMenu("bar", bar.id, e.clientX, e.clientY);
+        onContextMenu={selectOnContextMenu}
+        onClick={() => {
+          if (!resizable) selectBar();
         }}
         onDoubleClick={() => setWidth(null)}
         onKeyDown={(e) => {
           if (isMenuKey(e)) {
             e.preventDefault();
-            const rect = e.currentTarget.getBoundingClientRect();
-            openMenu("bar", bar.id, rect.right, rect.top);
+            selectBar();
           }
           if (resizable && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
             e.preventDefault();

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { midiPitch, type InstrumentId, type Pitch, type Score } from "@/modules/score";
+import type { InstrumentId, Score } from "@/modules/score";
 import { AudioPlayer } from "../../infrastructure/audio-player";
 
 const FALLBACK_MESSAGE = "Instrument sounds could not load; playing reference tones.";
@@ -63,10 +63,10 @@ export function usePlayback() {
     }
   };
 
-  /** Sounds a single note on an instrument, e.g. one just clicked; silent while the score is playing. */
+  /** Sounds a single MIDI note on an instrument (a drum piece on the kit), e.g. one just clicked; silent while the score is playing. */
   const audition = useCallback(
-    (pitch: Pitch, instrument: InstrumentId = "piano") => {
-      if (!playing) player.current?.audition(midiPitch(pitch), instrument);
+    (midi: number, instrument: InstrumentId = "piano") => {
+      if (!playing) player.current?.audition(midi, instrument);
     },
     [playing],
   );

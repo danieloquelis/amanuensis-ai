@@ -40,7 +40,7 @@ export function textLineCount(annotations: Annotation[]): number {
 function dynamicsY(system: System, staff: number): number {
   if (!system.staves) return system.top + DYNAMIC_OFFSET_BELOW_TOP;
   const top = staffTop(system, staff);
-  const ink = system.events.filter((e) => staffOf(e) === staff && !e.hidden).map((e) => eventInk(e).bottom);
+  const ink = system.events.filter((e) => staffOf(e) === staff && !e.hidden).map((e) => eventInk(e, top).bottom);
   return Math.max(top + STAFF_HEIGHT + DYNAMIC_GAP_BELOW_STAFF, ...ink.map((y) => y + DYNAMIC_GAP_BELOW_INK));
 }
 

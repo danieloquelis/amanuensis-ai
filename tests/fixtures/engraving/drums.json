@@ -1,0 +1,557 @@
+{
+  "schemaVersion": 3,
+  "id": "drums",
+  "revision": 0,
+  "title": "Backbeat",
+  "tempo": 100,
+  "parts": [
+    {
+      "id": "g0-0-part",
+      "instrument": "drums",
+      "name": "Drums",
+      "staves": [
+        {
+          "id": "g0-0-staff",
+          "clef": "percussion",
+          "voices": [
+            {
+              "id": "g0-0-voice"
+            },
+            {
+              "id": "g0-0-voice-feet"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "measures": [
+    {
+      "id": "g0-0-bar-1",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "voices": [
+        {
+          "voiceId": "g0-0-voice",
+          "events": [
+            {
+              "id": "g3-0-0h0",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["hat"]
+            },
+            {
+              "id": "g3-0-0h1",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["hat"]
+            },
+            {
+              "id": "g3-0-0h2",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["snare", "hat"]
+            },
+            {
+              "id": "g3-0-0h3",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["hat"]
+            },
+            {
+              "id": "g3-0-0h4",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["hat"]
+            },
+            {
+              "id": "g3-0-0h5",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["hat"]
+            },
+            {
+              "id": "g3-0-0h6",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["snare", "hat"]
+            },
+            {
+              "id": "g3-0-0h7",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["hat"]
+            }
+          ]
+        },
+        {
+          "voiceId": "g0-0-voice-feet",
+          "events": [
+            {
+              "id": "g3-0-0f0",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": null,
+              "drums": ["kick"]
+            },
+            {
+              "id": "g3-0-0f1",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": null
+            },
+            {
+              "id": "g3-0-0f2",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": null,
+              "drums": ["kick"]
+            },
+            {
+              "id": "g3-0-0f3",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "g0-0-bar-2",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "voices": [
+        {
+          "voiceId": "g0-0-voice",
+          "events": [
+            {
+              "id": "g3-0-1h0",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["hat"]
+            },
+            {
+              "id": "g3-0-1h1",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["hat"]
+            },
+            {
+              "id": "g3-0-1h2",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["snare", "hat"]
+            },
+            {
+              "id": "g3-0-1h3",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["hat"]
+            },
+            {
+              "id": "g3-0-1h4",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["snare"]
+            },
+            {
+              "id": "g3-0-1h5",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["tom1"]
+            },
+            {
+              "id": "g3-0-1h6",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["tom2"]
+            },
+            {
+              "id": "g3-0-1h7",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["tom3"]
+            }
+          ]
+        },
+        {
+          "voiceId": "g0-0-voice-feet",
+          "events": [
+            {
+              "id": "g3-0-1f0",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": null,
+              "drums": ["kick"]
+            },
+            {
+              "id": "g3-0-1f1",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": null
+            },
+            {
+              "id": "g3-0-1f2",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": null,
+              "drums": ["kick"]
+            },
+            {
+              "id": "g3-0-1f3",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "g0-0-bar-3",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "voices": [
+        {
+          "voiceId": "g0-0-voice",
+          "events": [
+            {
+              "id": "g1-0-0h0",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["crash"]
+            },
+            {
+              "id": "g1-0-0h1",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["hatopen"]
+            },
+            {
+              "id": "g1-0-0h2",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["snare", "hat"]
+            },
+            {
+              "id": "g1-0-0h3",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["hatopen"]
+            },
+            {
+              "id": "g1-0-0h4",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["hat"]
+            },
+            {
+              "id": "g1-0-0h5",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["hatopen"]
+            },
+            {
+              "id": "g1-0-0h6",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["snare", "hat"]
+            },
+            {
+              "id": "g1-0-0h7",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["hatopen"]
+            }
+          ]
+        },
+        {
+          "voiceId": "g0-0-voice-feet",
+          "events": [
+            {
+              "id": "g1-0-0f0",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": null,
+              "drums": ["kick"]
+            },
+            {
+              "id": "g1-0-0f1",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": null,
+              "drums": ["kick"]
+            },
+            {
+              "id": "g1-0-0f2",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": null,
+              "drums": ["kick"]
+            },
+            {
+              "id": "g1-0-0f3",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": null,
+              "drums": ["kick"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "g0-0-bar-4",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "voices": [
+        {
+          "voiceId": "g0-0-voice",
+          "events": [
+            {
+              "id": "g2-0-0h0",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["stick", "hat"]
+            },
+            {
+              "id": "g2-0-0h1",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["hat"]
+            },
+            {
+              "id": "g2-0-0h2",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["hat"]
+            },
+            {
+              "id": "g2-0-0h3",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["stick", "hat"]
+            },
+            {
+              "id": "g2-0-0h4",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["hat"]
+            },
+            {
+              "id": "g2-0-0h5",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["hat"]
+            },
+            {
+              "id": "g2-0-0h6",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["stick", "hat"]
+            },
+            {
+              "id": "g2-0-0h7",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["hat"]
+            }
+          ]
+        },
+        {
+          "voiceId": "g0-0-voice-feet",
+          "events": [
+            {
+              "id": "g2-0-0f0",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": null,
+              "drums": ["kick"]
+            },
+            {
+              "id": "g2-0-0f1",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["hatfoot"]
+            },
+            {
+              "id": "g2-0-0f2",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["kick"]
+            },
+            {
+              "id": "g2-0-0f3",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": null,
+              "drums": ["kick"]
+            },
+            {
+              "id": "g2-0-0f4",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["hatfoot"]
+            },
+            {
+              "id": "g2-0-0f5",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "drums": ["kick"]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "annotations": [],
+  "repeats": [],
+  "chords": [],
+  "marks": [],
+  "slurs": []
+}

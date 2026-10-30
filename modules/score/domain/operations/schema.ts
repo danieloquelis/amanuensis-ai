@@ -11,6 +11,7 @@ import { measureOperationSchemas } from "./measure-schemas";
 import { partOperationSchemas } from "./part-schemas";
 import { voiceOperationSchemas } from "./voice-schemas";
 import { copyOperationSchemas } from "./copy-schemas";
+import { drumOperationSchemas } from "./drum-schemas";
 import { ensembleOperationSchemas } from "./ensemble-schemas";
 import { phraseOperationSchemas } from "./phrase-schemas";
 
@@ -114,6 +115,7 @@ export const operationSchema = z.discriminatedUnion("type", [
   ...voiceOperationSchemas,
   ...copyOperationSchemas,
   ...ensembleOperationSchemas,
+  ...drumOperationSchemas,
 ]);
 
 const batchSchema = z

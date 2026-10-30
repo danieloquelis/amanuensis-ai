@@ -26,6 +26,8 @@ import {
   voiceLine,
 } from "@/modules/score";
 
+import { drumRestEdit, isOnDrumPart, stepDrumEdit } from "./drum-edits";
+
 /** A score operation plus the short receipt shown to the user. */
 export type Edit = { operation: Operation; receipt: string };
 
@@ -40,8 +42,9 @@ export const NOTE_DURATION_CHOICES = [
 /** Pitch used when a rest becomes a note (spelled in the key). */
 const DEFAULT_NOTE_PITCH: Pitch = { step: "C", octave: 4, alter: 0 };
 
-/** Moves a note by diatonic steps within the key; rests and spaces have no pitch to move. */
+/** Moves a note by diatonic steps within the key (a drum hit to the next piece); rests have no pitch to move. */
 export function stepPitchEdit(score: Score, eventId: string, steps: number): Edit | null {
+  if (isOnDrumPart(score, eventId)) return stepDrumEdit(score, eventId, steps);
   const { event } = locateEvent(score, eventId);
   if (!event.pitch) return null;
   const pitch = movePitch(event.pitch, steps, scoreKey(score));
@@ -76,6 +79,14 @@ export function toggleRestOperation(event: ScoreEvent, key: KeySignature): Opera
   return pitchOperation(event, inKey(DEFAULT_NOTE_PITCH, key));
 }
 
+/** Note to rest or back, with its receipt; on a drum part, a hit to rest or back. */
+export function toggleRestEdit(score: Score, eventId: string): Edit {
+  if (isOnDrumPart(score, eventId)) return drumRestEdit(score, eventId);
+  const { event } = locateEvent(score, eventId);
+  const operation = toggleRestOperation(event, scoreKey(score));
+  return { operation, receipt: event.pitch ? "Replaced note with rest" : "Added note" };
+}
+
 /**
  * Typing a letter A–G: the event (note or rest) takes that pitch, spelled in the key, in the
  * octave nearest the note it replaces, or else the previous note, as notation editors do; an
@@ -84,6 +95,24 @@ export function toggleRestOperation(event: ScoreEvent, key: KeySignature): Opera
  */
 export function letterNoteEdit(score: Score, eventId: string, step: Step, { written = false } = {}): Edit {
   const { event } = locateEvent(score, eventId);
+  const pitch = letterPitch(score, eventId, step, { written, near: event.pitch });
+  return {
+    operation: pitchOperation(event, pitch),
+    receipt: event.pitch ? `Changed ${pitchName(event.pitch)} to ${pitchName(pitch)}` : `Added ${pitchName(pitch)}`,
+  };
+}
+
+/**
+ * The pitch a typed letter names: spelled in the key, in the octave nearest `near` (or the
+ * previous note), preferring one the instrument plays. With `written`, the letter names the
+ * written note of a transposing part.
+ */
+export function letterPitch(
+  score: Score,
+  eventId: string,
+  step: Step,
+  { written = false, near = null as Pitch | null } = {},
+): Pitch {
   const { instrument } = partOf(score, eventId);
   const concertKey = scoreKey(score);
   const t = written ? transpositionOf(instrument) : null;
@@ -91,7 +120,7 @@ export function letterNoteEdit(score: Score, eventId: string, step: Step, { writ
   const sounding = (p: Pitch) => (t ? toConcert(p, t, concertKey) : p);
   const { low, high } = INSTRUMENTS[instrument].range;
   const middle = spellMidi(Math.round((low + high) / 2), concertKey);
-  const reference = shown(event.pitch ?? previousPitch(score, eventId) ?? middle);
+  const reference = shown(near ?? previousPitch(score, eventId) ?? middle);
   const candidates = [-1, 0, 1]
     .map((offset) =>
       inKey({ step, octave: reference.octave + offset, alter: 0 }, t ? writtenKey(concertKey, t) : concertKey),
@@ -100,13 +129,9 @@ export function letterNoteEdit(score: Score, eventId: string, step: Step, { writ
     .filter(isWithinPitchRange);
   const playable = candidates.filter((p) => isPlayable(midiPitch(p), instrument));
   const distance = (pitch: Pitch) => Math.abs(staffPosition(shown(pitch)) - staffPosition(reference));
-  const pitch = (playable.length ? playable : candidates).reduce((best, candidate) =>
+  return (playable.length ? playable : candidates).reduce((best, candidate) =>
     distance(candidate) < distance(best) ? candidate : best,
   );
-  return {
-    operation: pitchOperation(event, pitch),
-    receipt: event.pitch ? `Changed ${pitchName(event.pitch)} to ${pitchName(pitch)}` : `Added ${pitchName(pitch)}`,
-  };
 }
 
 /** How far past an instrument's range a drag may go: an octave, for notes written out of range on purpose. */

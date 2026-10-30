@@ -1,4 +1,5 @@
 import { INSTRUMENTS, isNote, scoreKey, type Clef, type KeySignature, type Score } from "@/modules/score";
+import { ARTICULATION_HALF_HEIGHT, articulationPlace } from "./articulation";
 import { keySignatureMarks } from "./header";
 import { STAFF_HEIGHT, STAFF_LEFT, type EngravedEvent, type StaffScene, type System } from "./scene";
 
@@ -17,9 +18,8 @@ export const NAME_INDENT = { first: 80, later: 44 };
 /** The name sits this far left of the staves (clear of a brace), and this far below their middle (text baseline). */
 const NAME_GAP = 22;
 const NAME_BASELINE = 4;
-/** A notehead's half height, and how far an articulation sits from its note. */
+/** A notehead's half height. */
 const HEAD_HALF_HEIGHT = 8;
-const ARTICULATION_REACH = 24;
 
 /** One staff of the score, in system order. */
 export type StaffPlan = {
@@ -85,7 +85,7 @@ export const systemBottom = (system: Pick<System, "top" | "staves">) =>
   (system.staves?.at(-1)?.top ?? system.top) + STAFF_HEIGHT;
 
 /** How far an event's ink reaches up and down: heads, stem, articulation. */
-export function eventInk(item: EngravedEvent): { top: number; bottom: number } {
+export function eventInk(item: EngravedEvent, staffTopY: number): { top: number; bottom: number } {
   const ys = [item.y, ...(item.heads?.map((h) => h.y) ?? [])];
   let top = Math.min(...ys) - HEAD_HALF_HEIGHT;
   let bottom = Math.max(...ys) + HEAD_HALF_HEIGHT;
@@ -94,8 +94,9 @@ export function eventInk(item: EngravedEvent): { top: number; bottom: number } {
     else top = Math.min(top, item.stemEnd);
   }
   if (item.event.articulation) {
-    if (item.curveSide === "below" || (!item.curveSide && !item.stemDown)) bottom += ARTICULATION_REACH;
-    else top -= ARTICULATION_REACH;
+    const mark = articulationPlace(item, staffTopY);
+    if (mark.below) bottom = Math.max(bottom, mark.y + ARTICULATION_HALF_HEIGHT);
+    else top = Math.min(top, mark.y - ARTICULATION_HALF_HEIGHT);
   }
   return { top, bottom };
 }
@@ -107,7 +108,7 @@ export function eventInk(item: EngravedEvent): { top: number; bottom: number } {
 export function spacedTops(system: System, plan: StaffPlan[], tops: number[]): number[] {
   const ink = tops.map((top) => ({ top, bottom: top + STAFF_HEIGHT }));
   for (const item of system.events.filter((e) => !e.hidden)) {
-    const { top, bottom } = eventInk(item);
+    const { top, bottom } = eventInk(item, tops[staffOf(item)]);
     const staff = ink[staffOf(item)];
     staff.top = Math.min(staff.top, top);
     staff.bottom = Math.max(staff.bottom, bottom);

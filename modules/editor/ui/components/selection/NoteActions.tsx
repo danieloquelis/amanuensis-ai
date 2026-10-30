@@ -1,17 +1,23 @@
-import { isRest, isNote, type ScoreEvent } from "@/modules/score";
+import { isNote, isRest, type ScoreEvent } from "@/modules/score";
+import { isOnDrumPart } from "../../../application/drum-edits";
 import type { ScoreEditor } from "../../hooks/use-score-editor";
 import { AccidentalButtons } from "../sheet-menu/AccidentalButtons";
 import { ArticulationButtons } from "../sheet-menu/ArticulationButtons";
 import { DurationButtons } from "../sheet-menu/DurationButtons";
 import { TieButton } from "../sheet-menu/TieButton";
 import styles from "./selection.module.css";
+import { MakeRestButton, StackButtons } from "./StackButtons";
 
 /**
- * Everything about one note or rest. A note gets two rows: rhythm (duration, dot, tie), then the
- * note itself (accidental, articulation); Delete makes it a rest. A rest needs one row: rest
- * values, fermata and Add note. Escape hands focus back to the sheet without a selection.
+ * Everything about one note or rest. A note gets two balanced rows: how long (values | dot, tie |
+ * rest), then how it sounds (accidental | articulations | notes on its stem). A rest needs one row: rest
+ * values, fermata and Add note. With one head of a chord picked, the accidental and the remove
+ * button act on that head. A drum hit has no tie or accidentals; which piece a head strikes is set
+ * by dragging it up or down the staff. Escape hands focus back to the sheet without a selection.
  */
 export function NoteActions({ editor, event }: { editor: ScoreEditor; event: ScoreEvent }) {
+  const drums = isOnDrumPart(editor.score, event.id);
+  const head = editor.selectedId === event.id ? editor.selectedHead : null;
   return (
     <div
       className={styles.rows}
@@ -25,8 +31,9 @@ export function NoteActions({ editor, event }: { editor: ScoreEditor; event: Sco
     >
       <div className={styles.actions}>
         <DurationButtons event={event} onCommand={editor.commit}>
-          <TieButton event={event} onCommand={editor.commit} />
+          {!drums && <TieButton event={event} onCommand={editor.commit} />}
         </DurationButtons>
+        {isNote(event) && <MakeRestButton editor={editor} event={event} />}
         {isRest(event) && (
           <>
             <ArticulationButtons event={event} onCommand={editor.commit} />
@@ -36,8 +43,9 @@ export function NoteActions({ editor, event }: { editor: ScoreEditor; event: Sco
       </div>
       {isNote(event) && (
         <div className={styles.actions}>
-          <AccidentalButtons event={event} onCommand={editor.commit} />
+          {!drums && <AccidentalButtons event={event} head={head} onCommand={editor.commit} />}
           <ArticulationButtons event={event} onCommand={editor.commit} />
+          <StackButtons editor={editor} event={event} head={head} />
         </div>
       )}
     </div>

@@ -1,6 +1,6 @@
 # Instruments, voices and ensembles plan
 
-Status: phases A1 (sampled piano), B0 (accessor seam), triplets phase 0 (note lengths) B1 (score v3, one part), A2 (choosing the instrument), D (two voices on a staff), C (several notes on one stem) and E (several instruments) implemented; F planned. Left out of E for now: the layout benchmark script. Written 29 October 2026 against commit `5799adf` (main). The document is self-contained. A session implementing it needs only the repository, `AGENTS.md`, [code conventions](../architecture/code-conventions.md) and this plan. Read the [triplets plan](triplets-plan.md) too, because the two plans touch the same code.
+Status: phases A1 (sampled piano), B0 (accessor seam), triplets phase 0 (note lengths) B1 (score v3, one part), A2 (choosing the instrument), D (two voices on a staff), C (several notes on one stem), E (several instruments) and F (drums, with the VCSL acoustic kit) implemented. Left out for now: the layout benchmark script (E) and the shuffle groove, which waits for triplets (F). Written 29 October 2026 against commit `5799adf` (main). The document is self-contained. A session implementing it needs only the repository, `AGENTS.md`, [code conventions](../architecture/code-conventions.md) and this plan. Read the [triplets plan](triplets-plan.md) too, because the two plans touch the same code.
 
 ## Goal
 

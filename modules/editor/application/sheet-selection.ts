@@ -1,5 +1,6 @@
 import {
   allStaves,
+  drumNames,
   eventPitches,
   findEvent,
   formatChord,
@@ -9,13 +10,17 @@ import {
   voiceNumber,
   type Score,
 } from "@/modules/score";
+import { headName } from "./head-edits";
 import type { SheetItem } from "./notation-edits";
 
 /**
  * Something picked on the sheet: a note or rest, a bar, or another item (chord, text…). A bar
- * picked in one instrument's lane names its staff; without `staffId` it is the whole bar.
+ * picked in one instrument's lane names its staff; without `staffId` it is the whole bar. A note
+ * picked by one head of its stem (a note of a chord, a piece of a drum hit) names that `head`; it
+ * is the same pick as the whole stem for selection purposes.
  */
-export type SheetRef = { kind: "event"; id: string } | { kind: "bar"; id: string; staffId?: string } | SheetItem;
+export type SheetRef =
+  { kind: "event"; id: string; head?: number } | { kind: "bar"; id: string; staffId?: string } | SheetItem;
 
 /** Shift extends a range from the first pick; ⌘/Ctrl adds or removes one item. */
 export type PickMode = "range" | "toggle";
@@ -88,7 +93,14 @@ export function refName(score: Score, ref: SheetRef): string {
       const found = findEvent(score, ref.id);
       if (!found) return "Note";
       const voice = voiceNumber(score, found.voiceId);
-      const notes = eventPitches(found.event).map(pitchName).join(" ");
+      const { drums } = found.event;
+      const notes =
+        ref.head !== undefined
+          ? headName(found.event, ref.head)
+          : drums
+            ? drumNames(drums).replace(/^./, (c) => c.toUpperCase())
+            : eventPitches(found.event).map(pitchName).join(" ");
+
       const name = `${notes || "Rest"} · bar ${found.measureIndex + 1}`;
       return voice > 1 ? `${name} · voice ${voice}` : name;
     }

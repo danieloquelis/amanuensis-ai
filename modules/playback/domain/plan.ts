@@ -1,5 +1,6 @@
 import { primaryVoiceId, type InstrumentId, type Score } from "@/modules/score";
 import { voiceChord, writtenChordSegments } from "./chord-track";
+import { chokeOpenHats } from "./drum-sound";
 import { CHORD_VELOCITY } from "./dynamics";
 import { performanceOrder } from "./performance-order";
 import { joinTies, startingAt } from "./tie-join";
@@ -90,7 +91,9 @@ export function createPlaybackPlan(score: Score, fromMeasureId?: string): Playba
     secondsPerBeat: 60 / score.tempo,
   };
   // Ties are joined after the start is cut, so starting on a held note still sounds it.
-  return joinTies(offset ? startingAt(plan, offset) : plan);
+  const joined = joinTies(offset ? startingAt(plan, offset) : plan);
+  chokeOpenHats(joined.events);
+  return joined;
 }
 
 /** Seconds from the bar's start to a beat inside it, following the bar's actual event timing. */

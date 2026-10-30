@@ -27,6 +27,7 @@ Notes sounding together on one stem (a chord within the voice): <C4 E4 G4>q; tie
 After a note: ~ ties it into the next note (same pitch, may be in the next bar); !staccato, !accent, !tenuto or !fermata.
 Slurs: ( before the first note and ) after the last note of the phrase; may span bars.
 A staff may hold two voices: "bar 2 v2: …" is the second line of bar 2 (stems down, e.g. a bass under the melody), complete in itself; "bar 2 v2: -" removes it; its notes are 2v2#1, 2v2:3. Chords, section and marks belong to the bar's first line.
+Drums: <hat snare>e are pieces struck together (kick snare stick tom1 tom2 tom3 hat hatopen hatfoot crash ride bell); hands (cymbals, snare, toms) in the main line, feet (kick, hatfoot) in v2; "bar N v2: -" leaves a bar without feet. A hit sounds once: no ties.
 With several staves, a "parts:" line lists their handles and every line names its staff: "bar 3 trumpet: …", "bar 3 piano.2 v2: …"; notes there are trumpet/3#2, piano.2/3v2:1.
 Pitches are concert pitch (as they sound) for every instrument; an "instrument" line says when the sheet shows a part transposed, and an "out of range" line lists notes the instrument can't play comfortably.
 Parts after ";": chords C Am7@3 (beats from 1, @1 may be left out), section A, and read-only: shows slashes|repeat, tempo N, marks …, dynamics mf@2, text "…"@1.`;
@@ -42,13 +43,19 @@ export function durationCode(value: number): string | null {
   return null;
 }
 
-/** One note, chord or rest as score text: "C4q", "<C4 E4>h~", "re.", "R". */
+/** One note, chord, drum hit or rest as score text: "C4q", "<C4 E4>h~", "<snare hat>e", "re.", "R". */
 export function eventText(event: ScoreEvent): string {
   if (event.measureRest) return "R";
   const value = durationCode(beats(event.duration)) ?? "?";
   // A chord: its notes in angle brackets, lowest first ("<C4 E4 G4>q").
   const notes = eventPitches(event);
-  const pitches = notes.length > 1 ? `<${notes.map(pitchText).join(" ")}>` : notes.length ? pitchText(notes[0]) : "r";
+  const pitches = event.drums
+    ? `<${event.drums.join(" ")}>`
+    : notes.length > 1
+      ? `<${notes.map(pitchText).join(" ")}>`
+      : notes.length
+        ? pitchText(notes[0])
+        : "r";
   const head = `${pitches}${value}`;
   return `${head}${event.tie ? "~" : ""}${event.articulation ? `!${event.articulation}` : ""}`;
 }

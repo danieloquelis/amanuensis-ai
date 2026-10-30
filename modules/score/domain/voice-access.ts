@@ -137,8 +137,8 @@ export function voiceOf(score: Score, eventId: string): string | null {
 export const voiceLine = (score: Score, eventId: string): ScoreEvent[] =>
   voiceEvents(score, voiceOf(score, eventId) ?? primaryVoiceId(score));
 
-/** Whether the event sounds: a note, as opposed to a rest. */
-export const isNote = (event: ScoreEvent) => event.pitch !== null;
+/** Whether the event sounds: a note or a drum hit, as opposed to a rest. */
+export const isNote = (event: ScoreEvent) => event.pitch !== null || Boolean(event.drums?.length);
 
 /** Whether the event is silence. */
 export const isRest = (event: ScoreEvent) => !isNote(event);

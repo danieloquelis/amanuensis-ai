@@ -81,9 +81,10 @@ export function SheetSystem({ system, eventOrder, partNames, laneNames, playBeat
             },
           )}
           onDoubleClick={(e) => interactions.openMenu("annotation", label.annotationId, e.clientX, e.clientY)}
+          // Right-click selects, like a click; double-click edits.
           onContextMenu={(e) => {
             e.preventDefault();
-            interactions.openMenu("annotation", label.annotationId, e.clientX, e.clientY);
+            interactions.selectItem({ kind: "annotation", id: label.annotationId });
           }}
           onPointerDown={(e) => interactions.gestures.startLabelDrag(e, label.annotationId)}
           onPointerMove={(e) => interactions.gestures.moveLabelDrag(e, label.annotationId)}
@@ -104,7 +105,7 @@ export function SheetSystem({ system, eventOrder, partNames, laneNames, playBeat
           onDoubleClick={(e) => interactions.openMenu("chord", chord.id, e.clientX, e.clientY)}
           onContextMenu={(e) => {
             e.preventDefault();
-            interactions.openMenu("chord", chord.id, e.clientX, e.clientY);
+            interactions.selectItem({ kind: "chord", id: chord.id });
           }}
         />
       ))}

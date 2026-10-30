@@ -16,6 +16,7 @@ import {
   type Score,
   type Step,
 } from "@/modules/score";
+import { addDrumPieceEdit, isOnDrumPart } from "./drum-edits";
 import { letterNoteEdit, type Edit } from "./note-edits";
 
 /**
@@ -43,15 +44,21 @@ export function addToChordEdit(score: Score, eventId: string, step: Step, { writ
   };
 }
 
-/** A typed letter, on the sheet as shown (written pitch): with Shift it joins the chord, otherwise it replaces the note. */
-export const typedLetterEdit = (score: Score, eventId: string, step: Step, addToChord: boolean): Edit =>
-  addToChord ? addToChordEdit(score, eventId, step) : letterNoteEdit(score, eventId, step, { written: true });
+/**
+ * A typed letter, on the sheet as shown (written pitch): with Shift it joins the chord, otherwise
+ * it replaces the note. Letters name pitches, so on a drum part they do nothing (null).
+ */
+export function typedLetterEdit(score: Score, eventId: string, step: Step, addToChord: boolean): Edit | null {
+  if (isOnDrumPart(score, eventId)) return null;
+  return addToChord ? addToChordEdit(score, eventId, step) : letterNoteEdit(score, eventId, step, { written: true });
+}
 
 /** A third above the chord's top note (or the note's), in the key: the next note a chord stacks. */
 const THIRD_STEPS = 2;
 
-/** Adds the note a third above the top of a note or chord, on the same stem; null when the stem is full. */
+/** Adds the note a third above the top of a note or chord, on the same stem (a drum hit, another piece); null when the stem is full. */
 export function addChordNoteEdit(score: Score, eventId: string): Edit | null {
+  if (isOnDrumPart(score, eventId)) return addDrumPieceEdit(score, eventId);
   const notes = eventPitches(locateEvent(score, eventId).event);
   if (!notes.length || notes.length >= MAX_CHORD_NOTES) return null;
   const added = movePitch(notes.at(-1)!, THIRD_STEPS, scoreKey(score));
@@ -61,8 +68,13 @@ export function addChordNoteEdit(score: Score, eventId: string): Edit | null {
   };
 }
 
-/** Takes the top note off a chord; null for a single note or a rest. */
+/** Takes the top note off a chord (the top piece off a drum hit); null for a single note or a rest. */
 export function removeTopNoteEdit(score: Score, eventId: string): Edit | null {
+  const { drums } = locateEvent(score, eventId).event;
+  if (drums) {
+    if (drums.length < 2) return null;
+    return { operation: { type: "setDrums", eventId, drums: drums.slice(0, -1) }, receipt: "Removed the top piece" };
+  }
   const notes = eventPitches(locateEvent(score, eventId).event);
   if (notes.length < 2) return null;
   return {

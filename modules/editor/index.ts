@@ -6,6 +6,7 @@ export { hasSecondVoice, secondVoiceEdit } from "./application/voice-edits";
 export { addToChordEdit, typedLetterEdit } from "./application/chord-edits";
 export { findSelection, selectionAfterEdit, type Selection } from "./application/selection";
 export { letterNoteEdit, toggleRestOperation, type Edit } from "./application/note-edits";
+export { addDrumPieceEdit, drumDragEdit, drumRestEdit, stepDrumEdit } from "./application/drum-edits";
 export {
   allHave,
   octaveEdit,
@@ -27,3 +28,4 @@ export {
   type PickMode,
   type SheetRef,
 } from "./application/sheet-selection";
+export { headName, removeHeadEdit, stepHeadEdit } from "./application/head-edits";

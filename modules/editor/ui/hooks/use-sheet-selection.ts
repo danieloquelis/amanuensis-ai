@@ -23,12 +23,18 @@ export function useSheetSelection(score: Score, latestScore: () => Score) {
   const picked = stored.filter((ref) => refExists(score, ref));
   const primary = picked.at(-1) ?? null;
   const selectedId = primary?.kind === "event" ? primary.id : null;
+  /** The head picked on the primary note's stem (a note of a chord, a drum piece), or null for the whole stem. */
+  const selectedHead = primary?.kind === "event" ? (primary.head ?? null) : null;
   const selectedBarId = primary?.kind === "bar" ? primary.id : null;
   /** The instrument lane of a bar picked in one, or null for a whole bar. */
   const selectedStaffId = primary?.kind === "bar" ? (primary.staffId ?? null) : null;
   const selectedItem: SheetItem | null = primary && primary.kind !== "event" && primary.kind !== "bar" ? primary : null;
 
-  const select = useCallback((id: string | null) => setPicked(id ? [{ kind: "event", id }] : []), []);
+  const select = useCallback(
+    (id: string | null, head?: number) =>
+      setPicked(id ? [head === undefined ? { kind: "event", id } : { kind: "event", id, head }] : []),
+    [],
+  );
   const selectBar = useCallback(
     (measureId: string | null, staffId?: string) => setPicked(measureId ? [barRef(measureId, staffId)] : []),
     [],
@@ -64,6 +70,7 @@ export function useSheetSelection(score: Score, latestScore: () => Score) {
     /** Short name of the whole selection ("Bars 3–6"), or null when nothing is picked. */
     pickedName: selectionName(score, picked),
     selectedId,
+    selectedHead,
     setSelectedId,
     selectedBarId,
     selectedStaffId,

@@ -1,23 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ProjectRepository } from "@/modules/projects";
 import {
-  isNote,
   createExample,
   createSession,
   execute,
   executeAll,
-  locateEvent,
-  scoreKey,
   travel,
   type Command,
   type Operation,
   type Score,
-  type Step,
 } from "@/modules/score";
 import { removeItemOperation, type SheetItem } from "../../application/notation-edits";
-import { typedLetterEdit } from "../../application/chord-edits";
-import { stepPitchEdit, toggleRestOperation } from "../../application/note-edits";
 import { findSelection, selectionAfterEdit } from "../../application/selection";
+import { useNoteCommands } from "./use-note-commands";
 import { useSheetSelection } from "./use-sheet-selection";
 
 const RECEIPT_LIMIT = 5;
@@ -169,25 +164,7 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
     persist(score);
   }, [clear, onBeforeEdit, persist, ready, replaceSession]);
 
-  /**
-   * A–G typed on a selected note or rest; on a transposing part it names the written note the
-   * sheet shows. With Shift (`addToChord`) the note joins the selected one on its stem.
-   */
-  const enterLetter = (eventId: string, step: Step, addToChord = false) => {
-    const edit = typedLetterEdit(latest.current.score, eventId, step, addToChord);
-    commit(edit.operation, edit.receipt);
-  };
-
-  const toggleRest = (eventId: string) => {
-    const score = latest.current.score;
-    const { event } = locateEvent(score, eventId);
-    commit(toggleRestOperation(event, scoreKey(score)), isNote(event) ? "Replaced note with rest" : "Added note");
-  };
-
-  const stepPitch = (eventId: string, steps: number) => {
-    const edit = stepPitchEdit(latest.current.score, eventId, steps);
-    if (edit) commit(edit.operation, edit.receipt);
-  };
+  const notes = useNoteCommands(latestScore, commit, { selectedId, selectedHead: sheetSelection.selectedHead, select });
 
   const deleteItem = (item: SheetItem) => {
     commit(removeItemOperation(item), "Removed");
@@ -229,9 +206,9 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
     applyCommands,
     /** The latest score, including edits not yet rendered. */
     getScore: latestScore,
-    stepPitch,
-    enterLetter,
-    toggleRest,
+    ...notes,
+    /** The head picked on the selected note's stem (a note of a chord, a drum piece), or null. */
+    selectedHead: sheetSelection.selectedHead,
     undoRedo,
     startOver,
     canUndo: session.past.length > 0,
