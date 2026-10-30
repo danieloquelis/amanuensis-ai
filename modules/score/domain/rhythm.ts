@@ -3,7 +3,8 @@ import type { Meter, ScoreEvent } from "./schema";
 /** Musical time in quarter-note beats: an eighth is 1/2, a 6/8 bar holds 3. */
 export type Fraction = { numerator: number; denominator: number };
 
-export const METERS = ["2/4", "3/4", "4/4", "5/4", "3/8", "6/8", "9/8", "12/8"] as const;
+/** Simple meters, cut time (2/2) among them, then compound meters. */
+export const METERS = ["2/2", "2/4", "3/4", "4/4", "5/4", "3/8", "6/8", "9/8", "12/8"] as const;
 
 export const DURATIONS = [
   { label: "Dotted whole", value: 6 },
@@ -72,7 +73,24 @@ export const meterName = (meter: Meter) => `${meter.numerator}/${meter.denominat
 /** Bar length in quarter-note beats. */
 export const measureCapacity = (meter: Meter) => (meter.numerator * 4) / meter.denominator;
 
-/** Compound meters (6/8, 9/8, 12/8) group in dotted quarters; everything else in quarters. */
+/**
+ * The tempo as a musician marks it: per half note in cut time (quarter = 200 is half = 100), per
+ * quarter otherwise. A score's tempo is always kept in quarter notes.
+ */
+export function tempoMarking(tempo: number, meter: Meter): { note: "quarter" | "half"; perMinute: number } {
+  return meter.denominator === 2
+    ? { note: "half", perMinute: Math.round(tempo / 2) }
+    : { note: "quarter", perMinute: tempo };
+}
+
+/** Compound meters (6/8, 9/8, 12/8): their beat is a dotted quarter, three eighths. */
+export const isCompound = (meter: Meter) => meter.denominator === 8 && meter.numerator % 3 === 0;
+
+/**
+ * The beat, in quarter-note beats: a dotted quarter in compound meters, a half in cut time (2/2,
+ * felt in two), otherwise a quarter. Beams, rests, slashes and rhythm spelling follow it.
+ */
 export function beatGroupLength(meter: Meter): number {
-  return meter.denominator === 8 && meter.numerator % 3 === 0 ? 1.5 : 1;
+  if (isCompound(meter)) return 1.5;
+  return meter.denominator === 2 ? 2 : 1;
 }

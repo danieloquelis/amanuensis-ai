@@ -1,7 +1,8 @@
 import type { SVGProps } from "react";
-import type { Meter } from "@/modules/score";
+import { tempoMarking, type Meter } from "@/modules/score";
 import { STAFF_GAP, STAFF_HEIGHT, STAFF_LEFT, type BarScene, type KeyAccidentalMark } from "../../domain/scene";
 import { AccidentalGlyph } from "./AccidentalGlyph";
+import { TempoNote } from "./TempoNote";
 import { classNames } from "@/shared/ui/class-names";
 import styles from "./glyphs.module.css";
 
@@ -65,8 +66,31 @@ export function KeySignature({ marks }: { marks: KeyAccidentalMark[] }) {
 
 type TimeSignatureProps = { meter: Meter; x: number; top: number } & SVGProps<SVGGElement>;
 
-/** Stacked meter digits. Extra SVG props (handlers, a11y) land on the root group. */
+/** The cut-time sign's vertical stroke reaches this far past the staff's outer lines. */
+const CUT_STROKE_OVERHANG = 5;
+
+/**
+ * Stacked meter digits; cut time (2/2) as its sign, ₵. Extra SVG props (handlers, a11y) land on
+ * the root group.
+ */
 export function TimeSignature({ meter, x, top, ...rest }: TimeSignatureProps) {
+  if (meter.numerator === 2 && meter.denominator === 2) {
+    return (
+      <g fill="currentColor" {...rest}>
+        <text x={x} y={top + 35} fontFamily="Georgia, serif" fontWeight="bold" fontSize="34" textAnchor="middle">
+          C
+        </text>
+        <line
+          x1={x}
+          x2={x}
+          y1={top - CUT_STROKE_OVERHANG}
+          y2={top + STAFF_HEIGHT + CUT_STROKE_OVERHANG}
+          stroke="currentColor"
+          strokeWidth={2}
+        />
+      </g>
+    );
+  }
   return (
     <g fontFamily="Georgia, serif" fontWeight="bold" fontSize="27" textAnchor="middle" fill="currentColor" {...rest}>
       <text x={x} y={top + 23}>
@@ -90,11 +114,16 @@ export function BarNumber({ bar, x = bar.x + 8, y, className, ...rest }: BarNumb
   );
 }
 
-export function TempoMark({ tempo, x, y }: { tempo: number; x: number; y: number }) {
+/** "♩ = 96", or a half note = 100 in cut time; `y` is the text's baseline. */
+export function TempoMark({ tempo, meter, x, y }: { tempo: number; meter: Meter; x: number; y: number }) {
+  const { note, perMinute } = tempoMarking(tempo, meter);
   return (
-    <text x={x} y={y} fontSize="12" fontWeight="600">
-      {`♩ = ${tempo}`}
-    </text>
+    <g>
+      <TempoNote note={note} x={x} y={y - 11} />
+      <text x={x + 11} y={y} fontSize="12" fontWeight="600">
+        {`= ${perMinute}`}
+      </text>
+    </g>
   );
 }
 

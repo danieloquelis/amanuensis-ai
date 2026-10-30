@@ -1,4 +1,4 @@
-import { beatGroupLength, durationFromBeats, eventOnsets, measureCapacity } from "../rhythm";
+import { beatGroupLength, durationFromBeats, eventOnsets, isCompound, measureCapacity } from "../rhythm";
 import type { Meter, ScoreEvent } from "../schema";
 
 /** Rest values a meter may use, longest first. Simple meters avoid dotted rests. */
@@ -31,7 +31,7 @@ function fitsBeat(position: number, value: number, meter: Meter): boolean {
 export function makeRests(duration: number, prefix: string, position: number, meter: Meter): ScoreEvent[] {
   // A whole-bar rest is a candidate when its value can be written (not 5/4, for example).
   const barRest = ANY_REST.filter((v) => v === measureCapacity(meter));
-  const candidates = [...barRest, ...(beatGroupLength(meter) === 1 ? SIMPLE_RESTS : COMPOUND_RESTS)];
+  const candidates = [...barRest, ...(isCompound(meter) ? COMPOUND_RESTS : SIMPLE_RESTS)];
   const rests: ScoreEvent[] = [];
   let at = position;
   let remaining = duration;

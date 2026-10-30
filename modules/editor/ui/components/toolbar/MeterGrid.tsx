@@ -1,4 +1,5 @@
 import { METERS, meterName, type Meter, type Score } from "@/modules/score";
+import { classNames } from "@/shared/ui/class-names";
 import { meterEdit } from "../../../application/notation-edits";
 import type { CommitEdit } from "../../hooks/use-score-editor";
 import styles from "./toolbar.module.css";
@@ -15,7 +16,7 @@ type MeterGridProps = {
 export function MeterGrid({ score, barIndex, onCommand, onError, onDone }: MeterGridProps) {
   const current = meterName(score.measures[barIndex].meter);
   return (
-    <div className={styles.grid} role="group" aria-label="Time signature">
+    <div className={classNames(styles.grid, styles.meterGrid)} role="group" aria-label="Time signature">
       {METERS.map((name) => (
         <button
           key={name}

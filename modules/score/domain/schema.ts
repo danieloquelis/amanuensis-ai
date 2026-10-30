@@ -44,7 +44,7 @@ export const pitchSchema = z
 
 export const meterSchema = z.strictObject({
   numerator: z.number().int().min(2).max(12),
-  denominator: z.union([z.literal(4), z.literal(8)]),
+  denominator: z.union([z.literal(2), z.literal(4), z.literal(8)]),
 });
 
 const fractionSchema = z.strictObject({

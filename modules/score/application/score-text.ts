@@ -22,7 +22,7 @@ const ACCIDENTALS: Record<number, string> = { [-1]: "b", 0: "", 1: "#" };
 export const SCORE_TEXT_GUIDE = `Score text, one line per bar: "bar N: notes ; part ; part".
 Notes: pitch then duration, e.g. C4q, F#4e, Bb3h. (C4 is middle C; # sharp, b flat.)
 Durations: w whole, h half, q quarter, e eighth, s sixteenth; add "." for dotted (q. = 1.5 beats). Rests: rq, re., …; R is a whole-bar rest.
-Each bar's durations must add up to its meter exactly (4/4: 4 quarter beats).
+Each bar's durations must add up to its meter exactly (4/4: 4 quarter beats; 2/2, cut time or alla breve ₵: also 4, felt in two half-note beats; 6/8: 3). Tempo is always quarter-note BPM: cut time marked half = 100 is tempo 200.
 Notes sounding together on one stem (a chord within the voice): <C4 E4 G4>q; tied <C4 E4>h~.
 After a note: ~ ties it into the next note (same pitch, may be in the next bar); !staccato, !accent, !tenuto or !fermata.
 Slurs: ( before the first note and ) after the last note of the phrase; may span bars.

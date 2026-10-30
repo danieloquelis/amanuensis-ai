@@ -73,6 +73,8 @@ export { anchorIds, findEvent, locateEvent, measureStarts } from "./domain/queri
 export {
   add,
   beatGroupLength,
+  isCompound,
+  tempoMarking,
   beats,
   durationFromBeats,
   durationNotation,

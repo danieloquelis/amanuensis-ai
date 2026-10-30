@@ -1,4 +1,4 @@
-import { beatGroupLength, measureCapacity } from "./rhythm";
+import { beatGroupLength, isCompound, measureCapacity } from "./rhythm";
 import type { Meter } from "./schema";
 
 /** Values a note can be written as, in quarter-note beats, longest first. */
@@ -8,16 +8,17 @@ const FINEST = 0.125;
 const EIGHTH = 0.5;
 const SIXTEENTH = 0.25;
 const EPSILON = 1e-9;
-/** How strong a point in the bar is. */
-const WEIGHT = { bar: 4, half: 3, beat: 2, eighth: 1, sixteenth: 0, finer: -1 };
+/** How strong a point in the bar is; `quarter` is a quarter inside a half-note beat (2/2). */
+const WEIGHT = { bar: 4, half: 3, beat: 2, quarter: 1.5, eighth: 1, sixteenth: 0, finer: -1 };
+const QUARTER = 1;
 
 const on = (position: number, unit: number) => Math.abs(position / unit - Math.round(position / unit)) < EPSILON;
 const writable = (length: number) => WRITABLE.some((value) => Math.abs(value - length) < EPSILON);
 
 /**
  * How strong a point in the bar is: the bar line, the middle of a bar of four beats (4/4, 12/8),
- * a beat (a quarter, or a dotted quarter in 6/8, 9/8, 12/8), an eighth, a sixteenth, or finer
- * (a point no value needs to show).
+ * a beat (a quarter, a dotted quarter in 6/8, 9/8, 12/8, a half in 2/2), a quarter within a half
+ * beat, an eighth, a sixteenth, or finer (a point no value needs to show).
  */
 export function metricWeight(position: number, meter: Meter): number {
   const capacity = measureCapacity(meter);
@@ -26,6 +27,7 @@ export function metricWeight(position: number, meter: Meter): number {
   if (on(position, capacity)) return WEIGHT.bar;
   if (beatsInBar === 4 && on(position, capacity / 2)) return WEIGHT.half;
   if (on(position, beat)) return WEIGHT.beat;
+  if (beat > QUARTER && !isCompound(meter) && on(position, QUARTER)) return WEIGHT.quarter;
   if (on(position, EIGHTH)) return WEIGHT.eighth;
   return on(position, SIXTEENTH) ? WEIGHT.sixteenth : WEIGHT.finer;
 }
@@ -43,9 +45,10 @@ function strongestInside(start: number, end: number, meter: Meter): { at: number
 /**
  * Whether one written value from `start` to `end` reads clearly: it hides no point in the bar
  * stronger than both where it starts and where it ends ("show the beat", as engravers say).
- * Familiar syncopations in quarter-beat meters are allowed through: a quarter on the off-beat
- * (e q e), a dotted quarter from the off-beat onto a beat (q. q. q), and a value of up to two
- * beats starting on a beat (q h q, q q. e q). Rests are
+ * Familiar syncopations in simple meters are allowed through: a quarter on the off-beat (e q e),
+ * a dotted quarter from the off-beat onto a beat (q. q. q), a value of up to two quarters
+ * starting on a beat (q h q, q q. e q), and in cut time a half from the second quarter of a beat
+ * (q h q across the middle of a 2/2 bar). Rests are
  * stricter: they never cross the middle of the bar, and never a beat they do not start on.
  */
 function readsClearly(start: number, end: number, meter: Meter, rest: boolean): boolean {
@@ -56,13 +59,14 @@ function readsClearly(start: number, end: number, meter: Meter, rest: boolean): 
     return wholeBar || (crossed < from && crossed < WEIGHT.half);
   }
   if (crossed <= Math.max(from, metricWeight(end, meter))) return true;
-  if (beatGroupLength(meter) !== 1 || crossed >= WEIGHT.bar) return false;
+  if (isCompound(meter) || crossed >= WEIGHT.bar) return false;
   const length = end - start;
+  const halfOffBeat = from === WEIGHT.quarter && Math.abs(length - 2) < EPSILON;
   const offBeatQuarter = from === WEIGHT.eighth && Math.abs(length - 1) < EPSILON;
   const offBeatDotted =
     from === WEIGHT.eighth && Math.abs(length - 1.5) < EPSILON && metricWeight(end, meter) >= WEIGHT.beat;
   const fromBeat = from >= WEIGHT.beat && length <= 2 + EPSILON;
-  return offBeatQuarter || offBeatDotted || fromBeat;
+  return offBeatQuarter || offBeatDotted || fromBeat || halfOffBeat;
 }
 
 /** Longest writable values first: the fallback when there is no point in the bar to split at. */

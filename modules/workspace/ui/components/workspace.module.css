@@ -392,6 +392,17 @@
   color: var(--muted);
 }
 
+/* Each item stays on one line (the drawn note would otherwise be a place to wrap). */
+.scoreMeta > span {
+  white-space: nowrap;
+}
+
+/* The drawn note sits on the text's baseline, as a glyph would. */
+.tempoMark svg {
+  display: inline;
+  vertical-align: -1px;
+}
+
 .scoreMeta > span:last-child {
   font:
     12px var(--font-ui),

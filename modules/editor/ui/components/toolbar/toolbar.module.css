@@ -114,6 +114,11 @@
   gap: 4px;
 }
 
+/* Time signatures: the five simple meters (2/2 to 5/4) on one row, the four compound below. */
+.meterGrid {
+  grid-template-columns: repeat(5, minmax(44px, auto));
+}
+
 .wideGrid {
   grid-template-columns: repeat(5, minmax(48px, auto));
 }

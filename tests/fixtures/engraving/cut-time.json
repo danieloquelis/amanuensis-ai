@@ -1,0 +1,322 @@
+{
+  "schemaVersion": 3,
+  "id": "cut-time",
+  "revision": 0,
+  "title": "Cut time",
+  "tempo": 200,
+  "key": {
+    "fifths": -2,
+    "mode": "major"
+  },
+  "parts": [
+    {
+      "id": "cut-0-part",
+      "instrument": "piano",
+      "name": "Piano",
+      "staves": [
+        {
+          "id": "cut-0-staff",
+          "clef": "treble",
+          "voices": [
+            {
+              "id": "cut-0-voice"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "measures": [
+    {
+      "id": "cut-0-bar-1",
+      "meter": {
+        "numerator": 2,
+        "denominator": 2
+      },
+      "voices": [
+        {
+          "voiceId": "cut-0-voice",
+          "events": [
+            {
+              "id": "cut-bars-0-n0",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": null
+            },
+            {
+              "id": "cut-bars-0-n1",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "G",
+                "alter": 0,
+                "octave": 5
+              }
+            },
+            {
+              "id": "cut-bars-0-n2",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "G",
+                "alter": 0,
+                "octave": 5
+              }
+            },
+            {
+              "id": "cut-bars-0-n3",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": null
+            },
+            {
+              "id": "cut-bars-0-n4",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "G",
+                "alter": 0,
+                "octave": 5
+              }
+            },
+            {
+              "id": "cut-bars-0-n5",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "G",
+                "alter": 0,
+                "octave": 5
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cut-0-bar-2",
+      "meter": {
+        "numerator": 2,
+        "denominator": 2
+      },
+      "voices": [
+        {
+          "voiceId": "cut-0-voice",
+          "events": [
+            {
+              "id": "cut-bars-1-n0",
+              "duration": {
+                "numerator": 3,
+                "denominator": 2
+              },
+              "pitch": null
+            },
+            {
+              "id": "cut-bars-1-n1",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "A",
+                "alter": 0,
+                "octave": 5
+              }
+            },
+            {
+              "id": "cut-bars-1-n2",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null
+            },
+            {
+              "id": "cut-bars-1-n3",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "G",
+                "alter": 0,
+                "octave": 5
+              }
+            },
+            {
+              "id": "cut-bars-1-n4",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cut-0-bar-3",
+      "meter": {
+        "numerator": 2,
+        "denominator": 2
+      },
+      "voices": [
+        {
+          "voiceId": "cut-0-voice",
+          "events": [
+            {
+              "id": "cut-bars-2-n0",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "C",
+                "alter": 0,
+                "octave": 5
+              }
+            },
+            {
+              "id": "cut-bars-2-n1",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "D",
+                "alter": 0,
+                "octave": 5
+              }
+            },
+            {
+              "id": "cut-bars-2-n2",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "E",
+                "alter": -1,
+                "octave": 5
+              }
+            },
+            {
+              "id": "cut-bars-2-n3",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "F",
+                "alter": 0,
+                "octave": 5
+              }
+            },
+            {
+              "id": "cut-bars-2-n4",
+              "duration": {
+                "numerator": 2,
+                "denominator": 1
+              },
+              "pitch": {
+                "step": "G",
+                "alter": 0,
+                "octave": 5
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cut-0-bar-4",
+      "meter": {
+        "numerator": 2,
+        "denominator": 2
+      },
+      "voices": [
+        {
+          "voiceId": "cut-0-voice",
+          "events": [
+            {
+              "id": "cut-bars-3-n0",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": null
+            },
+            {
+              "id": "cut-bars-3-n1",
+              "duration": {
+                "numerator": 2,
+                "denominator": 1
+              },
+              "pitch": {
+                "step": "C",
+                "alter": 0,
+                "octave": 5
+              }
+            },
+            {
+              "id": "cut-bars-3-n2",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": {
+                "step": "C",
+                "alter": 0,
+                "octave": 5
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cut-0-bar-5",
+      "meter": {
+        "numerator": 2,
+        "denominator": 2
+      },
+      "voices": [
+        {
+          "voiceId": "cut-0-voice",
+          "events": [
+            {
+              "id": "cut-bars-4-n0",
+              "duration": {
+                "numerator": 4,
+                "denominator": 1
+              },
+              "pitch": {
+                "step": "B",
+                "alter": -1,
+                "octave": 4
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "annotations": [],
+  "repeats": [],
+  "chords": [],
+  "marks": [],
+  "slurs": []
+}

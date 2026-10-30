@@ -1,6 +1,8 @@
 import { useRef, type CSSProperties } from "react";
 import { sheetHeading } from "@/modules/editor";
 import { ScoreSurface, type ScoreEditor } from "@/modules/editor/ui";
+import { TempoNote } from "@/modules/engraving/ui";
+import { tempoMarking } from "@/modules/score";
 import { usePinchZoom } from "../hooks/use-pinch-zoom";
 import styles from "./workspace.module.css";
 
@@ -26,6 +28,7 @@ export function ScoreCanvas({
 }) {
   const { score, ready, commit } = editor;
   const barCount = score.measures.length;
+  const marking = tempoMarking(score.tempo, score.measures[0].meter);
   const canvas = useRef<HTMLDivElement>(null);
   usePinchZoom(canvas, zoom, onZoom);
   return (
@@ -53,7 +56,10 @@ export function ScoreCanvas({
         </div>
         <div className={styles.scoreMeta}>
           <span>
-            Tempo <span className={styles.tempoMark}>♩ = {score.tempo}</span>
+            Tempo{" "}
+            <span className={styles.tempoMark}>
+              <TempoNote note={marking.note} /> = {marking.perMinute}
+            </span>
           </span>
           <span>Melody</span>
         </div>

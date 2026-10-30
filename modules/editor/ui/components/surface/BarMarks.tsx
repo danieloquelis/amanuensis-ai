@@ -76,7 +76,7 @@ export function BarMarks({
           {...selectable("mark", mark.id, MARK_LABELS[mark.kind])}
         />
       ))}
-      {bar.tempo && <TempoMark tempo={bar.tempo} x={tempoX} y={markY} />}
+      {bar.tempo && <TempoMark tempo={bar.tempo} meter={bar.meter} x={tempoX} y={markY} />}
       {endMarks.map((mark) => (
         <EndMarkText
           key={mark.id}

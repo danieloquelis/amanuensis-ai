@@ -50,12 +50,16 @@ const EPSILON = 1e-9;
 const FILL_PIECES: DrumPiece[] = ["snare", "tom1", "tom2", "tom3"];
 const FILL_STEP = 0.5;
 
+/** Cut time (2/2) plays the 4/4 patterns: the bar holds the same notes, felt in two. */
+const PLAYS_AS: Record<string, string> = { "2/2": "4/4" };
+const patternMeter = (meter: Meter) => PLAYS_AS[meterName(meter)] ?? meterName(meter);
+
 /** The grooves written for a meter. */
 export const groovesFor = (meter: Meter): GrooveName[] =>
-  GROOVE_NAMES.filter((name) => meterName(meter) in GROOVES[name]);
+  GROOVE_NAMES.filter((name) => patternMeter(meter) in GROOVES[name]);
 
 function patternFor(groove: GrooveName, meter: Meter): Pattern {
-  const pattern = (GROOVES[groove] as Record<string, Pattern>)[meterName(meter)];
+  const pattern = (GROOVES[groove] as Record<string, Pattern>)[patternMeter(meter)];
   if (pattern) return pattern;
   const fitting = groovesFor(meter);
   const others = fitting.length
