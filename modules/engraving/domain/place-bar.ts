@@ -165,6 +165,11 @@ function beatColumns(
     return [...slashXs.map((x, i) => ({ beat: bar.beat + i * beatLength, x })), end];
   }
   if (bar.measureRest) return [{ beat: bar.beat, x: notesX }, end];
-  const byBeat = bar.columns.map((column) => events[column.events[0]]);
-  return [...byBeat.map((e) => ({ beat: e.beat, x: e.x })), end];
+  // A whole-bar rest on another staff is drawn mid-bar: it never says where a beat is.
+  const byBeat = bar.columns.map((column) => {
+    const placed = column.events.map((index) => events[index]);
+    const timed = placed.find((placedEvent) => !placedEvent.event.measureRest);
+    return { beat: placed[0].beat, x: timed ? timed.x : notesX };
+  });
+  return [...byBeat.sort((a, b) => a.beat - b.beat), end];
 }

@@ -718,7 +718,8 @@ test("the instrument sets the clef, the written pitch and the sound, and survive
   await expect
     .poll(() => page.evaluate(() => (window as unknown as { instruments: string[] }).instruments[0]))
     .toBe("trumpet");
-  expect((await heardNotes(page))[0]).toBe(60);
+  // The E typed on the trumpet sounds D when the score plays.
+  await expect.poll(() => heardNotes(page)).toContain(62);
   await page.getByRole("button", { name: "Stop playback" }).click();
 });
 

@@ -209,3 +209,26 @@ test("where voices share a staff, rests move out of the other voice's notes", ()
     }
   }
 });
+
+test("the playhead only moves forward through a bar, even where another part rests the whole bar", () => {
+  const base = createExample();
+  const twoParts = applyCommand(base, {
+    requestId: "rest-part",
+    expectedRevision: base.revision,
+    operation: { type: "addPart", instrument: "trumpet" },
+  });
+  // The part above rests the whole bar while the trumpet below plays (as with a band arrangement).
+  const withRestingPart = writeBars(twoParts, "bar 2: R\nbar 2 trumpet: C5q D5e E5e F5q G5q", "resting").score;
+  for (const score of [...allFixtures(), withRestingPart]) {
+    for (const system of layoutScore(score).systems) {
+      for (const bar of system.bars) {
+        let last = -Infinity;
+        for (let k = 0; k <= 32; k++) {
+          const x = beatX(bar, bar.beat + (bar.capacity * k) / 32);
+          assert.ok(x >= last - EPSILON, `${score.id}, bar ${bar.number}: the playhead moves back at beat ${k}/32`);
+          last = x;
+        }
+      }
+    }
+  }
+});

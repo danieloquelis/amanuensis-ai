@@ -13,6 +13,8 @@ const LOOKAHEAD = 1.5;
 const REFILL_MS = 100;
 /** A clicked or moved note: short enough to keep up with a drag, long enough to hear the pitch. */
 const AUDITION = { duration: 0.45, velocity: 80, delay: 0.012 };
+/** A note clicked while its instrument loads waits this long for it (from the browser cache it is quick) before a reference tone. */
+const AUDITION_WAIT_MS = 250;
 
 export type PlaybackListener = {
   /** The playhead beat each frame, then `null` when finished. */
@@ -38,6 +40,8 @@ export class AudioPlayer {
   private generation = 0;
   /** Cuts off the note being auditioned when the next one sounds. */
   private auditioned: (() => void) | null = null;
+  /** Counts auditions, so a note still waiting for its instrument gives way to a newer one. */
+  private auditions = 0;
 
   stop() {
     this.generation++;
@@ -80,20 +84,35 @@ export class AudioPlayer {
     tick();
   }
 
+  /** Loads instruments ahead of use (a score just opened), so its first note already sounds right. */
+  prepare(instruments: SoundId[]) {
+    this.sampledSounds()
+      .prepare(instruments)
+      .catch(() => {});
+  }
+
   /**
-   * Sounds one note now, cutting off the previous audition so a fast drag never piles up. Until
-   * the instrument has loaded, the note sounds as a reference tone and loading starts.
+   * Sounds one note now, cutting off the previous audition so a fast drag never piles up. A note
+   * whose instrument is still loading waits a moment for it, then sounds as a reference tone.
    */
   audition(midi: number, instrument: SoundId) {
     const context = this.audioContext();
     void context.resume();
     this.auditioned?.();
+    const turn = ++this.auditions;
     const sampled = this.sampledSounds();
-    const ready = sampled.isReady([instrument]);
-    if (!ready) sampled.prepare([instrument]).catch(() => {});
-    const output = ready ? sampled : this.referenceTone();
     const request = { instrument, midi, velocity: AUDITION.velocity, duration: AUDITION.duration };
-    this.auditioned = this.sound(output, { ...request, time: context.currentTime + AUDITION.delay });
+    const sound = (output: SoundOutput) => {
+      if (turn !== this.auditions) return;
+      this.auditioned = this.sound(output, { ...request, time: context.currentTime + AUDITION.delay });
+    };
+    if (sampled.isReady([instrument])) return sound(sampled);
+    const loaded = sampled.prepare([instrument]).then(
+      () => true,
+      () => false,
+    );
+    const waited = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), AUDITION_WAIT_MS));
+    void Promise.race([loaded, waited]).then((ready) => sound(ready ? sampled : this.referenceTone()));
   }
 
   dispose() {

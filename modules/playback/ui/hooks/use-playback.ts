@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { InstrumentId, Score } from "@/modules/score";
+import { scoreSounds } from "../../application/score-sounds";
 import { AudioPlayer } from "../../infrastructure/audio-player";
 
 const FALLBACK_MESSAGE = "Instrument sounds could not load; playing reference tones.";
@@ -71,5 +72,8 @@ export function usePlayback() {
     [playing],
   );
 
-  return { playing, loading, playBeat, toggle, stop, audition };
+  /** Starts loading a score's instruments, so its notes sound right from the first click. */
+  const prepare = useCallback((score: Score) => player.current?.prepare(scoreSounds(score)), []);
+
+  return { playing, loading, playBeat, toggle, stop, audition, prepare };
 }

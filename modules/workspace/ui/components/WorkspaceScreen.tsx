@@ -6,6 +6,7 @@ import { localChatRepository } from "@/modules/assistant";
 import { ComposeDock, useAssistant, useComposeDock } from "@/modules/assistant/ui";
 import { playbackStart, selectionAnchors } from "@/modules/editor";
 import { ScoreToolMenus, useClipboardShortcuts, useScoreEditor } from "@/modules/editor/ui";
+import { scoreSounds } from "@/modules/playback";
 import { usePlayback } from "@/modules/playback/ui";
 import { localProjectRepository } from "@/modules/projects";
 import { useAnchorRect } from "@/shared/ui/hooks/use-anchor-rect";
@@ -35,6 +36,13 @@ export function WorkspaceScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const playback = usePlayback();
   const editor = useScoreEditor(playback.stop, localProjectRepository);
+  // The score's instruments load as soon as it opens (and when parts change), so the first note sounds right.
+  const sounds = scoreSounds(editor.score).join(",");
+  const { prepare } = playback;
+  const { loaded, getScore } = editor;
+  useEffect(() => {
+    if (loaded && sounds) prepare(getScore());
+  }, [loaded, sounds, prepare, getScore]);
   const assistant = useAssistant({
     getScore: editor.getScore,
     applyCommands: editor.applyCommands,
@@ -60,7 +68,6 @@ export function WorkspaceScreen() {
   useWorkspaceShortcuts(playback.stop, editor.undoRedo);
   useClipboardShortcuts(editor);
   const { audition: soundPitch } = playback;
-  const { getScore } = editor;
   // A note sounds on its own part's instrument.
   const soundNote = useCallback(
     (midi: number, eventId: string) => soundPitch(midi, partOf(getScore(), eventId).instrument),
