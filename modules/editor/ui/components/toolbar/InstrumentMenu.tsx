@@ -20,7 +20,7 @@ export function InstrumentMenu({
 }) {
   const part = score.parts.find((p) => p.id === target.partId)!;
   return (
-    <div className={`${styles.grid} ${styles.wideGrid}`} role="group" aria-label="Instrument">
+    <div className={`${styles.grid} ${styles.instrumentGrid}`} role="group" aria-label="Instrument">
       {INSTRUMENT_IDS.map((instrument) => (
         <button
           key={instrument}

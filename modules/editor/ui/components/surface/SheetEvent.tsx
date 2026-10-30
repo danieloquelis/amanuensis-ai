@@ -135,5 +135,8 @@ export function SheetEvent({ item, system, partName, selected, playBeat, interac
 function Halo({ item, head }: { item: EngravedEvent; head: number | null }) {
   const picked = head !== null ? item.heads?.[head] : undefined;
   if (picked) return <ellipse className={styles.halo} cx={item.x + picked.dx} cy={picked.y} rx="13" ry="10" />;
-  return <ellipse className={styles.halo} cx={item.x} cy={item.y} rx="18" ry="15" />;
+  // A stem of several notes glows round all of them.
+  const top = Math.min(item.y, ...(item.heads?.map((h) => h.y) ?? []));
+  const spread = item.y - top;
+  return <ellipse className={styles.halo} cx={item.x} cy={(item.y + top) / 2} rx="18" ry={15 + spread / 2} />;
 }

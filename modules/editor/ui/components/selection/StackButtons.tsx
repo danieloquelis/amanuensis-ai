@@ -18,7 +18,7 @@ export function StackButtons({ editor, event, head }: { editor: ScoreEditor; eve
   const thing = event.drums ? "drum" : "note";
   const removeLabel = head !== null ? `Remove this ${thing}` : `Remove the top ${thing}`;
   return (
-    <div role="group" aria-label="Stem">
+    <div role="group" aria-label="Stem" className={styles.endGroup}>
       {add && (
         <button
           className={styles.action}
@@ -29,7 +29,7 @@ export function StackButtons({ editor, event, head }: { editor: ScoreEditor; eve
           <ChordNoteIcon size={ICON} change="add" />
         </button>
       )}
-      {remove && (
+      {remove ? (
         <button
           className={styles.action}
           aria-label={removeLabel}
@@ -41,6 +41,9 @@ export function StackButtons({ editor, event, head }: { editor: ScoreEditor; eve
         >
           <ChordNoteIcon size={ICON} change="remove" />
         </button>
+      ) : (
+        // Its place is kept, so the card does not change width when a note is added.
+        <span className={styles.slot} aria-hidden />
       )}
     </div>
   );
@@ -49,7 +52,7 @@ export function StackButtons({ editor, event, head }: { editor: ScoreEditor; eve
 /** Makes the whole stem a rest of the same length: with the rhythm, since a rest is a length without a sound. */
 export function MakeRestButton({ editor, event }: { editor: ScoreEditor; event: ScoreEvent }) {
   return (
-    <div role="group" aria-label="Rest">
+    <div role="group" aria-label="Rest" className={styles.endGroup}>
       <button
         className={styles.action}
         aria-label="Make rest"
@@ -58,6 +61,8 @@ export function MakeRestButton({ editor, event }: { editor: ScoreEditor; event: 
       >
         <RestIcon size={ICON} />
       </button>
+      {/* The stem column below has two places: the rest keeps the second free, so they line up. */}
+      <span className={styles.slot} aria-hidden />
     </div>
   );
 }

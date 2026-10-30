@@ -9,8 +9,9 @@ import styles from "./selection.module.css";
 import { MakeRestButton, StackButtons } from "./StackButtons";
 
 /**
- * Everything about one note or rest. A note gets two balanced rows: how long (values | dot, tie |
- * rest), then how it sounds (accidental | articulations | notes on its stem). A rest needs one row: rest
+ * Everything about one note or rest, in one layout for notes, chords, rests and drum hits. The top
+ * row is how long (values | dot, tie | rest), the bottom how it sounds (accidental | articulations |
+ * notes on its stem); rest and stem share a column at the right, its places kept so nothing moves. A rest needs one row: rest
  * values, fermata and Add note. With one head of a chord picked, the accidental and the remove
  * button act on that head. A drum hit has no tie or accidentals; which piece a head strikes is set
  * by dragging it up or down the staff. Escape hands focus back to the sheet without a selection.
@@ -20,7 +21,8 @@ export function NoteActions({ editor, event }: { editor: ScoreEditor; event: Sco
   const head = editor.selectedId === event.id ? editor.selectedHead : null;
   return (
     <div
-      className={styles.rows}
+      // A drum hit has few buttons: its two rows sit side by side as one line.
+      className={drums ? `${styles.rows} ${styles.oneLine}` : styles.rows}
       role="toolbar"
       aria-label="Selected note actions"
       onKeyDown={(e) => {
@@ -44,7 +46,7 @@ export function NoteActions({ editor, event }: { editor: ScoreEditor; event: Sco
       {isNote(event) && (
         <div className={styles.actions}>
           {!drums && <AccidentalButtons event={event} head={head} onCommand={editor.commit} />}
-          <ArticulationButtons event={event} onCommand={editor.commit} />
+          <ArticulationButtons event={event} drums={drums} onCommand={editor.commit} />
           <StackButtons editor={editor} event={event} head={head} />
         </div>
       )}

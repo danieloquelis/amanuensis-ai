@@ -115,7 +115,12 @@
 }
 
 .wideGrid {
-  grid-template-columns: repeat(6, minmax(48px, auto));
+  grid-template-columns: repeat(5, minmax(48px, auto));
+}
+
+/* The instruments: even columns across the whole panel, so the icons fill its width. */
+.instrumentGrid {
+  grid-template-columns: repeat(6, 1fr);
 }
 
 .grid button,
@@ -324,17 +329,20 @@
   white-space: nowrap;
 }
 
+/* + and one icon per instrument, in even columns across the panel like the instruments above. */
 .addParts {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
   align-items: center;
+  justify-items: center;
   gap: 4px;
-  padding: 8px 0 0 8px;
+  padding: 8px 0 0;
   border-top: 1px solid var(--line-strong);
   color: var(--muted);
 }
 
 .addParts button {
-  width: 40px;
+  width: 100%;
 }
 
 .mixerRow input[type="range"] {
