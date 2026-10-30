@@ -24,6 +24,13 @@ export type TokenUsage = {
   cachedInputTokens?: number;
 };
 
+export type CompleteOptions = {
+  /** Cancels the call (the musician stopped the turn). */
+  signal?: AbortSignal;
+  /** Hears the reply's text piece by piece as it is written, before the call resolves. */
+  onText?: (text: string) => void;
+};
+
 export type ModelReply = { content: string | null; toolCalls: ToolCall[]; usage?: TokenUsage };
 
 /**
@@ -31,5 +38,5 @@ export type ModelReply = { content: string | null; toolCalls: ToolCall[]; usage?
  * fakes in tests; nothing in the assistant depends on a provider's wire format.
  */
 export interface ModelPort {
-  complete(messages: ChatMessage[], tools: ToolSpec[]): Promise<ModelReply>;
+  complete(messages: ChatMessage[], tools: ToolSpec[], options?: CompleteOptions): Promise<ModelReply>;
 }

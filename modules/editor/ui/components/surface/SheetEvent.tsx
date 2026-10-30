@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { staffOf, staffTop, type EngravedEvent, type System } from "@/modules/engraving";
 import { EventGlyph } from "@/modules/engraving/ui";
 import { drumNames, eventPitches, pitchName, soundingBeats, type Pitch } from "@/modules/score";
@@ -20,6 +21,8 @@ type SheetEventProps = {
   selected: boolean;
   playBeat: number | null;
   interactions: SheetInteractions;
+  /** Just arrived from the assistant: pops in after this many ms. */
+  arrival?: number;
 };
 
 /** "C4", or a chord's notes "C4, E4 and G4"; "Rest" for none. */
@@ -44,7 +47,7 @@ function pitchLabel({ event, sounds, outOfRange }: EngravedEvent) {
  * (Shift+A–G adds it to the chord), Delete turns a note into a rest (a picked head comes off its
  * stem), S slurs, Space or Enter selects it.
  */
-export function SheetEvent({ item, system, partName, selected, playBeat, interactions }: SheetEventProps) {
+export function SheetEvent({ item, system, partName, selected, playBeat, interactions, arrival }: SheetEventProps) {
   const { select, stepPitch, removeEvent, enterLetter, gestures, pick, focusEvent } = interactions;
   const { event, x, y } = item;
   const length = soundingBeats(event);
@@ -58,7 +61,9 @@ export function SheetEvent({ item, system, partName, selected, playBeat, interac
         item.outOfRange && styles.outOfRange,
         selected && styles.selected,
         sounding && styles.sounding,
+        arrival !== undefined && styles.arriving,
       )}
+      style={arrival !== undefined ? ({ "--arrive-delay": `${arrival}ms` } as CSSProperties) : undefined}
       role="button"
       tabIndex={0}
       aria-label={`${partName ? `${partName}, bar` : "Bar"} ${item.measure + 1}, beat ${item.localBeat + 1}, ${item.voice > 1 ? `voice ${item.voice}, ` : ""}${pitchLabel(item)}, ${length} beats`}

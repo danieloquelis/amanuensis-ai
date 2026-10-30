@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { partOf } from "@/modules/score";
 import { localChatRepository } from "@/modules/assistant";
 import { ComposeDock, useAssistant, useComposeDock } from "@/modules/assistant/ui";
@@ -40,6 +40,9 @@ export function WorkspaceScreen() {
     applyCommands: editor.applyCommands,
     chats: localChatRepository,
   });
+  // Nothing on the sheet or toolbar edits the score while the assistant works on it: its turn commits as one step.
+  const { lock } = editor;
+  useEffect(() => lock(assistant.busy), [lock, assistant.busy]);
   const studio = useRef<HTMLElement>(null);
   const { anchor, area } = useAnchorRect(
     studio,
@@ -73,7 +76,7 @@ export function WorkspaceScreen() {
   };
   // Expanded, the chat takes the left column of the screen and everything else shares the rest.
   const chatDocked = dock.chatMode === "sidebar";
-  const composeDock = editor.ready && (
+  const composeDock = editor.loaded && (
     <ComposeDock
       assistant={assistant}
       dock={dock}
@@ -94,6 +97,8 @@ export function WorkspaceScreen() {
           onMenuOpenChange={setMenuOpen}
           onAudition={audition}
           onPress={dock.dismissChat}
+          live={assistant.live}
+          draft={assistant.draft}
         />
         {selectionOpen && <SelectionCard editor={editor} anchor={anchor} area={area} reserved={reserved} />}
         {chatDocked && composeDock}

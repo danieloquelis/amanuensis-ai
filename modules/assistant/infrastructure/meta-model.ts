@@ -1,13 +1,27 @@
-import type { ChatMessage, ContentPart, ModelPort, ModelReply, ToolSpec } from "../application/model-port";
+import type {
+  ChatMessage,
+  CompleteOptions,
+  ContentPart,
+  ModelPort,
+  ModelReply,
+  ToolSpec,
+} from "../application/model-port";
+import { readCompletionStream } from "./meta-stream";
+import { readResponsesStream, responseReply, responsesRequest } from "./meta-responses";
+
+/** Which Meta endpoint carries the conversation: Chat Completions, or the Responses API (streams text while tools are offered). */
+export type MetaApi = "chat" | "responses";
+export type MetaSettings = { api?: MetaApi; idleMs?: number };
 
 const BASE_URL = "https://api.meta.ai/v1";
 export const DEFAULT_META_MODEL = "muse-spark-1.3";
 /**
  * Only for a connection that has stopped answering: a model reasoning through a sung take can
- * think for most of a minute in one step, which is normal and must not be cut off.
+ * think for most of a minute in one step (sending nothing meanwhile), which is normal and must
+ * not be cut off.
  */
 const TIMEOUT_MS = 180_000;
-const TIMEOUT_MESSAGE = "The assistant took longer than three minutes to answer. Please try again.";
+const TIMEOUT_MESSAGE = "The assistant went quiet for three minutes. Please try again.";
 
 type MetaToolCall = { id: string; type: "function"; function: { name: string; arguments: string } };
 
@@ -40,46 +54,99 @@ export function toMetaPart(part: ContentPart) {
  * loop easy to follow and every edit validated against the latest revision. `reasoningEffort`
  * (minimal … max) trades thinking time for depth; the model's default is used when it is unset.
  */
-export function createMetaModel(apiKey: string, model = DEFAULT_META_MODEL, reasoningEffort?: string): ModelPort {
+export function createMetaModel(
+  apiKey: string,
+  model = DEFAULT_META_MODEL,
+  reasoningEffort?: string,
+  { api = "chat", idleMs = TIMEOUT_MS }: MetaSettings = {},
+): ModelPort {
+  /** The endpoint and request body for one call on the chosen API. */
+  const request = (messages: ChatMessage[], tools: ToolSpec[]) =>
+    api === "responses"
+      ? {
+          url: `${BASE_URL}/responses`,
+          body: {
+            model,
+            ...responsesRequest(messages, tools),
+            parallel_tool_calls: false,
+            stream: true,
+            ...(reasoningEffort ? { reasoning: { effort: reasoningEffort } } : {}),
+          },
+        }
+      : {
+          url: `${BASE_URL}/chat/completions`,
+          body: {
+            model,
+            messages: messages.map(toMetaMessage),
+            tools: tools.map(({ name, description, parameters }) => ({
+              type: "function",
+              function: { name, description, parameters },
+            })),
+            parallel_tool_calls: false,
+            stream: true,
+            stream_options: { include_usage: true },
+            ...(reasoningEffort ? { reasoning_effort: reasoningEffort } : {}),
+          },
+        };
   return {
-    async complete(messages: ChatMessage[], tools: ToolSpec[]): Promise<ModelReply> {
-      const response = await fetch(`${BASE_URL}/chat/completions`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model,
-          messages: messages.map(toMetaMessage),
-          tools: tools.map(({ name, description, parameters }) => ({
-            type: "function",
-            function: { name, description, parameters },
-          })),
-          parallel_tool_calls: false,
-          ...(reasoningEffort ? { reasoning_effort: reasoningEffort } : {}),
-        }),
-        signal: AbortSignal.timeout(TIMEOUT_MS),
-      }).catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "TimeoutError") throw new Error(TIMEOUT_MESSAGE);
+    async complete(messages: ChatMessage[], tools: ToolSpec[], options: CompleteOptions = {}): Promise<ModelReply> {
+      // The deadline counts from the last sign of life: a streamed answer may take long, but not go quiet.
+      const idle = new AbortController();
+      let timer = setTimeout(() => idle.abort(new DOMException("idle", "TimeoutError")), idleMs);
+      const alive = () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => idle.abort(new DOMException("idle", "TimeoutError")), idleMs);
+      };
+      const signal = options.signal ? AbortSignal.any([options.signal, idle.signal]) : idle.signal;
+      try {
+        const { url, body } = request(messages, tools);
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          signal,
+        });
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          const detail = body?.error?.message ? `: ${String(body.error.message).slice(0, 200)}` : "";
+          throw new Error(`The model request failed (${response.status})${detail}`);
+        }
+        const streamed = response.headers.get("content-type")?.includes("text/event-stream");
+        if (api === "responses") {
+          return streamed
+            ? await readResponsesStream(response, options.onText, alive)
+            : responseReply(await response.json());
+        }
+        return streamed
+          ? await readCompletionStream(response, options.onText, alive)
+          : wholeReply(await response.json());
+      } catch (error) {
+        if (idle.signal.aborted && !options.signal?.aborted) throw new Error(TIMEOUT_MESSAGE);
         throw error;
-      });
-      const body = await response.json().catch(() => null);
-      if (!response.ok) {
-        const detail = body?.error?.message ? `: ${String(body.error.message).slice(0, 200)}` : "";
-        throw new Error(`The model request failed (${response.status})${detail}`);
+      } finally {
+        clearTimeout(timer);
       }
-      const message = body?.choices?.[0]?.message ?? {};
-      const toolCalls = ((message.tool_calls ?? []) as MetaToolCall[]).map((call) => ({
-        id: call.id,
-        name: call.function.name,
-        arguments: call.function.arguments,
-      }));
-      const usage = body?.usage
-        ? {
-            inputTokens: Number(body.usage.prompt_tokens ?? 0),
-            outputTokens: Number(body.usage.completion_tokens ?? 0),
-            cachedInputTokens: Number(body.usage.prompt_tokens_details?.cached_tokens ?? 0),
-          }
-        : undefined;
-      return { content: message.content ?? null, toolCalls, usage };
     },
   };
+}
+
+/** A reply sent whole (not streamed), in our provider-neutral shape. */
+function wholeReply(body: {
+  choices?: { message?: { content?: string | null; tool_calls?: MetaToolCall[] } }[];
+  usage?: { prompt_tokens?: number; completion_tokens?: number; prompt_tokens_details?: { cached_tokens?: number } };
+}): ModelReply {
+  const message = body?.choices?.[0]?.message ?? {};
+  const toolCalls = (message.tool_calls ?? []).map((call) => ({
+    id: call.id,
+    name: call.function.name,
+    arguments: call.function.arguments,
+  }));
+  const usage = body?.usage
+    ? {
+        inputTokens: Number(body.usage.prompt_tokens ?? 0),
+        outputTokens: Number(body.usage.completion_tokens ?? 0),
+        cachedInputTokens: Number(body.usage.prompt_tokens_details?.cached_tokens ?? 0),
+      }
+    : undefined;
+  return { content: message.content ?? null, toolCalls, usage };
 }

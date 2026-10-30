@@ -1,4 +1,4 @@
-import { ArrowUp, Paperclip, X } from "@phosphor-icons/react";
+import { ArrowUp, Paperclip, Stop, X } from "@phosphor-icons/react";
 import { useRef, type ReactNode, type RefObject } from "react";
 import { useVoiceRecorder } from "@/modules/voice/ui";
 import { IconButton } from "@/shared/ui/IconButton";
@@ -21,6 +21,8 @@ type ComposerProps = {
   onTake: (wav: Uint8Array) => void;
   /** Files waiting to go with the next request; held by the caller, like the draft. */
   attachments: Attachments;
+  /** Stops the turn that is running; what it wrote so far is kept. */
+  onStop: () => void;
   /** Controls before the send button (the chat toggle). */
   accessory?: ReactNode;
 };
@@ -46,7 +48,7 @@ const WAVE_SHAPE = [
  * pill around the orb, a live waveform and the time, and opens out again after.
  */
 export function Composer(props: ComposerProps) {
-  const { busy, subject, inputRef, draft, onDraft, onSend, onTake, accessory, attachments } = props;
+  const { busy, subject, inputRef, draft, onDraft, onSend, onTake, onStop, accessory, attachments } = props;
   const picker = useRef<HTMLInputElement>(null);
   const recorder = useVoiceRecorder(onTake);
   const recording = recorder.status === "recording";
@@ -140,9 +142,15 @@ export function Composer(props: ComposerProps) {
               }}
             />
             {accessory}
-            <button className={styles.send} aria-label="Send" disabled={busy || !ready}>
-              <ArrowUp size={18} weight="bold" />
-            </button>
+            {busy ? (
+              <button type="button" className={styles.send} aria-label="Stop" onClick={onStop}>
+                <Stop size={16} weight="fill" />
+              </button>
+            ) : (
+              <button className={styles.send} aria-label="Send" disabled={!ready}>
+                <ArrowUp size={18} weight="bold" />
+              </button>
+            )}
           </>
         )}
       </form>

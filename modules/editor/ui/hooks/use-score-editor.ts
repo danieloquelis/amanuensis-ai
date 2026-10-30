@@ -34,7 +34,10 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
   const sheetSelection = useSheetSelection(session.score, latestScore);
   const { selectedId, setSelectedId, selectedBarId, selectedItem, select, selectBar, selectItem, clear } =
     sheetSelection;
-  const [ready, setReady] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  // Locked while the assistant works on the score: its turn commits as one step when it ends.
+  const [locked, setLocked] = useState(false);
+  const ready = loaded && !locked;
   const [saveStatus, setSaveStatus] = useState("Opening local score…");
   const [error, setError] = useState<string | null>(null);
   const [receipts, setReceipts] = useState<string[]>([]);
@@ -67,7 +70,7 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
         );
         setSaveStatus("Local save unavailable");
       }
-      setReady(true);
+      setLoaded(true);
     });
     return () => cancelAnimationFrame(frame);
   }, [repository, replaceSession]);
@@ -197,7 +200,11 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
     selectedItem,
     selectItem,
     deleteItem,
+    /** The score is open; `ready` adds that nothing has locked editing. */
+    loaded,
     ready,
+    /** Locks (or unlocks) every edit from the sheet and toolbar; commands from an assistant turn still apply. */
+    lock: setLocked,
     saveStatus,
     error,
     setError,

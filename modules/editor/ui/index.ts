@@ -7,3 +7,4 @@ export { MixerTool } from "./components/toolbar/MixerTool";
 export { ScoreToolMenus } from "./components/toolbar/ScoreToolMenus";
 export { useClipboardShortcuts } from "./hooks/use-clipboard-shortcuts";
 export { useScoreEditor, type CommitEdit, type ScoreEditor } from "./hooks/use-score-editor";
+export { useTurnPreview } from "./hooks/use-turn-preview";

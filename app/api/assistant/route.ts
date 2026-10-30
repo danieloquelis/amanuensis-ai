@@ -22,9 +22,12 @@ export async function POST(request: Request) {
   const apiKey = process.env.META_AI_API_KEY;
   if (!apiKey) return Response.json({ error: "The assistant is not configured on this server." }, { status: 503 });
   const { body, uploads } = multipart ? await readForm(request) : { body: await request.json().catch(() => null) };
-  const model = createMetaModel(apiKey, process.env.META_AI_MODEL, process.env.META_AI_REASONING_EFFORT);
+  const model = createMetaModel(apiKey, process.env.META_AI_MODEL, process.env.META_AI_REASONING_EFFORT, {
+    api: process.env.META_AI_API === "responses" ? "responses" : "chat",
+  });
   return progressResponse(async (onProgress) => {
-    const services = { uploads, pageImages: uploads?.length ? createPageImages() : null };
+    // A musician who stops the turn closes the request: the agent stops with it.
+    const services = { uploads, pageImages: uploads?.length ? createPageImages() : null, signal: request.signal };
     const response = await handleAssistantRequest(body, model, onProgress, services);
     if (DEVELOPMENT) logTurn(String(body?.instruction ?? ""), body?.selectionName, response.body);
     return response;

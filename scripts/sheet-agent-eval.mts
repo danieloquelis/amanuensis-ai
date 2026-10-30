@@ -25,7 +25,8 @@ if (!process.argv.includes("--confirm")) {
 const apiKey = process.env.META_AI_API_KEY;
 if (!apiKey) throw new Error("META_AI_API_KEY is not set (run with --env-file=.env.local).");
 const modelName = process.env.META_AI_MODEL;
-const model = createMetaModel(apiKey, modelName, process.env.META_AI_REASONING_EFFORT);
+const api = process.env.META_AI_API === "responses" ? "responses" : "chat";
+const model = createMetaModel(apiKey, modelName, process.env.META_AI_REASONING_EFFORT, { api });
 const percent = (part: number, whole: number) => (whole ? `${Math.round((100 * part) / whole)}%` : "—");
 
 /** A new, empty score: what the musician has when they attach a page to a new sheet. */
@@ -40,13 +41,13 @@ async function readThroughAgent(png: Buffer) {
   let score = emptyScore();
   const request = { instruction: "", score, selectedIds: [], history: [], attachments: read.attachments };
   const started = Date.now();
-  const result = await runAssistant(model, request, "eval", undefined, createPageImages());
+  const result = await runAssistant(model, request, "eval", undefined, { pageImages: createPageImages() });
   for (const command of result.commands) score = applyCommand(score, command);
   return { result, score, seconds: (Date.now() - started) / 1000 };
 }
 
 const pages = await renderPages(arg("base", "http://localhost:3001"), list(arg("only", "")));
-console.log(`model ${modelName}; ${pages.filter((p) => p.score).length} pages through the agent\n`);
+console.log(`model ${modelName} (${api} API); ${pages.filter((p) => p.score).length} pages through the agent\n`);
 console.log("page        bars | pitch exact rhythm chords | steps checks  secs  tokens in/out (cached)");
 const runs = await Promise.all(
   pages

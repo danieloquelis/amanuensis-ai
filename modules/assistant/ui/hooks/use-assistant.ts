@@ -6,7 +6,9 @@ import { attachmentKind } from "../../application/attachments";
 import type { ChatRepository, Turn } from "../../application/chat-history";
 import type { HeardTake } from "../../application/handle-voice-request";
 import type { AssistantResult, AssistantTurn, ProgressListener } from "../../application/run-assistant";
+import { STOPPED_RECEIPT, stoppedReply } from "../../application/stopped-turn";
 import { requestAssistant, requestVoiceAssistant, type AssistantPayload } from "../../infrastructure/assistant-client";
+import { useLiveTurn } from "./use-live-turn";
 
 const HISTORY_TURNS = 6;
 const VOICE_LABEL = "Voice take";
@@ -14,6 +16,7 @@ const VOICE_LABEL = "Voice take";
 type Request = (
   payload: AssistantPayload,
   onProgress: ProgressListener,
+  signal: AbortSignal,
 ) => Promise<AssistantResult & { heard?: HeardTake }>;
 
 /** What a turn sent, kept for this session so a failed turn can be sent again as it was. */
@@ -60,6 +63,7 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
   const attempts = useRef(new Map<string, Attempt>());
   const asked = useRef<AskedTake | null>(null);
   const busy = turns.some((turn) => turn.status === "working");
+  const live = useLiveTurn();
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -112,15 +116,24 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
     const selection = { selectedIds: context.ids, ...(context.name ? { selectionName: context.name } : {}) };
     const started = Date.now();
     const took = () => ({ seconds: (Date.now() - started) / 1000 });
+    const signal = live.begin();
     try {
-      const result = await request({ instruction, score: getScore(), ...selection, history }, (activity) =>
-        // What was heard replaces "Voice take" as soon as it is known, before the agent answers.
-        update(
-          id,
-          activity.stage === "heard" && spoken
-            ? { activity, heard: activity.parts, instruction: describeHeard(activity.parts) }
-            : { activity },
-        ),
+      const payload = { instruction, score: getScore(), ...selection, history };
+      const result = await request(
+        payload,
+        (activity) => {
+          // Edits go to the sheet as they are made; the turn's line shows what it is doing.
+          if (activity.stage === "edits") return live.apply(activity);
+          if (activity.stage === "draft") return live.write(activity);
+          // What was heard replaces "Voice take" as soon as it is known, before the agent answers.
+          update(
+            id,
+            activity.stage === "heard" && spoken
+              ? { activity, heard: activity.parts, instruction: describeHeard(activity.parts) }
+              : { activity },
+          );
+        },
+        signal,
       );
       // A typed answer sent with an earlier take keeps its own words.
       const parts = spoken && result.heard && heardOf(result.heard);
@@ -147,6 +160,21 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
       });
       return result;
     } catch (error) {
+      if (signal.aborted) {
+        // Stopped: what the sheet already shows is kept, as one undo step.
+        const written = live.latest.current;
+        const kept = written.length > 0 && applyCommands(written, STOPPED_RECEIPT);
+        attempts.current.delete(id);
+        const revision = kept ? getScore().revision : undefined;
+        update(id, {
+          ...took(),
+          status: "done",
+          activity: undefined,
+          reply: stoppedReply(written.length, kept),
+          revision,
+        });
+        return null;
+      }
       update(id, {
         ...took(),
         status: "failed",
@@ -154,6 +182,9 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
         reply: error instanceof Error ? error.message : "Something went wrong.",
       });
       return null;
+    } finally {
+      // The committed score now holds the turn (or it failed): the sheet stops showing a preview.
+      live.end();
     }
   };
 
@@ -167,8 +198,8 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
     const take = files.length ? null : asked.current;
     // An answer to a question about a take: the agent hears the take again, not just the answer.
     const request: Request = take
-      ? (payload, progress) => requestVoiceAssistant(take.wav, withHeardWords(payload, take), progress)
-      : (payload, progress) => requestAssistant(payload, progress, files);
+      ? (payload, progress, signal) => requestVoiceAssistant(take.wav, withHeardWords(payload, take), progress, signal)
+      : (payload, progress, signal) => requestAssistant(payload, progress, files, signal);
     const attached = files.map((file) => ({ name: file.name, kind: attachmentKind(file.type, file.name) ?? "text" }));
     const result = await run(text, { instruction: text, request, context }, false, undefined, attached);
     asked.current = askedAfter(asked.current, take, result);
@@ -176,7 +207,7 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
 
   const sendTake = async (wav: Uint8Array, context: RequestContext) => {
     if (busy) return;
-    const request: Request = (payload, progress) => requestVoiceAssistant(wav, payload, progress);
+    const request: Request = (payload, progress, signal) => requestVoiceAssistant(wav, payload, progress, signal);
     const result = await run(VOICE_LABEL, { instruction: "", request, context }, true);
     asked.current = askedAfter(asked.current, { wav, speech: result?.heard?.recognized }, result);
   };
@@ -199,5 +230,16 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
     setTurns([]);
   };
 
-  return { turns, busy, send, sendTake, canRetry, retry, clear };
+  return {
+    turns,
+    busy,
+    live: live.commands,
+    draft: live.draft,
+    stop: live.stop,
+    send,
+    sendTake,
+    canRetry,
+    retry,
+    clear,
+  };
 }

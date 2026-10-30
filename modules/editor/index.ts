@@ -1,5 +1,6 @@
 // Public API of the editor module (framework-free). React components and hooks live in "./ui".
 export { checkOperation } from "./application/operation-check";
+export { arrivals, turnPreview, withDraft, type TurnDraft } from "./application/turn-preview";
 export { sheetHeading } from "./application/sheet-view";
 export { copyFromSelection, cutEdit, pasteBarsText, pasteEdit, type Clip } from "./application/clipboard";
 export { hasSecondVoice, secondVoiceEdit } from "./application/voice-edits";

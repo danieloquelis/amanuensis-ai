@@ -21,27 +21,39 @@ const UNAVAILABLE = "The assistant is unavailable right now.";
  * Browser-side call to the app's assistant route: JSON, or multipart with attached files.
  * Throws with the server's readable message.
  */
-export async function requestAssistant(payload: AssistantPayload, onProgress?: ProgressListener, files: File[] = []) {
+export async function requestAssistant(
+  payload: AssistantPayload,
+  onProgress?: ProgressListener,
+  files: File[] = [],
+  signal?: AbortSignal,
+) {
   if (!files.length) {
     const response = await fetch("/api/assistant", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
+      signal,
     });
     return readStream<AssistantResult>(response, onProgress);
   }
   const form = new FormData();
   form.append("request", JSON.stringify(payload));
   for (const file of files) form.append("files", file, file.name);
-  return readStream<AssistantResult>(await fetch("/api/assistant", { method: "POST", body: form }), onProgress);
+  return readStream<AssistantResult>(await fetch("/api/assistant", { method: "POST", body: form, signal }), onProgress);
 }
 
 /** Sends a recorded take (WAV) with the score; the server hears it and runs the assistant. */
-export async function requestVoiceAssistant(wav: Uint8Array, payload: AssistantPayload, onProgress?: ProgressListener) {
+export async function requestVoiceAssistant(
+  wav: Uint8Array,
+  payload: AssistantPayload,
+  onProgress?: ProgressListener,
+  signal?: AbortSignal,
+) {
   const form = new FormData();
   form.append("audio", new Blob([new Uint8Array(wav)], { type: "audio/wav" }), "take.wav");
   form.append("request", JSON.stringify(payload));
-  return readStream<VoiceResult>(await fetch("/api/assistant/voice", { method: "POST", body: form }), onProgress);
+  const response = await fetch("/api/assistant/voice", { method: "POST", body: form, signal });
+  return readStream<VoiceResult>(response, onProgress);
 }
 
 /** Reads progress lines as they arrive and resolves with the final result line. */

@@ -35,8 +35,10 @@ export {
   type ProgressEvent,
   type ProgressListener,
   type TraceEntry,
+  type TurnServices,
 } from "./application/run-assistant";
 export { createMusicTools, MUSIC_TOOL_NAMES, musicToolSpecs, type MusicToolName } from "./application/music-tools";
+export { scoreBlocks, withoutScoreBlocks, type ScoreBlock } from "./application/score-blocks";
 export { createScoreToolGateway } from "./application/score-tool-gateway";
 export { SCORE_TOOL_NAMES, scoreTools, toolParameters, type ScoreToolName } from "./application/tool-definitions";
 export { localChatRepository } from "./infrastructure/local-chat";

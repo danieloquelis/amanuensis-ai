@@ -50,7 +50,7 @@ test("attached music is read before it is written, the labelled page is shown, a
   const read = readUploads([{ name: "page.png", mediaType: "image/png", bytes: new Uint8Array([1]) }]);
   assert.ok("attachments" in read);
   const request = { instruction: "Write this", score, selectedIds: [], history: [], attachments: read.attachments };
-  await runAssistant(model, request, "t", undefined, fakeImages(page).images);
+  await runAssistant(model, request, "t", undefined, { pageImages: fakeImages(page).images });
 
   const last = seen.at(-1)!;
   assert.match(toolResult(seen[1], "score_write").error, /Read the attached music first/);

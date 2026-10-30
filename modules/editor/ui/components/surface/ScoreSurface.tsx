@@ -10,6 +10,7 @@ import type { CommitEdit } from "../../hooks/use-score-editor";
 import { useSheetGestures } from "../../hooks/use-sheet-gestures";
 import { useSlurDrag } from "../../hooks/use-slur-drag";
 import { SheetContextMenu } from "../sheet-menu/SheetContextMenu";
+import { classNames } from "@/shared/ui/class-names";
 import styles from "./score-surface.module.css";
 import type { SheetInteractions, SheetMenuTarget } from "./sheet-interactions";
 import { SheetSystem } from "./SheetSystem";
@@ -40,6 +41,10 @@ type ScoreSurfaceProps = {
   /** Sounds a note that is pressed or dragged to a new pitch. */
   /** Sounds a note as a MIDI note (a pitch, or a drum piece). */
   onAudition?: (eventId: string, midi: number) => void;
+  /** The assistant is working on this score: a light passes over the sheet. */
+  working?: boolean;
+  /** Notes that just arrived from the assistant, each with how long it waits before it pops in (ms). */
+  arriving?: ReadonlyMap<string, number>;
 };
 
 /** The editable sheet: engraved score plus selection, drag gestures and context menus. */
@@ -64,6 +69,8 @@ export function ScoreSurface({
   onFocusEvent,
   onMenuOpenChange,
   onAudition,
+  working = false,
+  arriving,
 }: ScoreSurfaceProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [menu, setMenu] = useState<SheetMenuTarget | null>(null);
@@ -127,7 +134,7 @@ export function ScoreSurface({
   const meters = score.measures.map((m) => meterName(m.meter)).join(", ");
 
   return (
-    <div className={styles.sheet}>
+    <div className={classNames(styles.sheet, working && styles.working)} aria-busy={working || undefined}>
       <svg
         ref={svgRef}
         className={styles.surface}
@@ -150,6 +157,7 @@ export function ScoreSurface({
             laneNames={lanes}
             playBeat={playBeat}
             interactions={interactions}
+            arriving={arriving}
           />
         ))}
       </svg>

@@ -16,10 +16,13 @@ type SheetSystemProps = {
   laneNames: Map<string, string>;
   playBeat: number | null;
   interactions: SheetInteractions;
+  /** Notes arriving from the assistant, each with its delay before it pops in (ms). */
+  arriving?: ReadonlyMap<string, number>;
 };
 
 /** One line of music. Children are drawn in paint order: staves, bars, notes, beams, ties and slurs, overlays. */
-export function SheetSystem({ system, eventOrder, partNames, laneNames, playBeat, interactions }: SheetSystemProps) {
+export function SheetSystem(props: SheetSystemProps) {
+  const { system, eventOrder, partNames, laneNames, playBeat, interactions, arriving } = props;
   const events = [...system.events].sort((a, b) => eventOrder.get(a.event.id)! - eventOrder.get(b.event.id)!);
 
   return (
@@ -60,6 +63,7 @@ export function SheetSystem({ system, eventOrder, partNames, laneNames, playBeat
           selected={interactions.isPicked({ kind: "event", id: item.event.id })}
           playBeat={playBeat}
           interactions={interactions}
+          arrival={arriving?.get(item.event.id)}
         />
       ))}
       <BeamLines beams={system.beams} />

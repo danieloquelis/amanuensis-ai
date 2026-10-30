@@ -29,7 +29,8 @@ export function PlaybackControls({ editor, playing, loading, startBar, onToggleP
         type="button"
         className={styles.play}
         data-playing={playing}
-        disabled={!editor.ready}
+        // Playing the score is fine while the assistant works on it: it plays what is committed.
+        disabled={!editor.loaded}
         onClick={onTogglePlay}
         aria-busy={loading}
         aria-label={label}

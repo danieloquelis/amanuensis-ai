@@ -4,10 +4,13 @@ import type { TakePart, VoiceTake } from "@/modules/voice";
 import { ASK_TOOL, askSchema, assistantTools } from "./assistant-tools";
 import type { Attachment } from "./attachments";
 import { createMusicTools, isMusicTool, musicToolSpecs } from "./music-tools";
-import type { ChatMessage, ContentPart, ModelPort, TokenUsage } from "./model-port";
+import type { ChatMessage, ContentPart, ModelPort, TokenUsage, ToolCall } from "./model-port";
 import { refuseHeardBarEdit, writtenLines } from "./heard-bars-guard";
 import { parseArguments, runScoreTool } from "./score-tool-call";
 import { createScoreToolGateway } from "./score-tool-gateway";
+import { createEditFeed, type EditsEvent } from "./edit-feed";
+import { createScoreBlockWriter, type DraftEvent } from "./score-block-writer";
+import { withoutScoreBlocks } from "./score-blocks";
 import { createSourceTools, isSourceTool, sourceToolSpecs } from "./source-tools";
 import { historyMessages, scoreContext, userMessage } from "./opening-messages";
 import { SYSTEM_PROMPT } from "./system-prompt";
@@ -58,8 +61,19 @@ export type ProgressEvent =
   /** The take was heard: what was said and sung, in order. Sent before the agent starts. */
   | { stage: "heard"; parts: TakePart[] }
   | { stage: "thinking" }
-  | { stage: "tool"; tool: string };
+  | { stage: "tool"; tool: string }
+  /** The turn's edits so far changed: the editor can show them before the turn ends. */
+  | EditsEvent
+  /** Bars being written in a <score> block, before it closes. */
+  | DraftEvent;
 export type ProgressListener = (event: ProgressEvent) => void;
+
+export type TurnServices = {
+  /** Reads noteheads on attached pictures; without it they are read by eye. */
+  pageImages?: PageImages | null;
+  /** Stops the turn: the model call in flight is cancelled and no further step starts. */
+  signal?: AbortSignal;
+};
 /** Trace arguments are cut to this length: enough to judge a decision, small enough to keep. */
 const TRACE_ARGUMENT_ROOM = 400;
 
@@ -73,8 +87,7 @@ export async function runAssistant(
   request: AssistantRequest,
   turnId: string = crypto.randomUUID().slice(0, 8),
   onProgress: ProgressListener = () => {},
-  /** Reads noteheads on attached pictures; without it they are read by eye. */
-  pageImages: PageImages | null = null,
+  { pageImages = null, signal }: TurnServices = {},
 ): Promise<AssistantResult> {
   let session: Session = createSession(request.score);
   const tools = createScoreToolGateway(
@@ -84,6 +97,7 @@ export async function runAssistant(
     },
   );
   const commands: Command[] = [];
+  const feed = createEditFeed();
   let toolWrites = 0;
   // Bars a transcription wrote this turn: the agent may not rewrite their notes (see the guard).
   const heard = new Set<string>();
@@ -119,6 +133,27 @@ export async function runAssistant(
     ...sourceToolSpecs(attachments.length > 0),
   ];
   const maxSteps = attachments.length ? MAX_SOURCE_STEPS : MAX_TOOL_STEPS;
+  const scoreTool = (call: ToolCall) =>
+    runScoreTool(
+      call,
+      tools,
+      commands,
+      turnId,
+      () => session.score,
+      (operation, asked) => refuseHeardBarEdit(session.score, operation, heard, asked, musicianWords(request)),
+    );
+  const sendEdits = () => {
+    const edits = feed.update(commands);
+    if (edits) onProgress(edits);
+  };
+  // Bars written in <score> blocks go through score_write, under the request ID their draft used.
+  const blocks = createScoreBlockWriter(turnId, onProgress, (requestId, text, pitches) => {
+    const args = JSON.stringify({ requestId, expectedRevision: session.score.revision, text, pitches });
+    const call = { id: requestId, name: "score_write", arguments: args };
+    const result = sources.refuseUnread(call.name) ?? scoreTool(call);
+    trace.push({ tool: "score_block", arguments: args.slice(0, TRACE_ARGUMENT_ROOM), ok: result.ok });
+    return result;
+  });
   const usage: TokenUsage = { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 };
   const trace: TraceEntry[] = [];
   const thinkingMs: number[] = [];
@@ -139,15 +174,22 @@ export async function runAssistant(
   });
 
   for (let step = 1; step <= maxSteps; step++) {
+    if (signal?.aborted) return finish("Stopped.", null, step - 1);
     onProgress({ stage: "thinking" });
     const asked = Date.now();
-    const reply = await model.complete(messages, toolList);
+    blocks.start();
+    const reply = await model.complete(messages, toolList, { signal, onText: blocks.hear });
     thinkingMs.push(Date.now() - asked);
     usage.inputTokens += reply.usage?.inputTokens ?? 0;
     usage.outputTokens += reply.usage?.outputTokens ?? 0;
     usage.cachedInputTokens! += reply.usage?.cachedInputTokens ?? 0;
     messages.push({ role: "assistant", content: reply.content, toolCalls: reply.toolCalls });
-    if (!reply.toolCalls.length) return finish(reply.content?.trim() || "Done.", null, step);
+    const written = blocks.commit(reply.content);
+    sendEdits();
+    // A reply with no tool calls ends the turn, unless a block it wrote was refused: then it may fix it.
+    if (!reply.toolCalls.length && (!written || written.ok)) {
+      return finish(withoutScoreBlocks(reply.content ?? "") || "Done.", null, step);
+    }
     for (const call of reply.toolCalls) {
       onProgress({ stage: "tool", tool: call.name });
       const entry: TraceEntry = { tool: call.name, arguments: call.arguments.slice(0, TRACE_ARGUMENT_ROOM), ok: true };
@@ -164,23 +206,16 @@ export async function runAssistant(
           ? await sources.run(call.name, parseArguments(call))
           : isMusicTool(call.name)
             ? music(call.name, parseArguments(call))
-            : runScoreTool(
-                call,
-                tools,
-                commands,
-                turnId,
-                () => session.score,
-                (operation, asked) =>
-                  refuseHeardBarEdit(session.score, operation, heard, asked, musicianWords(request)),
-              ));
+            : scoreTool(call));
       entry.ms = Date.now() - started;
       if (!result.ok) Object.assign(entry, { ok: false, error: "error" in result ? result.error : undefined });
       messages.push({ role: "tool", toolCallId: call.id, content: JSON.stringify(result) });
+      sendEdits();
     }
-    if (shown.length) {
-      messages.push({ role: "user", content: shown });
-      shown = [];
-    }
+    // What the tools showed (labelled pages) and how the blocks were written follow the tool results.
+    const after: ContentPart[] = [...(written ? [{ type: "text" as const, text: written.report }] : []), ...shown];
+    if (after.length) messages.push({ role: "user", content: after });
+    shown = [];
   }
   return finish(
     `I ran out of steps before finishing; what I changed so far is applied (Undo takes it back).`,

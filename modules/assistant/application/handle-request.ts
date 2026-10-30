@@ -30,7 +30,11 @@ export async function handleAssistantRequest(
   body: unknown,
   model: ModelPort,
   onProgress?: ProgressListener,
-  { uploads = [], pageImages = null }: { uploads?: Upload[]; pageImages?: PageImages | null } = {},
+  {
+    uploads = [],
+    pageImages = null,
+    signal,
+  }: { uploads?: Upload[]; pageImages?: PageImages | null; signal?: AbortSignal } = {},
 ): Promise<AssistantResponse> {
   const parsed = requestSchema.safeParse(body);
   if (!parsed.success || (!parsed.data.instruction && !uploads.length)) {
@@ -50,7 +54,7 @@ export async function handleAssistantRequest(
       { ...parsed.data, score, attachments: read.attachments },
       undefined,
       onProgress,
-      pageImages,
+      { pageImages, signal },
     );
     return { status: 200, body: result };
   } catch (error) {

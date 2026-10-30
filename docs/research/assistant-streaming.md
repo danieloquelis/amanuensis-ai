@@ -226,12 +226,28 @@ Measured 30 October 2026, `muse-spark-1.3-contributor`, effort low, Chat Complet
 - **The model prefers a tool when one is offered.** In the same request with a tool available, it called the tool instead of writing text; `tool_choice: "none"` is refused (400). Writing in `<score>` blocks must be the prompt's normal way to write, measured with `yarn eval:sheet-agent` before it replaces `score_write`.
 - **Checking comes later.** A bar is validated only when its block closes (or line by line as a draft), so a wrong bar may show briefly before it is corrected. The owner has said that is fine while the turn is visibly unfinished.
 
+**With tools offered, Chat Completions does not stream text** (measured 30 October 2026, 16 bars asked for, effort low): with one tool in the request the whole text arrived as a single piece at the end (16.8 s); the same request without tools streamed 59 pieces over 2.1 s. The agent always offers tools, so bars written as text in Chat Completions would still appear all at once. **The Responses API does stream them**: the same request with a tool, at `/v1/responses`, sent 71 `response.output_text.delta` events over 1.9 s. Drawing bars as they are written therefore needs a Responses API adapter behind `ModelPort` (input items instead of messages, `function_call` / `function_call_output` items, `input_image` / `input_file` parts), measured with `yarn eval:sheet-agent` before it replaces the Chat Completions adapter.
+
+**The agent does not write bars as text** (measured 30 October 2026, `yarn eval:sheet-agent` on leadsheet, keys, long and dense, Spark 1.3 at low effort):
+
+| Setup | Pitch (leadsheet / keys / long / dense) | `<score>` blocks written |
+| --- | --- | --- |
+| Chat Completions, prompt prefers blocks, `score_write` offered | 100% / 100% / 95% / 97% | 0 of 11 writes |
+| Responses API, same | 100% / 100% / 92% / 94% | 0 of 17 writes |
+| Chat Completions, `score_write` not offered | 0% / 93% / 97% / 74% | 4 blocks on 3 pages; otherwise `score_edit` |
+| Responses API, same | 100% / 100% / 92% / 0% (24 steps, 17 min) | 2 blocks on 1 page; otherwise `score_edit` |
+
+- Offered both, Spark always called `score_write`. Without it, it mostly wrote music through `score_edit` operations instead of blocks, and reading got worse and slower.
+- The Responses API reads as well as Chat Completions and uses the prompt cache too (60–90% of input tokens cached).
+- **Kept, unused by default:** the Responses adapter (`META_AI_API=responses`), `<score>` blocks (`score-blocks.ts`, `score-block-writer.ts`: drafts while the reply streams, written when the block closes) and draft drawing on the sheet (`withDraft`). A reply that does contain a block is drawn and written. The prompt and tools are as before: the agent writes with `score_write`.
+- Revisit with another model (Muse Wonder, a newer Spark) or when tool-call arguments stream.
+
 ## Plan
 
-1. **Shimmer and live edits.** `edits` event and `edit-feed.ts`; `use-live-turn.ts`; `turn-preview.ts` (`turnPreview`, `arrivals`) with unit tests; `use-turn-preview.ts`; sheet `working` and `arriving` props and CSS, staggered pop-in, reduced-motion and print rules; read-only sheet while previewing. No model streaming.
-2. **Stop.** `AbortController` in `assistant-client.ts`, a Stop control in the compose bar, `request.signal` into `runAssistant`; Stop commits the commands shown so far as one undo step.
-3. **Streaming adapter.** `ModelDelta`, SSE reading in `meta-model.ts`, idle timeout, `reply` event for the activity line. Optionally a Responses API adapter for reasoning summaries.
-4. **Bars drawn as they are written.** The agent writes bars in `<score>` blocks in its streamed reply; finished lines become `draft` events drawn as they arrive; the closed block is committed like `score_write`. Measure with the agent eval before switching.
+1. **Shimmer and live edits.** Done 30 October 2026. `edits` event and `edit-feed.ts`; `use-live-turn.ts`; `turn-preview.ts` (`turnPreview`, `arrivals`) with unit tests; `use-turn-preview.ts`; sheet `working` and `arriving` props and CSS, staggered pop-in, reduced-motion and print rules; read-only sheet while previewing. No model streaming.
+2. **Stop.** Done 30 October 2026. `AbortController` in `assistant-client.ts`, a Stop control in the compose bar, `request.signal` into `runAssistant`; Stop commits the commands shown so far as one undo step.
+3. **Streaming adapter.** Done 30 October 2026: the Chat Completions adapter streams (`stream: true`, `infrastructure/meta-stream.ts`), with an idle timeout instead of a fixed one, and passes reply text on as it arrives (`CompleteOptions.onText`).
+4. **Bars drawn as they are written.** Built 30 October 2026 (Responses API adapter, `<score>` blocks, drafts on the sheet) but not switched on: Spark does not write bars as text (see above). Revisit with another model.
 5. **Finer motion, if still wanted.** Glide for moved notes from scene coordinates and fade-out of removed notes.
 
 Tests per [test scope](../architecture/code-conventions.md#tests): unit tests for `edit-feed` (commit and undo produce the right `keep`/`add`), `turnPreview` (equals the final commit; `null` after a conflicting edit) and `arrivals`; one end-to-end check that a scripted turn shows notes before it finishes and leaves one undo step.

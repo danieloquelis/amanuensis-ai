@@ -58,7 +58,7 @@ const NOTHING_USED = { inputTokens: 0, outputTokens: 0 };
  */
 export async function handleVoiceRequest(
   input: { audio: Uint8Array | null; payload: unknown },
-  services: { model: ModelPort; recognizer: SpeechRecognizer; pitchTracker?: PitchTracker },
+  services: { model: ModelPort; recognizer: SpeechRecognizer; pitchTracker?: PitchTracker; signal?: AbortSignal },
   onProgress: ProgressListener = () => {},
 ): Promise<VoiceResponse> {
   if (!input.audio?.length) return failure(400, "Record a take first.");
@@ -116,7 +116,9 @@ export async function handleVoiceRequest(
     };
   }
   try {
-    const result = await runAssistant(services.model, { ...request, score, take }, undefined, onProgress);
+    const result = await runAssistant(services.model, { ...request, score, take }, undefined, onProgress, {
+      signal: services.signal,
+    });
     return { status: 200, body: { ...result, heard } };
   } catch (error) {
     return failure(502, error instanceof Error ? error.message : "The assistant is unavailable.");

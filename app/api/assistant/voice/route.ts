@@ -25,9 +25,11 @@ export async function POST(request: Request) {
   const payload = parseJson(form?.get("request"));
   const transcriber = createMuseTranscriber(apiKey);
   const recognizer = DEVELOPMENT ? cachedRecognizer(transcriber, ".cache/transcripts") : transcriber;
-  const model = createMetaModel(apiKey, process.env.META_AI_MODEL, process.env.META_AI_REASONING_EFFORT);
+  const model = createMetaModel(apiKey, process.env.META_AI_MODEL, process.env.META_AI_REASONING_EFFORT, {
+    api: process.env.META_AI_API === "responses" ? "responses" : "chat",
+  });
   return progressResponse(async (onProgress) => {
-    const services = { model, recognizer, pitchTracker: createSwiftF0Tracker() };
+    const services = { model, recognizer, pitchTracker: createSwiftF0Tracker(), signal: request.signal };
     const response = await handleVoiceRequest({ audio, payload }, services, onProgress);
     if (DEVELOPMENT) {
       const selection = (payload as { selectionName?: string } | null)?.selectionName;

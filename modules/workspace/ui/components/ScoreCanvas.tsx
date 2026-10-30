@@ -1,8 +1,9 @@
 import { useRef, type CSSProperties } from "react";
 import { sheetHeading } from "@/modules/editor";
-import { ScoreSurface, type ScoreEditor } from "@/modules/editor/ui";
+import { ScoreSurface, useTurnPreview, type ScoreEditor } from "@/modules/editor/ui";
 import { TempoNote } from "@/modules/engraving/ui";
-import { tempoMarking } from "@/modules/score";
+import type { TurnDraft } from "@/modules/editor";
+import { tempoMarking, type Command } from "@/modules/score";
 import { usePinchZoom } from "../hooks/use-pinch-zoom";
 import styles from "./workspace.module.css";
 
@@ -15,6 +16,8 @@ export function ScoreCanvas({
   onMenuOpenChange,
   onAudition,
   onPress,
+  live,
+  draft,
 }: {
   editor: ScoreEditor;
   playBeat: number | null;
@@ -25,8 +28,14 @@ export function ScoreCanvas({
   onAudition: (eventId: string, midi: number) => void;
   /** Any press on the paper or around it, e.g. to fold the chat away. */
   onPress: () => void;
+  /** The edits of the assistant turn running now, shown before it ends; null when none runs. */
+  live: readonly Command[] | null;
+  /** The bars it is writing right now, drawn before they are written. */
+  draft: TurnDraft | null;
 }) {
-  const { score, ready, commit } = editor;
+  const { ready, commit } = editor;
+  // While the assistant works, the sheet shows its edits so far, arriving as they are made.
+  const { score, arriving, working } = useTurnPreview(editor.score, live, draft);
   const barCount = score.measures.length;
   const marking = tempoMarking(score.tempo, score.measures[0].meter);
   const canvas = useRef<HTMLDivElement>(null);
@@ -84,6 +93,8 @@ export function ScoreCanvas({
           onFocusEvent={editor.focusEvent}
           onMenuOpenChange={onMenuOpenChange}
           onAudition={onAudition}
+          working={working}
+          arriving={arriving}
         />
         <div className={styles.paperFooter}>
           <span>

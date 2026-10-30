@@ -1,0 +1,112 @@
+import type { ChatMessage, ContentPart, ModelReply, ToolSpec } from "../application/model-port";
+
+// Meta's Responses API (`/v1/responses`): unlike Chat Completions, it streams the reply's text
+// while tools are offered, so the editor can draw bars as they are written.
+
+type OutputItem =
+  | { type: "message"; content?: { type: string; text?: string }[] }
+  | { type: "function_call"; call_id: string; name: string; arguments: string }
+  | { type: string };
+type ResponseBody = {
+  output?: OutputItem[];
+  usage?: { input_tokens?: number; output_tokens?: number; input_tokens_details?: { cached_tokens?: number } };
+  error?: { message?: string } | null;
+};
+type StreamEvent = { type: string; delta?: string; response?: ResponseBody; message?: string };
+
+const toPart = (part: ContentPart) =>
+  part.type === "text"
+    ? { type: "input_text", text: part.text }
+    : part.type === "image"
+      ? { type: "input_image", image_url: part.dataUrl }
+      : { type: "input_file", filename: part.filename, file_data: part.dataUrl };
+
+/** Our provider-neutral request as a Responses API body: system prompt as instructions, the rest as input items. */
+export function responsesRequest(messages: ChatMessage[], tools: ToolSpec[]) {
+  const instructions = messages
+    .filter((message) => message.role === "system")
+    .map((message) => message.content)
+    .join("\n\n");
+  const input = messages.flatMap((message): unknown[] => {
+    if (message.role === "system") return [];
+    if (message.role === "tool")
+      return [{ type: "function_call_output", call_id: message.toolCallId, output: message.content }];
+    if (message.role === "assistant") {
+      return [
+        ...(message.content ? [{ role: "assistant", content: message.content }] : []),
+        ...message.toolCalls.map((call) => ({
+          type: "function_call",
+          call_id: call.id,
+          name: call.name,
+          arguments: call.arguments,
+        })),
+      ];
+    }
+    return [
+      { role: "user", content: typeof message.content === "string" ? message.content : message.content.map(toPart) },
+    ];
+  });
+  const functions = tools.map(({ name, description, parameters }) => ({
+    type: "function",
+    name,
+    description,
+    parameters,
+  }));
+  return { instructions, input, tools: functions };
+}
+
+/** A finished response in our provider-neutral shape. */
+export function responseReply(body: ResponseBody): ModelReply {
+  if (body.error?.message) throw new Error(`The model request failed: ${body.error.message.slice(0, 200)}`);
+  const output = body.output ?? [];
+  const text = output
+    .flatMap((item) => ("content" in item && item.type === "message" ? (item.content ?? []) : []))
+    .map((part) => (part.type === "output_text" ? (part.text ?? "") : ""))
+    .join("");
+  const toolCalls = output
+    .filter((item): item is Extract<OutputItem, { type: "function_call" }> => item.type === "function_call")
+    .map((item) => ({ id: item.call_id, name: item.name, arguments: item.arguments }));
+  const usage = body.usage
+    ? {
+        inputTokens: Number(body.usage.input_tokens ?? 0),
+        outputTokens: Number(body.usage.output_tokens ?? 0),
+        cachedInputTokens: Number(body.usage.input_tokens_details?.cached_tokens ?? 0),
+      }
+    : undefined;
+  return { content: text || null, toolCalls, usage };
+}
+
+/**
+ * Reads a streamed response (server-sent events): its text, passed on piece by piece as it is
+ * written (`onText`), then the finished response. `onChunk` hears every chunk, for an idle timeout.
+ */
+export async function readResponsesStream(
+  response: Response,
+  onText: (text: string) => void = () => {},
+  onChunk: () => void = () => {},
+): Promise<ModelReply> {
+  const reader = response.body!.pipeThrough(new TextDecoderStream()).getReader();
+  let buffered = "";
+  let finished: ResponseBody | null = null;
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    onChunk();
+    buffered += value;
+    const lines = buffered.split("\n");
+    buffered = lines.pop() ?? "";
+    for (const line of lines) {
+      const data = line.startsWith("data:") ? line.slice("data:".length).trim() : "";
+      if (!data || data === "[DONE]") continue;
+      const event = JSON.parse(data) as StreamEvent;
+      if (event.type === "response.output_text.delta" && event.delta) onText(event.delta);
+      else if (event.type === "response.completed" && event.response) finished = event.response;
+      else if (event.type === "response.failed" || event.type === "error") {
+        const message = event.response?.error?.message ?? event.message ?? "the response failed";
+        throw new Error(`The model request failed: ${String(message).slice(0, 200)}`);
+      }
+    }
+  }
+  if (!finished) throw new Error("The model's answer ended early. Please try again.");
+  return responseReply(finished);
+}

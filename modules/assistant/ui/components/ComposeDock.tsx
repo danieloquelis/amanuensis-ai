@@ -26,7 +26,7 @@ type ComposeDockProps = {
  * becomes a sidebar on the left with the bar at its foot, until it is closed again.
  */
 export function ComposeDock({ assistant, dock, context, revision, onUndo }: ComposeDockProps) {
-  const { turns, busy, send, sendTake, canRetry, retry } = assistant;
+  const { turns, busy, send, sendTake, canRetry, retry, stop } = assistant;
   // Held here, not in the bar, so attached files stay when the bar moves to the sidebar.
   const attachments = useAttachments();
   const undoable = [...turns].reverse().find((turn) => turn.revision !== undefined);
@@ -69,6 +69,7 @@ export function ComposeDock({ assistant, dock, context, revision, onUndo }: Comp
       draft={dock.draft}
       onDraft={dock.setDraft}
       onSend={sendText}
+      onStop={stop}
       attachments={attachments}
       onTake={(wav) => {
         dock.openChat();
