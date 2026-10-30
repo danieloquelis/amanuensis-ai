@@ -1,7 +1,7 @@
 import type { KeyboardEvent, MouseEvent } from "react";
 import type { Step } from "@/modules/score";
 import type { SheetItem } from "../../../application/notation-edits";
-import type { PickMode, SheetRef } from "../../../application/sheet-selection";
+import { refKey, type PickMode, type SheetRef } from "../../../application/sheet-selection";
 import type { CommitEdit } from "../../hooks/use-score-editor";
 import type { useSheetGestures } from "../../hooks/use-sheet-gestures";
 import type { useSlurDrag } from "../../hooks/use-slur-drag";
@@ -18,8 +18,9 @@ export type SheetInteractions = {
   interactive: boolean;
   select: (id: string | null) => void;
   selectedBarId: string | null;
-  selectBar: (measureId: string | null) => void;
-  deleteBar: (measureId: string) => void;
+  /** Selects a bar: in one instrument's lane with `staffId`, else the whole bar. */
+  selectBar: (measureId: string | null, staffId?: string) => void;
+  deleteBar: (measureId: string, staffId?: string) => void;
   selectedItem: SheetItem | null;
   selectItem: (item: SheetItem | null) => void;
   deleteItem: (item: SheetItem) => void;
@@ -48,7 +49,7 @@ export const pickModeOf = (event: { shiftKey: boolean; metaKey: boolean; ctrlKey
   event.shiftKey ? "range" : event.metaKey || event.ctrlKey ? "toggle" : null;
 
 /** Marks a sheet element with what it shows, so overlays can find it on screen. */
-export const sheetRefAttribute = (ref: SheetRef) => ({ "data-sheet-ref": `${ref.kind}:${ref.id}` });
+export const sheetRefAttribute = (ref: SheetRef) => ({ "data-sheet-ref": refKey(ref) });
 
 /** A–G (either case, no modifiers) enters that note. */
 export const noteLetterOf = (event: { key: string; metaKey: boolean; ctrlKey: boolean; altKey: boolean }) =>

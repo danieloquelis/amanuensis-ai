@@ -10,7 +10,10 @@ import {
   voiceBars,
   voiceInfo,
   writtenKey,
+  type ChordRoot,
   type Clef,
+  type InstrumentId,
+  type KeySignature,
   type Pitch,
   type Score,
 } from "@/modules/score";
@@ -27,13 +30,16 @@ export const CLEF_BOTTOM_LINE: Record<Clef, number> = {
   percussion: E4,
 };
 
+/** Any octave will do for spelling a chord root. */
+const CHORD_OCTAVE = 4;
+
 /** Key signature accidentals sit this many staff steps lower on a bass staff than on a treble one. */
 const BASS_KEY_SHIFT = -2;
 
 /** How far a clef's key signature accidentals sit from the treble positions. */
 export const keyShift = (clef: Clef) => (clef === "bass" ? BASS_KEY_SHIFT : 0);
 
-/** The clef of the staff being drawn. Scores show one staff for now: the first. */
+/** The clef of the system's first staff. */
 export const staffClef = (score: Score): Clef => allStaves(score)[0].clef;
 
 /** Spoken name of a clef, for labels. */
@@ -55,10 +61,17 @@ export function writtenView(score: Score, concertPitch: boolean) {
   const sounding = new Map<string, Pitch[]>();
   const view = structuredClone(score);
   const concertKey = scoreKey(score);
-  const t = concertPitch ? null : transpositionOf(score.parts[0].instrument);
+  // Each part is written in its own key: a B♭ trumpet a tone above the piano.
+  const transposition = (instrument: InstrumentId) => (concertPitch ? null : transpositionOf(instrument));
+  const staffKeys = new Map<string, KeySignature>();
+  for (const part of score.parts) {
+    const t = transposition(part.instrument);
+    for (const staff of part.staves) staffKeys.set(staff.id, t ? writtenKey(concertKey, t) : concertKey);
+  }
   for (const measure of view.measures)
     for (const voiceBar of voiceBars(measure)) {
       const { instrument } = voiceInfo(score, voiceBar.voiceId)!.part;
+      const t = transposition(instrument);
       for (const event of voiceBar.events) {
         const notes = eventPitches(event);
         if (!notes.length) continue;
@@ -69,6 +82,17 @@ export function writtenView(score: Score, concertPitch: boolean) {
         if (event.stack) event.stack = event.stack.map((p) => toWritten(p, t, concertKey));
       }
     }
-  if (t) view.key = writtenKey(concertKey, t);
-  return { score: view, outOfRange, sounding };
+  // Chord symbols sit above the top staff, so they read in its key: a tone up over a B♭ trumpet.
+  const top = transposition(score.parts[0].instrument);
+  const written = (root: ChordRoot): ChordRoot => {
+    const { step, alter } = toWritten({ ...root, octave: CHORD_OCTAVE }, top!, concertKey);
+    return { step, alter };
+  };
+  if (top)
+    for (const chord of view.chords) {
+      chord.root = written(chord.root);
+      if (chord.bass) chord.bass = written(chord.bass);
+    }
+  view.key = staffKeys.get(score.parts[0].staves[0].id);
+  return { score: view, outOfRange, sounding, staffKeys };
 }

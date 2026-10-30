@@ -1,5 +1,5 @@
 import { StackMinus, StackPlus } from "@phosphor-icons/react";
-import { eventPitches, findEvent, scoreKey, type Score, type ScoreEvent } from "@/modules/score";
+import { eventPitches, findEvent, scoreKey, voiceInfo, type Score, type ScoreEvent } from "@/modules/score";
 import { IconButton } from "@/shared/ui/IconButton";
 import { addChordNoteEdit, removeTopNoteEdit } from "../../../application/chord-edits";
 import { toggleRestOperation } from "../../../application/note-edits";
@@ -16,11 +16,15 @@ const ICON = 22;
  * chord or take its top note off, make the note a rest, add or remove the bar's second voice.
  */
 export function NoteMenuSection({ score, event, commit }: { score: Score; event: ScoreEvent; commit: CheckedCommit }) {
-  const measureId = findEvent(score, event.id)?.measure.id;
+  const found = findEvent(score, event.id);
+  const measureId = found?.measure.id;
+  // The second voice goes on the note's own staff.
+  const staffId = found ? voiceInfo(score, found.voiceId)?.staff.id : undefined;
   const addNote = addChordNoteEdit(score, event.id);
   const removeTop = removeTopNoteEdit(score, event.id);
-  const voice = measureId ? secondVoiceEdit(score, measureId) : null;
-  const voiceLabel = measureId && hasSecondVoice(score, measureId) ? "Remove second voice" : "Add second voice";
+  const voice = measureId ? secondVoiceEdit(score, measureId, staffId) : null;
+  const twoVoices = measureId && hasSecondVoice(score, measureId, staffId);
+  const voiceLabel = twoVoices ? "Remove second voice" : "Add second voice";
   return (
     <div className={styles.row} role="group" aria-label="Note">
       {addNote && (

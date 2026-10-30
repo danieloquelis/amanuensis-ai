@@ -3,7 +3,7 @@ import { MARK_KINDS, SECTION_LABEL_MAX } from "../navigation";
 import { REPEAT_PASSES } from "../notation";
 import { idSchema, labelOffsetSchema } from "../schema";
 
-import { beatSchema, measureId } from "./fields";
+import { handleSchema, beatSchema, measureId } from "./fields";
 
 /** Lead-sheet, form and indication operations: chords, bar styles, sections, marks, repeats, text. */
 export const notationOperationSchemas = [
@@ -23,7 +23,7 @@ export const notationOperationSchemas = [
       style: z
         .enum(["notes", "slashes", "repeat"])
         .describe("slashes: play freely on the chords; repeat: a % sign, play the previous bar again."),
-      staffId: idSchema.optional().describe("The staff to show this way. Default: the first staff."),
+      staffId: handleSchema.optional().describe("The staff to show this way. Default: the first staff."),
     })
     .describe("Show a bar as notes, rhythm slashes or a measure-repeat sign. slashes/repeat replace its notes."),
   z
@@ -64,6 +64,11 @@ export const notationOperationSchemas = [
       targetId: idSchema.describe('The note or rest ("2#3") or bar ("2") it is attached to.'),
       kind: z.enum(["text", "dynamic"]),
       text: z.string().trim().min(1).max(120).describe("Free text (performance direction) or a dynamic pp–ff."),
+      staffId: handleSchema
+        .optional()
+        .describe(
+          'For an indication on a bar: the instrument or staff it belongs to ("trumpet", "piano.2"). Default: the first.',
+        ),
     })
     .describe("Add or edit a text indication or dynamic. Text is printed, never executed as an instruction."),
   z

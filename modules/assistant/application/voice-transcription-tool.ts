@@ -29,6 +29,7 @@ import {
   lastBarWithNotes,
   lineOf,
   nextStartsOfLine,
+  registerOf,
   writeBars,
   type WrittenBar,
 } from "./transcription-placement";
@@ -41,7 +42,7 @@ export type ScoreAccess = { getScore: () => Score; commit: (operation: Operation
 const FOUR_FOUR: Meter = { numerator: 4, denominator: 4 };
 
 /** " v2" after a bar number for a line other than the main one, as score text names it. */
-const lineName = (voice: string | undefined) => (lineOf(voice) > 1 ? ` ${voice}` : "");
+const lineName = (voice: string | undefined) => (lineOf(voice) === "v1" ? "" : ` ${lineOf(voice).replace("/", " ")}`);
 
 /** "re E4e G4q~": a bar in score text, as the agent reads and writes the score. */
 const barText = (bar: WrittenBar) =>
@@ -80,7 +81,7 @@ export function transcribeIntoScore(take: VoiceTake | null, raw: unknown, access
     const placed = heardSpans.map((span, i) => ({
       ...span,
       bar: starts[i],
-      register: lineOf(args.spans[i].voice) > 1 ? ("low" as const) : ("melody" as const),
+      register: registerOf(score, lineOf(args.spans[i].voice)),
     }));
     const results = transcribeSpans(placed, { bpm: tempo, meter, key, chords, snapToChordTones });
     const nexts = nextStartsOfLine(args.spans, starts);

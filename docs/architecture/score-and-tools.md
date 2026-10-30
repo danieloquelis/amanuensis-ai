@@ -4,7 +4,7 @@ These are design contracts, not implemented interfaces. Details may evolve after
 
 ## Source of truth
 
-`ScoreDocument` contains schema version, project/score ID, revision, parts/staves/voices, stable measure IDs, notes/rests, clef/key/meter/tempo context, ties/slurs, annotations and explicit user overrides. One staff and one monophonic voice are supported initially, while their IDs leave room for expansion.
+`ScoreDocument` contains schema version, project/score ID, revision, parts/staves/voices, stable measure IDs, notes/rests, clef/key/meter/tempo context, ties/slurs, annotations and explicit user overrides. Several parts (a piano may have a grand staff), and up to two voices per staff, are supported.
 
 Notes have stable IDs, spelled pitch (`step`, `alter`, `octave`), measure-local onset and duration, written notation hints and optional evidence references. Musical time uses reduced rational **quarter-note beats**, never float seconds: an eighth note is 1/2 and a 3/4 bar holds 3. Performance timestamps remain sample indices/seconds in separate evidence records.
 

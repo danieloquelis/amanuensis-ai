@@ -100,9 +100,12 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
         reply: turn.reply!,
       }));
     const about = { context: context.name ?? undefined };
-    if (retryId) update(id, { status: "working", reply: undefined, question: undefined, changes: undefined });
-    else setTurns((all) => [...all, { id, instruction: label, status: "working", spoken, ...about }]);
+    if (retryId) {
+      update(id, { status: "working", reply: undefined, question: undefined, changes: undefined, seconds: undefined });
+    } else setTurns((all) => [...all, { id, instruction: label, status: "working", spoken, ...about }]);
     const selection = { selectedIds: context.ids, ...(context.name ? { selectionName: context.name } : {}) };
+    const started = Date.now();
+    const took = () => ({ seconds: (Date.now() - started) / 1000 });
     try {
       const result = await request({ instruction, score: getScore(), ...selection, history }, (activity) =>
         // What was heard replaces "Voice take" as soon as it is known, before the agent answers.
@@ -117,12 +120,18 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
       const parts = spoken && result.heard && heardOf(result.heard);
       const heard = parts ? { heard: parts, instruction: describeHeard(parts) } : {};
       if (result.commands.length && !applyCommands(result.commands, result.reply)) {
-        update(id, { ...heard, status: "failed", reply: "The score changed while I was working. Try again." });
+        update(id, {
+          ...heard,
+          ...took(),
+          status: "failed",
+          reply: "The score changed while I was working. Try again.",
+        });
         return null;
       }
       attempts.current.delete(id);
       update(id, {
         ...heard,
+        ...took(),
         status: "done",
         activity: undefined,
         reply: result.reply,
@@ -133,6 +142,7 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
       return result;
     } catch (error) {
       update(id, {
+        ...took(),
         status: "failed",
         activity: undefined,
         reply: error instanceof Error ? error.message : "Something went wrong.",

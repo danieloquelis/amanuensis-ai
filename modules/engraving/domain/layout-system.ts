@@ -1,7 +1,6 @@
 import { anchorIds, type KeySignature, type Score } from "@/modules/score";
 import { placeAboveStaff } from "./above-staff";
 import { beamBar } from "./beams";
-import { staffClef } from "./clefs";
 import { headerEnd, headerMeterX, keySignatureMarks } from "./header";
 import { layoutLabels } from "./labels";
 import type { Line } from "./line-breaking";
@@ -9,32 +8,39 @@ import type { AnalyzedBar } from "./measure-analysis";
 import { placeBar } from "./place-bar";
 import type { System } from "./scene";
 import { barWidth, fixedWidth } from "./spacing";
+import { lineIndent, staffScenes, type StaffPlan } from "./staff-layout";
 
 /** A short final line stays ragged rather than spreading a few notes across the page. */
 const MAX_LAST_LINE_STRETCH = 2;
 
 export type SystemContext = {
   score: Score;
+  /** The widest key signature of the staves, which sets the header's width. */
   key: KeySignature;
   bars: AnalyzedBar[];
+  staves: StaffPlan[];
   available: (start: number) => number;
 };
 
-/** Lays out one line of music with its staff at `top`: bars, beams, rows above, labels. */
+/** Lays out one line of music with its staves' top lines at `tops`: bars, beams, rows above, labels. */
 export function layoutSystem(
   context: SystemContext,
   line: Line,
-  top: number,
+  tops: number[],
   isLastLine: boolean,
 ): { system: System; dynamicRows: number } {
-  const { score, key, bars } = context;
+  const { score, key, bars, staves } = context;
   const lineBars = bars.slice(line.start, line.end);
+  const [top] = tops;
+  const indent = lineIndent(staves, line.start === 0);
   const system: System = {
     top,
+    ...(staves.length > 1 ? { staves: staffScenes(staves, tops, indent, line.start === 0) } : {}),
+    ...(indent ? { indent } : {}),
     firstMeasure: line.start,
     endX: 0,
-    clef: staffClef(score),
-    keySignature: keySignatureMarks(key, top, staffClef(score)),
+    clef: staves[0].clef,
+    keySignature: keySignatureMarks(staves[0].key, top, staves[0].clef, indent),
     bars: [],
     events: [],
     beams: [],
@@ -49,19 +55,19 @@ export function layoutSystem(
   const stretch = isLastLine ? Math.min(line.stretch, MAX_LAST_LINE_STRETCH) : line.stretch;
   const justified = stretch === line.stretch && stretch > 0;
   const widths = lineBarWidths(lineBars, stretch, justified ? context.available(line.start) : null);
-  let x = headerEnd(key, lineBars[0]);
+  let x = headerEnd(key, lineBars[0], indent);
   lineBars.forEach((bar, index) => {
     const placed = placeBar(bar, {
       x,
       width: widths[index],
-      top,
+      tops,
       atLineStart: index === 0,
-      headerMeterX: headerMeterX(key),
+      headerMeterX: headerMeterX(key, indent),
       final: bar.index === bars.length - 1,
     });
     system.bars.push(placed.scene);
     system.events.push(...placed.events);
-    system.beams.push(...beamBar(bar, placed.events, top));
+    system.beams.push(...beamBar(bar, placed.events, tops));
     system.beamedIds.push(...bar.beamGroups.flat().map((i) => bar.events[i].event.id));
     x += widths[index];
   });

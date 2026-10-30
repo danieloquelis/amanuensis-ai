@@ -5,12 +5,12 @@ import { AccidentalGlyph } from "./AccidentalGlyph";
 import { classNames } from "@/shared/ui/class-names";
 import styles from "./glyphs.module.css";
 
-/** Five lines from the system's left edge to its last barline. */
-export function StaffLines({ top, endX }: { top: number; endX: number }) {
+/** Five lines from the system's left edge (after any indent for part names) to its last barline. */
+export function StaffLines({ top, endX, left = STAFF_LEFT }: { top: number; endX: number; left?: number }) {
   return [0, 1, 2, 3, 4].map((line) => (
     <line
       key={line}
-      x1={STAFF_LEFT}
+      x1={left}
       x2={endX}
       y1={top + line * STAFF_GAP}
       y2={top + line * STAFF_GAP}
@@ -42,16 +42,17 @@ export function TrebleClef({ top }: { top: number }) {
   );
 }
 
-export function Barline({ x, top }: { x: number; top: number }) {
-  return <line x1={x} x2={x} y1={top} y2={top + STAFF_HEIGHT} className={styles.barline} />;
+/** A barline down one staff, or through a part's staves to `bottom`. */
+export function Barline({ x, top, bottom = top + STAFF_HEIGHT }: { x: number; top: number; bottom?: number }) {
+  return <line x1={x} x2={x} y1={top} y2={bottom} className={styles.barline} />;
 }
 
 /** Thin then thick line closing the score. */
-export function FinalBarline({ x, top }: { x: number; top: number }) {
+export function FinalBarline({ x, top, bottom = top + STAFF_HEIGHT }: { x: number; top: number; bottom?: number }) {
   return (
     <g>
-      <line x1={x - 7} x2={x - 7} y1={top} y2={top + STAFF_HEIGHT} className={styles.barline} />
-      <rect x={x - 4} y={top} width="4" height={STAFF_HEIGHT} fill="currentColor" />
+      <line x1={x - 7} x2={x - 7} y1={top} y2={bottom} className={styles.barline} />
+      <rect x={x - 4} y={top} width="4" height={bottom - top} fill="currentColor" />
     </g>
   );
 }
@@ -112,7 +113,8 @@ export function RepeatStart({ x, barNumber, top }: { x: number; barNumber: numbe
   );
 }
 
-export function RepeatEnd({ bar, top }: { bar: BarScene; top: number }) {
+/** Thick line, thin line and dots ending at the barline; `count` shows the passes above (on the top staff). */
+export function RepeatEnd({ bar, top, count = true }: { bar: BarScene; top: number; count?: boolean }) {
   return (
     <g aria-label={`Repeat ends at bar ${bar.number}, ${bar.repeatEnd} passes`}>
       <line x1={bar.endX - 5} x2={bar.endX - 5} y1={top} y2={top + STAFF_HEIGHT} stroke="currentColor" />
@@ -120,7 +122,7 @@ export function RepeatEnd({ bar, top }: { bar: BarScene; top: number }) {
       {REPEAT_DOT_OFFSETS.map((dy) => (
         <circle key={dy} cx={bar.endX - 12} cy={top + dy} r="2" fill="currentColor" />
       ))}
-      <text x={bar.endX - 20} y={top - 16} fontSize="11">{`${bar.repeatEnd}×`}</text>
+      {count && <text x={bar.endX - 20} y={top - 16} fontSize="11">{`${bar.repeatEnd}×`}</text>}
     </g>
   );
 }

@@ -16,6 +16,8 @@ export {
   type Scene,
   type SceneLabel,
   type SlurArc,
+  type StaffScene,
   type System,
   type TieArc,
 } from "./domain/scene";
+export { nameRight, staffOf, staffTop, stavesLeft, systemBottom } from "./domain/staff-layout";

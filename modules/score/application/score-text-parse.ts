@@ -18,7 +18,9 @@ export type WrittenEvent = {
 };
 export type WrittenBar = {
   bar: number;
-  /** Which line of the bar: 1 is the main line, 2 the second voice ("bar 3 v2: …"). */
+  /** The staff it is on, by handle ("trumpet", "piano.2"); the first staff when absent. */
+  staff?: string;
+  /** Which line of the staff: 1 is its main line, 2 the second voice ("bar 3 v2: …"). */
   voice: number;
   /** "bar 3 v2: -": take that voice out of the bar. */
   remove: boolean;
@@ -28,8 +30,8 @@ export type WrittenBar = {
   section: string | null;
 };
 
-/** "bar 3:", "bar 3 (6/8):", "bar 3 v2:". */
-const BAR_LINE = /^bar\s+(\d+)\s*(?:\([^)]*\))?(?:\s*v(\d))?\s*:(.*)$/i;
+/** "bar 3:", "bar 3 (6/8):", "bar 3 v2:", "bar 3 trumpet:", "bar 3 piano.2 v2:". */
+const BAR_LINE = /^bar\s+(\d+)\s*(?:\([^)]*\))?(?:\s+(?!v\d\b)([a-z][\w-]*(?:\.\d)?))?(?:\s*v(\d))?\s*:(.*)$/i;
 const TOKEN = /^(\(?)(?:<([^>]+)>|([A-G][#b]?\d)|(r))([whqes])(\.?)(~?)(?:!(staccato|accent|tenuto|fermata))?(\)?)$/;
 const PITCH = /^([A-G])([#b]?)(\d)$/;
 /** Tokens are split on spaces, except inside a chord's angle brackets. */
@@ -71,14 +73,16 @@ export function parseBarsText(text: string): WrittenBar[] {
     const match = BAR_LINE.exec(line);
     if (!match) throw new Error(`"${line.slice(0, 40)}" is not a bar line ("bar N: notes ; chords …").`);
     const bar = Number(match[1]);
-    const voice = match[2] ? Number(match[2]) : 1;
-    const [notes, ...parts] = match[3].split(";").map((part) => part.trim());
+    const staff = match[2]?.toLowerCase();
+    const voice = match[3] ? Number(match[3]) : 1;
+    const [notes, ...parts] = match[4].split(";").map((part) => part.trim());
     const tokens = notes.match(TOKENS) ?? [];
     const remove = tokens.length === 1 && tokens[0] === "-";
     if (remove && voice === 1)
       throw new Error(`Bar ${bar}: the main line cannot be removed; write R for a whole-bar rest.`);
     const written: WrittenBar = {
       bar,
+      ...(staff ? { staff } : {}),
       voice,
       remove,
       events: remove || (tokens.length === 1 && tokens[0] === "R") ? null : tokens.map((t) => parseToken(t, bar)),

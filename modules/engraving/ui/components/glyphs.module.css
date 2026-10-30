@@ -15,3 +15,8 @@
     monospace;
   letter-spacing: 1px;
 }
+
+.partName {
+  fill: #4d554d;
+  font-size: 12px;
+}

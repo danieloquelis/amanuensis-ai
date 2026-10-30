@@ -23,7 +23,6 @@ const UNSUPPORTED_NOTATION = [
   "hairpins",
   "nested repeats and alternate endings",
   "mid-score key, clef or instrument changes",
-  "several instruments at once",
 ];
 
 type StoredPreview = { command: Command; applied: boolean };
@@ -50,7 +49,7 @@ export function createScoreToolGateway(getSession: () => Session, setSession: (s
 
   const handlers: Record<ScoreToolName, ToolHandler> = {
     score_get_context(raw) {
-      const { selectedIds, includeRaw } = readContextSchema.parse(raw);
+      const { selectedIds, includeRaw, parts, bars } = readContextSchema.parse(raw);
       const { score } = getSession();
       const valid = new Set([
         ...anchorIds(score.measures),
@@ -64,7 +63,7 @@ export function createScoreToolGateway(getSession: () => Session, setSession: (s
       return {
         ok: true,
         revision: score.revision,
-        score: scoreText(score),
+        score: scoreText(score, { parts, bars }),
         selected: selectedIds.map((id) => positionOf(score, id)),
         vocabulary: SCORE_VOCABULARY,
         notYetSupported: UNSUPPORTED_NOTATION,

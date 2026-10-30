@@ -76,6 +76,9 @@ export const staffSchema = z.strictObject({
   voices: z.array(voiceSchema).min(1).max(SCORE_LIMITS.voicesPerStaff),
 });
 
+/** A part's mixer level when it has none of its own. */
+export const DEFAULT_PART_VOLUME = 0.8;
+
 /** One instrument of the score, with its staves (two for a piano grand staff). */
 export const partSchema = z.strictObject({
   id: idSchema,

@@ -9,6 +9,17 @@ export const readContextSchema = z.strictObject({
       "IDs the user has selected (notes, bars, chords, text, marks, repeats); resolves 'this', 'here', 'these'.",
     ),
   includeRaw: z.boolean().optional().describe("Also return the raw score document. Rarely needed."),
+  parts: z
+    .array(z.string().max(40))
+    .max(8)
+    .optional()
+    .describe(
+      'Large scores: read only these parts\' lines, by handle ("trumpet", "piano"). Chords, sections and marks are on the first part\'s lines.',
+    ),
+  bars: z
+    .strictObject({ from: z.number().int().min(1), to: z.number().int().min(1) })
+    .optional()
+    .describe("Large scores: read only bars from–to (numbered from 1)."),
 });
 export const applyPreviewSchema = z.strictObject({
   previewId: z.string().describe("The previewId returned by score_preview."),

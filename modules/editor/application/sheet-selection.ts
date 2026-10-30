@@ -1,4 +1,5 @@
 import {
+  allStaves,
   eventPitches,
   findEvent,
   formatChord,
@@ -10,8 +11,11 @@ import {
 } from "@/modules/score";
 import type { SheetItem } from "./notation-edits";
 
-/** Something picked on the sheet: a note or rest, a whole bar, or another item (chord, text…). */
-export type SheetRef = { kind: "event"; id: string } | { kind: "bar"; id: string } | SheetItem;
+/**
+ * Something picked on the sheet: a note or rest, a bar, or another item (chord, text…). A bar
+ * picked in one instrument's lane names its staff; without `staffId` it is the whole bar.
+ */
+export type SheetRef = { kind: "event"; id: string } | { kind: "bar"; id: string; staffId?: string } | SheetItem;
 
 /** Shift extends a range from the first pick; ⌘/Ctrl adds or removes one item. */
 export type PickMode = "range" | "toggle";
@@ -21,7 +25,14 @@ const TEXT_NAME_LENGTH = 14;
 /** More bars than this are counted rather than listed ("5 bars"). */
 const LISTED_BARS = 3;
 
-export const sameRef = (a: SheetRef, b: SheetRef) => a.kind === b.kind && a.id === b.id;
+const staffOfRef = (ref: SheetRef) => (ref.kind === "bar" ? ref.staffId : undefined);
+
+export const sameRef = (a: SheetRef, b: SheetRef) =>
+  a.kind === b.kind && a.id === b.id && staffOfRef(a) === staffOfRef(b);
+
+/** A bar ref, in one staff's lane or (without a staff) the whole bar. */
+export const barRef = (id: string, staffId?: string): SheetRef =>
+  staffId ? { kind: "bar", id, staffId } : { kind: "bar", id };
 
 /** ⌘/Ctrl-click: adds the item at the end (it becomes the primary pick), or removes it. */
 export function toggleRef(refs: SheetRef[], ref: SheetRef): SheetRef[] {
@@ -40,7 +51,8 @@ export function rangeOfRefs(score: Score, anchor: SheetRef | undefined, target: 
   const to = order.indexOf(target.id);
   if (from === -1 || to === -1) return [target];
   const ids = from <= to ? order.slice(from, to + 1) : order.slice(to, from + 1).reverse();
-  return ids.map((id) => ({ kind: target.kind, id }) as SheetRef);
+  // A range of bars stays in the lane of the bar clicked last.
+  return ids.map((id) => (target.kind === "bar" ? barRef(id, target.staffId) : { kind: "event", id }));
 }
 
 const barNumber = (score: Score, measureId: string) => score.measures.findIndex((m) => m.id === measureId) + 1;
@@ -51,7 +63,9 @@ export function refExists(score: Score, ref: SheetRef): boolean {
     case "event":
       return findEvent(score, ref.id) !== null;
     case "bar":
-      return barNumber(score, ref.id) > 0;
+      return (
+        barNumber(score, ref.id) > 0 && (!ref.staffId || allStaves(score).some((staff) => staff.id === ref.staffId))
+      );
     case "section":
       return !!score.measures.find((m) => m.id === ref.id)?.section;
     case "chord":
@@ -78,8 +92,10 @@ export function refName(score: Score, ref: SheetRef): string {
       const name = `${notes || "Rest"} · bar ${found.measureIndex + 1}`;
       return voice > 1 ? `${name} · voice ${voice}` : name;
     }
-    case "bar":
-      return `Bar ${barNumber(score, ref.id)}`;
+    case "bar": {
+      const part = ref.staffId && score.parts.find((p) => p.staves.some((staff) => staff.id === ref.staffId));
+      return part ? `Bar ${barNumber(score, ref.id)} · ${part.name}` : `Bar ${barNumber(score, ref.id)}`;
+    }
     case "section":
       return `Section ${score.measures.find((m) => m.id === ref.id)?.section ?? ""} · bar ${barNumber(score, ref.id)}`;
     case "chord": {
@@ -146,8 +162,17 @@ export function selectionAnchors(score: Score, refs: SheetRef[]): string[] {
     const [start, end] = [order.indexOf(slur.startEventId), order.indexOf(slur.endEventId)];
     return picked.some((id) => order.indexOf(id) !== -1 && order.indexOf(id) >= start && order.indexOf(id) <= end);
   });
-  return [...refs, ...slurs.map((s) => ({ kind: "slur", id: s.id }))].map((ref) => `${ref.kind}:${ref.id}`);
+  // A whole bar on several staves is drawn as one area per lane.
+  const lanes = allStaves(score).length > 1 ? allStaves(score).map((staff) => staff.id) : [];
+  const keys = (ref: SheetRef) =>
+    ref.kind === "bar" && !ref.staffId && lanes.length
+      ? lanes.map((staffId) => refKey(barRef(ref.id, staffId)))
+      : [refKey(ref)];
+  return [...refs, ...slurs.map((s): SheetRef => ({ kind: "slur", id: s.id }))].flatMap(keys);
 }
+
+/** How a picked item is found on the sheet: "event:id", "bar:id", or a bar in one lane "bar:id@staffId". */
+export const refKey = (ref: SheetRef) => `${ref.kind}:${ref.id}${staffOfRef(ref) ? `@${staffOfRef(ref)}` : ""}`;
 
 /** Index of the bar a picked item is in (a repeat or slur: the bar it starts at), or null if it is gone. */
 function barIndexOf(score: Score, ref: SheetRef): number | null {

@@ -1,15 +1,7 @@
 import { INSTRUMENTS } from "../instruments";
-import { getStaff } from "../queries";
-import type { Part } from "../schema";
+import { getPart, getStaff } from "../queries";
 import type { Draft } from "./draft";
 import type { OperationOf } from "./schema";
-
-/** A part by ID; the first part when omitted. */
-function getPart(draft: Draft, id?: string): Part {
-  const part = id === undefined ? draft.parts[0] : draft.parts.find((p) => p.id === id);
-  if (!part) throw new Error("That part is not in the score.");
-  return part;
-}
 
 /**
  * Plays a part on another instrument. Pitches are stored as they sound, so the music sounds the

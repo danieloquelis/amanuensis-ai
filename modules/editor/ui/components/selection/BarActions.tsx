@@ -5,11 +5,17 @@ import { hasSecondVoice, secondVoiceEdit } from "../../../application/voice-edit
 import type { ScoreEditor } from "../../hooks/use-score-editor";
 import styles from "./selection.module.css";
 
-/** The selected bar: insert one after it, duplicate, add or remove a second voice, clear or delete it. */
+/**
+ * The selected bar: insert one after it, duplicate, add or remove a second voice, clear or delete
+ * it. Picked in one instrument's lane, the voice and clear act on that staff only; the bar itself
+ * (insert, duplicate, delete) is shared by every instrument.
+ */
 export function BarActions({ editor, measure }: { editor: ScoreEditor; measure: Measure }) {
   const { commit } = editor;
-  const voiceEdit = secondVoiceEdit(editor.score, measure.id);
-  const voiceLabel = hasSecondVoice(editor.score, measure.id) ? "Remove second voice" : "Add second voice";
+  const staffId = editor.selectedStaffId ?? undefined;
+  const voiceEdit = secondVoiceEdit(editor.score, measure.id, staffId);
+  const twoVoices = hasSecondVoice(editor.score, measure.id, staffId);
+  const voiceLabel = twoVoices ? "Remove second voice" : "Add second voice";
   return (
     <div className={styles.actions} role="toolbar" aria-label="Selected bar actions">
       <IconButton
@@ -31,12 +37,12 @@ export function BarActions({ editor, measure }: { editor: ScoreEditor; measure: 
         tooltip={voiceLabel}
         onClick={() => commit(voiceEdit.operation, voiceEdit.receipt)}
       >
-        {hasSecondVoice(editor.score, measure.id) ? <StackMinus size={19} /> : <StackPlus size={19} />}
+        {twoVoices ? <StackMinus size={19} /> : <StackPlus size={19} />}
       </IconButton>
       <IconButton
         label="Clear bar"
         tooltip="Clear bar"
-        onClick={() => commit({ type: "clearMeasure", measureId: measure.id }, "Cleared bar")}
+        onClick={() => commit({ type: "clearMeasure", measureId: measure.id, staffId }, "Cleared bar")}
       >
         <Eraser size={19} />
       </IconButton>

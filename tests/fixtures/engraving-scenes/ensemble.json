@@ -1,0 +1,1262 @@
+{
+  "width": 900,
+  "height": 1030,
+  "systems": [
+    {
+      "top": 90,
+      "staves": [
+        {
+          "staffId": "e0-0-staff",
+          "top": 90,
+          "clef": "treble",
+          "keySignature": [{ "x": 168, "y": 90, "alter": 1 }],
+          "barlineEnd": 138,
+          "name": { "text": "Trumpet in B♭", "y": 118 }
+        },
+        {
+          "staffId": "e0-0-1-staff",
+          "top": 226,
+          "clef": "treble",
+          "keySignature": [{ "x": 168, "y": 250, "alter": -1 }],
+          "barlineEnd": 388,
+          "brace": true,
+          "name": { "text": "Piano", "y": 311 }
+        },
+        { "staffId": "e1-0-staff", "top": 340, "clef": "bass", "keySignature": [{ "x": 168, "y": 376, "alter": -1 }] }
+      ],
+      "indent": 80,
+      "firstMeasure": 0,
+      "endX": 846,
+      "clef": "treble",
+      "keySignature": [{ "x": 168, "y": 90, "alter": 1 }],
+      "bars": [
+        {
+          "id": "e0-0-bar-1",
+          "number": 1,
+          "x": 211,
+          "endX": 504.1594970567303,
+          "width": 293.1594970567303,
+          "meter": { "numerator": 4, "denominator": 4 },
+          "meterX": 195,
+          "beat": 0,
+          "capacity": 4,
+          "notesX": 236,
+          "columns": [
+            { "beat": 0, "x": 236 },
+            { "beat": 2, "x": 340.6476086075045 },
+            { "beat": 3, "x": 422.4035528321174 },
+            { "beat": 4, "x": 494.1594970567303 }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": false,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        },
+        {
+          "id": "e0-0-bar-2",
+          "number": 2,
+          "x": 504.1594970567303,
+          "endX": 846,
+          "width": 341.8405029432697,
+          "meter": { "numerator": 4, "denominator": 4 },
+          "meterX": null,
+          "beat": 4,
+          "capacity": 4,
+          "notesX": 524.1594970567303,
+          "columns": [
+            { "beat": 4, "x": 524.1594970567303 },
+            { "beat": 5.5, "x": 618.616280125745 },
+            { "beat": 6, "x": 682.4881115511215 },
+            { "beat": 7, "x": 764.2440557756034 },
+            { "beat": 8, "x": 836 }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": false,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        }
+      ],
+      "events": [
+        {
+          "event": { "id": "w2-0-n0", "duration": { "numerator": 2, "denominator": 1 }, "pitch": null },
+          "voice": 1,
+          "x": 236,
+          "y": 114,
+          "beat": 0,
+          "localBeat": 0,
+          "measure": 0,
+          "stemDown": true,
+          "stemEnd": 156,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 223,
+          "right": 244,
+          "hidden": false
+        },
+        {
+          "event": {
+            "id": "w2-0-n1",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "G", "alter": 0, "octave": 4 }
+          },
+          "voice": 1,
+          "x": 340.6476086075045,
+          "y": 126,
+          "beat": 2,
+          "localBeat": 2,
+          "measure": 0,
+          "stemDown": false,
+          "stemEnd": 84,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 332.6476086075045,
+          "right": 348.6476086075045,
+          "hidden": false,
+          "sounds": [{ "step": "F", "alter": 0, "octave": 4 }]
+        },
+        {
+          "event": {
+            "id": "w2-0-n2",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "A", "alter": 0, "octave": 4 }
+          },
+          "voice": 1,
+          "x": 422.4035528321174,
+          "y": 120,
+          "beat": 3,
+          "localBeat": 3,
+          "measure": 0,
+          "stemDown": false,
+          "stemEnd": 78,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 414.4035528321174,
+          "right": 430.4035528321174,
+          "hidden": false,
+          "sounds": [{ "step": "G", "alter": 0, "octave": 4 }]
+        },
+        {
+          "event": {
+            "id": "w2-6-n0",
+            "duration": { "numerator": 4, "denominator": 1 },
+            "pitch": { "step": "F", "alter": 0, "octave": 4 },
+            "stack": [
+              { "step": "A", "alter": 0, "octave": 4 },
+              { "step": "C", "alter": 0, "octave": 5 }
+            ]
+          },
+          "voice": 1,
+          "x": 236,
+          "y": 268,
+          "beat": 0,
+          "localBeat": 0,
+          "measure": 0,
+          "stemDown": false,
+          "stemEnd": 202,
+          "ledgerLines": [],
+          "heads": [
+            { "y": 268, "dx": 0, "accidental": null, "accidentalShift": 0 },
+            { "y": 256, "dx": 0, "accidental": null, "accidentalShift": 0 },
+            { "y": 244, "dx": 0, "accidental": null, "accidentalShift": 0 }
+          ],
+          "chordTop": 244,
+          "accidental": null,
+          "left": 226,
+          "right": 246,
+          "hidden": false,
+          "staff": 1
+        },
+        {
+          "event": {
+            "id": "w2-12-n0",
+            "duration": { "numerator": 2, "denominator": 1 },
+            "pitch": { "step": "F", "alter": 0, "octave": 2 }
+          },
+          "voice": 1,
+          "x": 236,
+          "y": 394,
+          "beat": 0,
+          "localBeat": 0,
+          "measure": 0,
+          "stemDown": false,
+          "stemEnd": 352,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 228,
+          "right": 244,
+          "hidden": false,
+          "staff": 2
+        },
+        {
+          "event": {
+            "id": "w2-12-n1",
+            "duration": { "numerator": 2, "denominator": 1 },
+            "pitch": { "step": "C", "alter": 0, "octave": 3 }
+          },
+          "voice": 1,
+          "x": 340.6476086075045,
+          "y": 370,
+          "beat": 2,
+          "localBeat": 2,
+          "measure": 0,
+          "stemDown": false,
+          "stemEnd": 328,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 332.6476086075045,
+          "right": 348.6476086075045,
+          "hidden": false,
+          "staff": 2
+        },
+        {
+          "event": {
+            "id": "w2-1-n0",
+            "duration": { "numerator": 3, "denominator": 2 },
+            "pitch": { "step": "B", "alter": 0, "octave": 4 }
+          },
+          "voice": 1,
+          "x": 524.1594970567303,
+          "y": 114,
+          "beat": 4,
+          "localBeat": 0,
+          "measure": 1,
+          "stemDown": true,
+          "stemEnd": 156,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 516.1594970567303,
+          "right": 541.1594970567303,
+          "hidden": false,
+          "sounds": [{ "step": "A", "alter": 0, "octave": 4 }]
+        },
+        {
+          "event": {
+            "id": "w2-1-n1",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "A", "alter": 0, "octave": 4 }
+          },
+          "voice": 1,
+          "x": 618.616280125745,
+          "y": 120,
+          "beat": 5.5,
+          "localBeat": 1.5,
+          "measure": 1,
+          "stemDown": false,
+          "stemEnd": 78,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 610.616280125745,
+          "right": 642.616280125745,
+          "hidden": false,
+          "sounds": [{ "step": "G", "alter": 0, "octave": 4 }]
+        },
+        {
+          "event": {
+            "id": "w2-1-n2",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "G", "alter": 0, "octave": 4 }
+          },
+          "voice": 1,
+          "x": 682.4881115511215,
+          "y": 126,
+          "beat": 6,
+          "localBeat": 2,
+          "measure": 1,
+          "stemDown": false,
+          "stemEnd": 84,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 674.4881115511215,
+          "right": 690.4881115511215,
+          "hidden": false,
+          "sounds": [{ "step": "F", "alter": 0, "octave": 4 }]
+        },
+        {
+          "event": {
+            "id": "w2-1-n3",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "E", "alter": 0, "octave": 4 }
+          },
+          "voice": 1,
+          "x": 764.2440557756034,
+          "y": 138,
+          "beat": 7,
+          "localBeat": 3,
+          "measure": 1,
+          "stemDown": false,
+          "stemEnd": 96,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 756.2440557756034,
+          "right": 772.2440557756034,
+          "hidden": false,
+          "sounds": [{ "step": "D", "alter": 0, "octave": 4 }]
+        },
+        {
+          "event": {
+            "id": "w2-7-n0",
+            "duration": { "numerator": 2, "denominator": 1 },
+            "pitch": { "step": "F", "alter": 0, "octave": 4 },
+            "stack": [
+              { "step": "A", "alter": 0, "octave": 4 },
+              { "step": "D", "alter": 0, "octave": 5 }
+            ]
+          },
+          "voice": 1,
+          "x": 524.1594970567303,
+          "y": 268,
+          "beat": 4,
+          "localBeat": 0,
+          "measure": 1,
+          "stemDown": false,
+          "stemEnd": 196,
+          "ledgerLines": [],
+          "heads": [
+            { "y": 268, "dx": 0, "accidental": null, "accidentalShift": 0 },
+            { "y": 256, "dx": 0, "accidental": null, "accidentalShift": 0 },
+            { "y": 238, "dx": 0, "accidental": null, "accidentalShift": 0 }
+          ],
+          "chordTop": 238,
+          "accidental": null,
+          "left": 516.1594970567303,
+          "right": 532.1594970567303,
+          "hidden": false,
+          "staff": 1
+        },
+        {
+          "event": {
+            "id": "w2-7-n1",
+            "duration": { "numerator": 2, "denominator": 1 },
+            "pitch": { "step": "D", "alter": 0, "octave": 4 },
+            "stack": [
+              { "step": "F", "alter": 0, "octave": 4 },
+              { "step": "B", "alter": -1, "octave": 4 }
+            ]
+          },
+          "voice": 1,
+          "x": 682.4881115511215,
+          "y": 280,
+          "beat": 6,
+          "localBeat": 2,
+          "measure": 1,
+          "stemDown": false,
+          "stemEnd": 208,
+          "ledgerLines": [],
+          "heads": [
+            { "y": 280, "dx": 0, "accidental": null, "accidentalShift": 0 },
+            { "y": 268, "dx": 0, "accidental": null, "accidentalShift": 0 },
+            { "y": 250, "dx": 0, "accidental": null, "accidentalShift": 0 }
+          ],
+          "chordTop": 250,
+          "accidental": null,
+          "left": 674.4881115511215,
+          "right": 690.4881115511215,
+          "hidden": false,
+          "staff": 1
+        },
+        {
+          "event": {
+            "id": "w2-13-n0",
+            "duration": { "numerator": 2, "denominator": 1 },
+            "pitch": { "step": "D", "alter": 0, "octave": 2 }
+          },
+          "voice": 1,
+          "x": 524.1594970567303,
+          "y": 406,
+          "beat": 4,
+          "localBeat": 0,
+          "measure": 1,
+          "stemDown": false,
+          "stemEnd": 364,
+          "ledgerLines": [400],
+          "accidental": null,
+          "left": 516.1594970567303,
+          "right": 532.1594970567303,
+          "hidden": false,
+          "staff": 2
+        },
+        {
+          "event": {
+            "id": "w2-13-n1",
+            "duration": { "numerator": 2, "denominator": 1 },
+            "pitch": { "step": "B", "alter": -1, "octave": 1 }
+          },
+          "voice": 1,
+          "x": 682.4881115511215,
+          "y": 418,
+          "beat": 6,
+          "localBeat": 2,
+          "measure": 1,
+          "stemDown": false,
+          "stemEnd": 364,
+          "ledgerLines": [400, 412],
+          "accidental": null,
+          "left": 674.4881115511215,
+          "right": 690.4881115511215,
+          "hidden": false,
+          "staff": 2
+        }
+      ],
+      "beams": [],
+      "beamedIds": [],
+      "ties": [],
+      "slurs": [],
+      "labels": [
+        {
+          "id": "e3-0-annotation",
+          "annotationId": "e3-0-annotation",
+          "x": 340.6476086075045,
+          "y": 172,
+          "text": "mf",
+          "kind": "dynamic"
+        },
+        {
+          "id": "e4-0-annotation",
+          "annotationId": "e4-0-annotation",
+          "x": 236,
+          "y": 304,
+          "text": "p",
+          "kind": "dynamic",
+          "staff": 1
+        }
+      ],
+      "chords": [{ "id": "w2-18-chord", "x": 232, "text": "G" }],
+      "chordY": 68,
+      "markY": 46
+    },
+    {
+      "top": 570,
+      "staves": [
+        {
+          "staffId": "e0-0-staff",
+          "top": 570,
+          "clef": "treble",
+          "keySignature": [{ "x": 132, "y": 570, "alter": 1 }],
+          "barlineEnd": 618,
+          "name": { "text": "Tpt.", "y": 598 }
+        },
+        {
+          "staffId": "e0-0-1-staff",
+          "top": 690,
+          "clef": "treble",
+          "keySignature": [{ "x": 132, "y": 714, "alter": -1 }],
+          "barlineEnd": 846,
+          "brace": true,
+          "name": { "text": "Pno.", "y": 772 }
+        },
+        { "staffId": "e1-0-staff", "top": 798, "clef": "bass", "keySignature": [{ "x": 132, "y": 834, "alter": -1 }] }
+      ],
+      "indent": 44,
+      "firstMeasure": 2,
+      "endX": 846,
+      "clef": "treble",
+      "keySignature": [{ "x": 132, "y": 570, "alter": 1 }],
+      "bars": [
+        {
+          "id": "e0-0-bar-3",
+          "number": 3,
+          "x": 151,
+          "endX": 415.50877658773425,
+          "width": 264.50877658773425,
+          "meter": { "numerator": 4, "denominator": 4 },
+          "meterX": null,
+          "beat": 8,
+          "capacity": 4,
+          "notesX": 171,
+          "columns": [
+            { "beat": 8, "x": 171 },
+            { "beat": 8.5, "x": 208.27267935788632 },
+            { "beat": 9, "x": 245.54535871577264 },
+            { "beat": 9.5, "x": 282.81803807365895 },
+            { "beat": 10, "x": 320.0907174315453 },
+            { "beat": 11, "x": 367.79974700963976 },
+            { "beat": 12, "x": 405.50877658773425 }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": false,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        },
+        {
+          "id": "e0-0-bar-4",
+          "number": 4,
+          "x": 415.50877658773425,
+          "endX": 645.6670518792405,
+          "width": 230.15827529150621,
+          "meter": { "numerator": 4, "denominator": 4 },
+          "meterX": null,
+          "beat": 12,
+          "capacity": 4,
+          "notesX": 435.50877658773425,
+          "columns": [
+            { "beat": 12, "x": 435.50877658773425 },
+            { "beat": 12.5, "x": 472.78145594562056 },
+            { "beat": 13, "x": 510.0541353035069 },
+            { "beat": 13.5, "x": 547.3268146613932 },
+            { "beat": 14, "x": 584.5994940192795 },
+            { "beat": 16, "x": 635.6670518792405 }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": false,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        },
+        {
+          "id": "e0-0-bar-5",
+          "number": 5,
+          "x": 645.6670518792405,
+          "endX": 745.8335259399905,
+          "width": 100.16647406075002,
+          "meter": { "numerator": 4, "denominator": 4 },
+          "meterX": null,
+          "beat": 16,
+          "capacity": 4,
+          "notesX": 667.6670518792405,
+          "columns": [
+            { "beat": 16, "x": 667.6670518792405 },
+            { "beat": 20, "x": 735.8335259399905 }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": false,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        },
+        {
+          "id": "e0-0-bar-6",
+          "number": 6,
+          "x": 745.8335259399905,
+          "endX": 846,
+          "width": 100.16647406000946,
+          "meter": { "numerator": 4, "denominator": 4 },
+          "meterX": null,
+          "beat": 20,
+          "capacity": 4,
+          "notesX": 767.8335259399905,
+          "columns": [
+            { "beat": 20, "x": 767.8335259399905 },
+            { "beat": 24, "x": 836 }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": true,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        }
+      ],
+      "events": [
+        {
+          "event": {
+            "id": "w2-2-n0",
+            "duration": { "numerator": 2, "denominator": 1 },
+            "pitch": { "step": "D", "alter": 0, "octave": 5 }
+          },
+          "voice": 1,
+          "x": 171,
+          "y": 582,
+          "beat": 8,
+          "localBeat": 0,
+          "measure": 2,
+          "stemDown": true,
+          "stemEnd": 624,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 163,
+          "right": 179,
+          "hidden": false,
+          "sounds": [{ "step": "C", "alter": 0, "octave": 5 }]
+        },
+        {
+          "event": {
+            "id": "w2-2-n1",
+            "duration": { "numerator": 2, "denominator": 1 },
+            "pitch": { "step": "B", "alter": 0, "octave": 4 }
+          },
+          "voice": 1,
+          "x": 320.0907174315453,
+          "y": 594,
+          "beat": 10,
+          "localBeat": 2,
+          "measure": 2,
+          "stemDown": true,
+          "stemEnd": 636,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 312.0907174315453,
+          "right": 328.0907174315453,
+          "hidden": false,
+          "sounds": [{ "step": "A", "alter": 0, "octave": 4 }]
+        },
+        {
+          "event": {
+            "id": "w2-8-n0",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "C", "alter": 0, "octave": 5 }
+          },
+          "voice": 1,
+          "x": 171,
+          "y": 708,
+          "beat": 8,
+          "localBeat": 0,
+          "measure": 2,
+          "stemDown": true,
+          "stemEnd": 753,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 163,
+          "right": 179,
+          "hidden": false,
+          "staff": 1
+        },
+        {
+          "event": {
+            "id": "w2-8-n1",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "B", "alter": -1, "octave": 4 }
+          },
+          "voice": 1,
+          "x": 208.27267935788632,
+          "y": 714,
+          "beat": 8.5,
+          "localBeat": 0.5,
+          "measure": 2,
+          "stemDown": true,
+          "stemEnd": 756,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 200.27267935788632,
+          "right": 216.27267935788632,
+          "hidden": false,
+          "staff": 1
+        },
+        {
+          "event": {
+            "id": "w2-8-n2",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "A", "alter": 0, "octave": 4 }
+          },
+          "voice": 1,
+          "x": 245.54535871577264,
+          "y": 720,
+          "beat": 9,
+          "localBeat": 1,
+          "measure": 2,
+          "stemDown": false,
+          "stemEnd": 678,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 237.54535871577264,
+          "right": 253.54535871577264,
+          "hidden": false,
+          "staff": 1
+        },
+        {
+          "event": {
+            "id": "w2-8-n3",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "G", "alter": 0, "octave": 4 }
+          },
+          "voice": 1,
+          "x": 282.81803807365895,
+          "y": 726,
+          "beat": 9.5,
+          "localBeat": 1.5,
+          "measure": 2,
+          "stemDown": false,
+          "stemEnd": 681,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 274.81803807365895,
+          "right": 290.81803807365895,
+          "hidden": false,
+          "staff": 1
+        },
+        {
+          "event": {
+            "id": "w2-8-n4",
+            "duration": { "numerator": 2, "denominator": 1 },
+            "pitch": { "step": "A", "alter": 0, "octave": 4 }
+          },
+          "voice": 1,
+          "x": 320.0907174315453,
+          "y": 720,
+          "beat": 10,
+          "localBeat": 2,
+          "measure": 2,
+          "stemDown": false,
+          "stemEnd": 678,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 312.0907174315453,
+          "right": 328.0907174315453,
+          "hidden": false,
+          "staff": 1
+        },
+        {
+          "event": {
+            "id": "w2-14-n0",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "F", "alter": 0, "octave": 2 }
+          },
+          "voice": 1,
+          "x": 171,
+          "y": 852,
+          "beat": 8,
+          "localBeat": 0,
+          "measure": 2,
+          "stemDown": false,
+          "stemEnd": 810,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 163,
+          "right": 179,
+          "hidden": false,
+          "staff": 2
+        },
+        {
+          "event": {
+            "id": "w2-14-n1",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "C", "alter": 0, "octave": 3 }
+          },
+          "voice": 1,
+          "x": 245.54535871577264,
+          "y": 828,
+          "beat": 9,
+          "localBeat": 1,
+          "measure": 2,
+          "stemDown": false,
+          "stemEnd": 786,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 237.54535871577264,
+          "right": 253.54535871577264,
+          "hidden": false,
+          "staff": 2
+        },
+        {
+          "event": {
+            "id": "w2-14-n2",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "F", "alter": 0, "octave": 3 }
+          },
+          "voice": 1,
+          "x": 320.0907174315453,
+          "y": 810,
+          "beat": 10,
+          "localBeat": 2,
+          "measure": 2,
+          "stemDown": true,
+          "stemEnd": 852,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 312.0907174315453,
+          "right": 328.0907174315453,
+          "hidden": false,
+          "staff": 2
+        },
+        {
+          "event": {
+            "id": "w2-14-n3",
+            "duration": { "numerator": 1, "denominator": 1 },
+            "pitch": { "step": "C", "alter": 0, "octave": 3 }
+          },
+          "voice": 1,
+          "x": 367.79974700963976,
+          "y": 828,
+          "beat": 11,
+          "localBeat": 3,
+          "measure": 2,
+          "stemDown": false,
+          "stemEnd": 786,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 359.79974700963976,
+          "right": 375.79974700963976,
+          "hidden": false,
+          "staff": 2
+        },
+        {
+          "event": {
+            "id": "w2-3-n0",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "C", "alter": 0, "octave": 5 }
+          },
+          "voice": 1,
+          "x": 435.50877658773425,
+          "y": 588,
+          "beat": 12,
+          "localBeat": 0,
+          "measure": 3,
+          "stemDown": true,
+          "stemEnd": 633,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 427.50877658773425,
+          "right": 443.50877658773425,
+          "hidden": false,
+          "sounds": [{ "step": "B", "alter": -1, "octave": 4 }]
+        },
+        {
+          "event": {
+            "id": "w2-3-n1",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "B", "alter": 0, "octave": 4 }
+          },
+          "voice": 1,
+          "x": 472.78145594562056,
+          "y": 594,
+          "beat": 12.5,
+          "localBeat": 0.5,
+          "measure": 3,
+          "stemDown": true,
+          "stemEnd": 636,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 464.78145594562056,
+          "right": 480.78145594562056,
+          "hidden": false,
+          "sounds": [{ "step": "A", "alter": 0, "octave": 4 }]
+        },
+        {
+          "event": {
+            "id": "w2-3-n2",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "A", "alter": 0, "octave": 4 }
+          },
+          "voice": 1,
+          "x": 510.0541353035069,
+          "y": 600,
+          "beat": 13,
+          "localBeat": 1,
+          "measure": 3,
+          "stemDown": false,
+          "stemEnd": 558,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 502.0541353035069,
+          "right": 518.0541353035069,
+          "hidden": false,
+          "sounds": [{ "step": "G", "alter": 0, "octave": 4 }]
+        },
+        {
+          "event": {
+            "id": "w2-3-n3",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "G", "alter": 0, "octave": 4 }
+          },
+          "voice": 1,
+          "x": 547.3268146613932,
+          "y": 606,
+          "beat": 13.5,
+          "localBeat": 1.5,
+          "measure": 3,
+          "stemDown": false,
+          "stemEnd": 561,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 539.3268146613932,
+          "right": 555.3268146613932,
+          "hidden": false,
+          "sounds": [{ "step": "F", "alter": 0, "octave": 4 }]
+        },
+        {
+          "event": {
+            "id": "w2-3-n4",
+            "duration": { "numerator": 2, "denominator": 1 },
+            "pitch": { "step": "A", "alter": 0, "octave": 4 }
+          },
+          "voice": 1,
+          "x": 584.5994940192795,
+          "y": 600,
+          "beat": 14,
+          "localBeat": 2,
+          "measure": 3,
+          "stemDown": false,
+          "stemEnd": 558,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 576.5994940192795,
+          "right": 592.5994940192795,
+          "hidden": false,
+          "sounds": [{ "step": "G", "alter": 0, "octave": 4 }]
+        },
+        {
+          "event": {
+            "id": "w2-9-n0",
+            "duration": { "numerator": 2, "denominator": 1 },
+            "pitch": { "step": "G", "alter": 0, "octave": 4 },
+            "stack": [{ "step": "B", "alter": -1, "octave": 4 }]
+          },
+          "voice": 1,
+          "x": 435.50877658773425,
+          "y": 726,
+          "beat": 12,
+          "localBeat": 0,
+          "measure": 3,
+          "stemDown": false,
+          "stemEnd": 672,
+          "ledgerLines": [],
+          "heads": [
+            { "y": 726, "dx": 0, "accidental": null, "accidentalShift": 0 },
+            { "y": 714, "dx": 0, "accidental": null, "accidentalShift": 0 }
+          ],
+          "chordTop": 714,
+          "accidental": null,
+          "left": 427.50877658773425,
+          "right": 443.50877658773425,
+          "hidden": false,
+          "staff": 1
+        },
+        {
+          "event": {
+            "id": "w2-9-n1",
+            "duration": { "numerator": 2, "denominator": 1 },
+            "pitch": { "step": "E", "alter": 0, "octave": 4 },
+            "stack": [
+              { "step": "G", "alter": 0, "octave": 4 },
+              { "step": "C", "alter": 0, "octave": 5 }
+            ]
+          },
+          "voice": 1,
+          "x": 584.5994940192795,
+          "y": 738,
+          "beat": 14,
+          "localBeat": 2,
+          "measure": 3,
+          "stemDown": false,
+          "stemEnd": 666,
+          "ledgerLines": [],
+          "heads": [
+            { "y": 738, "dx": 0, "accidental": null, "accidentalShift": 0 },
+            { "y": 726, "dx": 0, "accidental": null, "accidentalShift": 0 },
+            { "y": 708, "dx": 0, "accidental": null, "accidentalShift": 0 }
+          ],
+          "chordTop": 708,
+          "accidental": null,
+          "left": 576.5994940192795,
+          "right": 592.5994940192795,
+          "hidden": false,
+          "staff": 1
+        },
+        {
+          "event": {
+            "id": "w2-15-n0",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "C", "alter": 0, "octave": 2 }
+          },
+          "voice": 1,
+          "x": 435.50877658773425,
+          "y": 870,
+          "beat": 12,
+          "localBeat": 0,
+          "measure": 3,
+          "stemDown": false,
+          "stemEnd": 823.5,
+          "ledgerLines": [858, 870],
+          "accidental": null,
+          "left": 427.50877658773425,
+          "right": 443.50877658773425,
+          "hidden": false,
+          "staff": 2
+        },
+        {
+          "event": {
+            "id": "w2-15-n1",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "D", "alter": 0, "octave": 2 }
+          },
+          "voice": 1,
+          "x": 472.78145594562056,
+          "y": 864,
+          "beat": 12.5,
+          "localBeat": 0.5,
+          "measure": 3,
+          "stemDown": false,
+          "stemEnd": 820.5,
+          "ledgerLines": [858],
+          "accidental": null,
+          "left": 464.78145594562056,
+          "right": 480.78145594562056,
+          "hidden": false,
+          "staff": 2
+        },
+        {
+          "event": {
+            "id": "w2-15-n2",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "E", "alter": 0, "octave": 2 }
+          },
+          "voice": 1,
+          "x": 510.0541353035069,
+          "y": 858,
+          "beat": 13,
+          "localBeat": 1,
+          "measure": 3,
+          "stemDown": false,
+          "stemEnd": 813,
+          "ledgerLines": [858],
+          "accidental": null,
+          "left": 502.0541353035069,
+          "right": 518.0541353035069,
+          "hidden": false,
+          "staff": 2
+        },
+        {
+          "event": {
+            "id": "w2-15-n3",
+            "duration": { "numerator": 1, "denominator": 2 },
+            "pitch": { "step": "F", "alter": 0, "octave": 2 }
+          },
+          "voice": 1,
+          "x": 547.3268146613932,
+          "y": 852,
+          "beat": 13.5,
+          "localBeat": 1.5,
+          "measure": 3,
+          "stemDown": false,
+          "stemEnd": 810,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 539.3268146613932,
+          "right": 555.3268146613932,
+          "hidden": false,
+          "staff": 2
+        },
+        {
+          "event": {
+            "id": "w2-15-n4",
+            "duration": { "numerator": 2, "denominator": 1 },
+            "pitch": { "step": "G", "alter": 0, "octave": 2 }
+          },
+          "voice": 1,
+          "x": 584.5994940192795,
+          "y": 846,
+          "beat": 14,
+          "localBeat": 2,
+          "measure": 3,
+          "stemDown": false,
+          "stemEnd": 804,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 576.5994940192795,
+          "right": 592.5994940192795,
+          "hidden": false,
+          "staff": 2
+        },
+        {
+          "event": {
+            "id": "w2-4-n0",
+            "duration": { "numerator": 4, "denominator": 1 },
+            "pitch": { "step": "B", "alter": 0, "octave": 4 }
+          },
+          "voice": 1,
+          "x": 667.6670518792405,
+          "y": 594,
+          "beat": 16,
+          "localBeat": 0,
+          "measure": 4,
+          "stemDown": true,
+          "stemEnd": 636,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 657.6670518792405,
+          "right": 677.6670518792405,
+          "hidden": false,
+          "sounds": [{ "step": "A", "alter": 0, "octave": 4 }]
+        },
+        {
+          "event": {
+            "id": "w2-10-n0",
+            "duration": { "numerator": 4, "denominator": 1 },
+            "pitch": { "step": "F", "alter": 0, "octave": 4 },
+            "stack": [
+              { "step": "A", "alter": 0, "octave": 4 },
+              { "step": "C", "alter": 0, "octave": 5 }
+            ]
+          },
+          "voice": 1,
+          "x": 667.6670518792405,
+          "y": 732,
+          "beat": 16,
+          "localBeat": 0,
+          "measure": 4,
+          "stemDown": false,
+          "stemEnd": 666,
+          "ledgerLines": [],
+          "heads": [
+            { "y": 732, "dx": 0, "accidental": null, "accidentalShift": 0 },
+            { "y": 720, "dx": 0, "accidental": null, "accidentalShift": 0 },
+            { "y": 708, "dx": 0, "accidental": null, "accidentalShift": 0 }
+          ],
+          "chordTop": 708,
+          "accidental": null,
+          "left": 657.6670518792405,
+          "right": 677.6670518792405,
+          "hidden": false,
+          "staff": 1
+        },
+        {
+          "event": {
+            "id": "w2-16-n0",
+            "duration": { "numerator": 4, "denominator": 1 },
+            "pitch": { "step": "F", "alter": 0, "octave": 2 }
+          },
+          "voice": 1,
+          "x": 667.6670518792405,
+          "y": 852,
+          "beat": 16,
+          "localBeat": 0,
+          "measure": 4,
+          "stemDown": false,
+          "stemEnd": 810,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 657.6670518792405,
+          "right": 677.6670518792405,
+          "hidden": false,
+          "staff": 2
+        },
+        {
+          "event": {
+            "id": "w2-5-n0",
+            "duration": { "numerator": 4, "denominator": 1 },
+            "pitch": { "step": "G", "alter": 0, "octave": 4 }
+          },
+          "voice": 1,
+          "x": 767.8335259399905,
+          "y": 606,
+          "beat": 20,
+          "localBeat": 0,
+          "measure": 5,
+          "stemDown": false,
+          "stemEnd": 564,
+          "ledgerLines": [],
+          "accidental": null,
+          "left": 757.8335259399905,
+          "right": 777.8335259399905,
+          "hidden": false,
+          "sounds": [{ "step": "F", "alter": 0, "octave": 4 }]
+        },
+        {
+          "event": {
+            "id": "w2-11-n0",
+            "duration": { "numerator": 4, "denominator": 1 },
+            "pitch": { "step": "F", "alter": 0, "octave": 4 },
+            "stack": [
+              { "step": "A", "alter": 0, "octave": 4 },
+              { "step": "C", "alter": 0, "octave": 5 }
+            ]
+          },
+          "voice": 1,
+          "x": 767.8335259399905,
+          "y": 732,
+          "beat": 20,
+          "localBeat": 0,
+          "measure": 5,
+          "stemDown": false,
+          "stemEnd": 666,
+          "ledgerLines": [],
+          "heads": [
+            { "y": 732, "dx": 0, "accidental": null, "accidentalShift": 0 },
+            { "y": 720, "dx": 0, "accidental": null, "accidentalShift": 0 },
+            { "y": 708, "dx": 0, "accidental": null, "accidentalShift": 0 }
+          ],
+          "chordTop": 708,
+          "accidental": null,
+          "left": 757.8335259399905,
+          "right": 777.8335259399905,
+          "hidden": false,
+          "staff": 1
+        },
+        {
+          "event": {
+            "id": "w2-17-n0",
+            "duration": { "numerator": 4, "denominator": 1 },
+            "pitch": { "step": "F", "alter": 0, "octave": 1 }
+          },
+          "voice": 1,
+          "x": 767.8335259399905,
+          "y": 894,
+          "beat": 20,
+          "localBeat": 0,
+          "measure": 5,
+          "stemDown": false,
+          "stemEnd": 822,
+          "ledgerLines": [858, 870, 882, 894],
+          "accidental": null,
+          "left": 757.8335259399905,
+          "right": 777.8335259399905,
+          "hidden": false,
+          "staff": 2
+        }
+      ],
+      "beams": [
+        { "x1": 165, "y1": 753, "x2": 202.27267935788632, "y2": 756, "level": 1, "down": true },
+        { "x1": 251.54535871577264, "y1": 678, "x2": 288.81803807365895, "y2": 681, "level": 1, "down": false },
+        { "x1": 429.50877658773425, "y1": 633, "x2": 466.78145594562056, "y2": 636, "level": 1, "down": true },
+        { "x1": 516.0541353035069, "y1": 558, "x2": 553.3268146613932, "y2": 561, "level": 1, "down": false },
+        { "x1": 441.50877658773425, "y1": 823.5, "x2": 478.78145594562056, "y2": 820.5, "level": 1, "down": false },
+        { "x1": 516.0541353035069, "y1": 813, "x2": 553.3268146613932, "y2": 810, "level": 1, "down": false }
+      ],
+      "beamedIds": [
+        "w2-8-n0",
+        "w2-8-n1",
+        "w2-8-n2",
+        "w2-8-n3",
+        "w2-3-n0",
+        "w2-3-n1",
+        "w2-3-n2",
+        "w2-3-n3",
+        "w2-15-n0",
+        "w2-15-n1",
+        "w2-15-n2",
+        "w2-15-n3"
+      ],
+      "ties": [],
+      "slurs": [],
+      "labels": [
+        {
+          "id": "e5-0-annotation",
+          "annotationId": "e5-0-annotation",
+          "x": 171,
+          "y": 918,
+          "text": "mp",
+          "kind": "dynamic",
+          "staff": 2
+        }
+      ],
+      "chords": [],
+      "chordY": 548,
+      "markY": 548
+    }
+  ]
+}

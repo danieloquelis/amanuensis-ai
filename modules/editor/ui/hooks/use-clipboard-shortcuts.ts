@@ -10,7 +10,7 @@ type ClipboardEditor = {
   commit: CommitEdit;
   setError: (message: string | null) => void;
   select: (id: string | null) => void;
-  selectBar: (id: string | null) => void;
+  selectBar: (id: string | null, staffId?: string) => void;
 };
 
 const isTyping = (target: EventTarget | null) =>
@@ -43,7 +43,7 @@ export function useClipboardShortcuts({ getScore, picked, commit, setError, sele
         // Select what was pasted, so the next ⌘V carries on after it.
         const pasted = edit.pasted(getScore());
         lastPasted.current = pasted.map((ref) => ref.id);
-        if (pasted[0]?.kind === "bar") selectBar(pasted[0].id);
+        if (pasted[0]?.kind === "bar") selectBar(pasted[0].id, pasted[0].staffId);
         else if (pasted[0]) select(pasted[0].id);
       } catch (error) {
         setError(error instanceof Error ? error.message : "That cannot be pasted here.");

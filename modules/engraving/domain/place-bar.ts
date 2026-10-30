@@ -21,7 +21,8 @@ const TOP_LINE = 8;
 type BarPlacement = {
   x: number;
   width: number;
-  top: number;
+  /** Each staff's top line, top down. */
+  tops: number[];
   atLineStart: boolean;
   /** Time signature centre in the system header, used when the bar starts the line. */
   headerMeterX: number;
@@ -33,14 +34,14 @@ type BarPlacement = {
  * justification. Beamed stems are finalized later by `beamBar`.
  */
 export function placeBar(bar: AnalyzedBar, placement: BarPlacement): { scene: BarScene; events: EngravedEvent[] } {
-  const { x, width, top, atLineStart } = placement;
+  const { x, width, tops, atLineStart } = placement;
   const endX = x + width;
   const contentStart = x + barLeadingSpace(bar, atLineStart);
   const columnXs = bar.measureRest
     ? [(contentStart + endX) / 2]
     : columnPositions(bar, contentStart, width, atLineStart);
   const xs = eventXs(bar, columnXs, (contentStart + endX) / 2);
-  const events = bar.events.map((item, index) => engrave(item, xs[index], bar, top));
+  const events = bar.events.map((item, index) => engrave(item, xs[index], bar, tops[item.staff]));
   const notesX = bar.measureRest ? contentStart : columnXs[0];
   const slashXs = bar.style === "slashes" ? evenlySpaced(slashCount(bar), contentStart, endX - BARLINE_PADDING) : [];
   const scene: BarScene = {
@@ -128,10 +129,11 @@ function engrave(item: AnalyzedEvent, columnX: number, bar: AnalyzedBar, top: nu
       : {}),
     accidental: item.accidental,
     ...(item.accidentalShift ? { accidentalShift: item.accidentalShift } : {}),
-    ...(bar.polyphonic ? { curveSide: stemsDown(item.voice) ? ("below" as const) : ("above" as const) } : {}),
+    ...(item.shared ? { curveSide: stemsDown(item.voice) ? ("below" as const) : ("above" as const) } : {}),
     left: x - item.left,
     right: x + item.right,
     hidden: bar.style !== null,
+    ...(item.staff > 0 ? { staff: item.staff } : {}),
   };
 }
 

@@ -697,13 +697,13 @@ test("the instrument sets the clef, the written pitch and the sound, and survive
   await installSoundProbe(page);
   await page.goto("/");
   const sheet = page.locator("svg[aria-label$='Select a note to edit.']");
-  await page.getByRole("button", { name: "Instrument", exact: true }).click();
+  await page.getByRole("button", { name: "Instruments", exact: true }).click();
   await page.getByRole("button", { name: "Trombone", exact: true }).click();
   await expect(sheet).toHaveAttribute("aria-label", /bass clef/);
   await page.reload();
   await expect(sheet).toHaveAttribute("aria-label", /bass clef/);
 
-  await page.getByRole("button", { name: "Instrument", exact: true }).click();
+  await page.getByRole("button", { name: "Instruments", exact: true }).click();
   await page.getByRole("button", { name: "Trumpet in B♭", exact: true }).click();
   // Concert C4 is written D4 for a B♭ trumpet, in D major.
   await expect(page.getByRole("button", { name: "Bar 1, beat 1, D4 (sounds C4), 1 beats", exact: true })).toBeVisible();
@@ -721,6 +721,50 @@ test("the instrument sets the clef, the written pitch and the sound, and survive
     .toBe("trumpet");
   expect((await heardNotes(page))[0]).toBe(60);
   await page.getByRole("button", { name: "Stop playback" }).click();
+});
+
+test("an added instrument gets its own staff, and the mixer mutes it", async ({ page }) => {
+  await installSoundProbe(page);
+  await page.goto("/");
+  const sheet = page.locator("svg[aria-label$='Select a note to edit.']");
+  await page.getByRole("button", { name: "Instruments", exact: true }).click();
+  await page.getByRole("button", { name: "Add Trumpet in B♭", exact: true }).click();
+  await expect(sheet).toHaveAttribute("aria-label", /Piano and Trumpet in B♭/);
+  await page.keyboard.press("Escape");
+
+  // The trumpet's bar 1 rest becomes the G it shows (sounding F).
+  await page.getByRole("button", { name: /^Trumpet in B♭, bar 1, beat 1, Rest/ }).click();
+  await page.keyboard.press("g");
+  await expect(page.getByRole("button", { name: /^Trumpet in B♭, bar 1, beat 1, G4 \(sounds F4\)/ })).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  await page.getByRole("button", { name: "Mixer", exact: true }).click();
+  await page.getByRole("button", { name: "Mute Trumpet in B♭", exact: true }).click();
+  await page.keyboard.press("Escape");
+  // Forget the note sounded when it was typed: only playback counts.
+  await page.evaluate(() => {
+    const probe = window as unknown as { heard: number[]; instruments: string[] };
+    probe.heard.length = 0;
+    probe.instruments.length = 0;
+  });
+  await page.getByRole("button", { name: "Play score" }).click();
+  await expect.poll(() => heardNotes(page).then((notes) => notes.length)).toBeGreaterThan(3);
+  const instruments = await page.evaluate(() => (window as unknown as { instruments: string[] }).instruments);
+  expect(instruments).not.toContain("trumpet");
+  await page.getByRole("button", { name: "Stop playback" }).click();
+
+  await page.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Mute Trumpet in B♭", exact: true })).toHaveCount(0);
+
+  // A bar picked in the trumpet's lane points the Instrument tool at the trumpet.
+  await page.getByRole("button", { name: "Bar 2, Trumpet in B♭", exact: true }).click({ position: { x: 12, y: 30 } });
+  await page.getByRole("button", { name: "Instruments", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Trumpet in B♭", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await page.getByRole("button", { name: "Flute", exact: true }).click();
+  await expect(sheet).toHaveAttribute("aria-label", /Piano and Flute/);
 });
 
 test("pinching (Ctrl + wheel) zooms the sheet, not the page", async ({ page }) => {

@@ -17,19 +17,22 @@ const FLAT_POSITIONS = [4, 7, 3, 6, 2, 5, 1];
 const keyEnd = (key: KeySignature) =>
   key.fifths === 0 ? CLEF_END : KEY_START + Math.abs(key.fifths) * KEY_ACCIDENTAL_WIDTH;
 
-/** Where the first bar of a system starts: after clef, key signature and any time signature. */
-export function headerEnd(key: KeySignature, firstBar: AnalyzedBar): number {
-  return keyEnd(key) + (firstBar.meterChanges ? METER_WIDTH : HEADER_GAP);
+/**
+ * Where the first bar of a system starts: after clef, key signature and any time signature. With
+ * several staves, `key` is the one with the most accidentals; `indent` makes room for part names.
+ */
+export function headerEnd(key: KeySignature, firstBar: AnalyzedBar, indent = 0): number {
+  return indent + keyEnd(key) + (firstBar.meterChanges ? METER_WIDTH : HEADER_GAP);
 }
 
 /** Centre of a time signature drawn in the system header. */
-export const headerMeterX = (key: KeySignature) => keyEnd(key) + METER_WIDTH / 2;
+export const headerMeterX = (key: KeySignature, indent = 0) => indent + keyEnd(key) + METER_WIDTH / 2;
 
 /** Key signature accidentals repeated at the start of every system. `x` is each glyph's left edge. */
-export function keySignatureMarks(key: KeySignature, top: number, clef: Clef): KeyAccidentalMark[] {
+export function keySignatureMarks(key: KeySignature, top: number, clef: Clef, indent = 0): KeyAccidentalMark[] {
   const positions = key.fifths > 0 ? SHARP_POSITIONS : FLAT_POSITIONS;
   return keySignatureSteps(key).map(({ alter }, index) => ({
-    x: KEY_START + index * KEY_ACCIDENTAL_WIDTH,
+    x: indent + KEY_START + index * KEY_ACCIDENTAL_WIDTH,
     y: positionY(top, positions[index] + keyShift(clef)),
     alter,
   }));

@@ -1,6 +1,6 @@
 import { ColumnsPlusRight, Repeat, SpeakerHigh, TextAa } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
-import { meterName, partOf, scoreKey, type Score } from "@/modules/score";
+import { meterName, scoreKey, type Score } from "@/modules/score";
 import surface from "@/shared/ui/surface.module.css";
 import { toolTarget, type Selection } from "../../../application/selection";
 import type { CommitEdit } from "../../hooks/use-score-editor";
@@ -8,7 +8,7 @@ import { ChordEntry } from "./ChordEntry";
 import { ChordIcon } from "./ChordIcon";
 import { DynamicsRow } from "./DynamicsRow";
 import { InstrumentIcon } from "./InstrumentIcon";
-import { InstrumentMenu } from "./InstrumentMenu";
+import { InstrumentsPanel } from "./InstrumentsPanel";
 import { KeyGrid, keyLabel } from "./KeyGrid";
 import { MarksPalette } from "./MarksPalette";
 import { MeterGrid } from "./MeterGrid";
@@ -22,6 +22,8 @@ type ScoreToolMenusProps = {
   score: Score;
   selection: Selection | null;
   selectedBarId: string | null;
+  /** The instrument lane of a bar picked in one. */
+  selectedStaffId?: string | null;
   ready: boolean;
   onCommand: CommitEdit;
   onError: (message: string) => void;
@@ -40,17 +42,18 @@ export function ScoreToolMenus({
   score,
   selection,
   selectedBarId,
+  selectedStaffId = null,
   ready,
   onCommand,
   onError,
   leading,
   compact = false,
 }: ScoreToolMenusProps) {
-  const target = toolTarget(score, selection, selectedBarId);
+  const target = toolTarget(score, selection, selectedBarId, selectedStaffId);
   const barKey = `${target.measureId}-${score.revision}`;
   const meter = meterName(score.measures[target.barIndex].meter);
-  // The tool shows what plays the selected note's part (or the first part), like Time and Key show theirs.
-  const { instrument } = target.eventId ? partOf(score, target.eventId) : score.parts[0];
+  // The tool shows what plays the selected lane (a note's, or a bar's picked in it), like Time and Key show theirs.
+  const { instrument } = score.parts.find((part) => part.id === target.partId)!;
   return (
     <div
       className={`${surface.glass} ${styles.tools}`}
@@ -63,10 +66,10 @@ export function ScoreToolMenus({
       <ToolPopover
         icon={<InstrumentIcon instrument={instrument} size={ICON.size} />}
         label="Instrument"
-        accessibleLabel="Instrument"
+        accessibleLabel="Instruments"
         disabled={!ready}
       >
-        {(close) => <InstrumentMenu score={score} target={target} onCommand={onCommand} onDone={close} />}
+        <InstrumentsPanel score={score} target={target} onCommand={onCommand} />
       </ToolPopover>
       <ToolPopover
         icon={<span className={styles.valueGlyph}>{meter}</span>}

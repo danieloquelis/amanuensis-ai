@@ -1,5 +1,5 @@
 import type { KeyboardEvent, MouseEvent } from "react";
-import { STAFF_LEFT, type BarScene, type System } from "@/modules/engraving";
+import { STAFF_GAP, stavesLeft, systemBottom, type BarScene, type System } from "@/modules/engraving";
 
 import { BarNumber, Barline, FinalBarline, RepeatEnd, RepeatStart, TimeSignature } from "@/modules/engraving/ui";
 import { MEASURE_WIDTH, meterName } from "@/modules/score";
@@ -8,6 +8,7 @@ import styles from "./score-surface.module.css";
 import { BarMarks } from "./BarMarks";
 import { isMenuKey, pickModeOf, selectableItem, type SheetInteractions } from "./sheet-interactions";
 
+const STAFF_HEIGHT = STAFF_GAP * 4;
 const repeatClasses = { selected: styles.itemSelected, base: styles.annotation };
 
 type SheetBarProps = {
@@ -26,6 +27,10 @@ type SheetBarProps = {
 export function SheetBar({ bar, system, isFirstInSystem, isLastInSystem, interactions }: SheetBarProps) {
   const { commit, openMenu, gestures } = interactions;
   const top = system.top;
+  const bottom = systemBottom(system);
+  // Barlines run through each part's staves; meters and repeat signs are on every staff.
+  const staves = system.staves ?? [{ top, barlineEnd: top + STAFF_HEIGHT }];
+  const parts = staves.filter((staff) => staff.barlineEnd !== undefined);
   const resizable = !isLastInSystem;
   const width = Math.round(bar.width);
   const { selectBar: selectBarById, deleteBar } = interactions;
@@ -53,7 +58,7 @@ export function SheetBar({ bar, system, isFirstInSystem, isLastInSystem, interac
       <BarNumber
         bar={bar}
         // Line-start numbers sit left of the staff, clear of section boxes and chords.
-        x={isFirstInSystem ? STAFF_LEFT : undefined}
+        x={isFirstInSystem ? stavesLeft(system) : undefined}
         y={isFirstInSystem ? system.markY : top - 34}
         className={isFirstInSystem ? styles.barNumber : `${styles.barNumber} ${styles.hoverOnly}`}
         role="button"
@@ -70,6 +75,12 @@ export function SheetBar({ bar, system, isFirstInSystem, isLastInSystem, interac
           if (e.key === "Delete" || e.key === "Backspace") onBarKey(e);
         }}
       />
+      {bar.meterX !== null &&
+        staves
+          .slice(1)
+          .map((staff) => (
+            <TimeSignature key={staff.top} meter={bar.meter} x={bar.meterX!} top={staff.top} className={styles.meter} />
+          ))}
       {bar.meterX !== null && (
         <TimeSignature
           meter={bar.meter}
@@ -91,7 +102,13 @@ export function SheetBar({ bar, system, isFirstInSystem, isLastInSystem, interac
           }}
         />
       )}
-      {bar.final && !bar.repeatEnd ? <FinalBarline x={bar.endX} top={top} /> : <Barline x={bar.endX} top={top} />}
+      {parts.map((part) =>
+        bar.final && !bar.repeatEnd ? (
+          <FinalBarline key={part.top} x={bar.endX} top={part.top} bottom={part.barlineEnd} />
+        ) : (
+          <Barline key={part.top} x={bar.endX} top={part.top} bottom={part.barlineEnd} />
+        ),
+      )}
       <g
         className={resizable ? styles.divider : styles.barTarget}
         role={resizable ? "slider" : "button"}
@@ -125,18 +142,22 @@ export function SheetBar({ bar, system, isFirstInSystem, isLastInSystem, interac
         onPointerUp={gestures.finishGesture}
         onPointerCancel={gestures.cancelGesture}
       >
-        <rect x={bar.endX - 9} y={top - 8} width="18" height="64" fill="transparent" />
-        <line x1={bar.endX} x2={bar.endX} y1={top - 6} y2={top + 54} className={styles.dividerHighlight} />
+        <rect x={bar.endX - 9} y={top - 8} width="18" height={bottom - top + 16} fill="transparent" />
+        <line x1={bar.endX} x2={bar.endX} y1={top - 6} y2={bottom + 6} className={styles.dividerHighlight} />
       </g>
       <BarMarks bar={bar} system={system} interactions={interactions} />
       {bar.repeatStartX !== null && bar.repeatStartId && (
         <g {...selectableItem(interactions, { kind: "repeat", id: bar.repeatStartId }, "Repeat", repeatClasses)}>
-          <RepeatStart x={bar.repeatStartX} barNumber={bar.number} top={top} />
+          {staves.map((staff) => (
+            <RepeatStart key={staff.top} x={bar.repeatStartX!} barNumber={bar.number} top={staff.top} />
+          ))}
         </g>
       )}
       {bar.repeatEnd && bar.repeatEndId && (
         <g {...selectableItem(interactions, { kind: "repeat", id: bar.repeatEndId }, "Repeat", repeatClasses)}>
-          <RepeatEnd bar={bar} top={top} />
+          {staves.map((staff, index) => (
+            <RepeatEnd key={staff.top} bar={bar} top={staff.top} count={index === 0} />
+          ))}
         </g>
       )}
     </g>

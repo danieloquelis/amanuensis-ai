@@ -1,5 +1,5 @@
 import { Play, Stop } from "@phosphor-icons/react";
-import type { ScoreEditor } from "@/modules/editor/ui";
+import { MixerTool, type ScoreEditor } from "@/modules/editor/ui";
 import { TEMPO_RANGE } from "@/modules/score";
 import styles from "./workspace.module.css";
 
@@ -13,7 +13,7 @@ type PlaybackControlsProps = {
   onTogglePlay: () => void;
 };
 
-/** Play/stop and the global tempo, first in the toolbar: listen, then edit. */
+/** Play/stop, the global tempo and (with several parts) the mixer, first in the toolbar: listen, then edit. */
 export function PlaybackControls({ editor, playing, loading, startBar, onTogglePlay }: PlaybackControlsProps) {
   const fromBar = !playing && startBar !== null;
   const label = loading
@@ -37,6 +37,7 @@ export function PlaybackControls({ editor, playing, loading, startBar, onToggleP
         {playing ? <Stop size={18} weight="fill" /> : <Play size={18} weight="fill" />}
       </button>
       <TempoField editor={editor} />
+      <MixerTool editor={editor} />
     </div>
   );
 }

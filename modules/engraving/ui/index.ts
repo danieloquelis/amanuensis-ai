@@ -4,6 +4,7 @@ export { ClefGlyph } from "./components/ClefGlyph";
 export { EventGlyph } from "./components/EventGlyph";
 export { IndicationText } from "./components/IndicationText";
 export { SlurCurve } from "./components/SlurCurve";
+export { SystemStaves } from "./components/SystemStaves";
 export { TieArcs } from "./components/TieArcs";
 export {
   ChordSymbol,

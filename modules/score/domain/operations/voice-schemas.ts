@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { handleSchema } from "./fields";
 import { idSchema, SCORE_LIMITS } from "../schema";
 
 const measureIdsSchema = z.array(idSchema).min(1).max(SCORE_LIMITS.measures);
@@ -10,7 +11,7 @@ export const voiceOperationSchemas = [
   z
     .strictObject({
       type: z.literal("addVoiceBars"),
-      staffId: idSchema.optional().describe("Default: the first staff."),
+      staffId: handleSchema.optional().describe("Default: the first staff."),
       voice: z
         .number()
         .int()
@@ -25,7 +26,7 @@ export const voiceOperationSchemas = [
   z
     .strictObject({
       type: z.literal("removeVoiceBars"),
-      voiceId: idSchema.describe('The voice, e.g. "v2" (the second voice of the first staff).'),
+      voiceId: handleSchema.describe('The voice, e.g. "v2" (the second voice of the first staff).'),
       measureIds: measureIdsSchema.optional().describe("Default: every bar, and the voice leaves the staff."),
     })
     .describe("Remove a voice from bars (its notes go), or from the whole staff. The main line stays."),

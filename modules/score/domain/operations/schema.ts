@@ -11,10 +11,11 @@ import { measureOperationSchemas } from "./measure-schemas";
 import { partOperationSchemas } from "./part-schemas";
 import { voiceOperationSchemas } from "./voice-schemas";
 import { copyOperationSchemas } from "./copy-schemas";
+import { ensembleOperationSchemas } from "./ensemble-schemas";
 import { phraseOperationSchemas } from "./phrase-schemas";
 
-/** Room for a whole score written at once: 32 bars, each added, written, with chords and a section. */
-export const OPERATION_BATCH_LIMIT = 256;
+/** Room for a whole score written at once: 8 parts × 32 bars of notes, with chords and sections. */
+export const OPERATION_BATCH_LIMIT = 1024;
 export type { DurationValue } from "./fields";
 
 export const operationSchema = z.discriminatedUnion("type", [
@@ -96,6 +97,12 @@ export const operationSchema = z.discriminatedUnion("type", [
       tempo: tempoSchema.optional().describe(`Quarter-note BPM. Default: ${NEW_SCORE_DEFAULTS.tempo}.`),
       key: keySignatureSchema.optional().describe("Default: C major."),
       instrument: z.enum(INSTRUMENT_IDS).optional().describe("Default: piano."),
+      instruments: z
+        .array(z.enum(INSTRUMENT_IDS))
+        .min(1)
+        .max(SCORE_LIMITS.parts)
+        .optional()
+        .describe("Several instruments, top to bottom (overrides instrument)."),
     })
     .describe(
       "Start a new song: replace the whole score with empty bars and nothing else. Only when the musician asks to start over or begin a new piece. One undoable edit.",
@@ -106,6 +113,7 @@ export const operationSchema = z.discriminatedUnion("type", [
   ...partOperationSchemas,
   ...voiceOperationSchemas,
   ...copyOperationSchemas,
+  ...ensembleOperationSchemas,
 ]);
 
 const batchSchema = z

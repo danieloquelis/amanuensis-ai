@@ -1,4 +1,4 @@
-import { INSTRUMENT_IDS, INSTRUMENTS, partOf, type Score } from "@/modules/score";
+import { INSTRUMENT_IDS, INSTRUMENTS, type Score } from "@/modules/score";
 import type { ToolTarget } from "../../../application/selection";
 import type { CommitEdit } from "../../hooks/use-score-editor";
 import { InstrumentIcon } from "./InstrumentIcon";
@@ -6,7 +6,7 @@ import styles from "./toolbar.module.css";
 
 const ICON_SIZE = 24;
 
-/** What the selected note's part (or the first part) is played on, one icon per instrument. The notes keep their sound. */
+/** What the selected lane's part (a note's or a bar's, else the first part) is played on, one icon per instrument. The notes keep their sound. */
 export function InstrumentMenu({
   score,
   target,
@@ -18,7 +18,7 @@ export function InstrumentMenu({
   onCommand: CommitEdit;
   onDone: () => void;
 }) {
-  const part = target.eventId ? partOf(score, target.eventId) : score.parts[0];
+  const part = score.parts.find((p) => p.id === target.partId)!;
   return (
     <div className={`${styles.grid} ${styles.wideGrid}`} role="group" aria-label="Instrument">
       {INSTRUMENT_IDS.map((instrument) => (

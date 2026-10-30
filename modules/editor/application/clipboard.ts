@@ -3,15 +3,18 @@ import {
   eventText,
   everyEvent,
   findEvent,
+  findStaff,
   voiceNumber,
   scoreText,
+  staffHandle,
+  voiceInfo,
   voiceLine,
   writeBars,
   type Operation,
   type Score,
 } from "@/modules/score";
 import type { Edit } from "./note-edits";
-import type { SheetRef } from "./sheet-selection";
+import { barRef, type SheetRef } from "./sheet-selection";
 
 /**
  * Copy and paste on the sheet. What is copied is remembered by ID (so a paste in the same score
@@ -24,18 +27,22 @@ export type Clip = {
   ids: string[];
   /** Score text: bar lines numbered from 1 ("bar 1: C4q …"), or the notes themselves ("C4q <E4 G4>h"). */
   text: string;
+  /** Bars copied in one instrument's lane: only that staff's music. */
+  staffId?: string;
 };
 
-const BAR_LINE = /^bar (\d+)((?: \([^)]*\))?(?: v\d)?):/;
+const BAR_LINE = /^bar (\d+)((?: \([^)]*\))?(?: [a-z][\w-]*(?:\.\d)?)?(?: v\d)?):/;
 
-/** The copied bars' lines of score text, renumbered from bar 1. */
-function barsText(score: Score, measureIds: string[]): string {
+/** The copied bars' lines of score text (one staff's, with `staffId`), renumbered from bar 1. */
+function barsText(score: Score, measureIds: string[], staffId?: string): string {
   const numbers = measureIds.map((id) => score.measures.findIndex((m) => m.id === id) + 1);
+  const handle = staffId && staffHandle(score, staffId);
   return scoreText(score)
     .split("\n")
     .flatMap((line) => {
       const match = BAR_LINE.exec(line);
       const at = match ? numbers.indexOf(Number(match[1])) : -1;
+      if (handle && !match?.[2].replace(/ v\d$/, "").endsWith(` ${handle}`)) return [];
       return at === -1 ? [] : [line.replace(BAR_LINE, `bar ${at + 1}$2:`)];
     })
     .join("\n");
@@ -43,10 +50,14 @@ function barsText(score: Score, measureIds: string[]): string {
 
 /** What the selection copies: picked bars (in score order), or the run of notes from the first picked to the last in one voice. */
 export function copyFromSelection(score: Score, picked: SheetRef[]): Clip | null {
-  const bars = picked.filter((ref) => ref.kind === "bar").map((ref) => ref.id);
-  if (bars.length) {
+  const barRefs = picked.filter((ref) => ref.kind === "bar");
+  if (barRefs.length) {
+    const bars = barRefs.map((ref) => ref.id);
     const ids = score.measures.map((m) => m.id).filter((id) => bars.includes(id));
-    return { kind: "bars", scoreId: score.id, ids, text: barsText(score, ids) };
+    // Bars picked in one lane copy that staff only.
+    const staffId = barRefs.every((ref) => ref.staffId === barRefs[0].staffId) ? barRefs[0].staffId : undefined;
+    const text = barsText(score, ids, staffId);
+    return { kind: "bars", scoreId: score.id, ids, text, ...(staffId ? { staffId } : {}) };
   }
   const events = picked.filter((ref) => ref.kind === "event").map((ref) => ref.id);
   if (!events.length) return null;
@@ -90,15 +101,28 @@ export function pasteEdit(
     if (clip.kind === "notes") throw new Error("Those notes are no longer in the score; copy them again.");
     return { ...pasteBarsText(score, clip.text, measureId, requestId), pasted: () => [] };
   }
+  // The lane pasted into: the bar's, or the note's staff.
+  const laneId = ref.kind === "bar" ? ref.staffId : found ? voiceInfo(score, found.voiceId)!.staff.id : undefined;
+  const toStaffId = clip.staffId ? (laneId ?? clip.staffId) : undefined;
   const own = clip.kind === "bars" ? measureId : ref.id;
-  const run = clip.ids.includes(own) ? clip.ids : followUp.includes(own) ? followUp : null;
-  if (clip.kind === "bars") return pasteBars(score, clip, run ? { after: run.at(-1)! } : { at: measureId }, requestId);
-  const at = found?.event.id ?? barEvents(score.measures[barIndex(score, measureId)])[0].id;
+  const sameLane = toStaffId === clip.staffId;
+  const run = clip.ids.includes(own) && sameLane ? clip.ids : followUp.includes(own) ? followUp : null;
+  if (clip.kind === "bars") {
+    return pasteBars(score, clip, run ? { after: run.at(-1)! } : { at: measureId }, requestId, toStaffId);
+  }
+  const laneVoice = laneId ? findStaff(score, laneId)?.voices[0].id : undefined;
+  const at = found?.event.id ?? barEvents(score.measures[barIndex(score, measureId)], laneVoice)[0].id;
   return pasteNotes(score, clip, run ? { after: run.at(-1)! } : { at }, requestId);
 }
 
-/** Copied bars from a bar on, or right after one (a bar is added when it was the last). */
-function pasteBars(score: Score, clip: Clip, where: { at: string } | { after: string }, requestId: string): PasteEdit {
+/** Copied bars from a bar on, or right after one (a bar is added when it was the last); one lane's onto `toStaffId`. */
+function pasteBars(
+  score: Score,
+  clip: Clip,
+  where: { at: string } | { after: string },
+  requestId: string,
+  toStaffId?: string,
+): PasteEdit {
   const operations: Operation[] = [];
   const after = "after" in where ? where.after : null;
   let toMeasureId = after ? score.measures[barIndex(score, after) + 1]?.id : (where as { at: string }).at;
@@ -106,10 +130,11 @@ function pasteBars(score: Score, clip: Clip, where: { at: string } | { after: st
     operations.push({ type: "appendMeasure", afterMeasureId: after! });
     toMeasureId = `${requestId}-0-bar`;
   }
-  operations.push({ type: "copyBars", measureIds: clip.ids, toMeasureId });
+  const lanes = clip.staffId ? { fromStaffId: clip.staffId, toStaffId } : {};
+  operations.push({ type: "copyBars", measureIds: clip.ids, toMeasureId, ...lanes });
   const pasted = (after: Score) => {
     const start = barIndex(after, toMeasureId);
-    return after.measures.slice(start, start + clip.ids.length).map((m): SheetRef => ({ kind: "bar", id: m.id }));
+    return after.measures.slice(start, start + clip.ids.length).map((m) => barRef(m.id, toStaffId));
   };
   const count = clip.ids.length;
   return { operation: single(operations), receipt: `Pasted ${count} bar${count === 1 ? "" : "s"}`, pasted };
@@ -160,7 +185,11 @@ export function pasteBarsText(score: Score, text: string, measureId: string, req
 export function cutEdit(clip: Clip): Edit {
   const operations: Operation[] =
     clip.kind === "bars"
-      ? clip.ids.map((measureId) => ({ type: "clearMeasure", measureId }))
+      ? clip.ids.map((measureId) => ({
+          type: "clearMeasure",
+          measureId,
+          ...(clip.staffId ? { staffId: clip.staffId } : {}),
+        }))
       : clip.ids.map((eventId) => ({ type: "removeEvent", eventId }));
   return {
     operation: { type: "batch", operations } as Operation,

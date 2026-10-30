@@ -53,10 +53,10 @@ export const transcribeSchema = z.strictObject({
           ),
         voice: z
           .string()
-          .regex(/^v[1-4]$/)
+          .regex(/^(?:v[1-4]|[a-z][\w-]*(?:\.\d)?(?:\/v[1-4])?)$/)
           .optional()
           .describe(
-            'Which line to write it into: "v2" is a second voice on the staff, stems down, e.g. a bass line under the melody (guitar thumb and fingers). Default: the main line.',
+            'Which line to write it into: "v2" is a second voice on the staff (a bass under the melody, guitar thumb and fingers); an instrument or staff by its handle ("trumpet", "piano.2", "piano.2/v2"). Default: the main line.',
           ),
       }),
     )

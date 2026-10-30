@@ -1,4 +1,4 @@
-import { getMeasure } from "../queries";
+import { getMeasure, getStaff } from "../queries";
 import type { Draft, OperationContext } from "./draft";
 import type { OperationOf } from "./schema";
 
@@ -40,7 +40,7 @@ export function putAnnotation(draft: Draft, op: OperationOf<"putAnnotation">, { 
     targetId: op.targetId,
     kind: op.kind,
     text: op.text,
-    ...(onBar ? { staffId: draft.parts[0].staves[0].id } : {}),
+    ...(onBar ? { staffId: getStaff(draft, op.staffId).id } : {}),
   };
   draft.annotations = [...draft.annotations.filter((a) => a.id !== annotation.id), annotation];
 }

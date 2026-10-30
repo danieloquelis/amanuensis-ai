@@ -13,12 +13,12 @@ const MAX_SLOPE = 0.3;
 const isSixteenth = (item: EngravedEvent | undefined) =>
   item !== undefined && durationNotation(item.event.duration).base === 0.25;
 
-/** Draws the beams of one placed bar and sets each beamed note's stem to meet its beam. */
-export function beamBar(analyzed: AnalyzedBar, events: EngravedEvent[], top: number): Beam[] {
+/** Draws the beams of one placed bar and sets each beamed note's stem to meet its beam. `tops` are the staves' top lines. */
+export function beamBar(analyzed: AnalyzedBar, events: EngravedEvent[], tops: number[]): Beam[] {
   return analyzed.beamGroups.flatMap((indexes) =>
     beamGroup(
       indexes.map((i) => events[i]),
-      top,
+      tops[analyzed.events[indexes[0]].staff],
     ),
   );
 }

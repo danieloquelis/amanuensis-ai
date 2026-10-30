@@ -22,7 +22,19 @@ export type Turn = {
   heard?: TakePart[];
   /** The selection the request was about ("Bars 3–6"), shown with it in the chat. */
   context?: string;
+  /** How long the answer took, from sending to the reply (or the failure). */
+  seconds?: number;
 };
+
+const SECONDS_PER_MINUTE = 60;
+
+/** "14 s", or "1 min 20 s" for a long one. */
+export function answerTime(seconds: number): string {
+  const whole = Math.max(1, Math.round(seconds));
+  if (whole < SECONDS_PER_MINUTE) return `${whole} s`;
+  const rest = whole % SECONDS_PER_MINUTE;
+  return `${Math.floor(whole / SECONDS_PER_MINUTE)} min${rest ? ` ${rest} s` : ""}`;
+}
 
 /** Port for keeping the conversation with the current song. Implementations may throw. */
 export interface ChatRepository {
@@ -49,6 +61,7 @@ const savedTurnSchema = z.object({
   spoken: z.boolean().optional(),
   heard: z.array(takePartSchema).optional(),
   context: z.string().optional(),
+  seconds: z.number().nonnegative().optional(),
 });
 
 /** The finished turns worth keeping, newest last; one still working is left out. */

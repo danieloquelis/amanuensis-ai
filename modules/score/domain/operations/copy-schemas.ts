@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { idSchema, SCORE_LIMITS } from "../schema";
-import { eventId, measureId } from "./fields";
+import { eventId, handleSchema, measureId } from "./fields";
 
 /** Copy and paste: whole bars, or a run of notes, written again elsewhere. */
 export const copyOperationSchemas = [
@@ -13,9 +13,17 @@ export const copyOperationSchemas = [
         .max(SCORE_LIMITS.measures)
         .describe('The bars to copy, in the order to write them, e.g. ["1", "2"].'),
       toMeasureId: measureId.describe("The first bar to write them into; bars are added past the end."),
+      fromStaffId: handleSchema
+        .optional()
+        .describe('Copy only this staff\'s music ("trumpet", "piano.2"), not the whole bars.'),
+      toStaffId: handleSchema
+        .optional()
+        .describe(
+          'With fromStaffId: the staff to write it on, e.g. "piano" to give the trumpet\'s line to the piano. Default: the same staff.',
+        ),
     })
     .describe(
-      "Copy whole bars (every voice, meter, chord symbols, dynamics and text, slurs within them) over the bars from toMeasureId on, e.g. repeat bars 1–2 at bar 5. What those bars held is replaced; sections and marks stay.",
+      "Copy whole bars (every voice, meter, chord symbols, dynamics and text, slurs within them) over the bars from toMeasureId on, e.g. repeat bars 1–2 at bar 5. What those bars held is replaced; sections and marks stay. With fromStaffId, only that staff's music is copied, onto toStaffId (voice by voice, same time signature); other staves and chords stay.",
     ),
   z
     .strictObject({

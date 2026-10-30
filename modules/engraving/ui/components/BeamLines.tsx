@@ -13,7 +13,7 @@ export function BeamLines({ beams }: { beams: Beam[] }) {
     ];
     return (
       <polygon
-        key={`${beam.x1}-${beam.level}`}
+        key={`${beam.x1},${beam.y1}-${beam.level}`}
         points={points.map(([x, y]) => `${x},${y}`).join(" ")}
         fill="currentColor"
         pointerEvents="none"

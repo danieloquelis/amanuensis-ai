@@ -1,4 +1,5 @@
 import {
+  DEFAULT_PART_VOLUME,
   eventPitches,
   legatoIds,
   measureStarts,
@@ -6,6 +7,8 @@ import {
   nextEvent,
   soundingBeats,
   voiceBars,
+  voiceInfo,
+  type Part,
   type Score,
   type ScoreEvent,
 } from "@/modules/score";
@@ -31,35 +34,52 @@ function gateOf(event: ScoreEvent, slurred: boolean) {
   return GATE.normal;
 }
 
+/** The voices of a staff. */
+const voiceInfoOfStaff = (score: Score, staffId: string) =>
+  score.parts
+    .flatMap((p) => p.staves)
+    .find((s) => s.id === staffId)
+    ?.voices.map((v) => v.id) ?? [];
+
+const MAX_VELOCITY = 127;
+
+/** A part's mixer level applied to a velocity: louder or softer, never past the MIDI range. */
+const mixed = (velocity: number, part: Part) =>
+  Math.max(
+    1,
+    Math.min(MAX_VELOCITY, Math.round((velocity * (part.volume ?? DEFAULT_PART_VOLUME)) / DEFAULT_PART_VOLUME)),
+  );
+
 /**
- * Each bar's voices (the main line first) with tempo, dynamics, articulation and slurs applied;
- * times not yet placed. A dynamic on a bar sets every voice; one on a note sets its own voice.
+ * Each bar's voices (every part, the main line first) with tempo, dynamics, articulation, slurs
+ * and the mixer applied; times not yet placed. A dynamic on a bar sets the voices of its staff;
+ * one on a note sets its own voice. A muted part keeps its timing and sounds nothing.
  */
 export function resolveWrittenEvents(score: Score): WrittenLine[][] {
   const starts = measureStarts(score);
   const dynamicAt = (targetId: string) =>
     score.annotations.find((a) => a.targetId === targetId && a.kind === "dynamic");
   const legato = legatoIds(score);
+  const firstStaff = score.parts[0].staves[0].id;
   let tempo = score.tempo;
-  let barVelocity = DEFAULT_VELOCITY;
+  const staffVelocity = new Map<string, number>();
   const velocities = new Map<string, number>();
-  // Every voice is played by the first part for now: scores hold one instrument.
-  const instrument = score.parts[0].instrument;
   return score.measures.map((measure, measureIndex) => {
     tempo = measure.tempo ?? tempo;
-    const measureDynamic = dynamicAt(measure.id);
-    if (measureDynamic) {
-      barVelocity = DYNAMIC_VELOCITY[measureDynamic.text];
-      velocities.clear();
+    for (const dynamic of score.annotations.filter((a) => a.targetId === measure.id && a.kind === "dynamic")) {
+      const staffId = dynamic.staffId ?? firstStaff;
+      staffVelocity.set(staffId, DYNAMIC_VELOCITY[dynamic.text]);
+      for (const voice of voiceInfoOfStaff(score, staffId)) velocities.delete(voice);
     }
     // A repeat (%) bar plays its source bar's notes in its own written place and tempo.
     const source = score.measures[soundingSource(score, measureIndex)];
     return voiceBars(source).map(({ voiceId, events }) => {
+      const { part, staff } = voiceInfo(score, voiceId)!;
       let localBeat = 0;
       return events.map((event) => {
         const eventDynamic = dynamicAt(event.id);
         if (eventDynamic) velocities.set(voiceId, DYNAMIC_VELOCITY[eventDynamic.text]);
-        const velocity = velocities.get(voiceId) ?? barVelocity;
+        const velocity = velocities.get(voiceId) ?? staffVelocity.get(staff.id) ?? DEFAULT_VELOCITY;
         const length = soundingBeats(event);
         const stretch = event.articulation === "fermata" ? FERMATA_STRETCH : 1;
         const entry = {
@@ -67,9 +87,9 @@ export function resolveWrittenEvents(score: Score): WrittenLine[][] {
           beat: starts[measureIndex] + localBeat,
           beats: length,
           duration: ((length * 60) / tempo) * stretch,
-          notes: notesOf(event),
-          velocity: accented(velocity, event.articulation === "accent"),
-          instrument,
+          notes: part.muted ? [] : notesOf(event),
+          velocity: mixed(accented(velocity, event.articulation === "accent"), part),
+          instrument: part.instrument,
           voice: voiceId,
           gate: gateOf(event, legato.has(event.id)),
           ...(event.tie ? { tiedTo: nextEvent(score, event.id)?.id } : {}),

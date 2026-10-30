@@ -7,8 +7,15 @@ const CLEF_X = 50;
 /** The small 8 under an octave-lower treble clef sits below the clef's tail. */
 const OCTAVE_MARK = { dx: 13, dy: 90, size: 11 };
 
-/** The clef at the start of every system. Original vector geometry, like the treble clef. */
-export function ClefGlyph({ clef, top }: { clef: Clef; top: number }) {
+/** The clef at the start of every system, `indent` right of the usual place. Original vector geometry, like the treble clef. */
+export function ClefGlyph({ clef, top, indent = 0 }: { clef: Clef; top: number; indent?: number }) {
+  if (indent) {
+    return (
+      <g transform={`translate(${indent} 0)`}>
+        <ClefGlyph clef={clef} top={top} />
+      </g>
+    );
+  }
   if (clef === "bass") return <BassClef top={top} />;
   if (clef === "percussion") return <PercussionClef top={top} />;
   return (

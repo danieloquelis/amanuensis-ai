@@ -22,6 +22,8 @@ export const eventId = idSchema.describe(
   'A note or rest: "2#5" (the 5th note or rest of bar 2) or "2:3" (bar 2, beat 3); in the second voice "2v2#1" or "2v2:3". IDs work too.',
 );
 export const measureId = idSchema.describe('A bar by number, e.g. "2". IDs work too.');
+/** A part, staff or voice by ID or by its handle in score text ("trumpet", "piano.2", "piano.2/v2", "v2"). */
+export const handleSchema = z.string().regex(/^[\w.\/-]{1,100}$/);
 export const beatSchema = z
   .number()
   .min(0)

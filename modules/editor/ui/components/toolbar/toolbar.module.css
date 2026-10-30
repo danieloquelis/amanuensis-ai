@@ -231,3 +231,117 @@
     display: none !important;
   }
 }
+
+/* Instruments panel and mixer: one row per part. */
+.instruments {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.partList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 8px 0 0;
+  border-top: 1px solid var(--line-strong);
+  list-style: none;
+}
+
+/* Rows keep their content off the edge of the highlight on the selected lane's part. */
+.partRow,
+.mixerRow {
+  padding: 0 4px 0 8px;
+  border-radius: var(--r-md);
+  corner-shape: squircle;
+  display: grid;
+  grid-template-columns: 24px 1fr repeat(4, 34px);
+  align-items: center;
+  gap: 4px;
+}
+
+.mixerRow {
+  grid-template-columns: 24px minmax(90px, 1fr) 34px 120px;
+}
+
+.partList:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.partRow button,
+.mixerRow button,
+.addParts button {
+  display: grid;
+  place-items: center;
+  height: 32px;
+  border: 0;
+  border-radius: var(--r-sm);
+  corner-shape: squircle;
+  background: transparent;
+  color: inherit;
+}
+
+.partRow button:hover:not(:disabled),
+.mixerRow button:hover,
+.addParts button:hover {
+  background: var(--hover);
+}
+
+.partRow button:disabled {
+  opacity: 0.3;
+}
+
+.partRow button[aria-pressed="true"],
+.mixerRow button[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.partName {
+  min-width: 0;
+  width: 150px;
+  padding: 5px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+}
+
+.partName:hover,
+.partName:focus {
+  border-color: var(--line-strong);
+  outline: none;
+}
+
+.mixerName {
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.addParts {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0 0 8px;
+  border-top: 1px solid var(--line-strong);
+  color: var(--muted);
+}
+
+.addParts button {
+  width: 40px;
+}
+
+.mixerRow input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.partRow[aria-current="true"] {
+  background: var(--accent-soft);
+}

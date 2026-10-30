@@ -3,7 +3,14 @@ export { describeScore, SCORE_VOCABULARY, summarizeChange } from "./application/
 export { createSession, execute, executeAll, travel, type Session } from "./application/session";
 export { positionOf } from "./application/notation-positions";
 export { resolvePositions } from "./application/positions";
-export { durationCode, eventText, pitchText, SCORE_TEXT_GUIDE, scoreText } from "./application/score-text";
+export {
+  durationCode,
+  eventText,
+  pitchText,
+  SCORE_TEXT_GUIDE,
+  scoreText,
+  type ScoreTextFilter,
+} from "./application/score-text";
 export { parseBarsText } from "./application/score-text-parse";
 export { writeBars } from "./application/score-text-write";
 export {
@@ -98,6 +105,7 @@ export {
   type Staff,
   type Clef,
   CLEFS,
+  DEFAULT_PART_VOLUME,
   type Pitch,
   type Repeat,
   type Score,
@@ -135,6 +143,7 @@ export {
   type VoiceInfo,
 } from "./domain/voice-access";
 export { toConcert, toWritten, transpositionOf, writtenKey } from "./domain/transposition";
+export { findPart, findStaff, findVoiceId, partHandles, staffHandle } from "./domain/handles";
 export {
   createPart,
   INSTRUMENT_IDS,

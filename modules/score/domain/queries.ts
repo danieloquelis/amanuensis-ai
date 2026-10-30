@@ -1,6 +1,7 @@
 import { measureCapacity } from "./rhythm";
-import type { Measure, Score, Staff } from "./schema";
-import { allStaves, measureEvents, numberedVoice, voiceBars, voiceInfo } from "./voice-access";
+import type { Measure, Part, Score, Staff } from "./schema";
+import { findPart, findStaff, findVoiceId } from "./handles";
+import { allStaves, measureEvents, voiceBars } from "./voice-access";
 
 /** Where an event is: its bar, its voice there, and its index within that voice bar. */
 export function findEvent(score: Score, id: string) {
@@ -29,24 +30,28 @@ export function getMeasure(score: Score, id: string): Measure {
   return measure;
 }
 
-/** "v2": voice 2 of the first staff, as score text names it. */
-const VOICE_HANDLE = /^v(\d)$/;
-
-/** A voice by ID or by handle ("v2"), resolved when the operation runs; throws when there is none. */
+/**
+ * A voice by ID or handle ("v2", "piano.2/v2", "trumpet"), resolved when the operation runs;
+ * throws when there is none.
+ */
 export function resolveVoice(score: Score, voiceId: string): string {
-  if (voiceInfo(score, voiceId)) return voiceId;
-  const handle = VOICE_HANDLE.exec(voiceId);
-  const id = handle && numberedVoice(score, Number(handle[1]));
+  const id = findVoiceId(score, voiceId);
   if (!id) throw new Error(`There is no voice ${voiceId}; add it with addVoiceBars first.`);
   return id;
 }
 
-/** A staff by ID; the first staff when omitted. */
+/** A staff by ID or handle ("piano.2"); the first staff when omitted. */
 export function getStaff(score: Score, id?: string): Staff {
-  const staves = allStaves(score);
-  const staff = id === undefined ? staves[0] : staves.find((s) => s.id === id);
-  if (!staff) throw new Error("That staff is not in the score.");
+  const staff = id === undefined ? allStaves(score)[0] : findStaff(score, id);
+  if (!staff) throw new Error(`There is no staff ${id}.`);
   return staff;
+}
+
+/** A part by ID or handle ("trumpet"); the first part when omitted. */
+export function getPart(score: Score, id?: string): Part {
+  const part = id === undefined ? score.parts[0] : findPart(score, id);
+  if (!part) throw new Error(`There is no part ${id}.`);
+  return part;
 }
 
 /** IDs that selections and indications may anchor to. */

@@ -38,6 +38,8 @@ export type EngravedEvent = {
   chordTop?: number;
   /** The pitches it sounds, lowest first, when the staff shows a transposing part as written (the event's are written). */
   sounds?: Pitch[];
+  /** Its staff in the system, counted from 0; absent on the first. */
+  staff?: number;
 };
 
 /** A beam segment. `y1`/`y2` are the stem tips (outer edge); thickness grows toward the noteheads. */
@@ -113,11 +115,30 @@ export type SceneLabel = {
   y: number;
   text: string;
   kind: "text" | "dynamic";
+  /** A dynamic's staff, counted from 0; absent on the first. */
+  staff?: number;
+};
+
+/** One staff of a system with several: its header, and on a part's first staff the part's name and barline reach. */
+export type StaffScene = {
+  staffId: string;
+  top: number;
+  clef: Clef;
+  keySignature: KeyAccidentalMark[];
+  /** Barlines run from this staff down to here: the bottom of the part's last staff. Absent below a part's first staff. */
+  barlineEnd?: number;
+  /** A brace joins the part's staves (a grand staff). */
+  brace?: boolean;
+  name?: { text: string; y: number };
 };
 
 export type System = {
   /** Y of the top staff line. */
   top: number;
+  /** With more than one staff, every staff, top down (the first is `top`, `clef`, `keySignature`). */
+  staves?: StaffScene[];
+  /** How far right of the usual start the staves begin, leaving room for part names. */
+  indent?: number;
   /** Index of the first measure on this system. */
   firstMeasure: number;
   /** Where the staff lines end: the last barline. */

@@ -1,13 +1,14 @@
 import { z } from "zod";
+import { handleSchema } from "./fields";
 import { INSTRUMENT_IDS } from "../instruments";
-import { CLEFS, idSchema } from "../schema";
+import { CLEFS } from "../schema";
 
 /** Operations on parts and staves: the instrument a part is played on, and a staff's clef. */
 export const partOperationSchemas = [
   z
     .strictObject({
       type: z.literal("setInstrument"),
-      partId: idSchema.optional().describe("Default: the first part."),
+      partId: handleSchema.optional().describe("Default: the first part."),
       instrument: z
         .enum(INSTRUMENT_IDS)
         .describe("trumpet is a B♭ trumpet (written a major 2nd above its sound); guitar is written an octave up."),
@@ -19,7 +20,7 @@ export const partOperationSchemas = [
   z
     .strictObject({
       type: z.literal("setClef"),
-      staffId: idSchema.optional().describe("Default: the first staff."),
+      staffId: handleSchema.optional().describe("Default: the first staff."),
       clef: z
         .enum(CLEFS)
         .describe("treble8vb: treble clef with an 8 below, sounding an octave lower (guitar). percussion: drums only."),

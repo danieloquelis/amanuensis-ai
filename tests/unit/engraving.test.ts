@@ -2,7 +2,15 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { beatX, layoutScore, type Scene } from "@/modules/engraving";
-import { applyCommand, createExample, movePitch, parseScore, type Operation, type Score } from "@/modules/score";
+import {
+  applyCommand,
+  createExample,
+  movePitch,
+  parseScore,
+  writeBars,
+  type Operation,
+  type Score,
+} from "@/modules/score";
 
 const FIXTURES = "tests/fixtures/engraving";
 const LINE_END = 846;
@@ -180,4 +188,24 @@ test("the playhead moves forward through a bar at the music's pace", () => {
 
 test("layout is deterministic", () => {
   for (const score of allFixtures()) assert.deepEqual(layoutScore(score), layoutScore(parseScore(score)));
+});
+
+test("where voices share a staff, rests move out of the other voice's notes", () => {
+  const score = writeBars(
+    createExample(),
+    "bar 1: rq <E4 G4 B4>q <E4 G4 B4>q <E4 G4 B4>q\nbar 1 v2: C4q rq rq rq",
+    "waltz",
+  ).score;
+  const events = eventsOf(layoutScore(score)).filter((e) => e.measure === 0);
+  const STEP = 6;
+  for (const rest of events.filter((e) => !e.event.pitch)) {
+    const beside = events.filter((e) => e.event.pitch && e.voice !== rest.voice && e.localBeat === rest.localBeat);
+    const heads = beside.flatMap((e) => e.heads?.map((h) => h.y) ?? [e.y]);
+    if (rest.voice === 2) {
+      // A quarter rest reaches 2.5 steps up; the chord's lowest head a step down.
+      assert.ok(rest.y - 2.5 * STEP > Math.max(...heads) + STEP, `beat ${rest.localBeat + 1}: below the chord`);
+    } else {
+      assert.ok(rest.y + 3 * STEP < Math.min(...heads) - STEP, "the upper voice's rest clears the bass note");
+    }
+  }
 });

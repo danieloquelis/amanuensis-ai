@@ -1,5 +1,6 @@
 import { formatChord, isNote, type Score } from "@/modules/score";
 import { beatX, type EngravedEvent, type System } from "./scene";
+import { staffOf } from "./staff-layout";
 
 /** Space between the topmost ink and the chord row, and between rows. */
 const CHORD_CLEARANCE = 10;
@@ -19,12 +20,13 @@ function eventTop(item: EngravedEvent, systemTop: number): number {
 }
 
 /**
- * Stacks the rows above a staff: chord symbols just clear of the highest note, stem or beam,
+ * Stacks the rows above the top staff: chord symbols just clear of its highest note, stem or beam,
  * then marks (sections, segno/coda, tempo, D.C./D.S.) above the chords.
  */
 export function placeAboveStaff(system: System, score: Score): void {
+  const topStaff = system.events.filter((e) => staffOf(e) === 0);
   const beamTops = system.beams.filter((b) => !b.down).map((b) => Math.min(b.y1, b.y2));
-  const inkTop = Math.min(system.top, ...system.events.map((e) => eventTop(e, system.top)), ...beamTops);
+  const inkTop = Math.min(system.top, ...topStaff.map((e) => eventTop(e, system.top)), ...beamTops);
   system.chordY = Math.min(system.top - 14, inkTop - CHORD_CLEARANCE);
   system.chords = system.bars.flatMap((bar) =>
     score.chords

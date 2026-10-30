@@ -1,4 +1,4 @@
-import type { EngravedEvent, System } from "@/modules/engraving";
+import { staffOf, staffTop, type EngravedEvent, type System } from "@/modules/engraving";
 import { EventGlyph } from "@/modules/engraving/ui";
 import { eventPitches, pitchName, soundingBeats, type Pitch } from "@/modules/score";
 import { classNames } from "@/shared/ui/class-names";
@@ -15,6 +15,8 @@ import {
 type SheetEventProps = {
   item: EngravedEvent;
   system: System;
+  /** Its part, named first in its label when the score has several. */
+  partName?: string;
   selected: boolean;
   playBeat: number | null;
   interactions: SheetInteractions;
@@ -39,7 +41,7 @@ function pitchLabel({ event, sounds, outOfRange }: EngravedEvent) {
  * A selectable, draggable note or rest; Shift/⌘-click adds it to the selection. Keyboard: ↑/↓ step the pitch, A–G enter a note (Shift+A–G adds it to the chord),
  * Delete turns a note into a rest, S slurs, Enter opens its menu.
  */
-export function SheetEvent({ item, system, selected, playBeat, interactions }: SheetEventProps) {
+export function SheetEvent({ item, system, partName, selected, playBeat, interactions }: SheetEventProps) {
   const { select, stepPitch, removeEvent, enterLetter, openMenu, gestures, pick, focusEvent } = interactions;
   const { event, x, y } = item;
   const length = soundingBeats(event);
@@ -56,7 +58,7 @@ export function SheetEvent({ item, system, selected, playBeat, interactions }: S
       )}
       role="button"
       tabIndex={0}
-      aria-label={`Bar ${item.measure + 1}, beat ${item.localBeat + 1}, ${item.voice > 1 ? `voice ${item.voice}, ` : ""}${pitchLabel(item)}, ${length} beats`}
+      aria-label={`${partName ? `${partName}, bar` : "Bar"} ${item.measure + 1}, beat ${item.localBeat + 1}, ${item.voice > 1 ? `voice ${item.voice}, ` : ""}${pitchLabel(item)}, ${length} beats`}
       aria-pressed={selected}
       onFocus={() => focusEvent(event.id)}
       // A Shift/⌘ click adds to the selection without moving focus (which would select only this).
@@ -122,7 +124,11 @@ export function SheetEvent({ item, system, selected, playBeat, interactions }: S
       />
       <g pointerEvents="none">
         {selected && <ellipse className={styles.halo} cx={x} cy={y} rx="18" ry="15" />}
-        <EventGlyph item={item} systemTop={system.top} beamed={system.beamedIds.includes(event.id)} />
+        <EventGlyph
+          item={item}
+          systemTop={staffTop(system, staffOf(item))}
+          beamed={system.beamedIds.includes(event.id)}
+        />
       </g>
     </g>
   );

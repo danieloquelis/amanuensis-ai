@@ -652,6 +652,18 @@
   color: #3f8a55;
 }
 
+/* How long the answer took, quietly at the end of the row. */
+.answerTime {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+
 /* Undo or Retry, beside an answer. */
 .turnAction {
   display: inline-flex;

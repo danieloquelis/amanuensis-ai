@@ -20,6 +20,7 @@ import { setClef, setInstrument } from "./part-operations";
 import { addVoiceBars, removeVoiceBars } from "./voice-operations";
 import { copyBars } from "./copy-bars";
 import { copyNotes } from "./copy-notes";
+import { addPart, movePart, removePart, renamePart, setPartMix, setStaffCount } from "./ensemble-operations";
 import { putSlur, shapeSlur, transpose } from "./phrase-operations";
 import { putAnnotation, putRepeat, removeNotation, removeTempo, rename, setKey, setTempo } from "./notation-operations";
 import { commandSchema, type Command, type OperationOf, type OperationType } from "./schema";
@@ -65,6 +66,12 @@ const handlers: OperationHandlers = {
   removeVoiceBars,
   copyBars,
   copyNotes,
+  addPart,
+  removePart,
+  movePart,
+  renamePart,
+  setStaffCount,
+  setPartMix,
 };
 
 /**

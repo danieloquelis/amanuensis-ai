@@ -3,34 +3,33 @@ import {
   barStyle,
   beatGroupLength,
   durationNotation,
-  eventPitches,
-  eventOnsets,
   isNote,
-  keyAlter,
   measureCapacity,
   measureStarts,
   meterName,
-  scoreKey,
   voiceBars,
-  voiceNumber,
-  staffPosition,
+  type KeySignature,
   type MarkKind,
   type Measure,
   type Score,
   type ScoreEvent,
 } from "@/modules/score";
-import { CLEF_BOTTOM_LINE, staffClef } from "./clefs";
 import { headPositions, layoutChord, type ChordHead } from "./chord-heads";
 import { onsetColumns, type Column } from "./columns";
-import { MIDDLE_LINE } from "./scene";
 import { eventExtents } from "./spacing";
-import { resolveCollisions, restPosition, stemsDown } from "./voice-layout";
+import { analyzeEvents, groupStemsDown } from "./event-analysis";
+import { resolveCollisions } from "./voice-layout";
 
 /** Everything about an event that does not depend on horizontal placement. */
 export type AnalyzedEvent = {
   event: ScoreEvent;
-  /** The event's voice on the staff, from 1 (the main line). */
+  /** The event's voice on its staff, from 1 (the main line). */
   voice: number;
+  voiceId: string;
+  /** The staff it is on, counted down the system from 0. */
+  staff: number;
+  /** Other voices share its staff in this bar: stems and curves keep to each voice's side. */
+  shared: boolean;
   localBeat: number;
   /** Steps above the bottom staff line. Rests sit on the middle line, or off it when voices share the staff. */
   position: number;
@@ -59,7 +58,7 @@ export type AnalyzedBar = {
   beamGroups: number[][];
   /** Events grouped by onset, in time order: what horizontal spacing works on. */
   columns: Column[];
-  /** More than one voice plays in the bar. */
+  /** More than one voice plays in the bar, on any staff: a whole-bar rest is then centred on its own. */
   polyphonic: boolean;
   measureRest: boolean;
   /** True when this bar needs a time signature (first bar or a change). */
@@ -72,17 +71,18 @@ export type AnalyzedBar = {
   repeatEndId: string | null;
 };
 
-export function analyzeScore(score: Score): AnalyzedBar[] {
+/** Every bar, all staves; `staffKeys` are the keys each staff is written in (transposing parts differ). */
+export function analyzeScore(score: Score, staffKeys: Map<string, KeySignature> = new Map()): AnalyzedBar[] {
   const starts = measureStarts(score);
   return score.measures.map((measure, index) => {
     const previous = score.measures[index - 1];
     const polyphonic = voiceBars(measure).length > 1;
-    const events = analyzeEvents(score, measure, polyphonic);
-    // Beams join notes of one voice; with several voices each voice's stems keep their side.
-    const voices = [...new Set(events.map((item) => item.voice))];
+    const events = analyzeEvents(score, measure, staffKeys);
+    // Beams join notes of one voice; where voices share a staff, each voice's stems keep their side.
+    const voices = [...new Set(events.map((item) => item.voiceId))];
     const beamGroups = voices.flatMap((voice) => findBeamGroups(measure, events, voice));
     beamGroups.forEach((group, groupIndex) => {
-      const down = polyphonic
+      const down = events[group[0]].shared
         ? events[group[0]].stemDown
         : groupStemsDown(group.flatMap((i) => headPositions(events[i])));
       for (const i of group) Object.assign(events[i], { beamGroup: groupIndex, stemDown: down });
@@ -116,61 +116,8 @@ export function analyzeScore(score: Score): AnalyzedBar[] {
 
 const isMeasureRest = (events: ScoreEvent[]) => events.length === 1 && Boolean(events[0].measureRest);
 
-/**
- * Every voice's events, with positions and accidentals. An accidental holds for its staff position
- * until the barline, whichever voice it is in, in the order the notes are played.
- */
-function analyzeEvents(score: Score, measure: Measure, polyphonic: boolean): AnalyzedEvent[] {
-  const key = scoreKey(score);
-  const bottomLine = CLEF_BOTTOM_LINE[staffClef(score)];
-  const events = voiceBars(measure).flatMap(({ voiceId, events: voiceEvents }) => {
-    const voice = voiceNumber(score, voiceId);
-    const onsets = eventOnsets(voiceEvents);
-    return voiceEvents.map((event, index): AnalyzedEvent => {
-      const position = event.pitch ? staffPosition(event.pitch) - bottomLine : restPosition(event, voice, polyphonic);
-      const chord = event.stack
-        ? eventPitches(event).map((p) => ({
-            position: staffPosition(p) - bottomLine,
-            accidental: null,
-            dx: 0,
-            accidentalShift: 0,
-          }))
-        : undefined;
-      const extremes = chord ? chord.map((h) => h.position) : [position];
-      return {
-        event,
-        voice,
-        localBeat: onsets[index],
-        position,
-        accidental: null,
-        // A lone chord's stem is set by its note farthest from the middle line.
-        stemDown: polyphonic ? stemsDown(voice) : groupStemsDown(extremes),
-        ...(chord ? { heads: chord } : {}),
-        beamGroup: null,
-        left: 0,
-        right: 0,
-        xShift: 0,
-        accidentalShift: 0,
-      };
-    });
-  });
-  const alterations = new Map<string, number>();
-  const played = [...events].sort((a, b) => a.localBeat - b.localBeat || a.voice - b.voice);
-  for (const item of played) {
-    eventPitches(item.event).forEach((pitch, k) => {
-      const at = `${pitch.step}${pitch.octave}`;
-      const current = alterations.get(at) ?? keyAlter(key, pitch.step);
-      const accidental = current !== pitch.alter ? pitch.alter : null;
-      alterations.set(at, pitch.alter);
-      if (item.heads) item.heads[k].accidental = accidental;
-      else item.accidental = accidental;
-    });
-  }
-  return events;
-}
-
 /** One voice's consecutive eighths and shorter, within one beat group (a dotted quarter in compound time). */
-function findBeamGroups(measure: Measure, events: AnalyzedEvent[], voice: number): number[][] {
+function findBeamGroups(measure: Measure, events: AnalyzedEvent[], voiceId: string): number[][] {
   const groupLength = beatGroupLength(measure.meter);
   const groups: number[][] = [];
   let current: number[] = [];
@@ -179,7 +126,7 @@ function findBeamGroups(measure: Measure, events: AnalyzedEvent[], voice: number
     current = [];
   };
   events.forEach((item, index) => {
-    if (item.voice !== voice) return;
+    if (item.voiceId !== voiceId) return;
     const beamable = isNote(item.event) && durationNotation(item.event.duration).base <= 0.5;
     if (!beamable) return flush();
     const beatGroup = (beat: number) => Math.floor(beat / groupLength);
@@ -188,11 +135,4 @@ function findBeamGroups(measure: Measure, events: AnalyzedEvent[], voice: number
   });
   flush();
   return groups;
-}
-
-/** The note farthest from the middle line decides; a tie goes down. */
-function groupStemsDown(positions: number[]): boolean {
-  const above = Math.max(...positions.map((p) => p - MIDDLE_LINE));
-  const below = Math.max(...positions.map((p) => MIDDLE_LINE - p));
-  return above >= below;
 }

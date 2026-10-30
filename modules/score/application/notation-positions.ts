@@ -1,7 +1,8 @@
 import { findEvent } from "../domain/queries";
 import { eventOnsets } from "../domain/rhythm";
 import type { Score } from "../domain/schema";
-import { barEvents, numberedVoice, voiceBars, voiceNumber } from "../domain/voice-access";
+import { findVoiceId, staffHandle } from "../domain/handles";
+import { barEvents, voiceBars, voiceInfo, voiceNumber } from "../domain/voice-access";
 
 /**
  * Positions for things other than notes, as score text shows them: "chord 2:3" (the chord in
@@ -9,8 +10,8 @@ import { barEvents, numberedVoice, voiceBars, voiceNumber } from "../domain/voic
  * "repeat 1" (the repeat starting at bar 1), "dynamic 2:1" and "text 2:1" (on bar 2, beat 1).
  */
 const HANDLE = /^(chord|slur|mark|repeat|dynamic|text)\s+(.+)$/;
-const AT_BEAT = /^(\d+)(?:v(\d))?:(\d+(?:\.\d+)?)$/;
-const AT_ORDER = /^(\d+)(?:v(\d))?#(\d+)$/;
+const AT_BEAT = /^(?:([a-z][\w-]*(?:\.\d)?)\/)?(\d+)(?:v(\d))?:(\d+(?:\.\d+)?)$/;
+const AT_ORDER = /^(?:([a-z][\w-]*(?:\.\d)?)\/)?(\d+)(?:v(\d))?#(\d+)$/;
 const EPSILON = 1e-9;
 
 export const isNotationHandle = (value: unknown): value is string => typeof value === "string" && HANDLE.test(value);
@@ -19,11 +20,11 @@ export const isNotationHandle = (value: unknown): value is string => typeof valu
 function eventAt(score: Score, where: string): { id: string; bar: number; beat: number } | null {
   const match = AT_ORDER.exec(where) ?? AT_BEAT.exec(where);
   if (!match) return null;
-  const [, barText, voice, place] = match;
+  const [, staff, barText, voice, place] = match;
   const bar = Number(barText) - 1;
   const measure = score.measures[bar];
-  const voiceId = voice ? numberedVoice(score, Number(voice)) : undefined;
-  if (!measure || voiceId === null) return null;
+  const voiceId = findVoiceId(score, `${staff ? `${staff}/` : ""}v${voice ?? 1}`);
+  if (!measure || !voiceId) return null;
   const events = barEvents(measure, voiceId);
   const onsets = eventOnsets(events);
   const index = AT_ORDER.test(where)
@@ -41,9 +42,9 @@ export function notationAt(score: Score, handle: string): string {
     switch (kind) {
       case "chord": {
         const at = AT_BEAT.exec(where);
-        const measure = at && bar(at[1]);
+        const measure = at && bar(at[2]);
         return score.chords.find(
-          (c) => c.measureId === measure?.id && Math.abs(c.beat - (Number(at![3]) - 1)) < EPSILON,
+          (c) => c.measureId === measure?.id && Math.abs(c.beat - (Number(at![4]) - 1)) < EPSILON,
         );
       }
       case "slur":
@@ -75,8 +76,12 @@ export function positionOf(score: Score, id: string): string {
     if (measure.id === id) return `${index + 1}`;
     for (const bar of voiceBars(measure)) {
       const order = bar.events.findIndex((e) => e.id === id);
+      if (order === -1) continue;
+      // Another staff than the first is named first: "trumpet/3#2".
+      const info = voiceInfo(score, bar.voiceId)!;
+      const staff = info.staffIndex > 0 ? `${staffHandle(score, info.staff.id)}/` : "";
       const voice = voiceNumber(score, bar.voiceId);
-      if (order !== -1) return `${index + 1}${voice > 1 ? `v${voice}` : ""}#${order + 1}`;
+      return `${staff}${index + 1}${voice > 1 ? `v${voice}` : ""}#${order + 1}`;
     }
   }
   const chord = score.chords.find((c) => c.id === id);

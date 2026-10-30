@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { layoutScore } from "@/modules/engraving";
 import { everyEvent, meterName, type Pitch, type Score, type Step } from "@/modules/score";
 import { applyGesturePreview } from "../../../application/gesture-preview";
 import { slurKeyEdit } from "../../../application/range-edits";
-import { sheetHeading } from "../../../application/sheet-view";
+import { eventPartNames, laneNames, sheetHeading } from "../../../application/sheet-view";
 import type { SheetItem } from "../../../application/notation-edits";
 import { sameRef, type PickMode, type SheetRef } from "../../../application/sheet-selection";
 import type { CommitEdit } from "../../hooks/use-score-editor";
@@ -20,8 +20,8 @@ type ScoreSurfaceProps = {
   interactive: boolean;
   onSelect: (id: string | null) => void;
   selectedBarId: string | null;
-  onSelectBar: (measureId: string | null) => void;
-  onDeleteBar: (measureId: string) => void;
+  onSelectBar: (measureId: string | null, staffId?: string) => void;
+  onDeleteBar: (measureId: string, staffId?: string) => void;
   selectedItem: SheetItem | null;
   onSelectItem: (item: SheetItem | null) => void;
   onDeleteItem: (item: SheetItem) => void;
@@ -111,9 +111,13 @@ export function ScoreSurface({
     },
   };
 
-  const scene = layoutScore(applyGesturePreview(score, slurGestures.preview ?? gestures.preview));
+  // Layout is the costly step with many parts: it runs again only when the score or a preview changes.
+  const preview = slurGestures.preview ?? gestures.preview;
+  const scene = useMemo(() => layoutScore(applyGesturePreview(score, preview)), [score, preview]);
   // Keep DOM nodes in score order while a drag previews new positions, so pointer capture holds.
-  const eventOrder = new Map(everyEvent(score).map((event, index) => [event.id, index]));
+  const eventOrder = useMemo(() => new Map(everyEvent(score).map((event, index) => [event.id, index])), [score]);
+  const partNames = useMemo(() => eventPartNames(score), [score]);
+  const lanes = useMemo(() => laneNames(score), [score]);
   const meters = score.measures.map((m) => meterName(m.meter)).join(", ");
 
   return (
@@ -136,6 +140,8 @@ export function ScoreSurface({
             key={system.firstMeasure}
             system={system}
             eventOrder={eventOrder}
+            partNames={partNames}
+            laneNames={lanes}
             playBeat={playBeat}
             interactions={interactions}
           />

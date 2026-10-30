@@ -7,7 +7,8 @@ import { ARTICULATIONS, DYNAMICS } from "../domain/notation";
 import { pitchName } from "../domain/pitch";
 import { beats, DURATIONS, eventOnsets, meterName, METERS, soundingBeats } from "../domain/rhythm";
 import type { Score, ScoreEvent } from "../domain/schema";
-import { barEvents, barStyle } from "../domain/voice-access";
+import { partHandles } from "../domain/handles";
+import { barEvents, barStyle, voiceBars } from "../domain/voice-access";
 
 const durationName = (event: ScoreEvent) =>
   event.measureRest
@@ -106,6 +107,8 @@ export const SCORE_VOCABULARY = {
     "Several notes on one stem, played together (a written-out chord): setNotes, or <C4 E4 G4>q in score text. Up to 6 notes; ties hold the notes the next chord repeats.",
   voices:
     'A staff may hold a second, independent line (voice 2, stems down): add it with addVoiceBars, write it with replaceMeasure voiceId "v2" or a "bar N v2:" line, remove it with removeVoiceBars.',
+  parts:
+    'Several instruments, each a part with its own staff (piano: two with setStaffCount): addPart, renamePart, movePart, removePart, setPartMix (volume, mute). Its score text lines are "bar 3 trumpet: …", its notes "trumpet/3#2".',
 };
 
 /** "Bar 2" or "Bars 1–4" for each run of consecutive bar numbers. */
@@ -119,26 +122,59 @@ function barRanges(numbers: number[]): string[] {
   return runs.map(([from, to]) => (from === to ? `Bar ${from}` : `Bars ${from}–${to}`));
 }
 
+/**
+ * With several parts, which parts' music changed in a bar ("trumpet"), or "" when only what
+ * belongs to the whole bar did (chords, a section).
+ */
+function changedParts(before: Score, after: Score, measureId: string): string[] {
+  if (after.parts.length < 2) return [""];
+  const handles = partHandles(after);
+  const music = (score: Score, partId: string) => {
+    const measure = score.measures.find((m) => m.id === measureId);
+    const part = score.parts.find((p) => p.id === partId);
+    const ids = new Set(part?.staves.flatMap((staff) => staff.voices.map((v) => v.id)));
+    return JSON.stringify(measure ? voiceBars(measure).filter((bar) => ids.has(bar.voiceId)) : null);
+  };
+  const parts = after.parts.filter((part) => music(before, part.id) !== music(after, part.id));
+  return parts.length ? parts.map((part) => handles.get(part.id)!) : [""];
+}
+
+/** Whether a bar's voices other than the score's main line changed (other staves, voice 2). */
+function otherLinesDiffer(before: Score, after: Score, measureId: string): boolean {
+  const others = (score: Score) => JSON.stringify(voiceBars(score.measures.find((m) => m.id === measureId)!).slice(1));
+  return others(before) !== others(after);
+}
+
 /** Short lines describing what changed between two revisions, for tool receipts and the panel. */
 export function summarizeChange(before: Score, after: Score): string[] {
   const previous = describeScore(before).bars;
   const current = describeScore(after).bars;
   const added: number[] = [];
-  const changed: number[] = [];
+  const changed = new Map<string, number[]>();
   for (const bar of current) {
     const old = previous.find((b) => b.id === bar.id);
     if (!old) added.push(bar.bar);
-    else if (JSON.stringify(old) !== JSON.stringify({ ...bar, bar: old.bar })) changed.push(bar.bar);
+    else if (
+      JSON.stringify(old) !== JSON.stringify({ ...bar, bar: old.bar }) ||
+      otherLinesDiffer(before, after, bar.id)
+    )
+      for (const part of changedParts(before, after, bar.id))
+        changed.set(part, [...(changed.get(part) ?? []), bar.bar]);
   }
   const removed = previous.filter((bar) => !current.some((b) => b.id === bar.id)).length;
   const lines = [
-    ...barRanges(changed).map((range) => `${range}: changed`),
+    ...[...changed].flatMap(([part, bars]) =>
+      barRanges(bars).map((range) => `${range}${part ? ` (${part})` : ""}: changed`),
+    ),
     ...barRanges(added).map((range) => `${range}: added`),
     ...(removed ? [`${removed} bar${removed > 1 ? "s" : ""} removed`] : []),
   ];
   if (before.title !== after.title) lines.push(`Title: ${after.title}`);
   if (before.tempo !== after.tempo) lines.push(`Tempo: ${after.tempo}`);
   if (JSON.stringify(before.key) !== JSON.stringify(after.key)) lines.push(`Key: ${keyName(scoreKey(after))}`);
+  if (JSON.stringify(before.parts) !== JSON.stringify(after.parts)) {
+    lines.push(`Parts: ${[...partHandles(after).values()].join(", ")}`);
+  }
   if (JSON.stringify(before.repeats) !== JSON.stringify(after.repeats)) lines.push("Repeats changed");
   if (JSON.stringify(before.annotations) !== JSON.stringify(after.annotations)) lines.push("Indications changed");
   if (JSON.stringify(before.slurs) !== JSON.stringify(after.slurs)) lines.push("Slurs changed");

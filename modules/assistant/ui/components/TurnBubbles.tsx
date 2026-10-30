@@ -1,5 +1,6 @@
-import { ArrowClockwise, ArrowCounterClockwise, Check, Microphone, WarningCircle } from "@phosphor-icons/react";
+import { ArrowClockwise, ArrowCounterClockwise, Check, Microphone, Timer, WarningCircle } from "@phosphor-icons/react";
 import type { TakePart } from "@/modules/voice";
+import { answerTime } from "../../application/chat-history";
 import { sungLength, type Turn } from "../hooks/use-assistant";
 import { useActivityLine } from "../hooks/use-activity-line";
 import styles from "./assistant.module.css";
@@ -18,7 +19,7 @@ type TurnBubblesProps = {
 /**
  * One exchange: the musician's message as a bubble on the right (what it was about on top, a ♪
  * where they sang), then the AI's answer on the left, with what changed as quiet receipts, any
- * choices to tap, and Undo, or Retry when it failed.
+ * choices to tap, Undo (or Retry when it failed), and how long the answer took.
  */
 export function TurnBubbles({ turn, ...actions }: TurnBubblesProps) {
   return (
@@ -80,7 +81,7 @@ function Answer({ turn, canUndo, canRetry, busy, onUndo, onRetry, onChoose }: Tu
           ))}
         </div>
       )}
-      {(changes.length > 0 || canUndo || canRetry) && (
+      {(changes.length > 0 || canUndo || canRetry || turn.seconds !== undefined) && (
         <div className={styles.receipts}>
           {changes.length > 0 && (
             <ul aria-label="Changes">
@@ -103,6 +104,12 @@ function Answer({ turn, canUndo, canRetry, busy, onUndo, onRetry, onChoose }: Tu
               <ArrowClockwise size={13} weight="bold" />
               Retry
             </button>
+          )}
+          {turn.seconds !== undefined && (
+            <span className={styles.answerTime} aria-label={`Answered in ${answerTime(turn.seconds)}`}>
+              <Timer size={12} />
+              {answerTime(turn.seconds)}
+            </span>
           )}
         </div>
       )}

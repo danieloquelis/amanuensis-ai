@@ -194,10 +194,10 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
     selectItem(null);
   };
 
-  /** Deletes a bar; the last remaining bar is cleared instead. */
-  const deleteBar = (measureId: string) => {
+  /** Deletes a bar; the last remaining bar is cleared instead. A bar in one instrument's lane is cleared there. */
+  const deleteBar = (measureId: string, staffId?: string) => {
     const lastBar = latest.current.score.measures.length === 1;
-    if (lastBar) commit({ type: "clearMeasure", measureId }, "Cleared bar");
+    if (staffId || lastBar) commit({ type: "clearMeasure", measureId, staffId }, "Cleared bar");
     else commit({ type: "deleteMeasure", measureId }, "Deleted bar");
   };
 
@@ -214,6 +214,7 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
     pick: sheetSelection.pick,
     focusEvent: sheetSelection.focusEvent,
     selectedBarId: selectedBar,
+    selectedStaffId: selectedBar ? sheetSelection.selectedStaffId : null,
     selectBar,
     deleteBar,
     selectedItem,

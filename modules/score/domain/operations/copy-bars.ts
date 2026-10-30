@@ -1,6 +1,7 @@
 import { getMeasure } from "../queries";
 import { createMeasure, measureEvents, replaceVoiceBars, voiceBars } from "../voice-access";
 import { copyAnchored, type CopyMap } from "./copy-anchored";
+import { copyStaffBars } from "./copy-staff-bars";
 import { detachFrom, fullMeasureRest, type Draft, type OperationContext } from "./draft";
 import type { OperationOf } from "./schema";
 
@@ -8,9 +9,11 @@ import type { OperationOf } from "./schema";
  * Pastes whole bars: each copied bar (every voice, with its meter, chords, indications and the
  * slurs within the copy) replaces a bar from the target on, in order; bars are added past the
  * end. What the target bars held goes. Sections, navigation marks and repeats stay where they are:
- * they label places in the form.
+ * they label places in the form. With `fromStaffId`, only one staff's music is copied (see copyStaffBars).
  */
-export function copyBars(draft: Draft, op: OperationOf<"copyBars">, { idPrefix }: OperationContext) {
+export function copyBars(draft: Draft, op: OperationOf<"copyBars">, context: OperationContext) {
+  if (op.fromStaffId) return copyStaffBars(draft, op, context);
+  const { idPrefix } = context;
   // Read everything copied before writing, so overlapping ranges ("bars 1–2 onto bar 2") work.
   const sources = op.measureIds.map((id) => structuredClone(getMeasure(draft, id)));
   const before = { annotations: structuredClone(draft.annotations), slurs: structuredClone(draft.slurs) };

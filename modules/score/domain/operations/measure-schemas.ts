@@ -2,7 +2,7 @@ import { z } from "zod";
 import { idSchema, MEASURE_WIDTH, meterSchema, pitchSchema, SCORE_LIMITS } from "../schema";
 
 import { MAX_CHORD_NOTES } from "../stacks";
-import { durationSchema, measureId } from "./fields";
+import { handleSchema, durationSchema, measureId } from "./fields";
 
 const measureIdsSchema = z.array(idSchema).min(1).max(SCORE_LIMITS.measures);
 
@@ -34,7 +34,7 @@ export const measureOperationSchemas = [
         .min(1)
         .max(SCORE_LIMITS.eventsPerMeasure)
         .describe("New notes and rests; their beats must add up exactly to the bar's length."),
-      voiceId: idSchema
+      voiceId: handleSchema
         .optional()
         .describe(
           'Which line of the bar to write, e.g. "v2" for the second voice (add it with addVoiceBars first, in the same batch is fine). Default: the main line.',
@@ -59,8 +59,8 @@ export const measureOperationSchemas = [
     .strictObject({
       type: z.literal("clearMeasure"),
       measureId,
-      staffId: idSchema.optional().describe("Clear only this staff. Default: every staff."),
-      voiceId: idSchema
+      staffId: handleSchema.optional().describe("Clear only this staff. Default: every staff."),
+      voiceId: handleSchema
         .optional()
         .describe('Rest only this line, e.g. "v2", keeping the other voices. Default: the whole bar.'),
     })

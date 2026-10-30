@@ -1,7 +1,8 @@
 import {
   barEvents,
+  findVoiceId,
   isNote,
-  numberedVoice,
+  voiceInfo,
   type BasicOperation,
   type Operation,
   type Pitch,
@@ -9,22 +10,36 @@ import {
 } from "@/modules/score";
 
 /**
- * Where sung spans go in the score: which bars of which line (voice) they fill, and the edits
- * that write them. A melody and a bass line sung in one take each count their bars on their own line.
+ * Where sung spans go in the score: which bars of which line they fill, and the edits that write
+ * them. A line is named as in score text: "v2" (second voice), "trumpet" (its part's main line),
+ * "piano.2/v2". A melody and a bass line sung in one take each count their bars on their own line.
  */
 
 type ToolResult = { ok: true; [key: string]: unknown } | { ok: false; error: string };
 export type WrittenBar = { pitch: Pitch | null; duration: number; tie?: boolean }[];
 type Access = { getScore: () => Score; commit: (operation: Operation) => ToolResult };
 
-/** The line a span names: "v2" is 2; the main line, 1, when it names none. */
-export const lineOf = (voice: string | undefined) => (voice ? Number(voice.slice(1)) : 1);
+/** The line a span names; the score's main line ("v1") when it names none. */
+export const lineOf = (voice: string | undefined) => voice ?? "v1";
+
+/** A line's voice number on its staff: "piano.2/v2" and "v2" are 2, "trumpet" is 1. */
+export const voiceNumberOf = (line: string) => Number(/v(\d)$/.exec(line)?.[1] ?? 1);
+
+/** The line's staff handle, if it names one ("piano.2/v2" → "piano.2"; "trumpet" → "trumpet"). */
+const staffOf = (line: string) => (/^v\d$/.test(line) ? undefined : line.split("/")[0]);
 
 /** The last bar (from 1) with a note in this line; 0 when it has none. */
-export function lastBarWithNotes(score: Score, line = 1): number {
-  const voiceId = line === 1 ? undefined : numberedVoice(score, line);
-  if (voiceId === null) return 0;
+export function lastBarWithNotes(score: Score, line = "v1"): number {
+  const voiceId = findVoiceId(score, line);
+  if (!voiceId) return 0;
   return score.measures.findLastIndex((measure) => barEvents(measure, voiceId).some(isNote)) + 1;
+}
+
+/** A second voice or a bass staff holds a lower line, written low; anything else is a melody. */
+export function registerOf(score: Score | undefined, line: string): "melody" | "low" {
+  if (voiceNumberOf(line) > 1) return "low";
+  const voiceId = score && findVoiceId(score, line);
+  return voiceId && voiceInfo(score, voiceId)?.staff.clef === "bass" ? "low" : "melody";
 }
 
 /**
@@ -39,7 +54,7 @@ export function barsInOrder(
   bpm: number,
   barBeats: number,
 ): number[] {
-  const next = new Map<number, number>();
+  const next = new Map<string, number>();
   return asked.map((span, i) => {
     const line = lineOf(span.voice);
     const after =
@@ -77,7 +92,7 @@ export function keptBars(bars: WrittenBar[], span: { bar: number; bars?: number 
 }
 
 /** Appends bars the take needs, then replaces each target bar of its line with what was heard. */
-export function writeBars(access: Access, bars: { bar: number; line: number; events: WrittenBar }[]): ToolResult {
+export function writeBars(access: Access, bars: { bar: number; line: string; events: WrittenBar }[]): ToolResult {
   const needed = Math.max(...bars.map((b) => b.bar)) - access.getScore().measures.length;
   if (needed > 0) {
     const appended = access.commit({
@@ -88,11 +103,14 @@ export function writeBars(access: Access, bars: { bar: number; line: number; eve
   }
   const measures = access.getScore().measures;
   // Another line gets its bars first (whole-bar rests), then each is written like the main line.
-  const addLines = [...new Set(bars.filter((b) => b.line > 1).map((b) => b.line))].map((line): BasicOperation => ({
-    type: "addVoiceBars",
-    voice: line,
-    measureIds: bars.filter((b) => b.line === line).map((b) => measures[b.bar - 1].id),
-  }));
+  const addLines = [...new Set(bars.filter((b) => voiceNumberOf(b.line) > 1).map((b) => b.line))].map(
+    (line): BasicOperation => ({
+      type: "addVoiceBars",
+      voice: voiceNumberOf(line),
+      measureIds: bars.filter((b) => b.line === line).map((b) => measures[b.bar - 1].id),
+      ...(staffOf(line) ? { staffId: staffOf(line) } : {}),
+    }),
+  );
   // Heard durations are whole written values; the score validates them like any edit.
   const writes = bars.map(
     ({ bar, line, events }) =>
@@ -100,7 +118,7 @@ export function writeBars(access: Access, bars: { bar: number; line: number; eve
         type: "replaceMeasure",
         measureId: measures[bar - 1].id,
         events,
-        ...(line > 1 ? { voiceId: `v${line}` } : {}),
+        ...(line !== "v1" ? { voiceId: line } : {}),
       }) as BasicOperation,
   );
   return access.commit({ type: "batch", operations: [...addLines, ...writes] });

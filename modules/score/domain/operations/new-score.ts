@@ -24,13 +24,12 @@ export function newScore(draft: Draft, op: OperationOf<"newScore">, { idPrefix }
   draft.tempo = op.tempo ?? NEW_SCORE_DEFAULTS.tempo;
   if (op.key) draft.key = { ...op.key };
   else delete draft.key;
-  draft.parts = [
-    createPart(op.instrument ?? "piano", {
-      part: `${idPrefix}-part`,
-      staff: `${idPrefix}-staff`,
-      voice: `${idPrefix}-voice`,
-    }),
-  ];
+  // Each instrument gets a part; the first keeps the plain IDs so a one-instrument score reads as before.
+  const instruments = op.instruments ?? [op.instrument ?? "piano"];
+  draft.parts = instruments.map((instrument, k) => {
+    const id = k === 0 ? idPrefix : `${idPrefix}-${k}`;
+    return createPart(instrument, { part: `${id}-part`, staff: `${id}-staff`, voice: `${id}-voice` });
+  });
   draft.measures = Array.from({ length: bars }, (_, index) => {
     const id = `${idPrefix}-bar-${index + 1}`;
     return createMeasure(draft, { id, meter: { ...meter } }, (staff) =>

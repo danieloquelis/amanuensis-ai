@@ -107,6 +107,7 @@ export function WorkspaceScreen() {
               score={editor.score}
               selection={editor.selection}
               selectedBarId={editor.selectedBarId}
+              selectedStaffId={editor.selectedStaffId}
               ready={editor.ready}
               onCommand={editor.commit}
               onError={editor.setError}

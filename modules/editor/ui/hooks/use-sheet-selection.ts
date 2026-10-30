@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import type { Score } from "@/modules/score";
 import type { SheetItem } from "../../application/notation-edits";
 import {
+  barRef,
   rangeOfRefs,
   refExists,
   sameRef,
@@ -23,11 +24,13 @@ export function useSheetSelection(score: Score, latestScore: () => Score) {
   const primary = picked.at(-1) ?? null;
   const selectedId = primary?.kind === "event" ? primary.id : null;
   const selectedBarId = primary?.kind === "bar" ? primary.id : null;
+  /** The instrument lane of a bar picked in one, or null for a whole bar. */
+  const selectedStaffId = primary?.kind === "bar" ? (primary.staffId ?? null) : null;
   const selectedItem: SheetItem | null = primary && primary.kind !== "event" && primary.kind !== "bar" ? primary : null;
 
   const select = useCallback((id: string | null) => setPicked(id ? [{ kind: "event", id }] : []), []);
   const selectBar = useCallback(
-    (measureId: string | null) => setPicked(measureId ? [{ kind: "bar", id: measureId }] : []),
+    (measureId: string | null, staffId?: string) => setPicked(measureId ? [barRef(measureId, staffId)] : []),
     [],
   );
   const selectItem = useCallback((item: SheetItem | null) => setPicked(item ? [item] : []), []);
@@ -63,6 +66,7 @@ export function useSheetSelection(score: Score, latestScore: () => Score) {
     selectedId,
     setSelectedId,
     selectedBarId,
+    selectedStaffId,
     selectedItem,
     select,
     selectBar,
