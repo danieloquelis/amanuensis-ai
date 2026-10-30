@@ -19,6 +19,7 @@ Start with the [product brief](product/product-brief.md), then the [architecture
 | [Models and voice research](research/models-and-voice.md) | Meta capabilities, specialist gaps and source evidence |
 | [Notation research](research/notation-engine.md) | Owned engraving engine and musical correctness |
 | [Sheet reading](research/sheet-reading.md) | How well Muse Spark reads printed music: measured results and options |
+| [Assistant streaming](research/assistant-streaming.md) | Showing the agent's work live: Meta streaming facts, live edits on the sheet, shimmer, phased plan |
 | [Melody transcription](research/melody-transcription.md) | Sung audio → notes and rhythm: model findings, pipeline, measured accuracy |
 | [Instrument sounds](research/instrument-sounds.md) | Sample sources, licenses and sizes for piano, winds, guitar and drums |
 | [Interaction research](research/interaction-and-motion.md) | Rive, interaction states and accessibility |
