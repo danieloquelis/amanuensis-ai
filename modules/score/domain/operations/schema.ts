@@ -14,6 +14,7 @@ import { copyOperationSchemas } from "./copy-schemas";
 import { drumOperationSchemas } from "./drum-schemas";
 import { ensembleOperationSchemas } from "./ensemble-schemas";
 import { phraseOperationSchemas } from "./phrase-schemas";
+import { timeOperationSchemas } from "./time-schemas";
 
 /** Room for a whole score written at once: 8 parts × 32 bars of notes, with chords and sections. */
 export const OPERATION_BATCH_LIMIT = 1024;
@@ -110,6 +111,7 @@ export const operationSchema = z.discriminatedUnion("type", [
     ),
   ...notationOperationSchemas,
   ...phraseOperationSchemas,
+  ...timeOperationSchemas,
   ...measureOperationSchemas,
   ...partOperationSchemas,
   ...voiceOperationSchemas,
