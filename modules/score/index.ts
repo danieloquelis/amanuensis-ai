@@ -56,6 +56,7 @@ export {
   type DurationValue,
   type Operation,
   type OperationType,
+  operationsTaking,
 } from "./domain/operations/schema";
 export {
   isWithinPitchRange,

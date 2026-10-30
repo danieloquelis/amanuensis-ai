@@ -74,8 +74,9 @@ export const measureOperationSchemas = [
       meter: meterSchema,
       policy: z
         .enum(["preserve", "scale", "auto"])
+        .default("auto")
         .describe(
-          "preserve keeps note values (adds/trims rests), scale fits proportionally, auto tries preserve first.",
+          "preserve keeps note values (adds/trims rests), scale fits proportionally, auto (default) tries preserve first.",
         ),
       extend: z
         .boolean()

@@ -4,6 +4,7 @@ import type { Attachment } from "./attachments";
 import type { ContentPart, ToolSpec } from "./model-port";
 import { checkPage } from "./page-check-tool";
 import { toolError } from "./score-tool-gateway";
+import type { ScoreWriter } from "./score-setup";
 import { readSource, type SourceState } from "./source-reading-tool";
 import { pageCheckSchema, readSourceSchema } from "./source-tool-schemas";
 import { toolParameters } from "./tool-definitions";
@@ -48,6 +49,7 @@ export function createSourceTools(
   images: PageImages | null,
   getScore: () => Score,
   show: (parts: ContentPart[]) => void,
+  commit: ScoreWriter["commit"] | null = null,
 ) {
   const state: SourceState = { read: false, pages: new Map() };
   return {
@@ -57,7 +59,10 @@ export function createSourceTools(
     },
     async run(name: SourceToolName, raw: unknown): Promise<ToolResult> {
       try {
-        if (name === "music_read_source") return await readSource(raw, attachments, images, state, show);
+        if (name === "music_read_source") {
+          const writer = commit ? { get: getScore, commit } : null;
+          return await readSource(raw, attachments, images, state, show, writer);
+        }
         return checkPage(raw, getScore(), state);
       } catch (error) {
         return { ok: false, error: toolError(error) };

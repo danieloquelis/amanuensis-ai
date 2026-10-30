@@ -35,11 +35,19 @@ export type WrittenBar = {
 
 /** "bar 3:", "bar 3 (6/8):", "bar 3 v2:", "bar 3 trumpet:", "bar 3 piano.2 v2:". */
 const BAR_LINE = /^bar\s+(\d+)\s*(?:\([^)]*\))?(?:\s+(?!v\d\b)([a-z][\w-]*(?:\.\d)?))?(?:\s*v(\d))?\s*:(.*)$/i;
-const TOKEN = /^(\(?)(?:<([^>]+)>|([A-G][#b]?\d)|(r))([whqes])(\.?)(~?)(?:!(staccato|accent|tenuto|fermata))?(\)?)$/;
-const PITCH = /^([A-G])([#b]?)(\d)$/;
+const TOKEN = /^(\(?)(?:<([^>]+)>|([A-G][#bn]?\d)|(r))([whqes])(\.?)(~?)(?:!(staccato|accent|tenuto|fermata))?(\)?)$/;
+/** "n" is an explicit natural (En4 is E4): accepted, as musicians write it. */
+const PITCH = /^([A-G])([#bn]?)(\d)$/;
+/** A drum piece written without its brackets ("kickq"), longest names first ("hatopen" before "hat"). */
+const BARE_DRUM = new RegExp(
+  `^(\\(?)(${[...DRUM_PIECE_CODES].sort((a, b) => b.length - a.length).join("|")})([whqes].*)$`,
+);
 /** Tokens are split on spaces, except inside a chord's angle brackets. */
 const TOKENS = /\(?<[^>]*>\S*|\S+/g;
-const ALTERS: Record<string, -1 | 0 | 1> = { b: -1, "": 0, "#": 1 };
+const ALTERS: Record<string, -1 | 0 | 1> = { b: -1, "": 0, n: 0, "#": 1 };
+
+/** Slips that can only mean one thing, read as meant: a trailing comma, a drum piece without its brackets. */
+const forgiven = (token: string) => token.replace(/,+$/, "").replace(BARE_DRUM, "$1<$2>$3");
 const DOT = 1.5;
 
 function parseToken(token: string, bar: number): WrittenEvent {
@@ -96,17 +104,23 @@ export function parseBarsText(text: string): WrittenBar[] {
       ...(staff ? { staff } : {}),
       voice,
       remove,
-      events: remove || (tokens.length === 1 && tokens[0] === "R") ? null : tokens.map((t) => parseToken(t, bar)),
+      events:
+        remove || (tokens.length === 1 && tokens[0] === "R") ? null : tokens.map((t) => parseToken(forgiven(t), bar)),
       chords: [],
       section: null,
     };
-    for (const part of parts) {
+    // A section written into the chord list ("chords F, section A") starts there, as meant.
+    const separated = parts.flatMap((part) => part.split(/,?\s+(?=section\s)/));
+    for (const part of separated) {
       const [word, ...rest] = part.split(/\s+/);
       if (word === "chords") {
-        written.chords = rest.map((chord) => {
-          const [symbol, beat] = chord.split("@");
-          return { symbol, beat: beat ? Number(beat) - 1 : 0 };
-        });
+        written.chords = rest
+          .map((chord) => chord.replace(/,+$/, ""))
+          .filter(Boolean)
+          .map((chord) => {
+            const [symbol, beat] = chord.split("@");
+            return { symbol, beat: beat ? Number(beat) - 1 : 0 };
+          });
       }
       if (word === "section") written.section = rest.join(" ");
     }

@@ -32,6 +32,15 @@ export const readSourceSchema = z.strictObject({
     .describe("The key signature: sharps positive, flats negative (E♭ major is -3). The heads are spelled in it."),
   meter: z.string().max(20).optional(),
   tempo: z.string().max(160).optional().describe('As marked, e.g. "Andante, eighth = 132".'),
+  quarterBpm: z
+    .number()
+    .int()
+    .min(1)
+    .max(400)
+    .optional()
+    .describe(
+      "The tempo in quarter notes per minute, when one is marked: eighth = 132 is 66, half = 100 (cut time) is 200.",
+    ),
   pickup: z.boolean().default(false).describe("The music starts with an incomplete bar (an anacrusis)."),
   bars: z.number().int().min(1).max(999).describe("Bars in the source, a pickup counting as one."),
   sections: z.array(z.string().max(60)).max(32).optional().describe('In order, e.g. ["A bars 1–8", "B bars 9–16"].'),

@@ -138,3 +138,14 @@ test("an agent can write a whole lead sheet through the tools alone", () => {
     ["notes", "notes", "slashes", "repeat"],
   );
 });
+
+test("a field on the wrong operation is refused with where it belongs", () => {
+  const { call } = gateway();
+  const result = call("score_edit", {
+    requestId: "misplaced",
+    expectedRevision: 0,
+    operation: { type: "setStaffCount", partId: "piano", staves: 2, key: { fifths: -3, mode: "major" } },
+  });
+  assert.equal(result.ok, false);
+  assert.match((result as { error: string }).error, /"key" belongs to setKey or newScore/);
+});

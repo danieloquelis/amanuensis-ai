@@ -1,5 +1,13 @@
 import type { PageImages } from "@/modules/page";
-import { commandSchema, createSession, summarizeChange, type Command, type Score, type Session } from "@/modules/score";
+import {
+  commandSchema,
+  createSession,
+  summarizeChange,
+  type Command,
+  type Operation,
+  type Score,
+  type Session,
+} from "@/modules/score";
 import type { TakePart, VoiceTake } from "@/modules/voice";
 import { ASK_TOOL, askSchema, assistantTools } from "./assistant-tools";
 import type { Attachment } from "./attachments";
@@ -103,21 +111,20 @@ export async function runAssistant(
   const heard = new Set<string>();
   let runningTool = "";
   // Tools that write (a transcription) commit through the same gateway as score_edit.
-  const music = createMusicTools(request.take ?? null, {
-    getScore: () => session.score,
-    commit: (operation) => {
-      const command = {
-        requestId: `${turnId}-tool-${++toolWrites}`,
-        expectedRevision: session.score.revision,
-        operation,
-      };
-      const result = tools("score_edit", command);
-      if (result.ok) commands.push(commandSchema.parse(command));
-      if (result.ok && runningTool === TRANSCRIBE_TOOL)
-        writtenLines(session.score, operation).forEach((key) => heard.add(key));
-      return result;
-    },
-  });
+  // Tools that write (a transcription, a setup from a reading) commit through the same gateway as score_edit.
+  const commit = (operation: Operation) => {
+    const command = {
+      requestId: `${turnId}-tool-${++toolWrites}`,
+      expectedRevision: session.score.revision,
+      operation,
+    };
+    const result = tools("score_edit", command);
+    if (result.ok) commands.push(commandSchema.parse(command));
+    if (result.ok && runningTool === TRANSCRIBE_TOOL)
+      writtenLines(session.score, operation).forEach((key) => heard.add(key));
+    return result;
+  };
+  const music = createMusicTools(request.take ?? null, { getScore: () => session.score, commit });
   const attachments = request.attachments ?? [];
   // Pictures a tool shows the model (labelled pages) go in a user message after the tool results.
   let shown: ContentPart[] = [];
@@ -126,6 +133,7 @@ export async function runAssistant(
     pageImages,
     () => session.score,
     (parts) => shown.push(...parts),
+    commit,
   );
   const toolList = [
     ...assistantTools,

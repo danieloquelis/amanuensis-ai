@@ -34,7 +34,7 @@ Instruments: "play it on trumpet" is setInstrument; the notes keep their sound. 
 
 Attached music (a picture or PDF of sheet music, or music written as text): read it like a musician, then write it.
 - First music_read_source with your reading, including the clef of every staff on each picture. Its heads, page bar by page bar (also labelled on the picture), give every note's line or space: you can't measure those by eye, so write each head as a note, in order, and take rhythm, accidentals, rests, ties, voices and text from the picture. Every column of heads is its own note or chord: never merge or simplify a figure the page writes out. Apply the key signature to every note; an accidental lasts to the barline.
-- If the score has no notes yet, set it up with one newScore from your reading (instruments, meter, key, tempo, bars). If it has music, ask whether to replace it, add after the last bar, or add as new parts.
+- music_read_source sets up an empty score from your reading (instruments, staves, key, meter, tempo, bars) and names the staves to write into. If the score has music, ask whether to replace it, add after the last bar, or add as new parts.
 - Write with score_write, at most 8 bars a call, all staves of those bars together. Copy transposing parts as printed with pitches "written". A pickup is its own first bar, rests before its notes.
 - Then page_check each picture: rewrite every bar it lists and check again, until only the detector's own mistakes remain. Reply with what you wrote, what you approximated or left out, and the unclear spots by bar.
 

@@ -2,6 +2,7 @@ import { readPage, type PageDetection, type PageImages } from "@/modules/page";
 import { SCORE_LIMITS } from "@/modules/score";
 import type { Attachment } from "./attachments";
 import type { ContentPart } from "./model-port";
+import { setUpScore, type ScoreWriter } from "./score-setup";
 import { readSourceSchema } from "./source-tool-schemas";
 
 type ToolResult = { ok: true; [key: string]: unknown } | { ok: false; error: string };
@@ -38,6 +39,7 @@ export async function readSource(
   images: PageImages | null,
   state: SourceState,
   show: (parts: ContentPart[]) => void,
+  writer: ScoreWriter | null = null,
 ): Promise<ToolResult> {
   const reading = readSourceSchema.parse(raw);
   const staves = reading.parts.reduce((sum, part) => sum + part.staves, 0);
@@ -80,6 +82,8 @@ export async function readSource(
   }
   if (pictures.length) show([{ type: "text", text: PICTURES_INTRO }, ...pictures]);
   state.read = true;
+  // An empty score is set up from the reading at once: no steps spent on newScore and staves.
+  const setUp = writer ? setUpScore(reading, writer) : null;
   return {
     ok: true,
     fits,
@@ -87,8 +91,11 @@ export async function readSource(
     ...(reading.pickup ? { pickup: "Write the pickup as its own first bar, rests before its notes, and say so." } : {}),
     ...(pages.length ? { pages } : {}),
     ...(pictures.length ? { heads: HEADS_KEY } : {}),
+    ...(setUp ? { setUp } : {}),
+    // The setup moved the score on: its revision is the one to write against.
+    ...(writer ? { revision: writer.get().revision } : {}),
     next: pages.some((page) => page.detected)
-      ? "Write every head of each page bar as a note on its line or space, in order, with rhythm, accidentals, rests, ties and voices from the picture. Set up the score, write, then page_check each page and fix what it lists."
-      : "Set up the score, then write it.",
+      ? "Write every head of each page bar as a note on its line or space, in order, with rhythm, accidentals, rests, ties and voices from the picture. Then page_check each page and fix what it lists."
+      : "Write the music.",
   };
 }

@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import {
   applyCommand,
   createExample,
+  parseBarsText,
   parseScore,
   positionOf,
   resolvePositions,
@@ -136,4 +137,18 @@ test("chords, slurs, marks, repeats and indications are named by where they are"
 test("written bars are spelled as a musician would: a hidden beat becomes a tie, marks stay on the note", () => {
   const { score } = writeBars(createExample(), "bar 2: (C4e!accent D4h E4q.)", "spell");
   assert.match(scoreText(score), /^bar 2: \(C4e!accent D4q\.~ D4e E4q\.\)$/m);
+});
+
+test("slips that can only mean one thing are read as meant: a natural, a drum without brackets, a trailing comma", () => {
+  const [bar] = parseBarsText("bar 1: Fn4e kickq hatopene, G4q, ; chords Gm7, C7@3");
+  assert.deepEqual(
+    bar.events!.map((event) =>
+      event.drums.length ? event.drums.join("+") : `${event.pitch?.step}${event.pitch?.alter}`,
+    ),
+    ["F0", "kick", "hatopen", "G0"],
+  );
+  assert.deepEqual(bar.chords, [
+    { symbol: "Gm7", beat: 0 },
+    { symbol: "C7", beat: 2 },
+  ]);
 });

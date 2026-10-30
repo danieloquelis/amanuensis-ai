@@ -13,6 +13,7 @@ import {
   writeBars,
   type Command,
   type Session,
+  operationsTaking,
 } from "@/modules/score";
 import { applyPreviewSchema, readContextSchema, undoSchema, writeSchema, type ScoreToolName } from "./tool-definitions";
 
@@ -159,7 +160,7 @@ type Issue = z.core.$ZodIssue;
  * The issue that says what is actually wrong. A union only says "Invalid input"; inside it, the
  * branch the arguments came closest to (their own type, fewest issues) names the missing or wrong field.
  */
-function innermost(issue: Issue, path: PropertyKey[] = []): { path: PropertyKey[]; message: string } {
+function innermost(issue: Issue, path: PropertyKey[] = []): { path: PropertyKey[]; message: string; issue: Issue } {
   const here = [...path, ...issue.path];
   if (issue.code === "invalid_union" && issue.errors.length) {
     // A branch of another type is furthest of all.
@@ -168,14 +169,24 @@ function innermost(issue: Issue, path: PropertyKey[] = []): { path: PropertyKey[
     // Unions of plain values (a duration, a pitch) are reported as the field itself.
     if (closest.length && closest[0].path.length) return innermost(closest[0], here);
   }
-  return { path: here, message: issue.message };
+  return { path: here, message: issue.message, issue };
+}
+
+/** For fields an operation doesn't have: the operations that do, so the change can go to the right one. */
+function homes(issue: Issue): string {
+  if (issue.code !== "unrecognized_keys") return "";
+  const places = issue.keys.map((key) => {
+    const takers = operationsTaking(key);
+    return takers.length ? `"${key}" belongs to ${takers.slice(0, 3).join(" or ")}` : `nothing takes "${key}"`;
+  });
+  return ` (${places.join("; ")}: put each change in its own operation; a batch holds several)`;
 }
 
 /** Zod errors become a readable path and message the model can act on. */
 export function toolError(error: unknown): string {
   if (error instanceof z.ZodError) {
-    const { path, message } = innermost(error.issues[0]);
-    return `Invalid tool arguments at ${path.map(String).join(".") || "(root)"}: ${message}`;
+    const { path, message, issue } = innermost(error.issues[0]);
+    return `Invalid tool arguments at ${path.map(String).join(".") || "(root)"}: ${message}${homes(issue)}`;
   }
   return error instanceof Error ? error.message : "The tool failed.";
 }

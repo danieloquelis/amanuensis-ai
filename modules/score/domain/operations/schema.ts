@@ -140,6 +140,13 @@ export const commandSchema = z.strictObject({
   operation: z.union([operationSchema, batchSchema]),
 });
 
+/** The operations that have a field of this name ("key" → newScore, setKey): to point a misplaced field to its home. */
+export function operationsTaking(field: string): string[] {
+  return operationSchema.options
+    .filter((option) => field !== "type" && field in option.shape)
+    .map((option) => option.shape.type.value);
+}
+
 export type BasicOperation = z.infer<typeof operationSchema>;
 export type OperationType = BasicOperation["type"];
 export type OperationOf<T extends OperationType> = Extract<BasicOperation, { type: T }>;
