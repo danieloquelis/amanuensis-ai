@@ -17,14 +17,23 @@ export type AssistantPayload = {
 
 const UNAVAILABLE = "The assistant is unavailable right now.";
 
-/** Browser-side call to the app's assistant route. Throws with the server's readable message. */
-export async function requestAssistant(payload: AssistantPayload, onProgress?: ProgressListener) {
-  const response = await fetch("/api/assistant", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  return readStream<AssistantResult>(response, onProgress);
+/**
+ * Browser-side call to the app's assistant route: JSON, or multipart with attached files.
+ * Throws with the server's readable message.
+ */
+export async function requestAssistant(payload: AssistantPayload, onProgress?: ProgressListener, files: File[] = []) {
+  if (!files.length) {
+    const response = await fetch("/api/assistant", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return readStream<AssistantResult>(response, onProgress);
+  }
+  const form = new FormData();
+  form.append("request", JSON.stringify(payload));
+  for (const file of files) form.append("files", file, file.name);
+  return readStream<AssistantResult>(await fetch("/api/assistant", { method: "POST", body: form }), onProgress);
 }
 
 /** Sends a recorded take (WAV) with the score; the server hears it and runs the assistant. */

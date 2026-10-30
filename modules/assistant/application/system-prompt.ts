@@ -31,6 +31,12 @@ Several instruments: addPart adds one (a piano's left hand is setStaffCount 2). 
 Drums: add a drum part with addPart (instrument drums). For a beat, start with putGroove (rock, funk, bossa, waltz…) over the bars, then adjust single bars with score_write; end a section with fill. A bar may go without the feet ("bar 5 drums v2: -"); a tempo change from a bar is setTempo with its measureId. Turning sung or beatboxed rhythms into drums is not supported yet: say so.
 Instruments: "play it on trumpet" is setInstrument; the notes keep their sound. Pitches you read and write are concert pitch for every instrument, but the sheet shows a B♭ trumpet a major 2nd higher and a guitar an octave higher, as players read them: when you switch to one, say the written notes moved but sound the same. If notes fall out of the instrument's range, say so and offer to move them by an octave.
 
+Attached music (a picture or PDF of sheet music, or music written as text): read it like a musician, then write it.
+- First music_read_source with your reading, including the clef of every staff on each picture. Its heads, page bar by page bar (also labelled on the picture), give every note's line or space: you can't measure those by eye, so write each head as a note, in order, and take rhythm, accidentals, rests, ties, voices and text from the picture. Every column of heads is its own note or chord: never merge or simplify a figure the page writes out. Apply the key signature to every note; an accidental lasts to the barline.
+- If the score has no notes yet, set it up with one newScore from your reading (instruments, meter, key, tempo, bars). If it has music, ask whether to replace it, add after the last bar, or add as new parts.
+- Write with score_write, at most 8 bars a call, all staves of those bars together. Copy transposing parts as printed with pitches "written". A pickup is its own first bar, rests before its notes.
+- Then page_check each picture: rewrite every bar it lists and check again, until only the detector's own mistakes remain. Reply with what you wrote, what you approximated or left out, and the unclear spots by bar.
+
 ${SCORE_TEXT_GUIDE}
 
 Reply with one short sentence saying what you changed, like "Added Am7 on beat 3 of bar 2." No preamble.`;

@@ -37,3 +37,31 @@ test("a model call that times out becomes a readable message, not a raw abort", 
   }) as typeof fetch;
   await assert.rejects(ask(createMetaModel("key")), /took longer than three minutes/);
 });
+
+test("pictures and PDFs go in the user message as Meta's image_url and file parts", async () => {
+  globalThis.fetch = (async (_url: string, init: RequestInit) => {
+    sent.push(JSON.parse(String(init.body)));
+    return Response.json({ choices: [{ message: { content: "Ok." } }] });
+  }) as typeof fetch;
+  const picture = "data:image/png;base64,iVBOR";
+  const pdf = "data:application/pdf;base64,JVBER";
+  await createMetaModel("key").complete(
+    [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: "Read this" },
+          { type: "image", dataUrl: picture },
+          { type: "file", filename: "song.pdf", dataUrl: pdf },
+        ],
+      },
+    ],
+    [],
+  );
+  const [message] = sent[0].messages as { content: unknown }[];
+  assert.deepEqual(message.content, [
+    { type: "text", text: "Read this" },
+    { type: "image_url", image_url: { url: picture } },
+    { type: "file", file: { filename: "song.pdf", file_data: pdf } },
+  ]);
+});

@@ -17,6 +17,7 @@ import {
   STEPS,
   toConcert,
   toWritten,
+  writeBars,
   writtenKey,
   type KeySignature,
   type Operation,
@@ -125,4 +126,15 @@ test("a typed letter picks an octave the instrument plays", () => {
   const first = barEvents(score.measures[0])[0].id;
   const op = letterNoteEdit(score, first, "C").operation as { pitch: Pitch };
   assert.ok(midiPitch(op.pitch) >= INSTRUMENTS.flute.range.low);
+});
+
+test("bars copied from a B♭ trumpet's page are stored a tone lower, as they sound", () => {
+  const score = edit(createExample(), { type: "setInstrument", instrument: "trumpet" });
+  const asWritten = writeBars(score, "bar 1: D5q E5q F#5h", "copied", "written").score;
+  assert.deepEqual(
+    barEvents(asWritten.measures[0]).map((event) => event.pitch && pitchName(event.pitch)),
+    ["C5", "D5", "E5"],
+  );
+  const asSounding = writeBars(score, "bar 1: D5q E5q F#5h", "sounding").score;
+  assert.equal(pitchName(barEvents(asSounding.measures[0])[0].pitch!), "D5");
 });

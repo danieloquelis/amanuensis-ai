@@ -1,5 +1,7 @@
 import { z } from "zod";
+import type { PageImages } from "@/modules/page";
 import { parseScore } from "@/modules/score";
+import { readUploads, type Upload } from "./attachments";
 import type { ModelPort } from "./model-port";
 import { runAssistant, type AssistantResult, type ProgressListener } from "./run-assistant";
 
@@ -7,7 +9,8 @@ export const MAX_REQUEST_BYTES = 1_000_000;
 const HISTORY_LIMIT = 6;
 
 const requestSchema = z.strictObject({
-  instruction: z.string().trim().min(1).max(2000),
+  /** May be empty when files are attached: the files are the request. */
+  instruction: z.string().trim().max(2000),
   score: z.unknown(),
   selectedIds: z.array(z.string().max(100)).max(64).default([]),
   selectionName: z.string().trim().max(120).optional(),
@@ -19,14 +22,22 @@ const requestSchema = z.strictObject({
 
 export type AssistantResponse = { status: number; body: AssistantResult | { error: string } };
 
-/** Validates an HTTP request body and runs the assistant. Never throws; failures become statuses. */
+/**
+ * Validates an HTTP request body (and any attached files) and runs the assistant. Never throws;
+ * failures become statuses.
+ */
 export async function handleAssistantRequest(
   body: unknown,
   model: ModelPort,
   onProgress?: ProgressListener,
+  { uploads = [], pageImages = null }: { uploads?: Upload[]; pageImages?: PageImages | null } = {},
 ): Promise<AssistantResponse> {
   const parsed = requestSchema.safeParse(body);
-  if (!parsed.success) return { status: 400, body: { error: "Send an instruction and the current score." } };
+  if (!parsed.success || (!parsed.data.instruction && !uploads.length)) {
+    return { status: 400, body: { error: "Send an instruction and the current score." } };
+  }
+  const read = readUploads(uploads);
+  if ("error" in read) return { status: 400, body: { error: read.error } };
   let score;
   try {
     score = parseScore(parsed.data.score);
@@ -34,7 +45,13 @@ export async function handleAssistantRequest(
     return { status: 400, body: { error: error instanceof Error ? error.message : "Invalid score." } };
   }
   try {
-    const result = await runAssistant(model, { ...parsed.data, score }, undefined, onProgress);
+    const result = await runAssistant(
+      model,
+      { ...parsed.data, score, attachments: read.attachments },
+      undefined,
+      onProgress,
+      pageImages,
+    );
     return { status: 200, body: result };
   } catch (error) {
     const message = error instanceof Error ? error.message : "The assistant is unavailable.";

@@ -1,6 +1,6 @@
 # Triplets plan
 
-Status: phase 0 (one place for note lengths: `soundingDuration`, `soundingBeats`, `eventOnsets`) implemented with the instruments plan; phases 1–4 planned. Written 29 October 2026 against commit `5799adf` (main). This document is self-contained: a session that implements it needs no other context than the repository, `AGENTS.md` and [code conventions](../architecture/code-conventions.md).
+Status: phase 0 (one place for note lengths: `soundingDuration`, `soundingBeats`, `eventOnsets`) implemented with the instruments plan. Phases 1–2 come after phases 1–2 of the [sheet reading plan](sheet-reading-plan.md) (the product owner chose that order on 30 October 2026; until then imported triplets are approximated); phases 3–4 later. Since this plan was written, scores gained parts, staves and voices: tuplet groups are validated per voice bar. Written 29 October 2026 against commit `5799adf` (main). This document is self-contained: a session that implements it needs no other context than the repository, `AGENTS.md` and [code conventions](../architecture/code-conventions.md).
 
 ## Goal
 

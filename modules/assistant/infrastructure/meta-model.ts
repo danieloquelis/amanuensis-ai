@@ -1,4 +1,4 @@
-import type { ChatMessage, ModelPort, ModelReply, ToolSpec } from "../application/model-port";
+import type { ChatMessage, ContentPart, ModelPort, ModelReply, ToolSpec } from "../application/model-port";
 
 const BASE_URL = "https://api.meta.ai/v1";
 export const DEFAULT_META_MODEL = "muse-spark-1.3";
@@ -22,7 +22,17 @@ function toMetaMessage(message: ChatMessage) {
     }));
     return { role: "assistant", content: message.content, ...(toolCalls.length ? { tool_calls: toolCalls } : {}) };
   }
+  if (message.role === "user" && typeof message.content !== "string") {
+    return { role: "user", content: message.content.map(toMetaPart) };
+  }
   return { role: message.role, content: message.content };
+}
+
+/** Meta's content parts: `image_url` for pictures, `file` for PDFs (both take data URLs). */
+export function toMetaPart(part: ContentPart) {
+  if (part.type === "image") return { type: "image_url", image_url: { url: part.dataUrl } };
+  if (part.type === "file") return { type: "file", file: { filename: part.filename, file_data: part.dataUrl } };
+  return part;
 }
 
 /**

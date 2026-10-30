@@ -24,7 +24,9 @@
     "fit:singing": "tsx --env-file=.env.local scripts/fit-singing-model.mts",
     "sounds:fetch": "tsx scripts/fetch-sounds.mts",
     "postinstall": "tsx scripts/fetch-sounds.mts --optional",
-    "icons": "tsx scripts/make-icons.mts"
+    "icons": "tsx scripts/make-icons.mts",
+    "eval:sheet-reading": "tsx --env-file=.env.local scripts/sheet-reading-eval.mts",
+    "eval:sheet-agent": "tsx --env-file=.env.local scripts/sheet-agent-eval.mts"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

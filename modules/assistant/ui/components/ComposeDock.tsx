@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { IconButton } from "@/shared/ui/IconButton";
 import { DOCKED_PANEL } from "@/shared/ui/hooks/use-bottom-inset";
 import type { Assistant, RequestContext } from "../hooks/use-assistant";
+import { useAttachments } from "../hooks/use-attachments";
 import type { ComposeDockState } from "../hooks/use-compose-dock";
 import { ChatThread } from "./ChatThread";
 import { Composer } from "./Composer";
@@ -26,14 +27,16 @@ type ComposeDockProps = {
  */
 export function ComposeDock({ assistant, dock, context, revision, onUndo }: ComposeDockProps) {
   const { turns, busy, send, sendTake, canRetry, retry } = assistant;
+  // Held here, not in the bar, so attached files stay when the bar moves to the sidebar.
+  const attachments = useAttachments();
   const undoable = [...turns].reverse().find((turn) => turn.revision !== undefined);
   const canUndo = (turnId: string) => turnId === undoable?.id && undoable.revision === revision;
   const sidebar = dock.chatMode === "sidebar";
   // The chat is hidden while the AI works: a dot on its button says so.
   const working = busy && dock.chatMode === "closed";
-  const sendText = (text: string) => {
+  const sendText = (text: string, files: File[] = []) => {
     dock.openChat();
-    void send(text, context);
+    void send(text, context, files);
   };
   const suggestions = (
     <div className={styles.suggestions} role="group" aria-label="Suggestions">
@@ -66,6 +69,7 @@ export function ComposeDock({ assistant, dock, context, revision, onUndo }: Comp
       draft={dock.draft}
       onDraft={dock.setDraft}
       onSend={sendText}
+      attachments={attachments}
       onTake={(wav) => {
         dock.openChat();
         void sendTake(wav, context);

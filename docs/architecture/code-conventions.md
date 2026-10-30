@@ -4,7 +4,7 @@ How code is organized in this repository. These rules apply to people and coding
 
 ## Modules
 
-Each domain capability lives in `modules/<name>/`: `score`, `engraving`, `editor`, `playback`, `projects`, `assistant`, `workspace`. `app/` routes only render a screen from a module. `shared/` holds domain-free UI helpers and never imports from `modules/`.
+Each domain capability lives in `modules/<name>/`: `score`, `engraving`, `editor`, `playback`, `projects`, `assistant`, `voice`, `page`, `workspace`. `app/` routes only render a screen from a module. `shared/` holds domain-free UI helpers and never imports from `modules/`.
 
 A module is split into layers. Add a layer only when the module needs it:
 

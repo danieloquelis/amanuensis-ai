@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Command, Score } from "@/modules/score";
 import { takeParts, type TakePart } from "@/modules/voice";
 import { askedAfter, withHeardWords, type AskedTake } from "../../application/asked-take";
+import { attachmentKind } from "../../application/attachments";
 import type { ChatRepository, Turn } from "../../application/chat-history";
 import type { HeardTake } from "../../application/handle-voice-request";
 import type { AssistantResult, AssistantTurn, ProgressListener } from "../../application/run-assistant";
@@ -41,6 +42,10 @@ export function describeHeard(parts: TakePart[]): string {
 }
 
 const heardOf = ({ speech, sung }: HeardTake) => takeParts(speech, sung);
+
+/** Earlier turns name the files they came with (the files themselves are not sent again). */
+const attachedNote = (turn: Turn) =>
+  turn.attachments?.length ? ` (attached: ${turn.attachments.map((file) => file.name).join(", ")})` : "";
 
 /**
  * One conversation with the score AI, driven from the compose bar. Each instruction (typed
@@ -89,6 +94,7 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
     { instruction, request, context }: Attempt,
     spoken: boolean,
     retryId?: string,
+    attachments?: Turn["attachments"],
   ): Promise<(AssistantResult & { heard?: HeardTake }) | null> => {
     const id = retryId ?? crypto.randomUUID();
     attempts.current.set(id, { instruction, request, context });
@@ -96,13 +102,13 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
       .filter((turn) => turn.status === "done" && turn.reply)
       .slice(-HISTORY_TURNS)
       .map((turn) => ({
-        instruction: turn.context ? `[${turn.context}] ${turn.instruction}` : turn.instruction,
+        instruction: `${turn.context ? `[${turn.context}] ` : ""}${turn.instruction}${attachedNote(turn)}`,
         reply: turn.reply!,
       }));
     const about = { context: context.name ?? undefined };
     if (retryId) {
       update(id, { status: "working", reply: undefined, question: undefined, changes: undefined, seconds: undefined });
-    } else setTurns((all) => [...all, { id, instruction: label, status: "working", spoken, ...about }]);
+    } else setTurns((all) => [...all, { id, instruction: label, status: "working", spoken, attachments, ...about }]);
     const selection = { selectedIds: context.ids, ...(context.name ? { selectionName: context.name } : {}) };
     const started = Date.now();
     const took = () => ({ seconds: (Date.now() - started) / 1000 });
@@ -151,16 +157,20 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
     }
   };
 
-  /** Sends a typed instruction; resolves once it is answered. Ignored while another is running. */
-  const send = async (instruction: string, context: RequestContext) => {
+  /**
+   * Sends a typed instruction, with any attached files; resolves once it is answered. Ignored
+   * while another is running.
+   */
+  const send = async (instruction: string, context: RequestContext, files: File[] = []) => {
     const text = instruction.trim();
-    if (!text || busy) return;
-    const take = asked.current;
+    if ((!text && !files.length) || busy) return;
+    const take = files.length ? null : asked.current;
     // An answer to a question about a take: the agent hears the take again, not just the answer.
     const request: Request = take
       ? (payload, progress) => requestVoiceAssistant(take.wav, withHeardWords(payload, take), progress)
-      : requestAssistant;
-    const result = await run(text, { instruction: text, request, context }, false);
+      : (payload, progress) => requestAssistant(payload, progress, files);
+    const attached = files.map((file) => ({ name: file.name, kind: attachmentKind(file.type, file.name) ?? "text" }));
+    const result = await run(text, { instruction: text, request, context }, false, undefined, attached);
     asked.current = askedAfter(asked.current, take, result);
   };
 

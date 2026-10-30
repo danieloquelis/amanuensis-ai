@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { TakePart } from "@/modules/voice";
+import type { AttachmentKind } from "./attachments";
 import type { ProgressEvent } from "./run-assistant";
 
 /** Enough to scroll back through a long session without growing local storage without bound. */
@@ -22,6 +23,8 @@ export type Turn = {
   heard?: TakePart[];
   /** The selection the request was about ("Bars 3–6"), shown with it in the chat. */
   context?: string;
+  /** Files sent with the request, by name; the files themselves are never kept. */
+  attachments?: { name: string; kind: AttachmentKind }[];
   /** How long the answer took, from sending to the reply (or the failure). */
   seconds?: number;
 };
@@ -61,6 +64,7 @@ const savedTurnSchema = z.object({
   spoken: z.boolean().optional(),
   heard: z.array(takePartSchema).optional(),
   context: z.string().optional(),
+  attachments: z.array(z.object({ name: z.string(), kind: z.enum(["image", "pdf", "text"]) })).optional(),
   seconds: z.number().nonnegative().optional(),
 });
 

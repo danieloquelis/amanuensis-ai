@@ -74,7 +74,12 @@ test("a malformed line or a bar that does not add up is refused with a readable 
   const score = createExample();
   assert.throws(() => writeBars(score, "bar 1: C4q E4x", "w"), /"E4x" is not a note or rest/);
   assert.throws(() => writeBars(score, "the first bar: C4w", "w"), /not a bar line/);
-  assert.throws(() => writeBars(score, "bar 1: C4q E4q", "w"), /4 quarter-note beats/);
+  assert.throws(() => writeBars(score, "bar 33: C4w", "w"), /at most 32 bars: bar 33 is past its end/);
+  // Every line that doesn't fill its bar is named at once.
+  assert.throws(
+    () => writeBars(score, "bar 1: C4q E4q\nbar 2: C4w\nbar 3: C4h.", "w"),
+    /bar 1 has 2 of 4 \(4\/4\); bar 3 has 3 of 4/,
+  );
 });
 
 test("operations can name notes by bar and beat, and bars by number", () => {

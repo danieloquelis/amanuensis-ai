@@ -296,6 +296,77 @@
   font-size: 12px;
 }
 
+/* Files waiting to go with the next request, just above the bar. */
+.attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 0 12px;
+  list-style: none;
+}
+
+.attachment {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 220px;
+  padding: 4px;
+  border-radius: var(--r-sm);
+  corner-shape: squircle;
+  background: var(--surface-raised);
+  box-shadow: 0 0 0 1px var(--line-strong);
+  color: var(--ink);
+  font-size: 12px;
+  animation: chip-in var(--medium) var(--ease-spring);
+}
+
+.attachment img {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.attachment span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.attachment button {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+}
+
+.attachment button:hover {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+/* The files a sent request carried, in its bubble. */
+.sentFiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.sentFile {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent-ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
 /* The orb: the AI's voice button, a glassy sphere of slowly turning greens with a mic on it. */
 .orb {
   display: grid;

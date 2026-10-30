@@ -1,8 +1,11 @@
 import { ArrowUp, Paperclip, X } from "@phosphor-icons/react";
-import type { ReactNode, RefObject } from "react";
+import { useRef, type ReactNode, type RefObject } from "react";
 import { useVoiceRecorder } from "@/modules/voice/ui";
 import { IconButton } from "@/shared/ui/IconButton";
+import { ATTACHMENT_LIMITS } from "../../application/attachments";
+import type { Attachments } from "../hooks/use-attachments";
 import { AiOrb } from "./AiOrb";
+import { AttachmentChips } from "./AttachmentChips";
 import styles from "./assistant.module.css";
 
 type ComposerProps = {
@@ -13,11 +16,17 @@ type ComposerProps = {
   /** The text typed so far; held by the caller so it survives the bar moving to the sidebar. */
   draft: string;
   onDraft: (text: string) => void;
-  onSend: (text: string) => void;
+  /** Sends the words and the attached files (either may be empty, not both). */
+  onSend: (text: string, files: File[]) => void;
   onTake: (wav: Uint8Array) => void;
+  /** Files waiting to go with the next request; held by the caller, like the draft. */
+  attachments: Attachments;
   /** Controls before the send button (the chat toggle). */
   accessory?: ReactNode;
 };
+
+/** What the file picker offers: pictures, PDFs and music written as text. */
+const ACCEPTED_FILES = "image/*,application/pdf,text/plain,.txt,.abc,.tab,.md,.cho,.chordpro";
 
 const formatSeconds = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 /**
@@ -32,23 +41,31 @@ const WAVE_SHAPE = [
 /**
  * The compose bar: tap the orb and sing, hum or talk (tap again to send it, or ✕ or Escape to
  * throw it away), or type and press Enter. What a request is about (the selection, or the whole score) shows as a chip before the
- * text. While a take is recorded or read, the bar draws in to a compact pill around the orb, a
- * live waveform and the time, and opens out again after.
+ * text. Sheet music (a picture, a PDF or text) is attached with the paperclip, dropped on the bar
+ * or pasted, and waits above it. While a take is recorded or read, the bar draws in to a compact
+ * pill around the orb, a live waveform and the time, and opens out again after.
  */
-export function Composer({ busy, subject, inputRef, draft, onDraft, onSend, onTake, accessory }: ComposerProps) {
+export function Composer(props: ComposerProps) {
+  const { busy, subject, inputRef, draft, onDraft, onSend, onTake, accessory, attachments } = props;
+  const picker = useRef<HTMLInputElement>(null);
   const recorder = useVoiceRecorder(onTake);
   const recording = recorder.status === "recording";
   const preparing = recorder.status === "processing";
   const capturing = recording || preparing;
   const state = recording ? "listening" : busy || preparing ? "working" : "idle";
+  const ready = Boolean(draft.trim() || attachments.files.length);
   const send = () => {
-    if (!draft.trim() || busy) return;
-    onSend(draft);
+    if (!ready || busy) return;
+    onSend(
+      draft,
+      attachments.take().map((item) => item.file),
+    );
     onDraft("");
   };
 
   return (
     <div className={styles.barWrap} data-capturing={capturing}>
+      {!capturing && <AttachmentChips files={attachments.files} onRemove={attachments.remove} />}
       <span className={styles.glow} data-state={state} aria-hidden />
       <form
         className={styles.bar}
@@ -57,6 +74,11 @@ export function Composer({ busy, subject, inputRef, draft, onDraft, onSend, onTa
         onSubmit={(e) => {
           e.preventDefault();
           send();
+        }}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          void attachments.add([...e.dataTransfer.files]);
         }}
       >
         <AiOrb
@@ -79,6 +101,13 @@ export function Composer({ busy, subject, inputRef, draft, onDraft, onSend, onTa
               value={draft}
               rows={1}
               onChange={(e) => onDraft(e.target.value)}
+              onPaste={(e) => {
+                const files = [...e.clipboardData.files];
+                const text = e.clipboardData.getData("text/plain");
+                if (!files.length && text.length <= ATTACHMENT_LIMITS.pasteChars) return;
+                e.preventDefault();
+                void (files.length ? attachments.add(files) : attachments.addText(text));
+              }}
               onKeyDown={(e) => {
                 if (e.key !== "Enter" || e.shiftKey) return;
                 e.preventDefault();
@@ -89,26 +118,37 @@ export function Composer({ busy, subject, inputRef, draft, onDraft, onSend, onTa
         )}
         {!capturing && (
           <>
-            {/* Attaching an image or PDF of sheet music to transcribe is planned; the slot is here. */}
             <IconButton
-              label="Attach an image or PDF"
-              tooltip="Attach an image or PDF · coming soon"
+              label="Attach sheet music"
+              tooltip="Attach a picture, PDF or text of the music · sent to Meta to read"
               tooltipSide="top"
-              aria-disabled="true"
               className={styles.attach}
+              disabled={busy}
+              onClick={() => picker.current?.click()}
             >
               <Paperclip size={20} />
             </IconButton>
+            <input
+              ref={picker}
+              type="file"
+              multiple
+              hidden
+              accept={ACCEPTED_FILES}
+              onChange={(e) => {
+                void attachments.add([...(e.target.files ?? [])]);
+                e.target.value = "";
+              }}
+            />
             {accessory}
-            <button className={styles.send} aria-label="Send" disabled={busy || !draft.trim()}>
+            <button className={styles.send} aria-label="Send" disabled={busy || !ready}>
               <ArrowUp size={18} weight="bold" />
             </button>
           </>
         )}
       </form>
-      {recorder.error && (
+      {(recorder.error || attachments.error) && (
         <p className={styles.recorderError} role="alert">
-          {recorder.error}
+          {recorder.error ?? attachments.error}
         </p>
       )}
     </div>

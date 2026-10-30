@@ -9,6 +9,9 @@ const TOOL_LINES: Record<string, string> = {
   music_infer_key: "Finding the key",
   music_infer_tempo: "Feeling the tempo",
   voice_transcribe_melody: "Writing down your melody",
+  music_read_source: "Reading the page",
+  score_write: "Writing the bars",
+  page_check: "Checking against the page",
   assistant_ask: "Thinking of a question",
 };
 

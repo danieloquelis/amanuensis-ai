@@ -60,10 +60,11 @@ export function runScoreTool(
     return result;
   }
   if (call.name === "score_write") {
-    const request = namespaced(args, turnId) as { requestId?: string; text?: unknown };
+    const request = namespaced(args, turnId) as { requestId?: string; text?: unknown; pitches?: "written" };
     try {
       // The bars it would write go through the same guard as an edit.
-      const preview = writeBars(score(), String(request.text ?? ""), request.requestId ?? `${turnId}-write`);
+      const id = request.requestId ?? `${turnId}-write`;
+      const preview = writeBars(score(), String(request.text ?? ""), id, request.pitches);
       const refusal = refuse(preview.command.operation, quoted);
       if (refusal) return { ok: false, error: refusal };
     } catch (error) {

@@ -76,12 +76,12 @@ export function createScoreToolGateway(getSession: () => Session, setSession: (s
     },
 
     score_write(raw) {
-      const { expectedRevision, text, requestId } = writeSchema.parse(raw);
+      const { expectedRevision, text, requestId, pitches } = writeSchema.parse(raw);
       const session = getSession();
       if (expectedRevision !== session.score.revision) {
         throw new Error("The score changed. Read the latest revision before writing.");
       }
-      const { command } = writeBars(session.score, text, requestId);
+      const { command } = writeBars(session.score, text, requestId, pitches);
       const next = execute(session, command);
       setSession(next);
       return { ok: true, revision: next.score.revision, changes: summarizeChange(session.score, next.score), command };

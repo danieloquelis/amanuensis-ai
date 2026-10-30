@@ -15,8 +15,10 @@ Start with the [product brief](product/product-brief.md), then the [architecture
 | [Delivery plan](planning/delivery-plan.md) | Research spikes, implementation order, acceptance gates, unresolved choices |
 | [Triplets plan](planning/triplets-plan.md) | Triplets (3:2): representation, phases, files, tests, what is left out |
 | [Instruments and voices plan](planning/instruments-voices-plan.md) | Sampled instruments, voices on a staff, several instruments, drums |
+| [Sheet reading plan](planning/sheet-reading-plan.md) | From a photo, PDF, handwritten page or text to the score: read and reason first, then write |
 | [Models and voice research](research/models-and-voice.md) | Meta capabilities, specialist gaps and source evidence |
 | [Notation research](research/notation-engine.md) | Owned engraving engine and musical correctness |
+| [Sheet reading](research/sheet-reading.md) | How well Muse Spark reads printed music: measured results and options |
 | [Melody transcription](research/melody-transcription.md) | Sung audio → notes and rhythm: model findings, pipeline, measured accuracy |
 | [Instrument sounds](research/instrument-sounds.md) | Sample sources, licenses and sizes for piano, winds, guitar and drums |
 | [Interaction research](research/interaction-and-motion.md) | Rive, interaction states and accessibility |

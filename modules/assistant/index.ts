@@ -1,5 +1,13 @@
 // Public API of the assistant module (framework-free). Provider adapters live in "./server".
 export { ASK_TOOL, assistantTools } from "./application/assistant-tools";
+export {
+  ATTACHMENT_LIMITS,
+  attachmentKind,
+  readUploads,
+  type Attachment,
+  type AttachmentKind,
+  type Upload,
+} from "./application/attachments";
 export { restoreTurns, turnsToSave, type ChatRepository, type Turn } from "./application/chat-history";
 export { handleAssistantRequest, MAX_REQUEST_BYTES, type AssistantResponse } from "./application/handle-request";
 export {
@@ -9,7 +17,15 @@ export {
   type VoiceResponse,
   type VoiceResult,
 } from "./application/handle-voice-request";
-export type { ChatMessage, ModelPort, ModelReply, TokenUsage, ToolCall, ToolSpec } from "./application/model-port";
+export type {
+  ChatMessage,
+  ContentPart,
+  ModelPort,
+  ModelReply,
+  TokenUsage,
+  ToolCall,
+  ToolSpec,
+} from "./application/model-port";
 export {
   MAX_TOOL_STEPS,
   runAssistant,

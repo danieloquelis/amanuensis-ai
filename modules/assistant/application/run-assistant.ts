@@ -1,16 +1,22 @@
+import type { PageImages } from "@/modules/page";
 import { commandSchema, createSession, summarizeChange, type Command, type Score, type Session } from "@/modules/score";
-import { describeTake, type TakePart, type VoiceTake } from "@/modules/voice";
+import type { TakePart, VoiceTake } from "@/modules/voice";
 import { ASK_TOOL, askSchema, assistantTools } from "./assistant-tools";
+import type { Attachment } from "./attachments";
 import { createMusicTools, isMusicTool, musicToolSpecs } from "./music-tools";
-import type { ChatMessage, ModelPort, TokenUsage } from "./model-port";
+import type { ChatMessage, ContentPart, ModelPort, TokenUsage } from "./model-port";
 import { refuseHeardBarEdit, writtenLines } from "./heard-bars-guard";
 import { parseArguments, runScoreTool } from "./score-tool-call";
 import { createScoreToolGateway } from "./score-tool-gateway";
+import { createSourceTools, isSourceTool, sourceToolSpecs } from "./source-tools";
+import { historyMessages, scoreContext, userMessage } from "./opening-messages";
 import { SYSTEM_PROMPT } from "./system-prompt";
 
 const TRANSCRIBE_TOOL = "voice_transcribe_melody";
 /** Hard cap on model round trips per instruction. */
 export const MAX_TOOL_STEPS = 12;
+/** Reading attached music takes more: read, set up, write a few bars at a time, check, fix. */
+export const MAX_SOURCE_STEPS = 24;
 
 export type AssistantTurn = { instruction: string; reply: string };
 
@@ -24,6 +30,8 @@ export type AssistantRequest = {
   history: AssistantTurn[];
   /** A recorded take: what was said (the instruction) and where singing happened. */
   take?: VoiceTake;
+  /** Files sent with the request: pictures or PDFs of sheet music, or music written as text. */
+  attachments?: Attachment[];
 };
 
 export type AssistantResult = {
@@ -65,6 +73,8 @@ export async function runAssistant(
   request: AssistantRequest,
   turnId: string = crypto.randomUUID().slice(0, 8),
   onProgress: ProgressListener = () => {},
+  /** Reads noteheads on attached pictures; without it they are read by eye. */
+  pageImages: PageImages | null = null,
 ): Promise<AssistantResult> {
   let session: Session = createSession(request.score);
   const tools = createScoreToolGateway(
@@ -94,7 +104,21 @@ export async function runAssistant(
       return result;
     },
   });
-  const toolList = [...assistantTools, ...musicToolSpecs(Boolean(request.take))];
+  const attachments = request.attachments ?? [];
+  // Pictures a tool shows the model (labelled pages) go in a user message after the tool results.
+  let shown: ContentPart[] = [];
+  const sources = createSourceTools(
+    attachments,
+    pageImages,
+    () => session.score,
+    (parts) => shown.push(...parts),
+  );
+  const toolList = [
+    ...assistantTools,
+    ...musicToolSpecs(Boolean(request.take)),
+    ...sourceToolSpecs(attachments.length > 0),
+  ];
+  const maxSteps = attachments.length ? MAX_SOURCE_STEPS : MAX_TOOL_STEPS;
   const usage: TokenUsage = { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 };
   const trace: TraceEntry[] = [];
   const thinkingMs: number[] = [];
@@ -114,7 +138,7 @@ export async function runAssistant(
     thinkingMs,
   });
 
-  for (let step = 1; step <= MAX_TOOL_STEPS; step++) {
+  for (let step = 1; step <= maxSteps; step++) {
     onProgress({ stage: "thinking" });
     const asked = Date.now();
     const reply = await model.complete(messages, toolList);
@@ -134,64 +158,37 @@ export async function runAssistant(
       }
       const started = Date.now();
       runningTool = call.name;
-      const result = isMusicTool(call.name)
-        ? music(call.name, parseArguments(call))
-        : runScoreTool(
-            call,
-            tools,
-            commands,
-            turnId,
-            () => session.score,
-            (operation, asked) => refuseHeardBarEdit(session.score, operation, heard, asked, musicianWords(request)),
-          );
+      const result =
+        sources.refuseUnread(call.name) ??
+        (isSourceTool(call.name)
+          ? await sources.run(call.name, parseArguments(call))
+          : isMusicTool(call.name)
+            ? music(call.name, parseArguments(call))
+            : runScoreTool(
+                call,
+                tools,
+                commands,
+                turnId,
+                () => session.score,
+                (operation, asked) =>
+                  refuseHeardBarEdit(session.score, operation, heard, asked, musicianWords(request)),
+              ));
       entry.ms = Date.now() - started;
       if (!result.ok) Object.assign(entry, { ok: false, error: "error" in result ? result.error : undefined });
       messages.push({ role: "tool", toolCallId: call.id, content: JSON.stringify(result) });
+    }
+    if (shown.length) {
+      messages.push({ role: "user", content: shown });
+      shown = [];
     }
   }
   return finish(
     `I ran out of steps before finishing; what I changed so far is applied (Undo takes it back).`,
     null,
-    MAX_TOOL_STEPS,
+    maxSteps,
   );
 }
 
 /** Everything the musician said or typed this turn, for checking the agent's quotes of it. */
 const musicianWords = (request: AssistantRequest) =>
   [request.instruction, ...(request.take?.speech.map((turn) => turn.text) ?? [])].join(" ");
-
-function historyMessages(request: AssistantRequest): ChatMessage[] {
-  return request.history.flatMap((turn): ChatMessage[] => [
-    { role: "user", content: turn.instruction },
-    { role: "assistant", content: turn.reply, toolCalls: [] },
-  ]);
-}
-
-/** A take's words are the request itself: the agent is told so, not left to infer it. */
-const TAKE_INTRO = "The musician recorded this take. What they said is their request; carry it out.";
-/** Typed with a take, the words answer the agent's question about that take, asked last turn. */
-const ANSWER_INTRO =
-  "That is their reply to your question about the take below, recorded last turn: carry out what the take asks, with that answer. Its singing is all here.";
-
-function userMessage(request: AssistantRequest, context: string): ChatMessage {
-  const intro = request.instruction.trim() ? ANSWER_INTRO : TAKE_INTRO;
-  const take = request.take ? `\n\n${intro}\n${describeTake(request.take)}` : "";
-  return { role: "user", content: `${request.instruction}${take}\n\n${context}`.trim() };
-}
-
-/**
- * The score as score_get_context returns it, sent with the request so the agent can act in its
- * first step instead of spending a model round trip reading the score.
- */
-function scoreContext(tools: ReturnType<typeof createScoreToolGateway>, request: AssistantRequest): string {
-  const result = tools("score_get_context", { selectedIds: request.selectedIds });
-  if (!result.ok) return "";
-  const { score, selected, vocabulary, notYetSupported } = result as Record<string, unknown>;
-  const name = request.selectionName ? `${request.selectionName}: ` : "";
-  const picked = (selected as string[]).length ? `\n[Selected: ${name}${(selected as string[]).join(", ")}]` : "";
-  return [
-    `[Score context, as score_get_context returns it]\n${score}${picked}`,
-    `[Vocabulary] ${JSON.stringify(vocabulary)}`,
-    `[Not yet supported] ${(notYetSupported as string[]).join("; ")}`,
-  ].join("\n");
-}

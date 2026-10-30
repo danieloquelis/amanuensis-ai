@@ -12,7 +12,7 @@ export {
   type ScoreTextFilter,
 } from "./application/score-text";
 export { parseBarsText } from "./application/score-text-parse";
-export { writeBars } from "./application/score-text-write";
+export { writeBars, type WrittenPitches } from "./application/score-text-write";
 export {
   CHORD_QUALITIES,
   CHORD_QUALITY_NAMES,

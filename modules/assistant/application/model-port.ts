@@ -1,8 +1,16 @@
 /** A tool call requested by the model; `arguments` is the raw JSON text it produced. */
 export type ToolCall = { id: string; name: string; arguments: string };
 
+/** Part of a user message: text, a picture, or a file such as a PDF (both as data URLs). */
+export type ContentPart =
+  | { type: "text"; text: string }
+  | { type: "image"; dataUrl: string }
+  | { type: "file"; filename: string; dataUrl: string };
+
 export type ChatMessage =
-  | { role: "system" | "user"; content: string }
+  | { role: "system"; content: string }
+  /** Pictures and files ride only in user messages, as the model APIs require. */
+  | { role: "user"; content: string | ContentPart[] }
   | { role: "assistant"; content: string | null; toolCalls: ToolCall[] }
   | { role: "tool"; toolCallId: string; content: string };
 

@@ -1,4 +1,14 @@
-import { ArrowClockwise, ArrowCounterClockwise, Check, Microphone, Timer, WarningCircle } from "@phosphor-icons/react";
+import {
+  ArrowClockwise,
+  ArrowCounterClockwise,
+  Check,
+  FilePdf,
+  FileText,
+  Image as ImageIcon,
+  Microphone,
+  Timer,
+  WarningCircle,
+} from "@phosphor-icons/react";
 import type { TakePart } from "@/modules/voice";
 import { answerTime } from "../../application/chat-history";
 import { sungLength, type Turn } from "../hooks/use-assistant";
@@ -31,12 +41,34 @@ export function TurnBubbles({ turn, ...actions }: TurnBubblesProps) {
             {turn.context && <span className={styles.contextChip}>{turn.context}</span>}
           </span>
         )}
-        <span>{turn.heard?.length ? <HeardParts parts={turn.heard} /> : turn.instruction}</span>
+        {turn.attachments?.length ? <SentFiles files={turn.attachments} /> : null}
+        {(turn.heard?.length || turn.instruction) && (
+          <span>{turn.heard?.length ? <HeardParts parts={turn.heard} /> : turn.instruction}</span>
+        )}
       </div>
       <div className={styles.theirs} data-failed={turn.status === "failed"}>
         {turn.status === "working" ? <Thinking turn={turn} /> : <Answer turn={turn} {...actions} />}
       </div>
     </li>
+  );
+}
+
+const FILE_ICONS = { image: ImageIcon, pdf: FilePdf, text: FileText };
+
+/** The files a request carried, by name. */
+function SentFiles({ files }: { files: NonNullable<Turn["attachments"]> }) {
+  return (
+    <span className={styles.sentFiles} aria-label="Attached files">
+      {files.map(({ name, kind }, i) => {
+        const Icon = FILE_ICONS[kind];
+        return (
+          <span key={i} className={styles.sentFile}>
+            <Icon size={13} />
+            {name}
+          </span>
+        );
+      })}
+    </span>
   );
 }
 

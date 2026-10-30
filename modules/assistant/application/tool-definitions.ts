@@ -34,6 +34,12 @@ export const writeSchema = z.strictObject({
     .min(1)
     .max(12_000)
     .describe('Bar lines in score text, one per bar, e.g. "bar 4: G4q F4q Eb4q D4q ; chords Cm".'),
+  pitches: z
+    .enum(["concert", "written"])
+    .default("concert")
+    .describe(
+      'How the notes are given. "concert" (default): as they sound. "written": as a transposing part\'s page shows them (copying a B♭ trumpet or guitar part from sheet music); they are converted to concert pitch. Other parts are unaffected.',
+    ),
 });
 
 /** The musician's words, required to change notes of bars just transcribed from their singing. */
