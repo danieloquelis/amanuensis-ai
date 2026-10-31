@@ -9,6 +9,12 @@ Read [docs/architecture/code-conventions.md](docs/architecture/code-conventions.
 - **Readable code.** Prettier formats everything; files stay under 200 lines; meaningful numbers get names. Don't compress logic onto long lines.
 - **Verify.** Run `yarn check` (format, lint, typecheck, unit tests), then `yarn build && yarn test:e2e`. ESLint enforces the layer and import rules; fix violations, don't disable them.
 
+## Code Map
+
+- `app` - application source
+- `tests` - automated tests
+- `docs` - project documentation
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know
