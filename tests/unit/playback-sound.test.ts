@@ -5,6 +5,7 @@ import {
   CHORD_VELOCITY,
   createPlaybackPlan,
   DYNAMIC_VELOCITY,
+  LOUD_SAMPLE_VELOCITY,
   soundsBetween,
   type PlaybackPlan,
 } from "@/modules/playback";
@@ -29,6 +30,11 @@ test("an accent strikes harder, never beyond the MIDI maximum", () => {
   assert.equal(velocityOf(createPlaybackPlan(score), "note-0-1"), DYNAMIC_VELOCITY.mf + ACCENT_VELOCITY);
   score = edit(score, { type: "putAnnotation", targetId: "note-0-1", kind: "dynamic", text: "ff" });
   assert.equal(velocityOf(createPlaybackPlan(score), "note-0-1"), 127);
+});
+
+test("mf and above play loud samples on every instrument", () => {
+  for (const dynamic of ["pp", "p", "mp"]) assert.ok(DYNAMIC_VELOCITY[dynamic] < LOUD_SAMPLE_VELOCITY, dynamic);
+  for (const dynamic of ["mf", "f", "ff"]) assert.ok(DYNAMIC_VELOCITY[dynamic] >= LOUD_SAMPLE_VELOCITY, dynamic);
 });
 
 test("notes are MIDI numbers: middle C is 60", () => {

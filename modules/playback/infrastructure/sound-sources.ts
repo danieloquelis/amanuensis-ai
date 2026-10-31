@@ -1,6 +1,7 @@
 import { LAYERS, type SmplrPreset } from "smplr";
 import { DRUM_PIECE_CODES, DRUM_PIECES, type DrumPiece } from "@/modules/score";
 import type { SoundId } from "../application/sound-port";
+import { LOUD_SAMPLE_VELOCITY } from "../domain/dynamics";
 
 /** Self-hosted samples. A new sample set goes in a new folder (v2), so cached files never go stale. */
 export const SOUNDS_BASE = "/sounds/v1";
@@ -13,8 +14,8 @@ export const SOUND_FORMATS = ["ogg", "m4a"];
  * the loud one mf to ff (see DYNAMIC_VELOCITY).
  */
 const PIANO_LAYERS = [
-  { name: "PP", velRange: [1, 76] },
-  { name: "MF", velRange: [77, 127] },
+  { name: "PP", velRange: [1, LOUD_SAMPLE_VELOCITY - 1] },
+  { name: "MF", velRange: [LOUD_SAMPLE_VELOCITY, 127] },
 ] as const;
 const PIANO_RANGE = { low: 21, high: 108 };
 const SAMPLE_SPACING = 3;
@@ -153,10 +154,10 @@ const DRUM_SAMPLES: Record<DrumPiece, { soft: string; loud: string; semitones?: 
     loud: `${CYMBALS}/Suspended Cymbal 1/susCymb1_hit_bell_mf1`,
   },
 };
-/** Hits up to mf use the soft samples; f and above the loud ones (see DYNAMIC_VELOCITY). */
+/** Like the piano, mp and below use the soft samples; mf and above the loud ones (see DYNAMIC_VELOCITY). */
 const DRUM_LAYERS = [
-  { layer: "soft", velRange: [1, 88] },
-  { layer: "loud", velRange: [89, 127] },
+  { layer: "soft", velRange: [1, LOUD_SAMPLE_VELOCITY - 1] },
+  { layer: "loud", velRange: [LOUD_SAMPLE_VELOCITY, 127] },
 ] as const;
 
 const sampleName = (path: string) => path.split("/").at(-1)!;
