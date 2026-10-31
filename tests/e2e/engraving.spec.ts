@@ -28,8 +28,17 @@ for (const name of [
 ]) {
   test(`engraves the ${name} fixture`, async ({ page }) => {
     const score = readFileSync(`tests/fixtures/engraving/${name}.json`, "utf8");
-    await page.addInitScript((value) => localStorage.setItem("amanuensis.score.v1", value), score);
-    await page.goto("/");
+    const id = (JSON.parse(score) as { id: string }).id;
+    await page.addInitScript((value) => {
+      const parsed = JSON.parse(value) as { id: string };
+      const now = Date.now();
+      localStorage.setItem(`amanuensis.score.${parsed.id}`, value);
+      localStorage.setItem(
+        "amanuensis.workspaces.v1",
+        JSON.stringify({ order: [parsed.id], times: { [parsed.id]: { createdAt: now, updatedAt: now } } }),
+      );
+    }, score);
+    await page.goto(`/workspace/${id}`);
     const sheet = page.locator("svg[aria-label$='Select a note to edit.']");
     await expect(sheet).toBeVisible();
     await expect(sheet).toHaveScreenshot(`${name}.png`, {

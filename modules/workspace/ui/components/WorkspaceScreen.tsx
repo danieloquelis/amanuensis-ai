@@ -1,14 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { partOf } from "@/modules/score";
-import { localChatRepository } from "@/modules/assistant";
+import { chatRepositoryFor } from "@/modules/assistant";
 import { ComposeDock, useAssistant, useComposeDock } from "@/modules/assistant/ui";
 import { playbackStart, selectionAnchors } from "@/modules/editor";
 import { ScoreToolMenus, useClipboardShortcuts, useScoreEditor } from "@/modules/editor/ui";
 import { scoreSounds } from "@/modules/playback";
 import { usePlayback } from "@/modules/playback/ui";
-import { localProjectRepository } from "@/modules/projects";
+import { createWorkspaceScore, localWorkspaceRepository, type ProjectRepository } from "@/modules/projects";
 import { useAnchorRect } from "@/shared/ui/hooks/use-anchor-rect";
 import { useBottomInset } from "@/shared/ui/hooks/use-bottom-inset";
 import { useNoteAudition } from "../hooks/use-note-audition";
@@ -30,12 +31,21 @@ import styles from "./workspace.module.css";
  * expanded, it takes the left column and the toolbar row and score share the rest, centred on
  * each other. Holds no rules itself.
  */
-export function WorkspaceScreen() {
+export function WorkspaceScreen({ workspaceId }: { workspaceId: string }) {
   const [zoom, setZoom] = useState<number>(ZOOM_RANGE.initial);
   // A right-click menu on the sheet replaces the selection card while it is open.
   const [menuOpen, setMenuOpen] = useState(false);
+  const router = useRouter();
   const playback = usePlayback();
-  const editor = useScoreEditor(playback.stop, localProjectRepository);
+  const repository = useMemo<ProjectRepository>(
+    () => ({
+      load: () => localWorkspaceRepository.load(workspaceId),
+      save: (score) => localWorkspaceRepository.save(workspaceId, score),
+    }),
+    [workspaceId],
+  );
+  const chats = useMemo(() => chatRepositoryFor(workspaceId), [workspaceId]);
+  const editor = useScoreEditor(playback.stop, repository);
   // The score's instruments load as soon as it opens (and when parts change), so the first note sounds right.
   const sounds = scoreSounds(editor.score).join(",");
   const { prepare } = playback;
@@ -46,7 +56,7 @@ export function WorkspaceScreen() {
   const assistant = useAssistant({
     getScore: editor.getScore,
     applyCommands: editor.applyCommands,
-    chats: localChatRepository,
+    chats,
   });
   // Nothing on the sheet or toolbar edits the score while the assistant works on it: its turn commits as one step.
   const { lock } = editor;
@@ -78,8 +88,9 @@ export function WorkspaceScreen() {
   // With something selected, Play starts from the first bar of the selection.
   const playFrom = playbackStart(editor.score, editor.picked);
   const startNewSong = () => {
-    editor.startOver();
-    assistant.clear();
+    const id = crypto.randomUUID();
+    localWorkspaceRepository.save(id, createWorkspaceScore(crypto.randomUUID()));
+    router.push(`/workspace/${id}`);
   };
   // Expanded, the chat takes the left column of the screen and everything else shares the rest.
   const chatDocked = dock.chatMode === "sidebar";
@@ -112,7 +123,7 @@ export function WorkspaceScreen() {
         <div className={styles.overlay}>
           <div className={styles.topStart}>
             <BrandMark />
-            <NewSongButton disabled={!editor.ready} onConfirm={startNewSong} />
+            <NewSongButton onCreate={startNewSong} />
           </div>
           <div className={styles.topCenter}>
             <ScoreToolMenus

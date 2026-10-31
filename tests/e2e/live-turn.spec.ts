@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { openExample } from "./workspace-helpers";
 
 const streamed = (body: unknown) => ({
   status: 200,
@@ -31,7 +32,7 @@ test("while the assistant works the sheet shows it and stays locked, then its ed
       }),
     );
   });
-  await page.goto("/");
+  await openExample(page);
   const meter = page.getByRole("button", { name: "Change time signature" });
   await expect(meter).toBeEnabled();
   const instruction = page.getByLabel("Describe the music");
@@ -53,7 +54,7 @@ test("while the assistant works the sheet shows it and stays locked, then its ed
 test("Stop ends a running turn and unlocks the score", async ({ page }) => {
   // The model never answers: only Stop ends this turn.
   await page.route("/api/assistant", () => new Promise(() => {}));
-  await page.goto("/");
+  await openExample(page);
   const meter = page.getByRole("button", { name: "Change time signature" });
   const instruction = page.getByLabel("Describe the music");
   await instruction.fill("Write a long melody");

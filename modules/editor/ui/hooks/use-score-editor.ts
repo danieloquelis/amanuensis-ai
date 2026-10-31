@@ -32,8 +32,7 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
   const latest = useRef(session);
   const latestScore = useCallback(() => latest.current.score, []);
   const sheetSelection = useSheetSelection(session.score, latestScore);
-  const { selectedId, setSelectedId, selectedBarId, selectedItem, select, selectBar, selectItem, clear } =
-    sheetSelection;
+  const { selectedId, setSelectedId, selectedBarId, selectedItem, select, selectBar, selectItem } = sheetSelection;
   const [loaded, setLoaded] = useState(false);
   // Locked while the assistant works on the score: its turn commits as one step when it ends.
   const [locked, setLocked] = useState(false);
@@ -147,26 +146,6 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
     [addReceipt, onBeforeEdit, persist, ready, replaceSession],
   );
 
-  /**
-   * Starts a new, blank song. The old one is gone for good: undo history and receipts start
-   * afresh, so this is for a deliberate "start over", not an edit.
-   */
-  const startOver = useCallback(() => {
-    if (!ready) return;
-    const current = latest.current;
-    const { score } = execute(current, {
-      requestId: crypto.randomUUID(),
-      expectedRevision: current.score.revision,
-      operation: { type: "newScore" },
-    });
-    onBeforeEdit();
-    replaceSession(createSession(score));
-    clear();
-    setReceipts([]);
-    setError(null);
-    persist(score);
-  }, [clear, onBeforeEdit, persist, ready, replaceSession]);
-
   const notes = useNoteCommands(latestScore, commit, { selectedId, selectedHead: sheetSelection.selectedHead, select });
 
   const deleteItem = (item: SheetItem) => {
@@ -217,7 +196,6 @@ export function useScoreEditor(onBeforeEdit: () => void, repository: ProjectRepo
     /** The head picked on the selected note's stem (a note of a chord, a drum piece), or null. */
     selectedHead: sheetSelection.selectedHead,
     undoRedo,
-    startOver,
     canUndo: session.past.length > 0,
     canRedo: session.future.length > 0,
   };

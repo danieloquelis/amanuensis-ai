@@ -1,7 +1,23 @@
 import type { Score } from "@/modules/score";
+import type { WorkspaceMeta } from "./workspace-index";
 
 /** Port for loading and saving the active score. Implementations may throw on unreadable data. */
 export interface ProjectRepository {
   load(): Score | null;
   save(score: Score): void;
+}
+
+/** Port for the workspaces on this device. `load` throws on unreadable data, like the single-score port. */
+export interface WorkspaceRepository {
+  /** Every workspace, most recently touched first. */
+  list(): WorkspaceMeta[];
+  load(id: string): Score | null;
+  /** Saves by workspace id: the score's own id may change (it does on `newScore`) without moving the workspace. */
+  save(id: string, score: Score): void;
+  remove(id: string): void;
+  /**
+   * Adopts the pre-workspace draft (`amanuensis.score.v1`) as a workspace and returns its id,
+   * or null when there is no legacy draft. Runs at most once: it deletes the legacy key.
+   */
+  adoptLegacy(): string | null;
 }

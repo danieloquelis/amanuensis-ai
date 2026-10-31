@@ -41,5 +41,10 @@ export { createMusicTools, MUSIC_TOOL_NAMES, musicToolSpecs, type MusicToolName 
 export { scoreBlocks, withoutScoreBlocks, type ScoreBlock } from "./application/score-blocks";
 export { createScoreToolGateway } from "./application/score-tool-gateway";
 export { SCORE_TOOL_NAMES, scoreTools, toolParameters, type ScoreToolName } from "./application/tool-definitions";
-export { localChatRepository } from "./infrastructure/local-chat";
+export {
+  adoptLegacyChat,
+  chatRepositoryFor,
+  localChatRepository,
+  removeWorkspaceChat,
+} from "./infrastructure/local-chat";
 export { askedAfter, withHeardWords, type AskedTake } from "./application/asked-take";

@@ -1,9 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
+import { openExample } from "./workspace-helpers";
 
 test("edit, undo, redo and reload preserve the musical document", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto("/");
+  await openExample(page);
   await page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true }).click();
   await page.keyboard.press("ArrowUp");
   await page.keyboard.press("Escape");
@@ -19,7 +20,7 @@ test("edit, undo, redo and reload preserve the musical document", async ({ page 
 });
 
 test("shortening a note leaves a rest that becomes a note by typing its letter", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   const quickBar = page.getByRole("toolbar", { name: "Selected note actions" });
   await page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true }).click();
   await quickBar.getByRole("button", { name: "Half duration", exact: true }).click();
@@ -64,21 +65,26 @@ test("a draft saved in the older format opens, and is saved in the current one a
   await page.goto("/");
   await page.evaluate((saved) => localStorage.setItem("amanuensis.score.v1", JSON.stringify(saved)), draft);
   await page.reload();
+  // The legacy draft is adopted as a workspace and listed on Home.
+  await expect(page.getByRole("link", { name: /Old draft/ })).toBeVisible();
+  await page.getByRole("link", { name: /Old draft/ }).click();
+  await expect(page).toHaveURL(/\/workspace\/old-draft$/);
   const note = page.getByRole("button", { name: "Bar 1, beat 1, D4, 4 beats", exact: true });
   await expect(note).toBeVisible();
   await note.click();
   await page.keyboard.press("ArrowUp");
   await expect(page.getByRole("button", { name: "Bar 1, beat 1, E4, 4 beats", exact: true })).toBeVisible();
-  const saved = JSON.parse((await page.evaluate(() => localStorage.getItem("amanuensis.score.v1")))!);
+  const saved = JSON.parse((await page.evaluate(() => localStorage.getItem("amanuensis.score.old-draft")))!);
   expect(saved.schemaVersion).toBe(3);
   expect(saved.parts[0].instrument).toBe("piano");
   expect(saved.annotations[0].staffId).toBe(saved.parts[0].staves[0].id);
+  expect(await page.evaluate(() => localStorage.getItem("amanuensis.score.v1"))).toBeNull();
   await page.reload();
   await expect(page.getByRole("button", { name: "Bar 1, beat 1, E4, 4 beats", exact: true })).toBeVisible();
 });
 
 test("pointer drag and keyboard editing operate on the same note", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true })).toBeEnabled();
   const note = page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true });
   const hit = note.locator("rect");
@@ -98,21 +104,27 @@ test("pointer drag and keyboard editing operate on the same note", async ({ page
 
 test("corrupt local data is preserved and the mobile editor remains usable", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.addInitScript(() => localStorage.setItem("amanuensis.score.v1", "broken draft"));
-  await page.goto("/");
+  await page.addInitScript(() => {
+    localStorage.setItem("amanuensis.score.broken", "broken draft");
+    localStorage.setItem(
+      "amanuensis.workspaces.v1",
+      JSON.stringify({ order: ["broken"], times: { broken: { createdAt: 1, updatedAt: 1 } } }),
+    );
+  });
+  await page.goto("/workspace/broken");
   await expect(page.getByRole("region", { name: "Score workspace" }).getByRole("alert")).toContainText(
     "left untouched",
   );
   await page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true }).click();
   await page.keyboard.press("ArrowUp");
   await page.keyboard.press("Escape");
-  expect(await page.evaluate(() => localStorage.getItem("amanuensis.score.v1"))).toBe("broken draft");
+  expect(await page.evaluate(() => localStorage.getItem("amanuensis.score.broken"))).toBe("broken draft");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: "test-results/workspace-mobile.png", fullPage: true });
 });
 
 test("printing shows the sheet with its title and hides editing controls", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   await expect(page.getByRole("button", { name: "Change time signature" })).toBeEnabled();
   await page.emulateMedia({ media: "print" });
   await expect(page.getByRole("heading", { name: "First light", exact: true })).toBeVisible();
@@ -121,7 +133,7 @@ test("printing shows the sheet with its title and hides editing controls", async
 });
 
 test("mixed meters, expressive indications and repeats are editable musical state", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   await expect(page.getByRole("button", { name: "Change time signature" })).toBeEnabled();
   await page.getByRole("button", { name: "Select bar 2", exact: true }).click();
   await page.getByRole("button", { name: "Change time signature" }).click();
@@ -152,7 +164,7 @@ test("mixed meters, expressive indications and repeats are editable musical stat
   await expect(page.locator("svg text").filter({ hasText: /^espressivo$/ })).toHaveCount(0);
 });
 test("empty measures become full-bar rests and allow note entry", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   await expect(page.getByRole("button", { name: "Change time signature" })).toBeEnabled();
   await page.getByRole("button", { name: "Select bar 1", exact: true }).click();
   await page.getByRole("toolbar", { name: "Selected bar actions" }).getByRole("button", { name: "Clear bar" }).click();
@@ -169,7 +181,7 @@ test("empty measures become full-bar rests and allow note entry", async ({ page 
   await expect(page.getByRole("button", { name: "Bar 1, beat 1, Rest, 3 beats", exact: true })).toBeVisible();
 });
 test("the card stacks notes on a stem, and one note of a chord can be picked and deleted", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   const note = page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true });
   // A right-click selects, like a click: there is no menu, the card has the actions.
   await note.click({ button: "right" });
@@ -196,7 +208,7 @@ test("the card stacks notes on a stem, and one note of a chord can be picked and
 });
 
 test("a note tied over the barline holds into the next bar", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   await page.getByRole("button", { name: "Bar 1, beat 4, E4, 1 beats", exact: true }).click();
   const tie = page
     .getByRole("toolbar", { name: "Selected note actions" })
@@ -207,7 +219,7 @@ test("a note tied over the barline holds into the next bar", async ({ page }) =>
 });
 
 test("a run of notes gets a slur, an articulation and an octave from its card", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   await page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true }).click();
   await page.getByRole("button", { name: "Bar 1, beat 3, G4, 1 beats", exact: true }).click({ modifiers: ["Shift"] });
   const card = page.getByRole("toolbar", { name: "Selected notes actions" });
@@ -229,7 +241,7 @@ test("a run of notes gets a slur, an articulation and an octave from its card", 
 });
 
 test("drag a bar divider, undo it, and restore persisted spacing", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   await expect(page.getByRole("button", { name: "Change time signature" })).toBeEnabled();
   const divider = page.getByRole("slider", { name: "Resize bar 1" });
   const natural = Number(await divider.getAttribute("aria-valuenow"));
@@ -253,7 +265,7 @@ test("drag a bar divider, undo it, and restore persisted spacing", async ({ page
 });
 
 test("horizontal note drag reorders the bar and Escape cancels a pitch drag", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   await expect(page.getByRole("button", { name: "Change time signature" })).toBeEnabled();
   const first = page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true });
   const third = page.getByRole("button", { name: "Bar 1, beat 3, G4, 1 beats", exact: true });
@@ -275,7 +287,7 @@ test("horizontal note drag reorders the bar and Escape cancels a pitch drag", as
 });
 
 test("a key signature changes the engraving and diatonic steps, not the written pitches", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   await page.getByRole("button", { name: "Change key signature" }).click();
   await page.getByRole("button", { name: "D major", exact: true }).click();
   await page.keyboard.press("Escape");
@@ -291,7 +303,7 @@ test("a key signature changes the engraving and diatonic steps, not the written 
 });
 
 test("a selected bar is deleted with the Delete key", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   const bar = page.getByRole("button", { name: "Bar 2", exact: true });
   const box = (await bar.boundingBox())!;
   await page.mouse.click(box.x + box.width - 6, box.y + box.height - 4);
@@ -302,7 +314,7 @@ test("a selected bar is deleted with the Delete key", async ({ page }) => {
 });
 
 test("a chord progression is typed bar by bar", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   await page.getByRole("button", { name: "Chord symbols", exact: true }).click();
   const input = page.getByLabel("Chord symbol", { exact: true });
   for (const chord of ["C", "Am7", "Dm7", "G7"]) {
@@ -316,7 +328,7 @@ test("a chord progression is typed bar by bar", async ({ page }) => {
 });
 
 test("several marks can be added and any one deleted by selecting it", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   await page.getByRole("button", { name: "Select bar 4", exact: true }).click();
   await page.getByRole("button", { name: "Marks and repeats", exact: true }).click();
   const marks = page.getByRole("group", { name: "Marks" });
@@ -359,7 +371,7 @@ test("the AI applies an instruction as one undoable step", async ({ page }) => {
       }),
     );
   });
-  await page.goto("/");
+  await openExample(page);
   await expect(page.getByRole("button", { name: "Change time signature" })).toBeEnabled();
   const instruction = page.getByLabel("Describe the music");
   await instruction.fill("Add Am7 on beat 3 of bar 2");
@@ -388,7 +400,7 @@ test("the AI's question becomes buttons that answer it", async ({ page }) => {
         : { reply: "Repeated bar 2.", question: null, commands: [], changes: [], steps: 1 };
     await route.fulfill(streamed(body));
   });
-  await page.goto("/");
+  await openExample(page);
   const instruction = page.getByLabel("Describe the music");
   await instruction.fill("repeat that");
   await instruction.press("Enter");
@@ -408,7 +420,7 @@ test("a failed request can be retried as it was, in place", async ({ page }) => 
       await route.fulfill(streamed({ reply: "Done this time.", question: null, commands: [], changes: [], steps: 1 }));
     }
   });
-  await page.goto("/");
+  await openExample(page);
   const instruction = page.getByLabel("Describe the music");
   await instruction.fill("make it swing");
   await instruction.press("Enter");
@@ -430,7 +442,7 @@ test("shift-click picks a range of bars, and the compose bar works on just those
     asked.push(route.request().postDataJSON());
     await route.fulfill(streamed({ reply: "Made bars 2–4 slash bars.", question: null, commands: [], changes: [] }));
   });
-  await page.goto("/");
+  await openExample(page);
   await expect(page.getByRole("button", { name: "Change time signature" })).toBeEnabled();
   await page.getByRole("button", { name: "Bar 2", exact: true }).click(barCorner);
   await page.getByRole("button", { name: "Bar 4", exact: true }).click({ ...barCorner, modifiers: ["Shift"] });
@@ -459,7 +471,7 @@ test("shift-click picks a range of bars, and the compose bar works on just those
 });
 
 test("cmd-click adds a note to the selection, and cmd-clicking it again removes it", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   const first = page.getByRole("button", { name: "Bar 1, beat 2, E4, 1 beats", exact: true });
   const second = page.getByRole("button", { name: "Bar 3, beat 1, G4, 1 beats", exact: true });
   await first.click();
@@ -475,7 +487,7 @@ test("cmd-click adds a note to the selection, and cmd-clicking it again removes 
 });
 
 test("the compose bar follows the selection, and ⌘K focuses it from anywhere", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   const compose = page.getByRole("form", { name: "Compose" });
   await expect(compose.getByText("Whole score", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true }).click();
@@ -492,7 +504,7 @@ test("a press on the score folds the chat away; while hidden, its button shows t
     if (calls++ > 0) await held;
     await route.fulfill(streamed({ reply: "Done.", question: null, commands: [], changes: [] }));
   });
-  await page.goto("/");
+  await openExample(page);
   const instruction = page.getByLabel("Describe the music");
   await instruction.fill("make it brighter");
   await instruction.press("Enter");
@@ -519,7 +531,7 @@ test("opening the chat folds the selection card away; a press on a note brings i
   await page.route("/api/assistant", (route) =>
     route.fulfill(streamed({ reply: "Done.", question: null, commands: [], changes: [] })),
   );
-  await page.goto("/");
+  await openExample(page);
   const note = page.getByRole("button", { name: "Bar 1, beat 4, E4, 1 beats", exact: true });
   const card = page.getByRole("region", { name: "Selection" });
   const chat = page.getByRole("region", { name: "Chat" });
@@ -550,7 +562,7 @@ test("the chat opens at its newest message, without scrolling there", async ({ p
       }),
     ),
   );
-  await page.goto("/");
+  await openExample(page);
   const instruction = page.getByLabel("Describe the music");
   const replies = page.getByRole("region", { name: "Chat" }).getByText("Done, and here is a longer answer");
   for (const [index, request] of ["one", "two", "three", "four", "five"].entries()) {
@@ -573,7 +585,7 @@ test("the chat expands into a sidebar that holds the compose bar, and closing it
   await page.route("/api/assistant", (route) =>
     route.fulfill(streamed({ reply: "Done.", question: null, commands: [], changes: [] })),
   );
-  await page.goto("/");
+  await openExample(page);
   const instruction = page.getByLabel("Describe the music");
   await instruction.fill("make it brighter");
   await instruction.press("Enter");
@@ -589,35 +601,60 @@ test("the chat expands into a sidebar that holds the compose bar, and closing it
   await expect(page.getByLabel("Describe the music")).toHaveValue("a half-typed idea");
 });
 
-test("a new song clears the score and the chat, once confirmed", async ({ page }) => {
+test("a new song keeps the current song and its chat, and starts blank", async ({ page }) => {
   const turn = { id: "t1", instruction: "Add chords", status: "done", reply: "Added C and G." };
-  // Saved before the app first loads (once per tab, so the reload below does not bring it back).
+  // Saved before the app first loads (once per tab, so later navigations do not bring it back).
   await page.addInitScript(
     (saved) => {
-      if (sessionStorage.getItem("seeded")) return;
-      sessionStorage.setItem("seeded", "yes");
-      localStorage.setItem("amanuensis.chat.v1", JSON.stringify(saved));
+      if (sessionStorage.getItem("chat-seeded")) return;
+      sessionStorage.setItem("chat-seeded", "yes");
+      localStorage.setItem("amanuensis.chat.e2e-song", JSON.stringify(saved));
     },
     [turn],
   );
-  await page.goto("/");
+  await openExample(page);
   await expect(page.getByRole("button", { name: "Show chat" })).toBeVisible();
   await page.getByRole("button", { name: "New song" }).click();
-  await page.getByRole("alertdialog", { name: "Start a new song?" }).getByRole("button", { name: "Cancel" }).click();
-  await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "New song" }).click();
-  await page.getByRole("alertdialog", { name: "Start a new song?" }).getByRole("button", { name: "New song" }).click();
-  await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true })).toBeHidden();
-  await expect(page.getByRole("button", { name: "Bar 4, beat 1, Rest, 4 beats", exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/workspace\/.+/);
+  // The new song is blank, with an empty chat.
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, Rest, 4 beats", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Show chat" })).toBeHidden();
-  await expect(page.getByRole("button", { name: "Undo", exact: true })).toBeDisabled();
   await page.reload();
-  await expect(page.getByRole("button", { name: "Bar 4, beat 1, Rest, 4 beats", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Show chat" })).toBeHidden();
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, Rest, 4 beats", exact: true })).toBeVisible();
+  // Home lists both songs; the first kept its work.
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: /First light/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Untitled/ })).toBeVisible();
+  await page.getByRole("link", { name: /First light/ }).click();
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Show chat" })).toBeVisible();
+});
+
+test("Home starts empty, creates songs, and removes one only when confirmed", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByText("No songs yet")).toBeVisible();
+  await page.getByRole("button", { name: "New song", exact: true }).click();
+  await expect(page).toHaveURL(/\/workspace\/.+/);
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: /Untitled/ })).toBeVisible();
+  const remove = page.getByRole("button", { name: "Remove Untitled" });
+  await remove.click();
+  // One click arms the confirm; the song is still listed.
+  await expect(page.getByRole("link", { name: /Untitled/ })).toBeVisible();
+  await expect(remove).toHaveAttribute("aria-pressed", "true");
+  await remove.click();
+  await expect(page.getByRole("link", { name: /Untitled/ })).toHaveCount(0);
+  await expect(page.getByText("No songs yet")).toBeVisible();
+});
+
+test("an unknown workspace id goes back Home", async ({ page }) => {
+  await page.goto("/workspace/does-not-exist");
+  await expect(page).toHaveURL("/");
+  await expect(page.getByText("No songs yet")).toBeVisible();
 });
 
 test("with a bar selected, Play starts from that bar", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   await expect(page.getByRole("button", { name: "Play score" })).toBeEnabled();
   await page.getByRole("button", { name: "Select bar 3", exact: true }).click();
   await page.getByRole("button", { name: "Play from bar 3" }).click();
@@ -647,7 +684,7 @@ test("a note sounds when pressed, at each pitch while dragged, and when changed 
 }) => {
   await installSoundProbe(page);
   const heard = () => heardNotes(page);
-  await page.goto("/");
+  await openExample(page);
   const note = page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true });
   await expect(note).toBeEnabled();
   const box = (await note.locator("rect").boundingBox())!;
@@ -671,7 +708,7 @@ test("Play loads the piano and plays the score", async ({ page }) => {
   page.on("request", (request) => {
     if (request.url().includes("/sounds/v1/piano/")) pianoFiles.push(request.url());
   });
-  await page.goto("/");
+  await openExample(page);
   await page.getByRole("button", { name: "Play score" }).click();
   await expect(page.getByRole("button", { name: "Stop playback" })).toBeVisible();
   await expect.poll(() => heardNotes(page).then((notes) => notes[0])).toBe(60);
@@ -683,7 +720,7 @@ test("Play loads the piano and plays the score", async ({ page }) => {
 test("when sounds cannot load, the score still plays", async ({ page }) => {
   await installSoundProbe(page);
   await page.route("**/sounds/**", (route) => route.abort());
-  await page.goto("/");
+  await openExample(page);
   await page.getByRole("button", { name: "Play score" }).click();
   await expect(page.getByRole("region", { name: "Score workspace" }).getByRole("alert")).toContainText(
     "Instrument sounds could not load; playing reference tones.",
@@ -694,7 +731,7 @@ test("when sounds cannot load, the score still plays", async ({ page }) => {
 
 test("the instrument sets the clef, the written pitch and the sound, and survives a reload", async ({ page }) => {
   await installSoundProbe(page);
-  await page.goto("/");
+  await openExample(page);
   const sheet = page.locator("svg[aria-label$='Select a note to edit.']");
   await page.getByRole("button", { name: "Instruments", exact: true }).click();
   await page.getByRole("button", { name: "Trombone", exact: true }).click();
@@ -725,7 +762,7 @@ test("the instrument sets the clef, the written pitch and the sound, and survive
 
 test("an added instrument gets its own staff, and the mixer mutes it", async ({ page }) => {
   await installSoundProbe(page);
-  await page.goto("/");
+  await openExample(page);
   const sheet = page.locator("svg[aria-label$='Select a note to edit.']");
   await page.getByRole("button", { name: "Instruments", exact: true }).click();
   await page.getByRole("button", { name: "Add Trumpet in B♭", exact: true }).click();
@@ -769,7 +806,7 @@ test("an added instrument gets its own staff, and the mixer mutes it", async ({ 
 
 test("a drum hit is dragged through the kit, sounding each piece, and plays on the kit", async ({ page }) => {
   await installSoundProbe(page);
-  await page.goto("/");
+  await openExample(page);
   await page.getByRole("button", { name: "Instruments", exact: true }).click();
   await page.getByRole("button", { name: "Add Drums", exact: true }).click();
   await page.keyboard.press("Escape");
@@ -801,7 +838,7 @@ test("a drum hit is dragged through the kit, sounding each piece, and plays on t
 });
 
 test("pinching (Ctrl + wheel) zooms the sheet, not the page", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   const paper = page.getByRole("article", { name: "Music sheet" });
   await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true })).toBeEnabled();
   const before = (await paper.boundingBox())!.width;
@@ -819,7 +856,7 @@ test("pinching (Ctrl + wheel) zooms the sheet, not the page", async ({ page }) =
 });
 
 test("a bar gets a second voice, its rest becomes a note, and undo takes it away", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true })).toBeEnabled();
   await page.getByRole("button", { name: "Select bar 1", exact: true }).click();
   await page
@@ -840,7 +877,7 @@ test("a bar gets a second voice, its rest becomes a note, and undo takes it away
 });
 
 test("Shift + a letter adds that note to the chord on the same stem", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   const note = page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true });
   await expect(note).toBeEnabled();
   await note.click();
@@ -851,7 +888,7 @@ test("Shift + a letter adds that note to the chord on the same stem", async ({ p
 });
 
 test("a note of a chord can be dragged on its own; the others stay", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   const note = page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true });
   await expect(note).toBeEnabled();
   await note.click();
@@ -871,7 +908,7 @@ test("a note of a chord can be dragged on its own; the others stay", async ({ pa
 });
 
 test("⌘C on a bar and ⌘V on another bar pastes it there, as one undoable edit", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true })).toBeEnabled();
   await page.getByRole("button", { name: "Select bar 1", exact: true }).click();
   await page.keyboard.press("ControlOrMeta+C");
@@ -884,7 +921,7 @@ test("⌘C on a bar and ⌘V on another bar pastes it there, as one undoable edi
 });
 
 test("⌘C then ⌘V on the same note pastes after it, and again after that", async ({ page }) => {
-  await page.goto("/");
+  await openExample(page);
   const note = page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true });
   await expect(note).toBeEnabled();
   await note.click();

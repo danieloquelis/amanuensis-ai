@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { openExample } from "./workspace-helpers";
 
 /** A one-pixel PNG: a picture the browser can decode, small enough to send as it is. */
 const PIXEL = Buffer.from(
@@ -36,7 +37,7 @@ test("an attached page is sent with the request, and the reply's commands apply"
       }),
     );
   });
-  await page.goto("/");
+  await openExample(page);
   await expect(page.getByRole("button", { name: "Change time signature" })).toBeEnabled();
   await page
     .getByRole("form", { name: "Compose" })
