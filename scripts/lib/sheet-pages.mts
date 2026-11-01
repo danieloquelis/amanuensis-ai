@@ -27,8 +27,15 @@ export async function renderPages(base: string, only: string[] = []): Promise<Pa
       const score = JSON.parse(readFileSync(`${FIXTURES}/${name}.json`, "utf8"));
       // Tall enough for the longest page, so no system is cut off below the window.
       const page = await browser.newPage({ viewport: { width: 1300, height: 3000 }, deviceScaleFactor: PIXEL_RATIO });
-      await page.addInitScript((value) => localStorage.setItem("amanuensis.score.v1", value), JSON.stringify(score));
-      await page.goto(base);
+      // Opened as a saved song, the way Home opens one (as the engraving e2e test does).
+      await page.addInitScript((value) => {
+        const parsed = JSON.parse(value) as { id: string };
+        const now = Date.now();
+        localStorage.setItem(`amanuensis.score.${parsed.id}`, value);
+        const times = { [parsed.id]: { createdAt: now, updatedAt: now } };
+        localStorage.setItem("amanuensis.workspaces.v1", JSON.stringify({ order: [parsed.id], times }));
+      }, JSON.stringify(score));
+      await page.goto(`${base}/workspace/${score.id}`);
       const sheet = page.locator("svg[aria-label$='Select a note to edit.']");
       await sheet.waitFor();
       await page.waitForTimeout(500);

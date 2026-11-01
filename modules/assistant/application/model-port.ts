@@ -11,7 +11,8 @@ export type ChatMessage =
   | { role: "system"; content: string }
   /** Pictures and files ride only in user messages, as the model APIs require. */
   | { role: "user"; content: string | ContentPart[] }
-  | { role: "assistant"; content: string | null; toolCalls: ToolCall[] }
+  /** `reasoning`: the provider's own record of the model's thinking for this reply, sent back as is. */
+  | { role: "assistant"; content: string | null; toolCalls: ToolCall[]; reasoning?: unknown[] }
   | { role: "tool"; toolCallId: string; content: string };
 
 export type ToolSpec = { name: string; description: string; parameters: unknown };
@@ -29,9 +30,15 @@ export type CompleteOptions = {
   signal?: AbortSignal;
   /** Hears the reply's text piece by piece as it is written, before the call resolves. */
   onText?: (text: string) => void;
+  /** Groups calls that share a beginning (one turn's steps), so the provider's prompt cache can reuse it. */
+  cacheKey?: string;
 };
 
-export type ModelReply = { content: string | null; toolCalls: ToolCall[]; usage?: TokenUsage };
+/**
+ * `reasoning` is the model's thinking for this reply, opaque (encrypted by the provider), when
+ * the provider can carry it to the next step: keep it with the reply in the conversation.
+ */
+export type ModelReply = { content: string | null; toolCalls: ToolCall[]; usage?: TokenUsage; reasoning?: unknown[] };
 
 /**
  * Port to a tool-calling chat model. Implemented by provider adapters (Meta) and by scripted

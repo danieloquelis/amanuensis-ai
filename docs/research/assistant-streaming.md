@@ -239,7 +239,7 @@ Measured 30 October 2026, `muse-spark-1.3-contributor`, effort low, Chat Complet
 
 - Offered both, Spark always called `score_write`. Without it, it mostly wrote music through `score_edit` operations instead of blocks, and reading got worse and slower.
 - The Responses API reads as well as Chat Completions and uses the prompt cache too (60–90% of input tokens cached).
-- **Kept, unused by default:** the Responses adapter (`META_AI_API=responses`), `<score>` blocks (`score-blocks.ts`, `score-block-writer.ts`: drafts while the reply streams, written when the block closes) and draft drawing on the sheet (`withDraft`). A reply that does contain a block is drawn and written. The prompt and tools are as before: the agent writes with `score_write`.
+- **Kept:** the Responses adapter, the default since 1 November 2026 because it carries the model's reasoning between steps ([reasoning continuity](reasoning-continuity.md); `META_AI_API=chat` switches back). Unused by default: `<score>` blocks (`score-blocks.ts`, `score-block-writer.ts`: drafts while the reply streams, written when the block closes) and draft drawing on the sheet (`withDraft`). A reply that does contain a block is drawn and written. The prompt and tools are as before: the agent writes with `score_write`.
 - Revisit with another model (Muse Wonder, a newer Spark) or when tool-call arguments stream.
 
 ## Plan

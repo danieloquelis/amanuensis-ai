@@ -3,6 +3,7 @@
 export {
   createMetaModel,
   DEFAULT_META_MODEL,
+  metaApi,
   toMetaPart,
   type MetaApi,
   type MetaSettings,

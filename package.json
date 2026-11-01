@@ -27,7 +27,8 @@
     "icons": "tsx scripts/make-icons.mts",
     "eval:sheet-reading": "tsx --env-file=.env.local scripts/sheet-reading-eval.mts",
     "eval:sheet-agent": "tsx --env-file=.env.local scripts/sheet-agent-eval.mts",
-    "eval:prompt-rules": "tsx --env-file=.env.local scripts/prompt-rules-eval.mts"
+    "eval:prompt-rules": "tsx --env-file=.env.local scripts/prompt-rules-eval.mts",
+    "eval:api": "tsx --env-file=.env.local scripts/api-compare.mts"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",

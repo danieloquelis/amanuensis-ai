@@ -2,10 +2,13 @@ import type { ChatMessage, ContentPart, ModelReply, ToolSpec } from "../applicat
 import { endedEarly } from "./model-retry";
 
 // Meta's Responses API (`/v1/responses`): unlike Chat Completions, it streams the reply's text
-// while tools are offered, so the editor can draw bars as they are written.
+// while tools are offered, so the editor can draw bars as they are written, and it can carry the
+// model's reasoning from one step to the next. Nothing is stored at Meta: the reasoning comes
+// back encrypted and is sent again with the conversation (Meta's recommended mode for agents).
 
 type OutputItem =
   | { type: "message"; content?: { type: string; text?: string }[] }
+  | { type: "reasoning"; id?: string; summary?: unknown[]; encrypted_content?: string }
   | { type: "function_call"; call_id: string; name: string; arguments: string }
   | { type: string };
 type ResponseBody = {
@@ -33,7 +36,10 @@ export function responsesRequest(messages: ChatMessage[], tools: ToolSpec[]) {
     if (message.role === "tool")
       return [{ type: "function_call_output", call_id: message.toolCallId, output: message.content }];
     if (message.role === "assistant") {
+      const said = Boolean(message.content || message.toolCalls.length);
       return [
+        // Reasoning must be followed by what it led to, a message or a call.
+        ...(said ? (message.reasoning ?? []) : []),
         ...(message.content ? [{ role: "assistant", content: message.content }] : []),
         ...message.toolCalls.map((call) => ({
           type: "function_call",
@@ -53,7 +59,7 @@ export function responsesRequest(messages: ChatMessage[], tools: ToolSpec[]) {
     description,
     parameters,
   }));
-  return { instructions, input, tools: functions };
+  return { instructions, input, tools: functions, store: false, include: ["reasoning.encrypted_content"] };
 }
 
 /** A finished response in our provider-neutral shape. */
@@ -74,7 +80,17 @@ export function responseReply(body: ResponseBody): ModelReply {
         cachedInputTokens: Number(body.usage.input_tokens_details?.cached_tokens ?? 0),
       }
     : undefined;
-  return { content: text || null, toolCalls, usage };
+  // Replayed whole, as Meta asks: encrypted content, an empty summary when there is none, the ID.
+  const reasoning = output
+    .filter((item): item is Extract<OutputItem, { type: "reasoning" }> => item.type === "reasoning")
+    .filter((item) => item.encrypted_content)
+    .map(({ id, summary, encrypted_content }) => ({
+      type: "reasoning",
+      id,
+      summary: summary ?? [],
+      encrypted_content,
+    }));
+  return { content: text || null, toolCalls, usage, ...(reasoning.length ? { reasoning } : {}) };
 }
 
 /**

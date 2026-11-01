@@ -10,8 +10,15 @@ import { readCompletionStream } from "./meta-stream";
 import { readResponsesStream, responseReply, responsesRequest } from "./meta-responses";
 import { FIRST_RETRY_MS, isRetryStatus, retryAfterMs, TransientError, withRetries } from "./model-retry";
 
-/** Which Meta endpoint carries the conversation: Chat Completions, or the Responses API (streams text while tools are offered). */
+/**
+ * Which Meta endpoint carries the conversation. The Responses API carries the model's reasoning
+ * from step to step and streams text while tools are offered; Chat Completions does neither.
+ * Measured on 1 November 2026 (docs/research/reasoning-continuity.md): as accurate, faster, cheaper.
+ */
 export type MetaApi = "chat" | "responses";
+
+/** The API from a setting such as `META_AI_API`: Responses unless it says "chat". */
+export const metaApi = (setting: string | undefined): MetaApi => (setting === "chat" ? "chat" : "responses");
 /** `retryMs` is the first wait before another try (tests shorten it). */
 export type MetaSettings = { api?: MetaApi; idleMs?: number; retryMs?: number };
 
@@ -63,16 +70,17 @@ export function createMetaModel(
   apiKey: string,
   model = DEFAULT_META_MODEL,
   reasoningEffort?: string,
-  { api = "chat", idleMs = TIMEOUT_MS, retryMs = FIRST_RETRY_MS }: MetaSettings = {},
+  { api = "responses", idleMs = TIMEOUT_MS, retryMs = FIRST_RETRY_MS }: MetaSettings = {},
 ): ModelPort {
   /** The endpoint and request body for one call on the chosen API. */
-  const request = (messages: ChatMessage[], tools: ToolSpec[]) =>
+  const request = (messages: ChatMessage[], tools: ToolSpec[], cacheKey?: string) =>
     api === "responses"
       ? {
           url: `${BASE_URL}/responses`,
           body: {
             model,
             ...responsesRequest(messages, tools),
+            ...(cacheKey ? { prompt_cache_key: cacheKey } : {}),
             parallel_tool_calls: false,
             stream: true,
             ...(reasoningEffort ? { reasoning: { effort: reasoningEffort } } : {}),
@@ -103,7 +111,7 @@ export function createMetaModel(
     };
     const signal = options.signal ? AbortSignal.any([options.signal, idle.signal]) : idle.signal;
     try {
-      const { url, body } = request(messages, tools);
+      const { url, body } = request(messages, tools, options.cacheKey);
       const response = await fetch(url, {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },

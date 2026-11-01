@@ -2,7 +2,7 @@
 
 Written 1 November 2026 against `main` at `9bd25e3`, plus the staged fixes for the replay revision and transcription placement. This is a review only. No code was changed, and no paid API calls were made. Claims about the code cite files and lines. Claims about Meta's products cite pages read on 1 November 2026. Where a source is secondary (press or blogs, not Meta), it says so.
 
-**Status, 1 November 2026:** recommendations 2 and 3 are done. A turn's edits have one owner (`modules/assistant/application/turn-edits.ts`), which checks that the commands replay to the agent's score before the turn returns. Model calls are retried on 429, 5xx and dropped connections, and a stream that stops before its end is caught (`modules/assistant/infrastructure/model-retry.ts`). Line numbers below refer to the code before those changes.
+**Status, 1 November 2026:** recommendations 1, 2 and 3 are done. The agent now runs on the Responses API and carries its encrypted reasoning between steps, with nothing stored at Meta ([measured](reasoning-continuity.md): as accurate, faster, slightly cheaper). A turn's edits have one owner (`modules/assistant/application/turn-edits.ts`), which checks that the commands replay to the agent's score before the turn returns. Model calls are retried on 429, 5xx and dropped connections, and a stream that stops before its end is caught (`modules/assistant/infrastructure/model-retry.ts`). Line numbers below refer to the code before those changes.
 
 The product owner asked:
 

@@ -1,5 +1,5 @@
 import { ATTACHMENT_LIMITS, handleAssistantRequest, MAX_REQUEST_BYTES, type Upload } from "@/modules/assistant";
-import { createMetaModel, logTurn, progressResponse } from "@/modules/assistant/server";
+import { createMetaModel, logTurn, metaApi, progressResponse } from "@/modules/assistant/server";
 import { createPageImages } from "@/modules/page/server";
 
 const DEVELOPMENT = process.env.NODE_ENV === "development";
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   if (!apiKey) return Response.json({ error: "The assistant is not configured on this server." }, { status: 503 });
   const { body, uploads } = multipart ? await readForm(request) : { body: await request.json().catch(() => null) };
   const model = createMetaModel(apiKey, process.env.META_AI_MODEL, process.env.META_AI_REASONING_EFFORT, {
-    api: process.env.META_AI_API === "responses" ? "responses" : "chat",
+    api: metaApi(process.env.META_AI_API),
   });
   return progressResponse(async (onProgress) => {
     // A musician who stops the turn closes the request: the agent stops with it.

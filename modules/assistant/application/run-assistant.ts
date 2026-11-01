@@ -167,12 +167,18 @@ export async function runAssistant(
     onProgress({ stage: "thinking" });
     const asked = Date.now();
     blocks.start();
-    const reply = await model.complete(messages, toolList, { signal, onText: blocks.hear });
+    const reply = await model.complete(messages, toolList, { signal, onText: blocks.hear, cacheKey: turnId });
     thinkingMs.push(Date.now() - asked);
     usage.inputTokens += reply.usage?.inputTokens ?? 0;
     usage.outputTokens += reply.usage?.outputTokens ?? 0;
     usage.cachedInputTokens! += reply.usage?.cachedInputTokens ?? 0;
-    messages.push({ role: "assistant", content: reply.content, toolCalls: reply.toolCalls });
+    // The model's reasoning goes back with its reply, so the next step builds on it.
+    messages.push({
+      role: "assistant",
+      content: reply.content,
+      toolCalls: reply.toolCalls,
+      reasoning: reply.reasoning,
+    });
     const written = blocks.commit(reply.content);
     sendEdits();
     // A reply with no tool calls ends the turn, unless a block it wrote was refused: then it may fix it.

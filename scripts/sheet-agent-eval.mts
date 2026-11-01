@@ -6,7 +6,7 @@
 //   yarn eval:sheet-agent --confirm [--base http://localhost:3001] [--only leadsheet,keys]
 import { mkdirSync, writeFileSync } from "node:fs";
 import { readUploads, runAssistant } from "@/modules/assistant";
-import { createMetaModel } from "@/modules/assistant/server";
+import { createMetaModel, metaApi } from "@/modules/assistant/server";
 import { createPageImages } from "@/modules/page/server";
 import { applyCommand, createExample, parseScore, type Score } from "@/modules/score";
 import { grade, truthChords, truthLines } from "./lib/sheet-compare.mjs";
@@ -25,7 +25,7 @@ if (!process.argv.includes("--confirm")) {
 const apiKey = process.env.META_AI_API_KEY;
 if (!apiKey) throw new Error("META_AI_API_KEY is not set (run with --env-file=.env.local).");
 const modelName = process.env.META_AI_MODEL;
-const api = process.env.META_AI_API === "responses" ? "responses" : "chat";
+const api = metaApi(process.env.META_AI_API);
 const model = createMetaModel(apiKey, modelName, process.env.META_AI_REASONING_EFFORT, { api });
 const percent = (part: number, whole: number) => (whole ? `${Math.round((100 * part) / whole)}%` : "—");
 
