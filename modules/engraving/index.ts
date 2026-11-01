@@ -21,3 +21,4 @@ export {
   type TieArc,
 } from "./domain/scene";
 export { nameRight, staffOf, staffTop, stavesLeft, systemBottom } from "./domain/staff-layout";
+export { barlineStaves, barStaves, closesWithFinalBarline, placeBarMarks, type BarStaff } from "./domain/bar-furniture";

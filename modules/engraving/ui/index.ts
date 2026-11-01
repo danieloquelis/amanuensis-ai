@@ -4,6 +4,7 @@ export { ClefGlyph } from "./components/ClefGlyph";
 export { EventGlyph } from "./components/EventGlyph";
 export { IndicationText } from "./components/IndicationText";
 export { SlurCurve } from "./components/SlurCurve";
+export { StaticSystem } from "./components/StaticSystem";
 export { SystemStaves } from "./components/SystemStaves";
 export { TempoNote } from "./components/TempoNote";
 export { TieArcs } from "./components/TieArcs";

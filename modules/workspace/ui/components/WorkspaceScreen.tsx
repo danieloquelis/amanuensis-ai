@@ -1,15 +1,13 @@
-"use client";
-
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { partOf } from "@/modules/score";
-import { chatRepositoryFor } from "@/modules/assistant";
+import { localWorkspaceChats } from "@/modules/assistant";
 import { ComposeDock, useAssistant, useComposeDock } from "@/modules/assistant/ui";
 import { playbackStart, selectionAnchors } from "@/modules/editor";
 import { ScoreToolMenus, useClipboardShortcuts, useScoreEditor } from "@/modules/editor/ui";
 import { scoreSounds } from "@/modules/playback";
 import { usePlayback } from "@/modules/playback/ui";
-import { createWorkspaceScore, localWorkspaceRepository, type ProjectRepository } from "@/modules/projects";
+import { localWorkspaceRepository, workspaceProject } from "@/modules/projects";
 import { useAnchorRect } from "@/shared/ui/hooks/use-anchor-rect";
 import { useBottomInset } from "@/shared/ui/hooks/use-bottom-inset";
 import { useNoteAudition } from "../hooks/use-note-audition";
@@ -25,7 +23,7 @@ import { SelectionCard } from "./SelectionCard";
 import styles from "./workspace.module.css";
 
 /**
- * Route-level screen: the score fills the window and the controls float over it. Playback and
+ * One song's editor (opened by `WorkspaceRoute`): the score fills the window and the controls float over it. Playback and
  * notation tools at the top; a selected note or bar gets its edit tools beside it; at the bottom
  * centre, the compose bar and its chat, which always know what is selected. With the chat
  * expanded, it takes the left column and the toolbar row and score share the rest, centred on
@@ -37,14 +35,8 @@ export function WorkspaceScreen({ workspaceId }: { workspaceId: string }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
   const playback = usePlayback();
-  const repository = useMemo<ProjectRepository>(
-    () => ({
-      load: () => localWorkspaceRepository.load(workspaceId),
-      save: (score) => localWorkspaceRepository.save(workspaceId, score),
-    }),
-    [workspaceId],
-  );
-  const chats = useMemo(() => chatRepositoryFor(workspaceId), [workspaceId]);
+  const repository = useMemo(() => workspaceProject(localWorkspaceRepository, workspaceId), [workspaceId]);
+  const chats = useMemo(() => localWorkspaceChats.for(workspaceId), [workspaceId]);
   const editor = useScoreEditor(playback.stop, repository);
   // The score's instruments load as soon as it opens (and when parts change), so the first note sounds right.
   const sounds = scoreSounds(editor.score).join(",");
@@ -87,11 +79,7 @@ export function WorkspaceScreen({ workspaceId }: { workspaceId: string }) {
   const undo = () => editor.undoRedo("undo");
   // With something selected, Play starts from the first bar of the selection.
   const playFrom = playbackStart(editor.score, editor.picked);
-  const startNewSong = () => {
-    const id = crypto.randomUUID();
-    localWorkspaceRepository.save(id, createWorkspaceScore(crypto.randomUUID()));
-    router.push(`/workspace/${id}`);
-  };
+  const startNewSong = () => router.push(`/workspace/${localWorkspaceRepository.create()}`);
   // Expanded, the chat takes the left column of the screen and everything else shares the rest.
   const chatDocked = dock.chatMode === "sidebar";
   const composeDock = editor.loaded && (
@@ -123,7 +111,7 @@ export function WorkspaceScreen({ workspaceId }: { workspaceId: string }) {
         <div className={styles.overlay}>
           <div className={styles.topStart}>
             <BrandMark />
-            <NewSongButton onCreate={startNewSong} />
+            <NewSongButton disabled={!editor.ready} onCreate={startNewSong} />
           </div>
           <div className={styles.topCenter}>
             <ScoreToolMenus

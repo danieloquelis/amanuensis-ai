@@ -45,6 +45,16 @@ export interface ChatRepository {
   save(turns: Turn[]): void;
 }
 
+/** Port for the conversations on this device, one per workspace. */
+export interface WorkspaceChats {
+  /** The conversation with one workspace. */
+  for(workspaceId: string): ChatRepository;
+  /** Moves the pre-workspace conversation to the workspace its draft became; later calls do nothing. */
+  adoptLegacy(workspaceId: string): void;
+  /** Forgets one workspace's conversation. */
+  remove(workspaceId: string): void;
+}
+
 const takePartSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("said"), text: z.string() }),
   z.object({ kind: z.literal("sang"), seconds: z.number() }),

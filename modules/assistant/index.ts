@@ -8,7 +8,13 @@ export {
   type AttachmentKind,
   type Upload,
 } from "./application/attachments";
-export { restoreTurns, turnsToSave, type ChatRepository, type Turn } from "./application/chat-history";
+export {
+  restoreTurns,
+  turnsToSave,
+  type ChatRepository,
+  type Turn,
+  type WorkspaceChats,
+} from "./application/chat-history";
 export { handleAssistantRequest, MAX_REQUEST_BYTES, type AssistantResponse } from "./application/handle-request";
 export {
   handleVoiceRequest,
@@ -41,10 +47,5 @@ export { createMusicTools, MUSIC_TOOL_NAMES, musicToolSpecs, type MusicToolName 
 export { scoreBlocks, withoutScoreBlocks, type ScoreBlock } from "./application/score-blocks";
 export { createScoreToolGateway } from "./application/score-tool-gateway";
 export { SCORE_TOOL_NAMES, scoreTools, toolParameters, type ScoreToolName } from "./application/tool-definitions";
-export {
-  adoptLegacyChat,
-  chatRepositoryFor,
-  localChatRepository,
-  removeWorkspaceChat,
-} from "./infrastructure/local-chat";
+export { localWorkspaceChats } from "./infrastructure/local-chat";
 export { askedAfter, withHeardWords, type AskedTake } from "./application/asked-take";

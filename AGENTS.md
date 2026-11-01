@@ -11,9 +11,12 @@ Read [docs/architecture/code-conventions.md](docs/architecture/code-conventions.
 
 ## Code Map
 
-- `app` - application source
-- `tests` - automated tests
-- `docs` - project documentation
+- `modules` - application source, one folder per capability (`score`, `engraving`, `editor`, `playback`, `projects`, `assistant`, `voice`, `page`, `workspace`)
+- `app` - Next.js routes; each renders a screen from a module, plus API route handlers in `app/api`
+- `shared` - domain-free UI helpers; never imports from `modules`
+- `tests` - unit, integration and Playwright e2e tests, with fixtures
+- `scripts` - evals, experiments and asset tooling run with `tsx`
+- `docs` - architecture conventions and planning notes
 
 <!-- BEGIN:nextjs-agent-rules -->
 

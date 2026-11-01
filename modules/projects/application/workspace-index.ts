@@ -9,6 +9,8 @@ export type WorkspaceMeta = {
   instruments: string[];
   createdAt: number;
   updatedAt: number;
+  /** The saved score could not be read: listed so it can be removed, its data left untouched. */
+  unreadable?: true;
 };
 
 /** When a workspace was created and last saved. Card data itself is derived from the score. */
@@ -49,8 +51,13 @@ export function workspaceMeta(id: string, score: Score, times: WorkspaceTimes): 
     title: score.title,
     bars: score.measures.length,
     tempo: score.tempo,
-    instruments: score.parts.map((part) => part.instrument),
+    instruments: score.parts.map((part) => part.name),
     createdAt: times.createdAt,
     updatedAt: times.updatedAt,
   };
+}
+
+/** The Home card for a workspace whose score could not be read. */
+export function unreadableWorkspaceMeta(id: string, times: WorkspaceTimes): WorkspaceMeta {
+  return { id, title: "Unreadable song", bars: 0, tempo: 0, instruments: [], ...times, unreadable: true };
 }

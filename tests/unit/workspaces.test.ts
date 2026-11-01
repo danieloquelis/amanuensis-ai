@@ -1,12 +1,16 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import type { WorkspaceChats } from "@/modules/assistant";
 import {
   createWorkspaceScore,
   emptyWorkspaceIndex,
   removeWorkspace,
   touchWorkspace,
   workspaceMeta,
+  type WorkspaceRepository,
 } from "@/modules/projects";
+import { applyCommand, createExample } from "@/modules/score";
+import { PREVIEW_PARTS, previewScore, removeSong } from "@/modules/workspace";
 
 test("touching a workspace records its times and moves it to the front", () => {
   let index = emptyWorkspaceIndex();
@@ -24,13 +28,40 @@ test("re-saving keeps the first-created time and refreshes the rest", () => {
   assert.deepEqual(index.order, ["ws-a"], "no duplicates");
 });
 
-test("a renamed score keeps its workspace: the key never follows the score id", () => {
-  const before = createWorkspaceScore("ws-seed");
-  const index = touchWorkspace(emptyWorkspaceIndex(), "ws-a", 1000);
-  const meta = workspaceMeta("ws-a", before, index.times["ws-a"]);
-  assert.equal(meta.id, "ws-a");
-  assert.notEqual(meta.id, before.id, "the card is keyed by workspace, not by score");
-  assert.equal(meta.title, "Untitled");
+test("a card is keyed by workspace and reads title, length, tempo and instrument names from the score", () => {
+  const score = createExample();
+  const meta = workspaceMeta("ws-a", score, { createdAt: 1000, updatedAt: 2000 });
+  assert.equal(meta.id, "ws-a", "the card is keyed by workspace, never by score id");
+  assert.equal(meta.title, score.title);
+  assert.equal(meta.bars, score.measures.length);
+  assert.equal(meta.tempo, score.tempo);
+  assert.deepEqual(meta.instruments, ["Piano"], "shown names, not instrument ids");
+});
+
+test("a preview draws at most three instruments and leaves the song untouched", () => {
+  let score = createExample();
+  for (const instrument of ["guitar", "trumpet", "flute", "drums"] as const) {
+    score = applyCommand(score, {
+      requestId: `add-${instrument}`,
+      expectedRevision: score.revision,
+      operation: { type: "addPart", instrument },
+    });
+  }
+  const preview = previewScore(score);
+  assert.equal(preview.parts.length, PREVIEW_PARTS);
+  assert.deepEqual(
+    preview.parts.map((part) => part.id),
+    score.parts.slice(0, PREVIEW_PARTS).map((part) => part.id),
+  );
+  assert.equal(score.parts.length, 5);
+});
+
+test("removing a song removes its conversation too", () => {
+  const removed: string[] = [];
+  const workspaces = { remove: (id: string) => removed.push(`score ${id}`) } as unknown as WorkspaceRepository;
+  const chats = { remove: (id: string) => removed.push(`chat ${id}`) } as unknown as WorkspaceChats;
+  removeSong({ workspaces, chats }, "ws-a");
+  assert.deepEqual(removed, ["score ws-a", "chat ws-a"]);
 });
 
 test("a new workspace is a blank song with a fresh identity", () => {

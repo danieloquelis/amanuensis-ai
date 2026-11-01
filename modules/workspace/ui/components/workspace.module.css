@@ -116,68 +116,6 @@
   mask: url("/brand/mark.svg") center / contain no-repeat;
 }
 
-/* "New song" confirmation, under its button at the top left */
-
-.confirm {
-  position: fixed;
-  inset: auto;
-  margin: 0;
-  width: 280px;
-  max-width: calc(100vw - 24px);
-  padding: 16px;
-  border: 0;
-  border-radius: var(--r-lg);
-  corner-shape: squircle;
-  background: var(--glass-strong);
-  backdrop-filter: var(--glass-blur);
-  color: var(--ink);
-  box-shadow: var(--shadow-popover);
-}
-
-.confirmTitle {
-  margin: 0 0 4px;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.confirmText {
-  margin: 0 0 14px;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-.confirmActions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.confirmActions button {
-  padding: 8px 14px;
-  border: 0;
-  border-radius: var(--r-md);
-  corner-shape: squircle;
-  background: var(--hover);
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 500;
-  transition: transform var(--fast) var(--ease-out);
-}
-
-.confirmActions button:active {
-  transform: scale(0.97);
-}
-
-.confirmActions .confirmPrimary {
-  background: var(--accent);
-  color: white;
-}
-
-.confirmActions .confirmPrimary:hover {
-  background: var(--accent-hover);
-}
-
 /* Playback, first in the toolbar */
 
 .transport {

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { openExample } from "./workspace-helpers";
+import { EXAMPLE_WORKSPACE, openExample } from "./workspace-helpers";
 
 test("edit, undo, redo and reload preserve the musical document", async ({ page }) => {
   const errors: string[] = [];
@@ -68,13 +68,15 @@ test("a draft saved in the older format opens, and is saved in the current one a
   // The legacy draft is adopted as a workspace and listed on Home.
   await expect(page.getByRole("link", { name: /Old draft/ })).toBeVisible();
   await page.getByRole("link", { name: /Old draft/ }).click();
-  await expect(page).toHaveURL(/\/workspace\/old-draft$/);
+  // It gets a workspace id of its own, never the score's id.
+  await expect(page).toHaveURL(/\/workspace\/[0-9a-f-]{36}$/);
+  const workspaceId = new URL(page.url()).pathname.split("/").at(-1)!;
   const note = page.getByRole("button", { name: "Bar 1, beat 1, D4, 4 beats", exact: true });
   await expect(note).toBeVisible();
   await note.click();
   await page.keyboard.press("ArrowUp");
   await expect(page.getByRole("button", { name: "Bar 1, beat 1, E4, 4 beats", exact: true })).toBeVisible();
-  const saved = JSON.parse((await page.evaluate(() => localStorage.getItem("amanuensis.score.old-draft")))!);
+  const saved = JSON.parse((await page.evaluate((id) => localStorage.getItem(`amanuensis.score.${id}`), workspaceId))!);
   expect(saved.schemaVersion).toBe(3);
   expect(saved.parts[0].instrument).toBe("piano");
   expect(saved.annotations[0].staffId).toBe(saved.parts[0].staves[0].id);
@@ -121,6 +123,9 @@ test("corrupt local data is preserved and the mobile editor remains usable", asy
   expect(await page.evaluate(() => localStorage.getItem("amanuensis.score.broken"))).toBe("broken draft");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: "test-results/workspace-mobile.png", fullPage: true });
+  // Home still lists it, so it never silently disappears and can be removed.
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: /Unreadable song/ })).toBeVisible();
 });
 
 test("printing shows the sheet with its title and hides editing controls", async ({ page }) => {
@@ -605,12 +610,12 @@ test("a new song keeps the current song and its chat, and starts blank", async (
   const turn = { id: "t1", instruction: "Add chords", status: "done", reply: "Added C and G." };
   // Saved before the app first loads (once per tab, so later navigations do not bring it back).
   await page.addInitScript(
-    (saved) => {
+    ({ id, saved }) => {
       if (sessionStorage.getItem("chat-seeded")) return;
       sessionStorage.setItem("chat-seeded", "yes");
-      localStorage.setItem("amanuensis.chat.e2e-song", JSON.stringify(saved));
+      localStorage.setItem(`amanuensis.chat.${id}`, JSON.stringify(saved));
     },
-    [turn],
+    { id: EXAMPLE_WORKSPACE, saved: [turn] },
   );
   await openExample(page);
   await expect(page.getByRole("button", { name: "Show chat" })).toBeVisible();
@@ -637,12 +642,12 @@ test("Home starts empty, creates songs, and removes one only when confirmed", as
   await expect(page).toHaveURL(/\/workspace\/.+/);
   await page.goto("/");
   await expect(page.getByRole("link", { name: /Untitled/ })).toBeVisible();
-  const remove = page.getByRole("button", { name: "Remove Untitled" });
-  await remove.click();
-  // One click arms the confirm; the song is still listed.
+  await page.getByRole("button", { name: "Remove Untitled" }).click();
+  // One click arms the confirm, which renames the button; the song is still listed.
   await expect(page.getByRole("link", { name: /Untitled/ })).toBeVisible();
-  await expect(remove).toHaveAttribute("aria-pressed", "true");
-  await remove.click();
+  const confirm = page.getByRole("button", { name: "Confirm removing Untitled" });
+  await expect(confirm).toHaveAttribute("aria-pressed", "true");
+  await confirm.click();
   await expect(page.getByRole("link", { name: /Untitled/ })).toHaveCount(0);
   await expect(page.getByText("No songs yet")).toBeVisible();
 });

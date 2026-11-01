@@ -48,8 +48,9 @@ Dependencies point inward: `ui → application → domain`. `infrastructure` imp
 - One exported component per file. Small private subcomponents in the same file are fine.
 - Name event props `onX` and handlers inside a component as verbs (`selectBar`, `openBarMenu`).
 - Group props for many interactive children into one object rather than threading ten callbacks, for example `SheetInteractions` in `editor/ui/components/surface/sheet-interactions.ts`.
-- `"use client"` goes only on the screen components that `app/` routes render (currently `WorkspaceScreen`). Everything they import is already client code (see `node_modules/next/dist/docs/01-app/01-getting-started/05-server-and-client-components.md`).
+- `"use client"` goes only on the screen components that `app/` routes render (currently `HomeScreen` and `WorkspaceRoute`). Everything they import is already client code (see `node_modules/next/dist/docs/01-app/01-getting-started/05-server-and-client-components.md`).
 - Engraving UI components are stateless SVG glyphs. They accept extra SVG props (`role`, handlers, `className`) on their root element so the editor can make them interactive without the engraving module knowing about editing.
+- Where something is drawn (which staves get barlines, where marks sit) is decided once in `engraving/domain` (`bar-furniture.ts`), and both the editable sheet and the read-only `StaticSystem` use it. A read-only view of a score renders `StaticSystem`; it never copies the sheet's drawing code.
 
 ## AI-first
 
@@ -58,6 +59,7 @@ The editor is one client of the engine; agents are another, with equal power.
 - **New capability, new operation.** Add a typed operation, with `.describe()` on the variant and on any non-obvious field. The descriptions reach the model through the generated tool schema; `tests/unit/agent-tools.test.ts` checks that they do.
 - **Defaults live in the domain.** Behaviour such as "keep note values if they fit, otherwise fit proportionally" (`setMeter` with `policy: "auto"`) or "apply until the next time-signature change" (`extend`) belongs in the operation, not in a UI helper. UI helpers in `editor/application` may only choose which operation to send.
 - **Readable for agents.** `describeScore` (score module) is the agent's view: bar numbers, beats from 1, pitch and duration names, chord symbols, IDs. Extend it when you add data.
+- **The song, not the songbook.** The agent works on the open song. Creating, opening, listing and removing songs (`workspace`, `projects`) is app navigation and deliberately not an agent tool. Adding it later means a new kind of turn result that the browser acts on, not a score operation.
 - **Musician's model in the UI.** Palettes add; they never toggle. Anything on the sheet is selected by clicking and removed with Delete.
 
 ## Score changes

@@ -1,6 +1,13 @@
 import type { KeyboardEvent, MouseEvent } from "react";
-import { STAFF_GAP, stavesLeft, systemBottom, type BarScene, type System } from "@/modules/engraving";
-
+import {
+  barlineStaves,
+  barStaves,
+  closesWithFinalBarline,
+  stavesLeft,
+  systemBottom,
+  type BarScene,
+  type System,
+} from "@/modules/engraving";
 import { BarNumber, Barline, FinalBarline, RepeatEnd, RepeatStart, TimeSignature } from "@/modules/engraving/ui";
 import { MEASURE_WIDTH, meterName } from "@/modules/score";
 import { clampMeasureWidth, MEASURE_WIDTH_STEP } from "../../../application/bar-spacing";
@@ -8,7 +15,6 @@ import styles from "./score-surface.module.css";
 import { BarMarks } from "./BarMarks";
 import { isMenuKey, pickModeOf, selectableItem, type SheetInteractions } from "./sheet-interactions";
 
-const STAFF_HEIGHT = STAFF_GAP * 4;
 const repeatClasses = { selected: styles.itemSelected, base: styles.annotation };
 
 type SheetBarProps = {
@@ -29,8 +35,8 @@ export function SheetBar({ bar, system, isFirstInSystem, isLastInSystem, interac
   const top = system.top;
   const bottom = systemBottom(system);
   // Barlines run through each part's staves; meters and repeat signs are on every staff.
-  const staves = system.staves ?? [{ top, barlineEnd: top + STAFF_HEIGHT }];
-  const parts = staves.filter((staff) => staff.barlineEnd !== undefined);
+  const staves = barStaves(system);
+  const parts = barlineStaves(system);
   const resizable = !isLastInSystem;
   const width = Math.round(bar.width);
   const { selectBar: selectBarById, deleteBar } = interactions;
@@ -104,7 +110,7 @@ export function SheetBar({ bar, system, isFirstInSystem, isLastInSystem, interac
         />
       )}
       {parts.map((part) =>
-        bar.final && !bar.repeatEnd ? (
+        closesWithFinalBarline(bar) ? (
           <FinalBarline key={part.top} x={bar.endX} top={part.top} bottom={part.barlineEnd} />
         ) : (
           <Barline key={part.top} x={bar.endX} top={part.top} bottom={part.barlineEnd} />

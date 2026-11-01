@@ -114,10 +114,16 @@
   text-decoration: none;
 }
 
+/* Same height on every card, so titles line up whether a song has one staff or several. */
+.previewFrame {
+  height: 120px;
+  margin-bottom: 8px;
+}
+
+/* The music is scaled to fit and centred in the frame. */
 .preview {
   width: 100%;
-  height: auto;
-  margin-bottom: 8px;
+  height: 100%;
   color: var(--ink);
 }
 
