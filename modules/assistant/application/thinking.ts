@@ -13,3 +13,6 @@ export function thinkingOf(body: unknown): Thinking | undefined {
   const parsed = thinkingSchema.safeParse(value);
   return parsed.success ? parsed.data : undefined;
 }
+
+/** One level below: what a helper (a band musician) thinks at, next to its leader. */
+export const thinkingBelow = (level: Thinking | undefined): Thinking => (level === "high" ? "medium" : "low");

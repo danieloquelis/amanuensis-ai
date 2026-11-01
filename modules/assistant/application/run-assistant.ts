@@ -2,6 +2,7 @@ import { summarizeChange, type Operation } from "@/modules/score";
 import { agentToolSpecs, createAgentState, isAgentTool, PLAN_TOOL } from "./agent-state";
 import type { AssistantRequest, AssistantResult, ProgressListener, TraceEntry, TurnServices } from "./assistant-types";
 import { ASK_TOOL, askSchema, assistantTools } from "./assistant-tools";
+import { BAND_ARRANGE, bandContext, bandToolSpecs, createBandTools, isBandTool } from "./band-tools";
 import { createMusicTools, isMusicTool, musicToolSpecs } from "./music-tools";
 import type { ChatMessage, ContentPart, ModelPort, TokenUsage, ToolCall } from "./model-port";
 import { refuseHeardBarEdit, writtenLines } from "./heard-bars-guard";
@@ -47,7 +48,7 @@ export async function runAssistant(
   request: AssistantRequest,
   turnId: string = crypto.randomUUID().slice(0, 8),
   onProgress: ProgressListener = () => {},
-  { pageImages = null, signal, systemPrompt = SYSTEM_PROMPT }: TurnServices = {},
+  { pageImages = null, signal, systemPrompt = SYSTEM_PROMPT, musicians = model }: TurnServices = {},
 ): Promise<AssistantResult> {
   // The working copy and the commands the editor replays, kept by one owner.
   const edits = createTurnEdits(request.score);
@@ -88,7 +89,24 @@ export async function runAssistant(
     ...musicToolSpecs(Boolean(request.take)),
     ...sourceToolSpecs(attachments.length > 0),
     ...agentToolSpecs,
+    ...(request.band?.on ? bandToolSpecs : []),
   ];
+  // Band Mode: arrangements are played by the band, one musician per part, on this turn's edits.
+  const band = request.band?.on
+    ? createBandTools(
+        {
+          model: musicians,
+          tools,
+          score: edits.score,
+          turnId,
+          signal,
+          onProgress,
+          onEdits: () => sendEdits(),
+          onCall: (entry) => trace.push({ ...entry, arguments: entry.arguments.slice(0, TRACE_ARGUMENT_ROOM) }),
+        },
+        request.band.members,
+      )
+    : null;
   // A plan shown for a larger request raises the cap (see MAX_PLANNED_STEPS).
   let maxSteps = attachments.length ? MAX_SOURCE_STEPS : MAX_TOOL_STEPS;
   const scoreTool = (call: ToolCall) =>
@@ -113,7 +131,12 @@ export async function runAssistant(
   const messages: ChatMessage[] = [
     { role: "system", content: systemPrompt },
     ...historyMessages(request),
-    userMessage(request, `${scoreContext(tools, request)}\n\n${agent.context()}`),
+    userMessage(
+      request,
+      [scoreContext(tools, request), agent.context(), ...(band ? [bandContext(request.band!.members)] : [])].join(
+        "\n\n",
+      ),
+    ),
   ];
   const finish = (reply: string, question: AssistantResult["question"], steps: number): AssistantResult => {
     // A server-side fault, caught here rather than as a failed replay in the musician's editor.
@@ -129,6 +152,7 @@ export async function runAssistant(
       thinkingMs,
       ...(agent.plan().length ? { plan: agent.plan() } : {}),
       ...agent.changes(),
+      ...(band?.reports().length ? { band: band.reports() } : {}),
     };
   };
 
@@ -178,10 +202,12 @@ export async function runAssistant(
             ? music(call.name, parseArguments(call))
             : isAgentTool(call.name)
               ? agent.run(call.name, parseArguments(call))
-              : scoreTool(call));
+              : band && isBandTool(call.name)
+                ? await band.run(call.name, parseArguments(call))
+                : scoreTool(call));
+      if (call.name === PLAN_TOOL || call.name === BAND_ARRANGE) maxSteps = Math.max(maxSteps, MAX_PLANNED_STEPS);
       if (call.name === PLAN_TOOL && result.ok) {
         onProgress({ stage: "plan", steps: agent.plan() });
-        maxSteps = Math.max(maxSteps, MAX_PLANNED_STEPS);
       }
       entry.ms = Date.now() - started;
       if (!result.ok) Object.assign(entry, { ok: false, error: "error" in result ? result.error : undefined });

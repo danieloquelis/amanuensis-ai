@@ -76,11 +76,11 @@ export function createScoreToolGateway(edits: TurnEdits) {
     },
 
     score_write(raw) {
-      const { expectedRevision, text, requestId, pitches } = writeSchema.parse(raw);
+      const { expectedRevision, text, requestId, pitches, keepHarmony } = writeSchema.parse(raw);
       if (expectedRevision !== edits.score().revision) {
         throw new Error("The score changed. Read the latest revision before writing.");
       }
-      return commit(writeBars(edits.score(), text, requestId, pitches).command);
+      return commit(writeBars(edits.score(), text, requestId, pitches, { keepHarmony }).command);
     },
 
     score_preview(raw) {

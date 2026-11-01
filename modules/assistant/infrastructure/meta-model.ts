@@ -6,6 +6,7 @@ import type {
   ModelReply,
   ToolSpec,
 } from "../application/model-port";
+import { thinkingBelow, type Thinking } from "../application/thinking";
 import { readCompletionStream } from "./meta-stream";
 import { readResponsesStream, responseReply, responsesRequest } from "./meta-responses";
 import { FIRST_RETRY_MS, isRetryStatus, retryAfterMs, TransientError, withRetries } from "./model-retry";
@@ -172,4 +173,17 @@ function wholeReply(body: {
       }
     : undefined;
   return { content: message.content ?? null, toolCalls, usage };
+}
+
+/**
+ * The models one request uses, from the server's settings and the thinking the musician chose:
+ * the agent's, and (for Band Mode) the musicians', a level of thinking below it.
+ */
+export function createMetaModels(apiKey: string, env: Record<string, string | undefined>, thinking?: Thinking) {
+  const settings = { api: metaApi(env.META_AI_API) };
+  const effort = thinking ?? env.META_AI_REASONING_EFFORT;
+  return {
+    model: createMetaModel(apiKey, env.META_AI_MODEL, effort, settings),
+    musicians: createMetaModel(apiKey, env.META_AI_MODEL, thinkingBelow(thinking), settings),
+  };
 }

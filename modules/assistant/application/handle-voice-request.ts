@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MEMORY_LIMIT, SONG_NOTES_LIMIT } from "./agent-state";
+import { bandSchema } from "./musicians";
 import { thinkingSchema } from "./thinking";
 import { parseScore } from "@/modules/score";
 import {
@@ -42,6 +43,7 @@ const payloadSchema = z.strictObject({
   /** What the agent wrote down about this song, and has learned about the musician. */
   songNotes: z.string().max(SONG_NOTES_LIMIT).optional(),
   memory: z.array(z.string().max(MEMORY_LIMIT.characters)).max(MEMORY_LIMIT.facts).optional(),
+  band: bandSchema.optional(),
 });
 
 /**
@@ -67,7 +69,14 @@ const NOTHING_USED = { inputTokens: 0, outputTokens: 0 };
  */
 export async function handleVoiceRequest(
   input: { audio: Uint8Array | null; payload: unknown },
-  services: { model: ModelPort; recognizer: SpeechRecognizer; pitchTracker?: PitchTracker; signal?: AbortSignal },
+  services: {
+    model: ModelPort;
+    /** The band's musicians' model, a level of thinking below (Band Mode). */
+    musicians?: ModelPort;
+    recognizer: SpeechRecognizer;
+    pitchTracker?: PitchTracker;
+    signal?: AbortSignal;
+  },
   onProgress: ProgressListener = () => {},
 ): Promise<VoiceResponse> {
   if (!input.audio?.length) return failure(400, "Record a take first.");
@@ -129,6 +138,7 @@ export async function handleVoiceRequest(
   try {
     const result = await runAssistant(services.model, { ...request, score, take }, undefined, onProgress, {
       signal: services.signal,
+      musicians: services.musicians,
     });
     return { status: 200, body: { ...result, heard } };
   } catch (error) {

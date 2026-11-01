@@ -27,6 +27,10 @@ export const applyPreviewSchema = z.strictObject({
 });
 export const undoSchema = z.strictObject({ expectedRevision: z.number().int().nonnegative() });
 export const writeSchema = z.strictObject({
+  keepHarmony: z
+    .boolean()
+    .optional()
+    .describe("A bar's main line that lists no chords or section leaves them as they are (default: it clears them)."),
   requestId: commandSchema.shape.requestId,
   expectedRevision: commandSchema.shape.expectedRevision,
   text: z

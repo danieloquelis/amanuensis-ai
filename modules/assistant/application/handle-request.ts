@@ -5,6 +5,7 @@ import { readUploads, type Upload } from "./attachments";
 import type { ModelPort } from "./model-port";
 import { runAssistant, type AssistantResult, type ProgressListener } from "./run-assistant";
 import { MEMORY_LIMIT, SONG_NOTES_LIMIT } from "./agent-state";
+import { bandSchema } from "./musicians";
 import { thinkingSchema } from "./thinking";
 
 export const MAX_REQUEST_BYTES = 1_000_000;
@@ -25,6 +26,7 @@ const requestSchema = z.strictObject({
   /** What the agent wrote down about this song, and has learned about the musician. */
   songNotes: z.string().max(SONG_NOTES_LIMIT).optional(),
   memory: z.array(z.string().max(MEMORY_LIMIT.characters)).max(MEMORY_LIMIT.facts).optional(),
+  band: bandSchema.optional(),
 });
 
 export type AssistantResponse = { status: number; body: AssistantResult | { error: string } };
@@ -41,7 +43,8 @@ export async function handleAssistantRequest(
     uploads = [],
     pageImages = null,
     signal,
-  }: { uploads?: Upload[]; pageImages?: PageImages | null; signal?: AbortSignal } = {},
+    musicians,
+  }: { uploads?: Upload[]; pageImages?: PageImages | null; signal?: AbortSignal; musicians?: ModelPort } = {},
 ): Promise<AssistantResponse> {
   const parsed = requestSchema.safeParse(body);
   if (!parsed.success || (!parsed.data.instruction && !uploads.length)) {
@@ -61,7 +64,7 @@ export async function handleAssistantRequest(
       { ...parsed.data, score, attachments: read.attachments },
       undefined,
       onProgress,
-      { pageImages, signal },
+      { pageImages, signal, musicians },
     );
     return { status: 200, body: result };
   } catch (error) {

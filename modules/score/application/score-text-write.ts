@@ -104,7 +104,8 @@ function harmonyByBar(bars: WrittenBar[], isMain: (line: WrittenBar) => boolean)
 
 /**
  * Writes whole bars given as score text: each listed bar is replaced by what its line says
- * (notes, ties, slurs, articulations, chords, section), each value spelled as a musician would at
+ * (notes, ties, slurs, articulations, chords, section; with `keepHarmony`, a line that lists no
+ * chords or section leaves the bar's as they are), each value spelled as a musician would at
  * its place in the bar; bars past the end are added. "bar N vK:" lines write voice K (adding it to
  * the bar when needed) and "bar N vK: -" removes it, leaving the bar's main line alone. One command, so one undo step; it is
  * validated like any edit. With `pitches: "written"`, transposing parts' lines are read as their
@@ -115,6 +116,7 @@ export function writeBars(
   text: string,
   requestId: string,
   pitches: WrittenPitches = "concert",
+  { keepHarmony = false }: { keepHarmony?: boolean } = {},
 ): { score: Score; command: Command } {
   const bars = parseBarsText(text);
   if (!bars.length) throw new Error('Write at least one bar line ("bar N: notes").');
@@ -163,9 +165,11 @@ export function writeBars(
       operations.push({ type: "clearMeasure", measureId, voiceId });
     }
     const hadSection = !!score.measures.find((m) => m.id === measureId)?.section;
-    if (isMain(line) && (section || hadSection)) operations.push({ type: "setSection", measureId, label: section });
+    const sets = section || (hadSection && !keepHarmony);
+    if (isMain(line) && sets) operations.push({ type: "setSection", measureId, label: section });
   }
-  for (const [bar, chords] of harmonyByBar(bars, isMain)) {
+  // With keepHarmony, only lines that list chords change them: the main line no longer clears them.
+  for (const [bar, chords] of harmonyByBar(bars, keepHarmony ? () => false : isMain)) {
     const measureId = measureIds[bar - 1];
     for (const chord of score.chords.filter((c) => c.measureId === measureId)) {
       operations.push({ type: "removeNotation", id: chord.id });

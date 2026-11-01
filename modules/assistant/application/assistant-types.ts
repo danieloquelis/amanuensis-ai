@@ -1,11 +1,13 @@
 import type { PageImages } from "@/modules/page";
-import type { Command, Score } from "@/modules/score";
+import type { Command, InstrumentId, Score } from "@/modules/score";
 import type { TakePart, VoiceTake } from "@/modules/voice";
 import type { PlanStep } from "./agent-state";
+import type { BandReport } from "./band-tools";
+import type { BandMember } from "./musicians";
 import type { Attachment } from "./attachments";
 import type { DraftEvent } from "./score-block-writer";
 import type { EditsEvent } from "./edit-feed";
-import type { TokenUsage } from "./model-port";
+import type { ModelPort, TokenUsage } from "./model-port";
 
 export type AssistantTurn = { instruction: string; reply: string };
 
@@ -25,6 +27,8 @@ export type AssistantRequest = {
   songNotes?: string;
   /** What the agent has learned about this musician, across songs. */
   memory?: string[];
+  /** Band Mode: arrangements go to the band, one musician per part, as the musician set it up. */
+  band?: { on: boolean; members: BandMember[] };
   /** Files sent with the request: pictures or PDFs of sheet music, or music written as text. */
   attachments?: Attachment[];
 };
@@ -48,6 +52,8 @@ export type AssistantResult = {
   songNotes?: string;
   /** What it knows about the musician, when that changed: the browser keeps it. */
   memory?: string[];
+  /** What each musician of the band played, when the band did. */
+  band?: BandReport[];
 };
 
 /** `ms` is how long the tool itself ran. */
@@ -63,6 +69,16 @@ export type ProgressEvent =
   | { stage: "thought"; text: string }
   /** The agent's plan, whenever it shows or updates it. */
   | { stage: "plan"; steps: PlanStep[] }
+  /** A musician of the band: waiting its turn, playing (with its thinking as it streams), or done. */
+  | {
+      stage: "musician";
+      part: string;
+      instrument: InstrumentId;
+      name: string;
+      state: "waiting" | "playing" | "done";
+      thought?: string;
+      report?: string;
+    }
   | { stage: "tool"; tool: string }
   /** The turn's edits so far changed: the editor can show them before the turn ends. */
   | EditsEvent
@@ -75,6 +91,8 @@ export type TurnServices = {
   pageImages?: PageImages | null;
   /** Stops the turn: the model call in flight is cancelled and no further step starts. */
   signal?: AbortSignal;
+  /** The model the band's musicians think with (Band Mode): a level below the bandleader's. Default: the same. */
+  musicians?: ModelPort;
   /** Evaluations only: the instructions to run with instead of `SYSTEM_PROMPT` (e.g. with one rule left out). */
   systemPrompt?: string;
 };

@@ -1,5 +1,5 @@
 import { thinkingOf, handleVoiceRequest, MAX_AUDIO_BYTES } from "@/modules/assistant";
-import { createMetaModel, logTurn, metaApi, progressResponse } from "@/modules/assistant/server";
+import { createMetaModels, logTurn, progressResponse } from "@/modules/assistant/server";
 import { archiveTake, cachedRecognizer, createMuseTranscriber, createSwiftF0Tracker } from "@/modules/voice/server";
 
 /** Hearing the take plus several model steps, each of which may think for most of a minute. */
@@ -25,16 +25,9 @@ export async function POST(request: Request) {
   const payload = parseJson(form?.get("request"));
   const transcriber = createMuseTranscriber(apiKey);
   const recognizer = DEVELOPMENT ? cachedRecognizer(transcriber, ".cache/transcripts") : transcriber;
-  const model = createMetaModel(
-    apiKey,
-    process.env.META_AI_MODEL,
-    thinkingOf(payload) ?? process.env.META_AI_REASONING_EFFORT,
-    {
-      api: metaApi(process.env.META_AI_API),
-    },
-  );
+  const { model, musicians } = createMetaModels(apiKey, process.env, thinkingOf(payload));
   return progressResponse(async (onProgress) => {
-    const services = { model, recognizer, pitchTracker: createSwiftF0Tracker(), signal: request.signal };
+    const services = { model, musicians, recognizer, pitchTracker: createSwiftF0Tracker(), signal: request.signal };
     const response = await handleVoiceRequest({ audio, payload }, services, onProgress);
     if (DEVELOPMENT) {
       const selection = (payload as { selectionName?: string } | null)?.selectionName;

@@ -2,6 +2,7 @@
 // Import from route handlers only, never from client components.
 export {
   createMetaModel,
+  createMetaModels,
   DEFAULT_META_MODEL,
   metaApi,
   toMetaPart,

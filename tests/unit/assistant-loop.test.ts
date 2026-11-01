@@ -543,3 +543,66 @@ test("checking a take finds a note struck without a pitch, and the bars may be r
     ],
   );
 });
+
+test("in Band Mode the band plays in rehearsal order, each musician only its own part, as one undo step", async () => {
+  const { model, seen } = scriptedModel([
+    // The bandleader hands out the parts (bass named first: the band still starts with the drums).
+    {
+      content: null,
+      toolCalls: [
+        call("band_arrange", {
+          feel: "a gentle waltz",
+          parts: [
+            { part: "bass", brief: "roots on 1" },
+            { part: "drums", brief: "brushes" },
+          ],
+        }),
+      ],
+    },
+    // The drummer.
+    {
+      content: null,
+      toolCalls: [
+        call("score_edit", {
+          requestId: "groove",
+          expectedRevision: 2,
+          operation: { type: "putGroove", partId: "drums", groove: "rock", measureIds: ["1"] },
+        }),
+      ],
+    },
+    { content: "Rock groove in bar 1.", toolCalls: [] },
+    // The bassist tries the piano first: refused; then its own part.
+    { content: null, toolCalls: [call("score_write", { requestId: "b1", expectedRevision: 3, text: "bar 1: C2w" })] },
+    {
+      content: null,
+      toolCalls: [call("score_write", { requestId: "b2", expectedRevision: 3, text: "bar 1 bass: C2w" })],
+    },
+    { content: "Root on 1.", toolCalls: [] },
+    // The bandleader checks and replies.
+    { content: null, toolCalls: [call("band_review", {})] },
+    { content: "The band played bar 1.", toolCalls: [] },
+  ]);
+  const score = createExample();
+  const band = { on: true, members: [{ instrument: "bass" as const, name: "Luis", note: "reads treble clef" }] };
+  const progress: string[] = [];
+  const result = await runAssistant(model, { ...request("arrange it"), score, band }, "t10", (event) => {
+    if (event.stage === "musician" && event.state !== "playing") progress.push(`${event.name} ${event.state}`);
+  });
+  assert.deepEqual(progress, ["Drums waiting", "Luis waiting", "Drums done", "Luis done"]);
+  assert.deepEqual(
+    result.band?.map((r) => [r.name, r.report]),
+    [
+      ["Drums", "Rock groove in bar 1."],
+      ["Luis", "Root on 1."],
+    ],
+  );
+  // The bassist's brief carried its player, and its try at the piano was refused.
+  assert.match(JSON.stringify(seen[3]), /Your player is Luis: reads treble clef/);
+  assert.match(JSON.stringify(seen[4].at(-1)), /You play Bass/);
+  const after = executeAll(createSession(score), result.commands).score;
+  assert.deepEqual(
+    after.parts.map((p) => p.instrument),
+    ["piano", "bass", "drums"],
+  );
+  assert.equal(executeAll(createSession(score), result.commands).past.length, 1, "one undo step");
+});
