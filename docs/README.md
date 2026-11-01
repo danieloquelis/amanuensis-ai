@@ -27,6 +27,7 @@ Start with the [product brief](product/product-brief.md), then the [architecture
 | [Agent architecture review](research/agent-architecture-review.md) | Is the agent built soundly: multimodality, Meta SDKs and frameworks, ranked recommendations |
 | [Reasoning continuity](research/reasoning-continuity.md) | Carrying the agent's reasoning between steps on the Responses API: measured against Chat Completions |
 | [Prompt rules evaluation](research/prompt-rules-eval.md) | Which system-prompt rules change what the agent does, measured by leaving each out |
+| [Band Mode evaluation](research/band-mode-eval.md) | Band Mode against the single agent on three songs: measured arrangement quality, time and cost |
 
 ## Working decisions
 
