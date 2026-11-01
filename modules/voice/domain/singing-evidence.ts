@@ -39,34 +39,66 @@ export const FEATURES = [
 ] as const;
 
 /**
+ * A silence this long (seconds) inside one turn is not a pause in talk: the recognizer splits
+ * turns at far shorter pauses (0.1–0.5 s in our takes).
+ */
+const LONGEST_PAUSE_SECONDS = 0.8;
+
+/** Where the voice resumes after the turn's last long silence, as an index into `voiced`; -1 if none. */
+function afterLastLongPause(frames: PitchFrame[], voiced: number[]): number {
+  for (let k = voiced.length - 1; k > 0; k--) {
+    if (frames[voiced[k]].time - frames[voiced[k - 1]].time > LONGEST_PAUSE_SECONDS) return k;
+  }
+  return -1;
+}
+
+/**
  * Which voiced frames the recognizer's words account for, if spoken at `lettersPerSecond`, and
  * which of them are syllables it wrote down for singing. Each turn's words are spread over its
- * first voiced frames by letters.
+ * first voiced frames by letters. A turn that ends in sung syllables after a long silence ("…
+ * I'll sing it to you. Ta ta ta ta") was talk, then singing: the syllables are the voice after
+ * the silence, and the talk's words are spread over the voice before it.
  */
 export function wordsInFrames(frames: PitchFrame[], speech: SpeechTurn[], lettersPerSecond = SPEAKING_RATES[0]) {
   const worded = new Array<boolean>(frames.length).fill(false);
   const vocable = new Array<boolean>(frames.length).fill(false);
-  for (const turn of speech) {
-    const words = turn.text.split(/\s+/).map(wordOf).filter(Boolean);
-    const sung = vocableMask(words);
+  /** Spreads `words` over the first of `voiced` by letters, at the speaking pace. */
+  const place = (words: string[], sung: boolean[], voiced: number[]) => {
     const letters = words.reduce((sum, word) => sum + word.length, 0);
-    const inside = frames
-      .map((frame, index) => ({ frame, index }))
-      .filter(({ frame }) => frame.frequency !== null)
-      .filter(({ frame }) => frame.time >= turn.start - SPEECH_MARGIN_SECONDS)
-      .filter(({ frame }) => frame.time <= turn.end + SPEECH_MARGIN_SECONDS)
-      .map(({ index }) => index);
-    const room = Math.min(inside.length, Math.ceil(letters / lettersPerSecond / FRAME_SECONDS));
+    const room = Math.min(voiced.length, Math.ceil(letters / lettersPerSecond / FRAME_SECONDS));
     let cursor = 0;
     words.forEach((word, k) => {
       const count = Math.round((word.length / letters) * room);
-      for (const index of inside.slice(cursor, cursor + count)) {
+      for (const index of voiced.slice(cursor, cursor + count)) {
         worded[index] = true;
         vocable[index] = sung[k];
       }
       cursor += count;
     });
-    for (const index of inside.slice(cursor, room)) worded[index] = true;
+    for (const index of voiced.slice(cursor, room)) worded[index] = true;
+  };
+  for (const turn of speech) {
+    const words = turn.text.split(/\s+/).map(wordOf).filter(Boolean);
+    const sung = vocableMask(words);
+    const voiced = frames
+      .map((frame, index) => ({ frame, index }))
+      .filter(({ frame }) => frame.frequency !== null)
+      .filter(({ frame }) => frame.time >= turn.start - SPEECH_MARGIN_SECONDS)
+      .filter(({ frame }) => frame.time <= turn.end + SPEECH_MARGIN_SECONDS)
+      .map(({ index }) => index);
+    // The sung syllables the turn ends with, if any.
+    let talk = words.length;
+    while (talk > 0 && sung[talk - 1]) talk--;
+    const resumes = talk > 0 && talk < words.length ? afterLastLongPause(frames, voiced) : -1;
+    if (resumes === -1) {
+      place(words, sung, voiced);
+      continue;
+    }
+    place(words.slice(0, talk), sung.slice(0, talk), voiced.slice(0, resumes));
+    for (const index of voiced.slice(resumes)) {
+      worded[index] = true;
+      vocable[index] = true;
+    }
   }
   return { worded, vocable };
 }

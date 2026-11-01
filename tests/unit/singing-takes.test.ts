@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { sungStretches, type PitchFrame, type SoundFrame, type SpeechTurn } from "@/modules/voice";
+import { sungStretches, wordsInFrames, type PitchFrame, type SoundFrame, type SpeechTurn } from "@/modules/voice";
 
 /**
  * Real takes, kept as what the learned pitch tracker and the spectrum heard and the words the
@@ -57,4 +57,19 @@ test("singing inside a turn the recognizer stretched over it is found, after the
   assert.equal(spans.length, 1);
   // The talk ends by 6 s; the singing runs to the end of the voice.
   assert.ok(spans[0].start > 6 && spans[0].end > 9.3, JSON.stringify(spans));
+});
+
+test("a turn of talk that ends in sung syllables after a long pause sings from the pause on", () => {
+  // Talk from 0 to 3 s, a 1 s silence, then four sung "ta"s from 4 to 6 s, all in one turn.
+  const frames = Array.from({ length: 600 }, (_, i) => ({
+    time: i / 100,
+    frequency: i < 300 || i >= 400 ? 200 : null,
+    clarity: 0.9,
+    rms: 0.1,
+  }));
+  const turn = { start: 0, end: 6, text: "now I am going to sing the line for you. Ta ta ta ta" };
+  const { worded, vocable } = wordsInFrames(frames, [turn], 12);
+  assert.ok(vocable.slice(400).every(Boolean), "the voice after the pause is the sung syllables");
+  assert.ok(!vocable.slice(0, 300).some(Boolean), "the talk is not");
+  assert.ok(worded.slice(0, 300).some(Boolean));
 });
