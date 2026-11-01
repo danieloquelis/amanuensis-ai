@@ -1,4 +1,4 @@
-import { barStyle, MARK_KINDS, MARK_LABELS, type Score } from "@/modules/score";
+import { barStyle, findStaff, MARK_KINDS, MARK_LABELS, type Score } from "@/modules/score";
 import { addMark, addSection, barStyleEdit, endRepeatEdit, startRepeatEdit } from "../../../application/notation-edits";
 import type { Edit } from "../../../application/note-edits";
 import { checkOperation } from "../../../application/operation-check";
@@ -14,6 +14,8 @@ const STYLES = [
 type MarksPaletteProps = {
   score: Score;
   barIndex: number;
+  /** The staff the bar is picked in: a slash or repeat bar is shown on that staff only. */
+  staffId: string;
   onCommand: CommitEdit;
   onError: (message: string) => void;
 };
@@ -22,8 +24,8 @@ type MarksPaletteProps = {
  * Form and lead-sheet marks for the selected bar. Buttons add; to remove something, select it
  * on the sheet and press Delete.
  */
-export function MarksPalette({ score, barIndex, onCommand, onError }: MarksPaletteProps) {
-  const style = barStyle(score.measures[barIndex]) ?? "notes";
+export function MarksPalette({ score, barIndex, staffId, onCommand, onError }: MarksPaletteProps) {
+  const style = barStyle(score.measures[barIndex], findStaff(score, staffId)?.voices[0].id) ?? "notes";
   const apply = (edit: Edit | null) => {
     if (!edit) return;
     const problem = checkOperation(score, edit.operation);
@@ -39,7 +41,7 @@ export function MarksPalette({ score, barIndex, onCommand, onError }: MarksPalet
             role="radio"
             aria-checked={style === option.value}
             aria-label={"ariaLabel" in option ? option.ariaLabel : option.label}
-            onClick={() => apply(barStyleEdit(score, barIndex, option.value))}
+            onClick={() => apply(barStyleEdit(score, barIndex, option.value, staffId))}
           >
             {option.label}
           </button>

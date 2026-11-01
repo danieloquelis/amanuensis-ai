@@ -106,7 +106,13 @@ export function ScoreToolMenus({
       </ToolPopover>
       <span className={surface.divider} />
       <ToolPopover icon={<Repeat {...ICON} />} label="Repeats" accessibleLabel="Marks and repeats" disabled={!ready}>
-        <MarksPalette score={score} barIndex={target.barIndex} onCommand={onCommand} onError={onError} />
+        <MarksPalette
+          score={score}
+          barIndex={target.barIndex}
+          staffId={target.staffId}
+          onCommand={onCommand}
+          onError={onError}
+        />
       </ToolPopover>
       <button
         className={styles.tool}

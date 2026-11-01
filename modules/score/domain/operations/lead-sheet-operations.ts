@@ -1,5 +1,6 @@
 import { CHORD_QUALITY_NAMES, parseChordSymbol } from "../chords";
 import { getMeasure, getStaff } from "../queries";
+import { staffHandle } from "../handles";
 import { barStyle, setBarStyle } from "../voice-access";
 import { restStaff, type Draft, type OperationContext } from "./draft";
 import type { OperationOf } from "./schema";
@@ -29,6 +30,11 @@ export function putChord(draft: Draft, op: OperationOf<"putChord">, { idPrefix }
  */
 export function setMeasureStyle(draft: Draft, op: OperationOf<"setMeasureStyle">, { idPrefix }: OperationContext) {
   const measure = getMeasure(draft, op.measureId);
+  // With several staves, which one is a choice to make, never a default to fall into.
+  const staves = draft.parts.flatMap((part) => part.staves);
+  if (!op.staffId && staves.length > 1) {
+    throw new Error(`Say which staff to show this way: ${staves.map((s) => staffHandle(draft, s.id)).join(", ")}.`);
+  }
   const staff = getStaff(draft, op.staffId);
   const main = staff.voices[0].id;
   if (op.style === "notes") {

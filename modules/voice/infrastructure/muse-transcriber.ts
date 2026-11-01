@@ -6,8 +6,16 @@ export const META_API_URL = "https://api.meta.ai/v1";
 const MODEL = "muse-voice-transcribe-1.0";
 const TIMEOUT_MS = 30_000;
 const MS_PER_SECOND = 1000;
-/** Words the recognizer should expect in a musician's instructions. */
-const MUSIC_WORDS = ["beats per minute", "BPM", "Allegro", "Andante", "Adagio", "major", "minor", "sharp", "flat"];
+/**
+ * Words the recognizer should expect in a musician's instructions (Muse Voice Transcribe's keyword
+ * biasing), in English and Spanish: without them, "de la batería" was heard as "del día".
+ */
+const MUSIC_WORDS = [
+  ...["beats per minute", "BPM", "Allegro", "Andante", "Adagio", "major", "minor", "sharp", "flat"],
+  ...["bar", "bars", "chord", "chords", "drums", "bass", "trumpet", "guitar", "slashes", "triplet", "groove"],
+  ...["compás", "compases", "acorde", "acordes", "batería", "bajo", "trompeta", "guitarra", "flauta"],
+  ...["tresillo", "corchea", "negra", "blanca", "redonda", "silencio", "tonalidad", "sostenido", "bemol"],
+];
 
 const replySchema = z.object({
   turns: z

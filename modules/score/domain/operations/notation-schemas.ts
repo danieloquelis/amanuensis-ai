@@ -23,7 +23,9 @@ export const notationOperationSchemas = [
       style: z
         .enum(["notes", "slashes", "repeat"])
         .describe("slashes: play freely on the chords; repeat: a % sign, play the previous bar again."),
-      staffId: handleSchema.optional().describe("The staff to show this way. Default: the first staff."),
+      staffId: handleSchema
+        .optional()
+        .describe('The staff to show this way ("drums", "piano.2"); required when the score has more than one.'),
     })
     .describe("Show a bar as notes, rhythm slashes or a measure-repeat sign. slashes/repeat replace its notes."),
   z

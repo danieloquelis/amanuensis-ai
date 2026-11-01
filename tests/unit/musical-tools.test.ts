@@ -218,3 +218,18 @@ test("drag-style reorder can move to the end without changing durations or ident
     /within one measure/,
   );
 });
+
+test("with several staves, a slash bar must say which staff, and only that staff changes", () => {
+  const withDrums = edit(createExample(), { type: "addPart", instrument: "drums" });
+  assert.throws(
+    () => edit(withDrums, { type: "setMeasureStyle", measureId: "bar-2", style: "slashes" }, "slash"),
+    /Say which staff to show this way: piano, drums/,
+  );
+  const slashed = edit(
+    withDrums,
+    { type: "setMeasureStyle", measureId: "bar-2", style: "slashes", staffId: "drums" },
+    "slash",
+  );
+  const styles = slashed.measures[1].voices.map((bar) => bar.style ?? "notes");
+  assert.deepEqual(styles, ["notes", "slashes"]);
+});

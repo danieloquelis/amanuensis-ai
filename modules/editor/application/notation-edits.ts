@@ -1,4 +1,5 @@
 import {
+  findStaff,
   barStyle,
   MARK_LABELS,
   meterName,
@@ -43,12 +44,18 @@ export function addMark(score: Score, barIndex: number, kind: MarkKind): Edit {
   };
 }
 
-/** Shows a bar as notes, rhythm slashes, or a repeat of the previous bar. */
-export function barStyleEdit(score: Score, barIndex: number, style: "notes" | "slashes" | "repeat"): Edit | null {
+/** Shows a bar of one staff as notes, rhythm slashes, or a repeat of the previous bar. */
+export function barStyleEdit(
+  score: Score,
+  barIndex: number,
+  style: "notes" | "slashes" | "repeat",
+  staffId: string,
+): Edit | null {
   const measure = score.measures[barIndex];
-  if ((barStyle(measure) ?? "notes") === style) return null;
+  const main = findStaff(score, staffId)?.voices[0].id;
+  if ((barStyle(measure, main) ?? "notes") === style) return null;
   const receipt = { notes: "Notes", slashes: "Slash bar", repeat: "Repeat previous bar" }[style];
-  return { operation: { type: "setMeasureStyle", measureId: measure.id, style }, receipt };
+  return { operation: { type: "setMeasureStyle", measureId: measure.id, style, staffId }, receipt };
 }
 
 const indexOf = (score: Score, measureId: string) => score.measures.findIndex((m) => m.id === measureId);

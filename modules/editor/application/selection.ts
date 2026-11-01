@@ -1,10 +1,12 @@
 import {
+  allStaves,
   barEvents,
   eventOnsets,
   findEvent,
   groupOf,
   measureEvents,
   partOf,
+  voiceInfo,
   type Score,
   type ScoreEvent,
 } from "@/modules/score";
@@ -18,9 +20,17 @@ export function findSelection(score: Score, selectedId: string | null): Selectio
 
 /**
  * Where a toolbar tool acts: the selected note or rest, the selected bar, or the start of bar 1.
- * `partId` is the instrument it belongs to: the note's, the lane's of a bar picked in one, else the first.
+ * `partId` is the instrument it belongs to: the note's, the lane's of a bar picked in one, else the first;
+ * `staffId` the staff likewise (a piano's lower staff, the drums).
  */
-export type ToolTarget = { barIndex: number; measureId: string; eventId: string | null; beat: number; partId: string };
+export type ToolTarget = {
+  barIndex: number;
+  measureId: string;
+  eventId: string | null;
+  beat: number;
+  partId: string;
+  staffId: string;
+};
 
 export function toolTarget(
   score: Score,
@@ -35,7 +45,8 @@ export function toolTarget(
     );
     const lane = score.parts.find((part) => part.staves.some((staff) => staff.id === selectedStaffId));
     const partId = (lane ?? score.parts[0]).id;
-    return { barIndex, measureId: score.measures[barIndex].id, eventId: null, beat: 0, partId };
+    const staffId = lane ? selectedStaffId! : allStaves(score)[0].id;
+    return { barIndex, measureId: score.measures[barIndex].id, eventId: null, beat: 0, partId, staffId };
   }
   const measure = score.measures[selection.measureIndex];
   const events = findEvent(score, selection.event.id)?.voiceBar.events ?? barEvents(measure);
@@ -44,7 +55,16 @@ export function toolTarget(
   const group = groupOf(events, selection.event.id);
   const beat = eventOnsets(events)[group ? group.first : index];
   const partId = partOf(score, selection.event.id).id;
-  return { barIndex: selection.measureIndex, measureId: measure.id, eventId: selection.event.id, beat, partId };
+  const voiceId = findEvent(score, selection.event.id)?.voiceId;
+  const staffId = (voiceId && voiceInfo(score, voiceId)?.staff.id) || allStaves(score)[0].id;
+  return {
+    barIndex: selection.measureIndex,
+    measureId: measure.id,
+    eventId: selection.event.id,
+    beat,
+    partId,
+    staffId,
+  };
 }
 
 /** Selecting a bar selects its first event. */

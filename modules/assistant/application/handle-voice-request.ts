@@ -99,7 +99,9 @@ export async function handleVoiceRequest(
     : Promise.resolve(undefined);
   try {
     // A take sent again with an answer was heard already: it is not paid for twice.
-    speech = heardBefore ?? (await services.recognizer.transcribe(input.audio));
+    // The song's own parts are words the musician is likely to say.
+    const hints = score.parts.map((part) => part.name);
+    speech = heardBefore ?? (await services.recognizer.transcribe(input.audio, hints));
   } catch (error) {
     return failure(502, error instanceof Error ? error.message : "Speech recognition failed.");
   }
