@@ -1,11 +1,22 @@
+import type { InstrumentId } from "@/modules/score";
 import type { PlanStep } from "./agent-state";
 import type { ProgressEvent } from "./run-assistant";
 
 /** What a turn did, in order: its thinking (the model's reasoning summary) and the steps it took. */
 export type WorkEntry = { kind: "thought"; text: string } | { kind: "step"; tool: string };
 
-/** A turn's record of its work: the log, and its plan when it made one. */
-export type TurnWork = { log?: WorkEntry[]; plan?: PlanStep[] };
+/** A musician of the band in a turn: its state, the thought it is on, and its note to the bandleader. */
+export type BandSeat = {
+  part: string;
+  instrument: InstrumentId;
+  name: string;
+  state: "waiting" | "playing" | "done";
+  thought?: string;
+  report?: string;
+};
+
+/** A turn's record of its work: the log, its plan when it made one, and its band in Band Mode. */
+export type TurnWork = { log?: WorkEntry[]; plan?: PlanStep[]; band?: BandSeat[] };
 
 /** The thinking a turn keeps (characters): enough to see why, not the whole stream. */
 const KEPT_THOUGHT = 4000;
@@ -17,6 +28,7 @@ const KEPT_THOUGHT = 4000;
 export function withProgress(work: TurnWork, event: ProgressEvent): TurnWork {
   const log = work.log ?? [];
   if (event.stage === "plan") return { ...work, plan: event.steps };
+  if (event.stage === "musician") return { ...work, band: withMusician(work.band ?? [], event) };
   if (event.stage === "tool") return { ...work, log: [...log, { kind: "step", tool: event.tool }] };
   if (event.stage !== "thought") return work;
   const last = log.at(-1);
@@ -68,4 +80,20 @@ export function readableThought(text: string): string {
     .replace(/\b(?:the )?sung-(\d+)(?: (?:span|audio))?\b/g, "sung part $1")
     .replace(/\b(?:the )?voice-\d+(?: (?:span|audio|stretch))?\b/g, "the other voice")
     .replace(/\bspans?\b/g, (word) => (word === "span" ? "part" : "parts"));
+}
+
+/** The band after a musician's event: its seat added or updated; its thinking joins the thought it is on. */
+function withMusician(band: BandSeat[], event: Extract<ProgressEvent, { stage: "musician" }>): BandSeat[] {
+  const { part, instrument, name, state, thought, report } = event;
+  const seat = band.find((s) => s.part === part);
+  if (!seat) return [...band, { part, instrument, name, state, ...(report ? { report } : {}) }];
+  // A musician sent back plays again: its thought starts over.
+  const again = state === "playing" && seat.state === "done";
+  const next: BandSeat = {
+    ...seat,
+    state,
+    thought: thought ? (again ? "" : (seat.thought ?? "")) + thought : again ? undefined : seat.thought,
+    ...(report ? { report } : {}),
+  };
+  return band.map((s) => (s.part === part ? next : s));
 }

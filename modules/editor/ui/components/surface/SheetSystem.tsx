@@ -1,4 +1,4 @@
-import { beatX, systemBottom, type System } from "@/modules/engraving";
+import { beatX, STAFF_GAP, stavesLeft, systemBottom, type System } from "@/modules/engraving";
 import { BeamLines, ChordSymbol, IndicationText, SystemStaves, TieArcs, TupletMarks } from "@/modules/engraving/ui";
 import styles from "./score-surface.module.css";
 import { BarArea } from "./BarArea";
@@ -15,6 +15,8 @@ type SheetSystemProps = {
   /** Each staff's lane name, with several staves. */
   laneNames: Map<string, string>;
   playBeat: number | null;
+  /** Staves being written right now by one of the band's musicians: they glow. */
+  glowing?: ReadonlySet<string>;
   interactions: SheetInteractions;
   /** Notes arriving from the assistant, each with its delay before it pops in (ms). */
   arriving?: ReadonlyMap<string, number>;
@@ -22,11 +24,12 @@ type SheetSystemProps = {
 
 /** One line of music. Children are drawn in paint order: staves, bars, notes, beams, triplets, ties and slurs, overlays. */
 export function SheetSystem(props: SheetSystemProps) {
-  const { system, eventOrder, partNames, laneNames, playBeat, interactions, arriving } = props;
+  const { system, eventOrder, partNames, laneNames, playBeat, glowing, interactions, arriving } = props;
   const events = [...system.events].sort((a, b) => eventOrder.get(a.event.id)! - eventOrder.get(b.event.id)!);
 
   return (
     <g>
+      {glowing?.size ? <StaffGlow system={system} glowing={glowing} /> : null}
       <SystemStaves system={system} />
       {system.bars.map((bar) =>
         system.staves ? (
@@ -134,4 +137,28 @@ function Playhead({ system, playBeat }: { system: System; playBeat: number }) {
       y2={systemBottom(system) + 30}
     />
   );
+}
+
+/** Room the glow leaves around a staff (px), and its corner radius. */
+const GLOW_MARGIN = { x: 10, y: 12 };
+const GLOW_RADIUS = 10;
+
+/** A soft light behind the staves a band musician is writing, so the eye follows who is playing. */
+function StaffGlow({ system, glowing }: { system: System; glowing: ReadonlySet<string> }) {
+  const left = stavesLeft(system) - GLOW_MARGIN.x;
+  const last = system.bars[system.bars.length - 1];
+  const width = last.x + last.width + GLOW_MARGIN.x - left;
+  return (system.staves ?? [])
+    .filter((staff) => glowing.has(staff.staffId))
+    .map((staff) => (
+      <rect
+        key={`glow-${staff.staffId}`}
+        className={styles.staffGlow}
+        x={left}
+        y={staff.top - GLOW_MARGIN.y}
+        width={width}
+        height={STAFF_GAP * 4 + GLOW_MARGIN.y * 2}
+        rx={GLOW_RADIUS}
+      />
+    ));
 }

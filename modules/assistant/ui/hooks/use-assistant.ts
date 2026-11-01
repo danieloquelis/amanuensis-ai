@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Command, Score } from "@/modules/score";
 import { askedAfter, withHeardWords, type AskedTake } from "../../application/asked-take";
-import { useAgentMemory } from "./use-agent-memory";
-import { useThinking } from "./use-thinking";
+import { useAssistantSettings } from "./use-assistant-settings";
 import { attachmentKind } from "../../application/attachments";
 import type { ChatRepository, Turn } from "../../application/chat-history";
 import type { HeardTake } from "../../application/handle-voice-request";
@@ -53,8 +52,7 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
   const asked = useRef<AskedTake | null>(null);
   const busy = turns.some((turn) => turn.status === "working");
   const live = useLiveTurn();
-  const thinking = useThinking();
-  const memory = useAgentMemory(chats);
+  const { thinking, memory, band, request: settings } = useAssistantSettings(chats);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -108,9 +106,7 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
         score: getScore(),
         ...selection,
         history,
-        thinking: thinking.level,
-        songNotes: memory.songNotes,
-        memory: memory.facts,
+        ...settings(),
       };
       const result = await request(
         payload,
@@ -247,5 +243,7 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
     thinking,
     /** This song's notes and what the assistant has learned about the musician. */
     memory,
+    /** Band Mode: on or off, and the musician's band. */
+    band,
   };
 }

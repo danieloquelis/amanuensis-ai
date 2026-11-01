@@ -1,3 +1,4 @@
+import type { BandMember } from "../application/musicians";
 import type { Thinking } from "../application/thinking";
 import type { VoiceResult } from "../application/handle-voice-request";
 import type { AssistantResult, AssistantTurn, ProgressListener } from "../application/run-assistant";
@@ -14,6 +15,8 @@ export type AssistantPayload = {
   history: AssistantTurn[];
   /** How long the model may think. */
   thinking?: Thinking;
+  /** Band Mode, when on: the musician's band. */
+  band?: { on: boolean; members: BandMember[] };
   /** With a take sent again: the words already heard in it, so they are not recognized twice. */
   speech?: SpeechTurn[];
 };

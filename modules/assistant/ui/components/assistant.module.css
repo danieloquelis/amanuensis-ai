@@ -1187,3 +1187,223 @@
   font-size: 12px;
   cursor: pointer;
 }
+
+/* Band Mode in the compose bar: the band's instruments as overlapping circles, lit when on. */
+.bandButton {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 10px 0 8px;
+  border: 0;
+  border-radius: var(--r-sm);
+  corner-shape: squircle;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background var(--fast) var(--ease-out);
+}
+
+.bandButton:hover,
+.bandButton:focus-visible {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+.bandButton[data-on="true"] {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent-ink);
+}
+
+.bandStack {
+  display: flex;
+}
+
+.bandStack span {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow:
+    inset 0 0 0 1px var(--line-strong),
+    0 0 0 1.5px var(--surface);
+}
+
+.bandStack span + span {
+  margin-left: -6px;
+}
+
+@container (max-width: 600px) {
+  .bandLabel {
+    display: none;
+  }
+}
+
+/* Its panel: the switch, then who plays, one row per musician. */
+.bandPanel {
+  width: 420px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  padding: 14px 16px;
+  border-radius: var(--r-lg);
+  corner-shape: squircle;
+  transform-origin: bottom left;
+}
+
+.bandSwitch {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.bandSwitch strong {
+  display: block;
+  font-size: 14px;
+}
+
+.bandSwitch span span {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.bandSwitch input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
+.bandMembers {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 8px;
+  padding: 12px 0 0;
+  border-top: 1px solid var(--line-strong);
+  list-style: none;
+}
+
+.bandMembers li {
+  display: grid;
+  grid-template-columns: 24px 112px 80px 1fr 22px;
+  align-items: center;
+  gap: 6px;
+}
+
+.bandMembers select,
+.bandMembers input {
+  min-width: 0;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.bandIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink-soft);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+.bandAdd {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+/* The band in a turn: one row per musician, its state, and the line it is on. */
+.bandRoom {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.bandRoom li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.bandRoom li[data-state="waiting"] {
+  opacity: 0.55;
+}
+
+.bandRoom li[data-state="playing"] .bandIcon {
+  color: var(--accent-ink);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.bandSeat {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.bandWho {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.bandState {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.bandLine,
+.bandNote {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.bandLine {
+  font-style: italic;
+  animation: thought-in 360ms var(--ease-out) both;
+}
+
+.bandNote {
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bandLine {
+    animation: none;
+  }
+}

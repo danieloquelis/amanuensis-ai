@@ -1,3 +1,4 @@
+import { INSTRUMENTS } from "@/modules/score";
 import { CaretDown, ChatsCircle, SidebarSimple, Sparkle, X } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 import { IconButton } from "@/shared/ui/IconButton";
@@ -8,6 +9,7 @@ import { useAttachments } from "../hooks/use-attachments";
 import type { ComposeDockState } from "../hooks/use-compose-dock";
 import { ChatThread } from "./ChatThread";
 import { Composer } from "./Composer";
+import { BandMenu } from "./BandMenu";
 import { ChatResizeHandle } from "./ChatResizeHandle";
 import { MemoryMenu } from "./MemoryMenu";
 import { ThinkingMenu } from "./ThinkingMenu";
@@ -69,6 +71,11 @@ export function ComposeDock({ assistant, dock, context, revision, onUndo }: Comp
       onUndo={onUndo}
       onRetry={retry}
       onChoose={sendText}
+      onRedo={(seat) => {
+        // The musician's words go with it: the request is ready to finish and send.
+        dock.setDraft(`${seat.name}, play your ${INSTRUMENTS[seat.instrument].name.toLowerCase()} part again: `);
+        dock.focus();
+      }}
       actions={
         <>
           {remembered}
@@ -94,6 +101,12 @@ export function ComposeDock({ assistant, dock, context, revision, onUndo }: Comp
       }}
       accessory={
         <>
+          <BandMenu
+            on={assistant.band.on}
+            members={assistant.band.members}
+            onTurn={assistant.band.turn}
+            onMembers={assistant.band.setMembers}
+          />
           <ThinkingMenu level={assistant.thinking.level} onChange={assistant.thinking.choose} />
           {!sidebar && turns.length > 0 && (
             <IconButton

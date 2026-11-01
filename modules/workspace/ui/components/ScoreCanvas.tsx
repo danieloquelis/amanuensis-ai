@@ -3,7 +3,7 @@ import { sheetHeading } from "@/modules/editor";
 import { ScoreSurface, useTurnPreview, type ScoreEditor } from "@/modules/editor/ui";
 import { TempoNote } from "@/modules/engraving/ui";
 import type { TurnDraft } from "@/modules/editor";
-import { tempoMarking, type Command } from "@/modules/score";
+import { findPart, tempoMarking, type Command, type Score } from "@/modules/score";
 import { localSheetViews } from "../../infrastructure/local-sheet-views";
 import { usePinchZoom } from "../hooks/use-pinch-zoom";
 import { usePlaybackFollow } from "../hooks/use-playback-follow";
@@ -22,6 +22,7 @@ export function ScoreCanvas({
   onPress,
   live,
   draft,
+  glowingPart = null,
 }: {
   /** The song open, so its sheet opens where it was left. */
   workspaceId: string;
@@ -38,6 +39,8 @@ export function ScoreCanvas({
   live: readonly Command[] | null;
   /** The bars it is writing right now, drawn before they are written. */
   draft: TurnDraft | null;
+  /** The part a band musician is writing right now (Band Mode): its staves glow. */
+  glowingPart?: string | null;
 }) {
   const { ready, commit } = editor;
   // While the assistant works, the sheet shows its edits so far, arriving as they are made.
@@ -103,6 +106,7 @@ export function ScoreCanvas({
           onMenuOpenChange={onMenuOpenChange}
           onAudition={onAudition}
           working={working}
+          glowing={stavesOf(score, glowingPart)}
           arriving={arriving}
         />
         <div className={styles.paperFooter}>
@@ -114,4 +118,10 @@ export function ScoreCanvas({
       </article>
     </div>
   );
+}
+
+/** The staves of a part named by its handle, or none. */
+function stavesOf(score: Score, part: string | null): ReadonlySet<string> | undefined {
+  const found = part ? findPart(score, part) : null;
+  return found ? new Set(found.staves.map((staff) => staff.id)) : undefined;
 }

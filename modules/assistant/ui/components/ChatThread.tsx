@@ -1,3 +1,4 @@
+import type { BandSeat } from "../../application/work-log";
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 import type { Turn } from "../hooks/use-assistant";
 import { TurnBubbles } from "./TurnBubbles";
@@ -11,6 +12,8 @@ type ChatThreadProps = {
   onUndo: () => void;
   onRetry: (turnId: string) => void;
   onChoose: (text: string) => void;
+  /** Asks one of the band's musicians to play its part again (Band Mode). */
+  onRedo: (seat: BandSeat) => void;
   /** Buttons on the right of the header: expand, collapse or close, depending on where it is. */
   actions: ReactNode;
   /** Shown when there is nothing yet (suggestions, in the sidebar). */
@@ -22,7 +25,7 @@ type ChatThreadProps = {
  * newest at the bottom. Edits land in the score directly; the latest one can be undone here.
  */
 export function ChatThread(props: ChatThreadProps) {
-  const { turns, busy, canUndo, canRetry, onUndo, onRetry, onChoose, actions, empty } = props;
+  const { turns, busy, canUndo, canRetry, onUndo, onRetry, onChoose, onRedo, actions, empty } = props;
   const listRef = useRef<HTMLOListElement>(null);
   const opened = useRef(false);
   // The chat opens already at its newest message; while it is open, new messages scroll into view.
@@ -49,6 +52,7 @@ export function ChatThread(props: ChatThreadProps) {
             onUndo={onUndo}
             onRetry={() => void onRetry(turn.id)}
             onChoose={onChoose}
+            onRedo={onRedo}
           />
         ))}
         {!turns.length && empty}

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { INSTRUMENT_IDS } from "@/modules/score";
 import type { TakePart } from "@/modules/voice";
 import type { AttachmentKind } from "./attachments";
 import type { ProgressEvent } from "./run-assistant";
@@ -87,6 +88,17 @@ const savedTurnSchema = z.object({
   attachments: z.array(z.object({ name: z.string(), kind: z.enum(["image", "pdf", "text"]) })).optional(),
   seconds: z.number().nonnegative().optional(),
   plan: z.array(z.object({ text: z.string(), done: z.boolean() })).optional(),
+  band: z
+    .array(
+      z.object({
+        part: z.string(),
+        instrument: z.enum(INSTRUMENT_IDS),
+        name: z.string(),
+        state: z.enum(["waiting", "playing", "done"]),
+        report: z.string().optional(),
+      }),
+    )
+    .optional(),
   log: z
     .array(
       z.discriminatedUnion("kind", [

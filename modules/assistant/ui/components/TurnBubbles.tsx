@@ -13,6 +13,8 @@ import type { TakePart } from "@/modules/voice";
 import { answerTime } from "../../application/chat-history";
 import { sungLength, type Turn } from "../hooks/use-assistant";
 import { useActivityLine } from "../hooks/use-activity-line";
+import type { BandSeat } from "../../application/work-log";
+import { BandNotes, BandRoom } from "./BandRoom";
 import { LiveThought, PlanChecklist, WorkSummary } from "./WorkLog";
 import styles from "./assistant.module.css";
 
@@ -25,6 +27,7 @@ type TurnBubblesProps = {
   onUndo: () => void;
   onRetry: () => void;
   onChoose: (text: string) => void;
+  onRedo: (seat: BandSeat) => void;
 };
 
 /**
@@ -92,7 +95,7 @@ function Thinking({ turn }: { turn: Turn }) {
   return (
     <div className={`${styles.answer} ${styles.thinking}`}>
       {turn.plan?.length ? <PlanChecklist steps={turn.plan} /> : null}
-      {turn.log?.length ? <LiveThought log={turn.log} /> : null}
+      {turn.band?.length ? <BandRoom seats={turn.band} /> : turn.log?.length ? <LiveThought log={turn.log} /> : null}
       <span key={line} className={styles.activity} role="status">
         {line}…
       </span>
@@ -100,7 +103,7 @@ function Thinking({ turn }: { turn: Turn }) {
   );
 }
 
-function Answer({ turn, canUndo, canRetry, busy, onUndo, onRetry, onChoose }: TurnBubblesProps) {
+function Answer({ turn, canUndo, canRetry, busy, onUndo, onRetry, onChoose, onRedo }: TurnBubblesProps) {
   const changes = turn.changes ?? [];
   return (
     <div className={styles.answer}>
@@ -110,6 +113,7 @@ function Answer({ turn, canUndo, canRetry, busy, onUndo, onRetry, onChoose }: Tu
         {turn.status === "failed" && <WarningCircle className={styles.warning} size={16} weight="fill" />}
         {turn.reply}
       </p>
+      {turn.band?.some((seat) => seat.report) ? <BandNotes seats={turn.band} onRedo={onRedo} /> : null}
       {turn.question && (
         <div className={styles.choices}>
           {turn.question.choices.map((choice) => (

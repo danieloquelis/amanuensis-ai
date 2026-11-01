@@ -50,6 +50,27 @@
   fill: #71978020;
 }
 
+/* A band musician's staves while it writes them: a soft light that breathes. */
+.staffGlow {
+  fill: color-mix(in srgb, var(--accent) 10%, transparent);
+  stroke: color-mix(in srgb, var(--accent) 45%, transparent);
+  stroke-width: 1.5;
+  pointer-events: none;
+  animation: staff-glow 1.6s var(--ease-in-out) infinite alternate;
+}
+
+@keyframes staff-glow {
+  to {
+    fill: color-mix(in srgb, var(--accent) 20%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .staffGlow {
+    animation: none;
+  }
+}
+
 .playhead {
   stroke: #76a98d;
   stroke-width: 1.5;

@@ -18,6 +18,8 @@ import { SheetSystem } from "./SheetSystem";
 type ScoreSurfaceProps = {
   score: Score;
   playBeat: number | null;
+  /** Staves being written right now by one of the band's musicians: they glow. */
+  glowing?: ReadonlySet<string>;
   interactive: boolean;
   /** Selects a note or rest; with `head`, one head of its stem (a note of a chord, a drum piece). */
   onSelect: (id: string | null, head?: number) => void;
@@ -51,6 +53,7 @@ type ScoreSurfaceProps = {
 export function ScoreSurface({
   score,
   playBeat,
+  glowing,
   interactive,
   onSelect,
   selectedBarId,
@@ -156,6 +159,7 @@ export function ScoreSurface({
             partNames={partNames}
             laneNames={lanes}
             playBeat={playBeat}
+            glowing={glowing}
             interactions={interactions}
             arriving={arriving}
           />

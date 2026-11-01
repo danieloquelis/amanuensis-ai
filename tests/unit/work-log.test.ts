@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readableThought } from "@/modules/assistant";
+import { readableThought, withProgress } from "@/modules/assistant";
 
 test("the thinking shown in the chat names things as a musician would, not by the agent's tool names", () => {
   assert.equal(
@@ -14,4 +14,27 @@ test("the thinking shown in the chat names things as a musician would, not by th
     "Drafting the new bars text after checking against your take.",
   );
   assert.equal(readableThought("Comparing sung-2 with voice-1."), "Comparing sung part 2 with the other voice.");
+});
+
+test("a turn keeps its band: each musician's state, the thought it is on, and its note when done", () => {
+  const musician = (state: "waiting" | "playing" | "done", extra: { thought?: string; report?: string } = {}) => ({
+    stage: "musician" as const,
+    part: "bass",
+    instrument: "bass" as const,
+    name: "Luis",
+    state,
+    ...extra,
+  });
+  let work = withProgress({}, musician("waiting"));
+  work = withProgress(work, musician("playing", { thought: "Walking " }));
+  work = withProgress(work, musician("playing", { thought: "to the A7." }));
+  assert.equal(work.band?.[0].thought, "Walking to the A7.");
+  work = withProgress(work, musician("done", { report: "Roots on 1." }));
+  assert.deepEqual(
+    work.band?.map((s) => [s.state, s.report]),
+    [["done", "Roots on 1."]],
+  );
+  // Sent back by the bandleader, it plays again with a fresh thought.
+  work = withProgress(work, musician("playing", { thought: "Fixing bar 6." }));
+  assert.equal(work.band?.[0].thought, "Fixing bar 6.");
 });

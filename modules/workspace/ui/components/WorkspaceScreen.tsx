@@ -2,7 +2,7 @@ import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState }
 import { useRouter } from "next/navigation";
 import { partOf } from "@/modules/score";
 import { localWorkspaceChats } from "@/modules/assistant";
-import { ComposeDock, useAssistant, useComposeDock } from "@/modules/assistant/ui";
+import { ComposeDock, useAssistant, useComposeDock, type Assistant } from "@/modules/assistant/ui";
 import { playbackStart, selectionAnchors } from "@/modules/editor";
 import { ScoreToolMenus, useClipboardShortcuts, useScoreEditor } from "@/modules/editor/ui";
 import { scoreSounds } from "@/modules/playback";
@@ -116,6 +116,7 @@ export function WorkspaceScreen({ workspaceId }: { workspaceId: string }) {
           onPress={dock.dismissChat}
           live={assistant.live}
           draft={assistant.draft}
+          glowingPart={playingPart(assistant.turns)}
         />
         {selectionOpen && <SelectionCard editor={editor} anchor={anchor} area={area} reserved={reserved} />}
         {chatDocked && composeDock}
@@ -157,3 +158,7 @@ export function WorkspaceScreen({ workspaceId }: { workspaceId: string }) {
     </main>
   );
 }
+
+/** The part a band musician is writing right now, in the turn that is working (Band Mode). */
+const playingPart = (turns: Assistant["turns"]) =>
+  turns.find((turn) => turn.status === "working")?.band?.find((seat) => seat.state === "playing")?.part ?? null;
