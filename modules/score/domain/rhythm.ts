@@ -4,7 +4,7 @@ import type { Meter, ScoreEvent } from "./schema";
 export type Fraction = { numerator: number; denominator: number };
 
 /** Simple meters, cut time (2/2) among them, then compound meters. */
-export const METERS = ["2/2", "2/4", "3/4", "4/4", "5/4", "3/8", "6/8", "9/8", "12/8"] as const;
+export const METERS = ["2/2", "2/4", "3/4", "4/4", "5/4", "6/4", "3/8", "6/8", "9/8", "12/8"] as const;
 
 export const DURATIONS = [
   { label: "Dotted whole", value: 6 },
@@ -99,4 +99,23 @@ export const isCompound = (meter: Meter) => meter.denominator === 8 && meter.num
 export function beatGroupLength(meter: Meter): number {
   if (isCompound(meter)) return 1.5;
   return meter.denominator === 2 ? 2 : 1;
+}
+
+/** 6/4: six quarter beats, felt as two groups of three (two dotted halves). */
+const isSixFour = (meter: Meter) => meter.numerator === 6 && meter.denominator === 4;
+
+/**
+ * Where the bar divides into two strong halves, in quarter-note beats: the middle of a bar of
+ * four beats (4/4, 12/8) or of 6/4. Rests never cross it. Null when the bar has no such middle.
+ */
+export function barMiddle(meter: Meter): number | null {
+  const capacity = measureCapacity(meter);
+  const beatsInBar = Math.round(capacity / beatGroupLength(meter));
+  return beatsInBar === 4 || isSixFour(meter) ? capacity / 2 : null;
+}
+
+/** Rest values a meter may use, longest first: 6/4 rests a half bar as a dotted half. */
+export function restValues(meter: Meter): number[] {
+  if (isCompound(meter)) return [3, 1.5, 0.5, 0.25];
+  return isSixFour(meter) ? [3, 2, 1, 0.5, 0.25] : [4, 2, 1, 0.5, 0.25];
 }

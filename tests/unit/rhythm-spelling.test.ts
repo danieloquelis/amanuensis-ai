@@ -3,7 +3,17 @@ import assert from "node:assert/strict";
 import { describeReadability, readability, spellRhythm, type Meter } from "@/modules/score";
 import { toBars } from "@/modules/voice";
 
-const NAMES: Record<number, string> = { 4: "w", 3: "h.", 2: "h", 1.5: "q.", 1: "q", 0.75: "e.", 0.5: "e", 0.25: "s" };
+const NAMES: Record<number, string> = {
+  6: "w.",
+  4: "w",
+  3: "h.",
+  2: "h",
+  1.5: "q.",
+  1: "q",
+  0.75: "e.",
+  0.5: "e",
+  0.25: "s",
+};
 const FOUR: Meter = { numerator: 4, denominator: 4 };
 
 /** A bar's rhythm as written: lengths in beats (a string is a rest), tied parts joined by "~". */
@@ -44,6 +54,15 @@ test("rests show every beat they cover, and never the middle of the bar", () => 
   assert.equal(written(["3", 1]), "rh rq q");
   assert.equal(written(["4"]), "rw");
   assert.equal(written([1, "2"], { numerator: 3, denominator: 4 }), "q rq rq");
+});
+
+test("6/4 is two groups of three quarters: values show its middle, and rests never cross it", () => {
+  const sixFour: Meter = { numerator: 6, denominator: 4 };
+  assert.equal(written([3, 3], sixFour), "h. h.");
+  assert.equal(written([6], sixFour), "w.");
+  assert.equal(written([1, 4, 1], sixFour), "q h~h q");
+  assert.equal(written(["4", 2], sixFour), "rh. rq h");
+  assert.equal(written([3, "3"], sixFour), "h. rh.");
 });
 
 test("compound meters show their dotted-quarter beats", () => {

@@ -1,4 +1,4 @@
-import { beatGroupLength, isCompound, measureCapacity } from "./rhythm";
+import { barMiddle, beatGroupLength, isCompound, measureCapacity } from "./rhythm";
 import type { Meter } from "./schema";
 
 /** Values a note can be written as, in quarter-note beats, longest first. */
@@ -16,16 +16,16 @@ const on = (position: number, unit: number) => Math.abs(position / unit - Math.r
 const writable = (length: number) => WRITABLE.some((value) => Math.abs(value - length) < EPSILON);
 
 /**
- * How strong a point in the bar is: the bar line, the middle of a bar of four beats (4/4, 12/8),
+ * How strong a point in the bar is: the bar line, the middle of a bar of four beats (4/4, 12/8) or 6/4,
  * a beat (a quarter, a dotted quarter in 6/8, 9/8, 12/8, a half in 2/2), a quarter within a half
  * beat, an eighth, a sixteenth, or finer (a point no value needs to show).
  */
 export function metricWeight(position: number, meter: Meter): number {
   const capacity = measureCapacity(meter);
   const beat = beatGroupLength(meter);
-  const beatsInBar = Math.round(capacity / beat);
+  const middle = barMiddle(meter);
   if (on(position, capacity)) return WEIGHT.bar;
-  if (beatsInBar === 4 && on(position, capacity / 2)) return WEIGHT.half;
+  if (middle !== null && on(position, middle)) return WEIGHT.half;
   if (on(position, beat)) return WEIGHT.beat;
   if (beat > QUARTER && !isCompound(meter) && on(position, QUARTER)) return WEIGHT.quarter;
   if (on(position, EIGHTH)) return WEIGHT.eighth;

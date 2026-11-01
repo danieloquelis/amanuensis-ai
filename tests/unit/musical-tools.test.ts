@@ -127,6 +127,30 @@ test("full-measure rests follow local meter including 5/4", () => {
   assert.equal(beats(barEvents(score.measures[0])[0].duration), 5);
 });
 
+test("a bar lengthened to 6/4 is filled with rests that keep its two halves", () => {
+  let score = edit(createExample(), {
+    type: "setMeter",
+    measureIds: ["bar-1"],
+    meter: { numerator: 2, denominator: 4 },
+    policy: "auto",
+  });
+  score = edit(
+    score,
+    {
+      type: "setMeter",
+      measureIds: ["bar-1"],
+      meter: { numerator: 6, denominator: 4 },
+      policy: "preserve",
+    },
+    "six",
+  );
+  const rests = barEvents(score.measures[0]).filter((event) => event.pitch === null);
+  assert.deepEqual(
+    rests.map((rest) => beats(rest.duration)),
+    [1, 3],
+  );
+});
+
 test("v1 files migrate without losing identity or edits", () => {
   const original = createExample();
   const legacy = {
