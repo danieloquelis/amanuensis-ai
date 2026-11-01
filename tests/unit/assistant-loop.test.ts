@@ -467,3 +467,41 @@ test("a bar that breaks a sung figure can be made to repeat it, but heard notes 
     ],
   );
 });
+
+test("the agent shows its plan as it works, and keeps notes on the song and what it learns about the musician", async () => {
+  const plan = (done: boolean) =>
+    call("assistant_plan", {
+      steps: [
+        { text: "Chords for bar 2", done },
+        { text: "Notes for next time", done: false },
+      ],
+    });
+  const { model, seen } = scriptedModel([
+    { content: null, toolCalls: [plan(false)] },
+    { content: null, toolCalls: [call("score_edit", chordEdit)] },
+    { content: null, toolCalls: [plan(true)] },
+    { content: null, toolCalls: [call("song_notes_write", { text: "Key C. Bar 2 harmonized with Am7." })] },
+    { content: null, toolCalls: [call("musician_remember", { fact: "Likes seventh chords" })] },
+    { content: "Added Am7 and noted it.", toolCalls: [] },
+  ]);
+  const plans: string[] = [];
+  const result = await runAssistant(
+    model,
+    { ...request("harmonize bar 2"), songNotes: "Song in C.", memory: ["Sings slightly flat"] },
+    "t9",
+    (event) => {
+      if (event.stage === "plan") plans.push(event.steps.map((s) => (s.done ? "✓" : "·")).join(""));
+    },
+  );
+  // What it knew before came with the request.
+  const opening = JSON.stringify(seen[0]);
+  assert.match(opening, /Song in C\./);
+  assert.match(opening, /Sings slightly flat/);
+  assert.deepEqual(plans, ["··", "✓·"]);
+  assert.deepEqual(
+    result.plan?.map((s) => s.done),
+    [true, false],
+  );
+  assert.equal(result.songNotes, "Key C. Bar 2 harmonized with Am7.");
+  assert.deepEqual(result.memory, ["Sings slightly flat", "Likes seventh chords"]);
+});

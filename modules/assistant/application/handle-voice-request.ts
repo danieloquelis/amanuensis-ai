@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MEMORY_LIMIT, SONG_NOTES_LIMIT } from "./agent-state";
 import { thinkingSchema } from "./thinking";
 import { parseScore } from "@/modules/score";
 import {
@@ -38,6 +39,9 @@ const payloadSchema = z.strictObject({
   takeWritten: z.boolean().optional(),
   /** How long the model may think; the route reads it (see `thinkingOf`). */
   thinking: thinkingSchema.optional(),
+  /** What the agent wrote down about this song, and has learned about the musician. */
+  songNotes: z.string().max(SONG_NOTES_LIMIT).optional(),
+  memory: z.array(z.string().max(MEMORY_LIMIT.characters)).max(MEMORY_LIMIT.facts).optional(),
 });
 
 /**

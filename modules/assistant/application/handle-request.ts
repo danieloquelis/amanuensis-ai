@@ -4,6 +4,7 @@ import { parseScore } from "@/modules/score";
 import { readUploads, type Upload } from "./attachments";
 import type { ModelPort } from "./model-port";
 import { runAssistant, type AssistantResult, type ProgressListener } from "./run-assistant";
+import { MEMORY_LIMIT, SONG_NOTES_LIMIT } from "./agent-state";
 import { thinkingSchema } from "./thinking";
 
 export const MAX_REQUEST_BYTES = 1_000_000;
@@ -21,6 +22,9 @@ const requestSchema = z.strictObject({
     .default([]),
   /** How long the model may think; the route reads it (see `thinkingOf`). */
   thinking: thinkingSchema.optional(),
+  /** What the agent wrote down about this song, and has learned about the musician. */
+  songNotes: z.string().max(SONG_NOTES_LIMIT).optional(),
+  memory: z.array(z.string().max(MEMORY_LIMIT.characters)).max(MEMORY_LIMIT.facts).optional(),
 });
 
 export type AssistantResponse = { status: number; body: AssistantResult | { error: string } };

@@ -30,6 +30,8 @@ export const DEFAULT_META_MODEL = "muse-spark-1.3";
  * not be cut off.
  */
 const TIMEOUT_MS = 180_000;
+/** "concise": a few sentences on the key steps ("auto" is about one; Meta's reasoning guide). */
+const REASONING_SUMMARY = "concise";
 const TIMEOUT_MESSAGE = "The assistant went quiet for three minutes. Please try again.";
 const UNREACHABLE_MESSAGE = "The assistant couldn't be reached. Please try again.";
 
@@ -83,7 +85,8 @@ export function createMetaModel(
             ...(cacheKey ? { prompt_cache_key: cacheKey } : {}),
             parallel_tool_calls: false,
             stream: true,
-            ...(reasoningEffort ? { reasoning: { effort: reasoningEffort } } : {}),
+            // A short summary of its reasoning streams back: the musician sees what it is weighing.
+            reasoning: { summary: REASONING_SUMMARY, ...(reasoningEffort ? { effort: reasoningEffort } : {}) },
           },
         }
       : {
@@ -133,7 +136,7 @@ export function createMetaModel(
       const streamed = response.headers.get("content-type")?.includes("text/event-stream");
       if (api === "responses") {
         return streamed
-          ? await readResponsesStream(response, options.onText, alive)
+          ? await readResponsesStream(response, options.onText, alive, options.onThought)
           : responseReply(await response.json());
       }
       return streamed ? await readCompletionStream(response, options.onText, alive) : wholeReply(await response.json());

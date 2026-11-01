@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { TakePart } from "@/modules/voice";
 import type { AttachmentKind } from "./attachments";
 import type { ProgressEvent } from "./run-assistant";
+import { logToKeep, type TurnWork } from "./work-log";
 
 /** Enough to scroll back through a long session without growing local storage without bound. */
 export const SAVED_TURN_LIMIT = 60;
@@ -27,7 +28,7 @@ export type Turn = {
   attachments?: { name: string; kind: AttachmentKind }[];
   /** How long the answer took, from sending to the reply (or the failure). */
   seconds?: number;
-};
+} & TurnWork;
 
 const SECONDS_PER_MINUTE = 60;
 
@@ -43,6 +44,15 @@ export function answerTime(seconds: number): string {
 export interface ChatRepository {
   load(): Turn[];
   save(turns: Turn[]): void;
+  /** What the agent wrote down about this song ("" when nothing yet). */
+  loadNotes(): string;
+  saveNotes(text: string): void;
+}
+
+/** Port for what the agent has learned about the musician, across songs. Implementations may throw. */
+export interface MusicianMemory {
+  load(): string[];
+  save(facts: string[]): void;
 }
 
 /** Port for the conversations on this device, one per workspace. */
@@ -76,11 +86,23 @@ const savedTurnSchema = z.object({
   context: z.string().optional(),
   attachments: z.array(z.object({ name: z.string(), kind: z.enum(["image", "pdf", "text"]) })).optional(),
   seconds: z.number().nonnegative().optional(),
+  plan: z.array(z.object({ text: z.string(), done: z.boolean() })).optional(),
+  log: z
+    .array(
+      z.discriminatedUnion("kind", [
+        z.object({ kind: z.literal("thought"), text: z.string() }),
+        z.object({ kind: z.literal("step"), tool: z.string() }),
+      ]),
+    )
+    .optional(),
 });
 
 /** The finished turns worth keeping, newest last; one still working is left out. */
 export function turnsToSave(turns: Turn[]): Turn[] {
-  return turns.filter((turn) => turn.status !== "working").slice(-SAVED_TURN_LIMIT);
+  return turns
+    .filter((turn) => turn.status !== "working")
+    .slice(-SAVED_TURN_LIMIT)
+    .map((turn) => (turn.log ? { ...turn, log: logToKeep(turn.log) } : turn));
 }
 
 /** Saved turns read back; anything unreadable is skipped rather than failing the whole chat. */

@@ -157,7 +157,8 @@ test("on the Responses API, the conversation becomes input items, the text strea
   assert.deepEqual(sent[0].include, ["reasoning.encrypted_content"]);
   assert.equal(sent[0].prompt_cache_key, "turn-1");
   assert.equal(sent[0].instructions, "Be brief.");
-  assert.deepEqual(sent[0].reasoning, { effort: "low" });
+  // A short summary of its reasoning is asked for, so the musician can see it think.
+  assert.deepEqual(sent[0].reasoning, { summary: "concise", effort: "low" });
   assert.deepEqual(sent[0].input, [
     {
       role: "user",

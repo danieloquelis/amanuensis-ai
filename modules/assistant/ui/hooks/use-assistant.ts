@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import type { Command, Score } from "@/modules/score";
-import { takeParts, type TakePart } from "@/modules/voice";
 import { askedAfter, withHeardWords, type AskedTake } from "../../application/asked-take";
+import { useAgentMemory } from "./use-agent-memory";
 import { useThinking } from "./use-thinking";
 import { attachmentKind } from "../../application/attachments";
 import type { ChatRepository, Turn } from "../../application/chat-history";
 import type { HeardTake } from "../../application/handle-voice-request";
-import type { AssistantResult, AssistantTurn, ProgressListener } from "../../application/run-assistant";
+import type { AssistantResult, ProgressListener } from "../../application/run-assistant";
+import { describeHeard, heardOf, historyOf } from "../../application/turn-text";
 import { STOPPED_RECEIPT, stoppedReply } from "../../application/stopped-turn";
+import { withProgress } from "../../application/work-log";
 import { requestAssistant, requestVoiceAssistant, type AssistantPayload } from "../../infrastructure/assistant-client";
 import { useLiveTurn } from "./use-live-turn";
 
-const HISTORY_TURNS = 6;
 const VOICE_LABEL = "Voice take";
 
 type Request = (
@@ -28,6 +29,7 @@ export type RequestContext = { ids: string[]; name: string | null };
 export type Assistant = ReturnType<typeof useAssistant>;
 
 export type { Turn };
+export { describeHeard, sungLength } from "../../application/turn-text";
 
 type Options = {
   getScore: () => Score;
@@ -35,21 +37,6 @@ type Options = {
   /** Where the conversation is kept, so it survives a reload. */
   chats: ChatRepository;
 };
-
-/** How long a sung stretch is, as the history shows it. */
-export const sungLength = (seconds: number) => `${Math.max(1, Math.round(seconds))} s`;
-
-/** A take as text, in order: their words, and "♪ sang 3 s" where they sang (for history). */
-export function describeHeard(parts: TakePart[]): string {
-  const text = parts.map((part) => (part.kind === "said" ? part.text : `♪ sang ${sungLength(part.seconds)}`));
-  return text.join(" ") || "(nothing heard)";
-}
-
-const heardOf = ({ speech, sung }: HeardTake) => takeParts(speech, sung);
-
-/** Earlier turns name the files they came with (the files themselves are not sent again). */
-const attachedNote = (turn: Turn) =>
-  turn.attachments?.length ? ` (attached: ${turn.attachments.map((file) => file.name).join(", ")})` : "";
 
 /**
  * One conversation with the score AI, driven from the compose bar. Each instruction (typed
@@ -67,6 +54,7 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
   const busy = turns.some((turn) => turn.status === "working");
   const live = useLiveTurn();
   const thinking = useThinking();
+  const memory = useAgentMemory(chats);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -105,13 +93,7 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
   ): Promise<(AssistantResult & { heard?: HeardTake }) | null> => {
     const id = retryId ?? crypto.randomUUID();
     attempts.current.set(id, { instruction, request, context });
-    const history: AssistantTurn[] = turns
-      .filter((turn) => turn.status === "done" && turn.reply)
-      .slice(-HISTORY_TURNS)
-      .map((turn) => ({
-        instruction: `${turn.context ? `[${turn.context}] ` : ""}${turn.instruction}${attachedNote(turn)}`,
-        reply: turn.reply!,
-      }));
+    const history = historyOf(turns);
     const about = { context: context.name ?? undefined };
     if (retryId) {
       update(id, { status: "working", reply: undefined, question: undefined, changes: undefined, seconds: undefined });
@@ -121,7 +103,15 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
     const took = () => ({ seconds: (Date.now() - started) / 1000 });
     const signal = live.begin();
     try {
-      const payload = { instruction, score: getScore(), ...selection, history, thinking: thinking.level };
+      const payload = {
+        instruction,
+        score: getScore(),
+        ...selection,
+        history,
+        thinking: thinking.level,
+        songNotes: memory.songNotes,
+        memory: memory.facts,
+      };
       const result = await request(
         payload,
         (activity) => {
@@ -129,11 +119,15 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
           if (activity.stage === "edits") return live.apply(activity);
           if (activity.stage === "draft") return live.write(activity);
           // What was heard replaces "Voice take" as soon as it is known, before the agent answers.
-          update(
-            id,
+          const heard =
             activity.stage === "heard" && spoken
-              ? { activity, heard: activity.parts, instruction: describeHeard(activity.parts) }
-              : { activity },
+              ? { heard: activity.parts, instruction: describeHeard(activity.parts) }
+              : {};
+          // Its thinking, steps and plan are kept with the turn as they stream in.
+          setTurns((all) =>
+            all.map((turn) =>
+              turn.id === id ? { ...turn, ...heard, ...withProgress(turn, activity), activity } : turn,
+            ),
           );
         },
         signal,
@@ -151,9 +145,11 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
         return null;
       }
       attempts.current.delete(id);
+      memory.keep(result);
       update(id, {
         ...heard,
         ...took(),
+        ...(result.plan ? { plan: result.plan } : {}),
         status: "done",
         activity: undefined,
         reply: result.reply,
@@ -249,5 +245,7 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
     clear,
     /** How long the model may think, as the musician chose it. */
     thinking,
+    /** This song's notes and what the assistant has learned about the musician. */
+    memory,
   };
 }

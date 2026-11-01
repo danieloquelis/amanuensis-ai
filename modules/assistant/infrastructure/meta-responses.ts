@@ -95,12 +95,14 @@ export function responseReply(body: ResponseBody): ModelReply {
 
 /**
  * Reads a streamed response (server-sent events): its text, passed on piece by piece as it is
- * written (`onText`), then the finished response. `onChunk` hears every chunk, for an idle timeout.
+ * written (`onText`), its reasoning summary likewise (`onThought`), then the finished response.
+ * `onChunk` hears every chunk, for an idle timeout.
  */
 export async function readResponsesStream(
   response: Response,
   onText: (text: string) => void = () => {},
   onChunk: () => void = () => {},
+  onThought: (text: string) => void = () => {},
 ): Promise<ModelReply> {
   const reader = response.body!.pipeThrough(new TextDecoderStream()).getReader();
   let buffered = "";
@@ -118,7 +120,10 @@ export async function readResponsesStream(
       const data = line.startsWith("data:") ? line.slice("data:".length).trim() : "";
       if (!data || data === "[DONE]") continue;
       const event = JSON.parse(data) as StreamEvent;
-      if (event.type === "response.output_text.delta" && event.delta) {
+      if (event.type === "response.reasoning_summary_text.delta" && event.delta) onThought(event.delta);
+      // Each summary part is a thought of its own.
+      else if (event.type === "response.reasoning_summary_text.done") onThought("\n\n");
+      else if (event.type === "response.output_text.delta" && event.delta) {
         textSent = true;
         onText(event.delta);
       } else if (event.type === "response.completed" && event.response) finished = event.response;

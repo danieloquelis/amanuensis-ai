@@ -9,6 +9,7 @@ import type { ComposeDockState } from "../hooks/use-compose-dock";
 import { ChatThread } from "./ChatThread";
 import { Composer } from "./Composer";
 import { ChatResizeHandle } from "./ChatResizeHandle";
+import { MemoryMenu } from "./MemoryMenu";
 import { ThinkingMenu } from "./ThinkingMenu";
 import styles from "./assistant.module.css";
 
@@ -51,6 +52,14 @@ export function ComposeDock({ assistant, dock, context, revision, onUndo }: Comp
       ))}
     </div>
   );
+  const remembered = (
+    <MemoryMenu
+      songNotes={assistant.memory.songNotes}
+      facts={assistant.memory.facts}
+      onForget={assistant.memory.forget}
+      onClearNotes={assistant.memory.clearNotes}
+    />
+  );
   const thread = (actions: ReactNode) => (
     <ChatThread
       turns={turns}
@@ -60,7 +69,12 @@ export function ComposeDock({ assistant, dock, context, revision, onUndo }: Comp
       onUndo={onUndo}
       onRetry={retry}
       onChoose={sendText}
-      actions={actions}
+      actions={
+        <>
+          {remembered}
+          {actions}
+        </>
+      }
       empty={sidebar && <li className={styles.sidebarEmpty}>{suggestions}</li>}
     />
   );

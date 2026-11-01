@@ -28,7 +28,7 @@ export function ThinkingMenu({ level, onChange }: { level: Thinking; onChange: (
     <>
       <button
         type="button"
-        className={styles.thinking}
+        className={styles.thinkingButton}
         popoverTarget={id}
         aria-haspopup="menu"
         aria-label={`Thinking: ${LEVELS[level].name}`}

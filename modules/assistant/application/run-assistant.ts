@@ -1,16 +1,15 @@
-import type { PageImages } from "@/modules/page";
-import { summarizeChange, type Command, type Operation, type Score } from "@/modules/score";
-import type { TakePart, VoiceTake } from "@/modules/voice";
+import { summarizeChange, type Operation } from "@/modules/score";
+import { agentToolSpecs, createAgentState, isAgentTool, PLAN_TOOL } from "./agent-state";
+import type { AssistantRequest, AssistantResult, ProgressListener, TraceEntry, TurnServices } from "./assistant-types";
 import { ASK_TOOL, askSchema, assistantTools } from "./assistant-tools";
-import type { Attachment } from "./attachments";
 import { createMusicTools, isMusicTool, musicToolSpecs } from "./music-tools";
 import type { ChatMessage, ContentPart, ModelPort, TokenUsage, ToolCall } from "./model-port";
 import { refuseHeardBarEdit, writtenLines } from "./heard-bars-guard";
 import type { HeardOption } from "./sung-figures";
 import { parseArguments, runScoreTool } from "./score-tool-call";
 import { createScoreToolGateway } from "./score-tool-gateway";
-import { createEditFeed, type EditsEvent } from "./edit-feed";
-import { createScoreBlockWriter, type DraftEvent } from "./score-block-writer";
+import { createEditFeed } from "./edit-feed";
+import { createScoreBlockWriter } from "./score-block-writer";
 import { withoutScoreBlocks } from "./score-blocks";
 import { createSourceTools, isSourceTool, sourceToolSpecs } from "./source-tools";
 import { historyMessages, scoreContext, userMessage } from "./opening-messages";
@@ -22,64 +21,19 @@ const TRANSCRIBE_TOOL = "voice_transcribe_melody";
 export const MAX_TOOL_STEPS = 12;
 /** Reading attached music takes more: read, set up, write a few bars at a time, check, fix. */
 export const MAX_SOURCE_STEPS = 24;
+/** A request the agent planned in several steps (parts for a band, an arrangement) may take this many. */
+export const MAX_PLANNED_STEPS = 32;
 
-export type AssistantTurn = { instruction: string; reply: string };
+export type {
+  AssistantRequest,
+  AssistantResult,
+  AssistantTurn,
+  ProgressEvent,
+  ProgressListener,
+  TraceEntry,
+  TurnServices,
+} from "./assistant-types";
 
-export type AssistantRequest = {
-  instruction: string;
-  score: Score;
-  selectedIds: string[];
-  /** What the musician calls the selection ("Bars 3–6"), so their words can refer to it. */
-  selectionName?: string;
-  /** Recent turns, oldest first, so follow-ups ("make it softer") have context. */
-  history: AssistantTurn[];
-  /** A recorded take: what was said (the instruction) and where singing happened. */
-  take?: VoiceTake;
-  /** The take was recorded and written last turn; typed words now follow up on it. */
-  takeWritten?: boolean;
-  /** Files sent with the request: pictures or PDFs of sheet music, or music written as text. */
-  attachments?: Attachment[];
-};
-
-export type AssistantResult = {
-  reply: string;
-  question: { text: string; choices: string[] } | null;
-  /** Commands committed this turn, in order; the editor replays them as one undo step. */
-  commands: Command[];
-  changes: string[];
-  steps: number;
-  /** Tokens used across the turn's model calls, when the provider reports them. */
-  usage: TokenUsage;
-  /** What the agent did, step by step: each tool call and whether it worked. For review. */
-  trace: TraceEntry[];
-  /** How long each model call took (ms), in order: where the turn's time went. */
-  thinkingMs: number[];
-};
-
-/** `ms` is how long the tool itself ran. */
-export type TraceEntry = { tool: string; arguments: string; ok: boolean; error?: string; ms?: number };
-
-/** What the assistant is doing right now, for a live progress line (never the model's text). */
-export type ProgressEvent =
-  | { stage: "hearing" }
-  /** The take was heard: what was said and sung, in order. Sent before the agent starts. */
-  | { stage: "heard"; parts: TakePart[] }
-  | { stage: "thinking" }
-  | { stage: "tool"; tool: string }
-  /** The turn's edits so far changed: the editor can show them before the turn ends. */
-  | EditsEvent
-  /** Bars being written in a <score> block, before it closes. */
-  | DraftEvent;
-export type ProgressListener = (event: ProgressEvent) => void;
-
-export type TurnServices = {
-  /** Reads noteheads on attached pictures; without it they are read by eye. */
-  pageImages?: PageImages | null;
-  /** Stops the turn: the model call in flight is cancelled and no further step starts. */
-  signal?: AbortSignal;
-  /** Evaluations only: the instructions to run with instead of `SYSTEM_PROMPT` (e.g. with one rule left out). */
-  systemPrompt?: string;
-};
 /** Trace arguments are cut to this length: enough to judge a decision, small enough to keep. */
 const TRACE_ARGUMENT_ROOM = 400;
 
@@ -122,6 +76,8 @@ export async function runAssistant(
     commit,
     allow: (more) => options.push(...more),
   });
+  // Its plan, the song's notes and what it knows about the musician, beyond the score.
+  const agent = createAgentState(request.songNotes, request.memory);
   const attachments = request.attachments ?? [];
   // Pictures a tool shows the model (labelled pages) go in a user message after the tool results.
   let shown: ContentPart[] = [];
@@ -130,8 +86,10 @@ export async function runAssistant(
     ...assistantTools,
     ...musicToolSpecs(Boolean(request.take)),
     ...sourceToolSpecs(attachments.length > 0),
+    ...agentToolSpecs,
   ];
-  const maxSteps = attachments.length ? MAX_SOURCE_STEPS : MAX_TOOL_STEPS;
+  // A plan shown for a larger request raises the cap (see MAX_PLANNED_STEPS).
+  let maxSteps = attachments.length ? MAX_SOURCE_STEPS : MAX_TOOL_STEPS;
   const scoreTool = (call: ToolCall) =>
     runScoreTool(call, tools, turnId, edits.score, (operation, asked) =>
       refuseHeardBarEdit(edits.score(), operation, heard, asked, musicianWords(request), options),
@@ -154,7 +112,7 @@ export async function runAssistant(
   const messages: ChatMessage[] = [
     { role: "system", content: systemPrompt },
     ...historyMessages(request),
-    userMessage(request, scoreContext(tools, request)),
+    userMessage(request, `${scoreContext(tools, request)}\n\n${agent.context()}`),
   ];
   const finish = (reply: string, question: AssistantResult["question"], steps: number): AssistantResult => {
     // A server-side fault, caught here rather than as a failed replay in the musician's editor.
@@ -168,6 +126,8 @@ export async function runAssistant(
       usage,
       trace,
       thinkingMs,
+      ...(agent.plan().length ? { plan: agent.plan() } : {}),
+      ...agent.changes(),
     };
   };
 
@@ -176,7 +136,12 @@ export async function runAssistant(
     onProgress({ stage: "thinking" });
     const asked = Date.now();
     blocks.start();
-    const reply = await model.complete(messages, toolList, { signal, onText: blocks.hear, cacheKey: turnId });
+    const reply = await model.complete(messages, toolList, {
+      signal,
+      onText: blocks.hear,
+      onThought: (text) => onProgress({ stage: "thought", text }),
+      cacheKey: turnId,
+    });
     thinkingMs.push(Date.now() - asked);
     usage.inputTokens += reply.usage?.inputTokens ?? 0;
     usage.outputTokens += reply.usage?.outputTokens ?? 0;
@@ -210,7 +175,13 @@ export async function runAssistant(
           ? await sources.run(call.name, parseArguments(call))
           : isMusicTool(call.name)
             ? music(call.name, parseArguments(call))
-            : scoreTool(call));
+            : isAgentTool(call.name)
+              ? agent.run(call.name, parseArguments(call))
+              : scoreTool(call));
+      if (call.name === PLAN_TOOL && result.ok) {
+        onProgress({ stage: "plan", steps: agent.plan() });
+        maxSteps = Math.max(maxSteps, MAX_PLANNED_STEPS);
+      }
       entry.ms = Date.now() - started;
       if (!result.ok) Object.assign(entry, { ok: false, error: "error" in result ? result.error : undefined });
       messages.push({ role: "tool", toolCallId: call.id, content: JSON.stringify(result) });

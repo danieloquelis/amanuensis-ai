@@ -862,7 +862,7 @@
 }
 
 /* How long the assistant may think: a quiet button in the bar, its level as a word. */
-.thinking {
+.thinkingButton {
   display: inline-flex;
   flex: none;
   align-items: center;
@@ -879,8 +879,8 @@
   transition: background var(--fast) var(--ease-out);
 }
 
-.thinking:hover,
-.thinking:focus-visible {
+.thinkingButton:hover,
+.thinkingButton:focus-visible {
   background: var(--hover);
   color: var(--ink);
 }
@@ -891,7 +891,7 @@
     display: none;
   }
 
-  .thinking {
+  .thinkingButton {
     padding: 0 9px;
   }
 }
@@ -977,4 +977,178 @@
 
 .resizeHandle:focus-visible {
   outline: none;
+}
+
+/* The agent's plan: a checklist above its answer. */
+.plan {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  corner-shape: squircle;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.planTitle {
+  margin: 0 0 6px;
+  color: var(--accent-ink);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.plan ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.plan li svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--muted);
+}
+
+.plan li[data-done="true"] {
+  color: var(--muted);
+}
+
+.plan li[data-done="true"] svg {
+  color: var(--accent);
+}
+
+/* Its thinking and steps: quiet lines under the plan, newest last. */
+.workLog {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.workLog li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.workLog li svg {
+  flex: none;
+  margin-top: 3px;
+}
+
+.thought {
+  color: var(--ink-soft);
+  font-style: italic;
+}
+
+.thought svg {
+  color: var(--accent);
+}
+
+.step {
+  color: var(--muted);
+}
+
+/* Live, only the latest few show: the rest is in the summary once the answer is in. */
+.workLog[data-live="true"] li:not(:nth-last-child(-n + 4)) {
+  display: none;
+}
+
+.workSummary {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.workSummary summary {
+  cursor: pointer;
+  width: fit-content;
+}
+
+.workSummary[open] summary {
+  margin-bottom: 8px;
+}
+
+/* What the assistant remembers: its notes on the song and what it knows about the musician. */
+.memoryPanel {
+  width: 320px;
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+  padding: 14px 16px;
+  border-radius: var(--r-lg);
+  corner-shape: squircle;
+  transform-origin: top right;
+}
+
+.memoryPanel section + section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-strong);
+}
+
+.memoryPanel h3 {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.memoryNotes {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.memoryEmpty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.memoryPanel ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.memoryPanel li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.memoryForget {
+  flex: none;
+  width: 22px;
+  height: 22px;
+}
+
+.memoryClear {
+  margin-top: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font-size: 12px;
+  cursor: pointer;
 }

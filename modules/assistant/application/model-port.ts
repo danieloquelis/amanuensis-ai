@@ -30,6 +30,8 @@ export type CompleteOptions = {
   signal?: AbortSignal;
   /** Hears the reply's text piece by piece as it is written, before the call resolves. */
   onText?: (text: string) => void;
+  /** Hears a summary of the model's reasoning piece by piece, where the provider gives one. */
+  onThought?: (text: string) => void;
   /** Groups calls that share a beginning (one turn's steps), so the provider's prompt cache can reuse it. */
   cacheKey?: string;
 };

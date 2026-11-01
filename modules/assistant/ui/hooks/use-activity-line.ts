@@ -13,7 +13,16 @@ const TOOL_LINES: Record<string, string> = {
   score_write: "Writing the bars",
   page_check: "Checking against the page",
   assistant_ask: "Thinking of a question",
+  assistant_plan: "Planning",
+  song_notes_write: "Noting down the song",
+  musician_remember: "Remembering how you like it",
+  musician_forget: "Forgetting that",
+  voice_hear_notes: "Listening again",
+  music_suggest_chords: "Finding chords",
 };
+
+/** A step the assistant took, in plain words. */
+export const stepLine = (tool: string) => TOOL_LINES[tool] ?? "Working on it";
 
 /** What a musician might be doing while thinking. Rotated while the model thinks. */
 const THINKING_LINES = [
@@ -43,6 +52,6 @@ export function useActivityLine(activity: ProgressEvent | undefined): string {
     return () => clearInterval(timer);
   }, [thinking]);
   if (activity?.stage === "hearing") return "Listening to your take";
-  if (activity?.stage === "tool") return TOOL_LINES[activity.tool] ?? "Working on it";
+  if (activity?.stage === "tool") return stepLine(activity.tool);
   return THINKING_LINES[tick % THINKING_LINES.length];
 }

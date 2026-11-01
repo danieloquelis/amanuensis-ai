@@ -13,6 +13,7 @@ import type { TakePart } from "@/modules/voice";
 import { answerTime } from "../../application/chat-history";
 import { sungLength, type Turn } from "../hooks/use-assistant";
 import { useActivityLine } from "../hooks/use-activity-line";
+import { PlanChecklist, WorkEntries, WorkSummary } from "./WorkLog";
 import styles from "./assistant.module.css";
 
 type TurnBubblesProps = {
@@ -85,11 +86,14 @@ function HeardParts({ parts }: { parts: TakePart[] }) {
   );
 }
 
+/** While it works: its plan, its thinking and steps as they stream in, and what it is doing now. */
 function Thinking({ turn }: { turn: Turn }) {
   const line = useActivityLine(turn.activity);
   return (
-    <div className={`${styles.answer} ${styles.thinking}`} role="status">
-      <span key={line} className={styles.activity}>
+    <div className={`${styles.answer} ${styles.thinking}`}>
+      {turn.plan?.length ? <PlanChecklist steps={turn.plan} /> : null}
+      {turn.log?.length ? <WorkEntries log={turn.log} live /> : null}
+      <span key={line} className={styles.activity} role="status">
         {line}…
       </span>
     </div>
@@ -100,6 +104,8 @@ function Answer({ turn, canUndo, canRetry, busy, onUndo, onRetry, onChoose }: Tu
   const changes = turn.changes ?? [];
   return (
     <div className={styles.answer}>
+      {turn.plan?.length ? <PlanChecklist steps={turn.plan} /> : null}
+      {turn.log?.length ? <WorkSummary log={turn.log} seconds={turn.seconds} /> : null}
       <p>
         {turn.status === "failed" && <WarningCircle className={styles.warning} size={16} weight="fill" />}
         {turn.reply}
