@@ -1,13 +1,10 @@
 import { useId, useRef, useState } from "react";
 import { Brain, Check } from "@phosphor-icons/react";
 import { moveMenuFocus } from "@/shared/ui/menu-keyboard";
+import { placeMenu } from "@/shared/ui/floating-placement";
 import surface from "@/shared/ui/surface.module.css";
 import { THINKING_LEVELS, type Thinking } from "../../application/thinking";
 import styles from "./assistant.module.css";
-
-/** The menu keeps this far (px) from its button and from the window's edges. */
-const GAP = 8;
-const EDGE_MARGIN = 12;
 
 const LEVELS: Record<Thinking, { name: string; hint: string }> = {
   low: { name: "Low", hint: "Fastest replies" },
@@ -21,8 +18,8 @@ const LEVELS: Record<Thinking, { name: string; hint: string }> = {
  */
 export function ThinkingMenu({ level, onChange }: { level: Thinking; onChange: (level: Thinking) => void }) {
   const id = useId();
-  const anchor = useRef({ left: 0, top: 0 });
-  const [position, setPosition] = useState({ left: EDGE_MARGIN, top: EDGE_MARGIN });
+  const anchor = useRef({ left: 0, top: 0, bottom: 0 });
+  const [position, setPosition] = useState<ReturnType<typeof placeMenu> | null>(null);
   const close = () => document.getElementById(id)?.hidePopover();
   return (
     <>
@@ -35,7 +32,7 @@ export function ThinkingMenu({ level, onChange }: { level: Thinking; onChange: (
         title={`Thinking: ${LEVELS[level].name}`}
         onClick={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
-          anchor.current = { left: rect.left, top: rect.top };
+          anchor.current = { left: rect.left, top: rect.top, bottom: rect.bottom };
         }}
       >
         <Brain size={18} aria-hidden="true" />
@@ -47,17 +44,13 @@ export function ThinkingMenu({ level, onChange }: { level: Thinking; onChange: (
         role="menu"
         aria-label="Thinking"
         className={`${surface.panel} ${surface.popover} ${styles.thinkingMenu}`}
-        style={position}
+        style={position ?? undefined}
         onKeyDown={moveMenuFocus}
         onToggle={(e) => {
           if (e.newState !== "open") return;
-          // Above the button (the bar sits low), kept inside the window, now that the menu can be measured.
-          const { offsetWidth: width, offsetHeight: height } = e.currentTarget;
-          const { left, top } = anchor.current;
-          setPosition({
-            left: Math.max(EDGE_MARGIN, Math.min(left, innerWidth - width - EDGE_MARGIN)),
-            top: Math.max(EDGE_MARGIN, top - height - GAP),
-          });
+          setPosition(
+            placeMenu(anchor.current, e.currentTarget.offsetWidth, { width: innerWidth, height: innerHeight }),
+          );
           e.currentTarget.querySelector<HTMLElement>('[aria-checked="true"]')?.focus();
         }}
       >

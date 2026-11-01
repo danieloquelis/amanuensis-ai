@@ -44,3 +44,22 @@ export function placeAround(
     top: clamp(anchor.top, MARGIN, floor - size.height),
   };
 }
+
+/**
+ * Where a menu opens from the button it belongs to, in the window: on the side with more room
+ * (below the compose bar on Home, which sits high; above it in the editor, where it sits low),
+ * attached to the button by the edge nearest it so it grows away from it, and never taller than
+ * that side's room.
+ */
+export function placeMenu(
+  button: { left: number; top: number; bottom: number },
+  width: number,
+  window: { width: number; height: number },
+): { left: number; maxHeight: number } & ({ top: number } | { bottom: number }) {
+  const left = clamp(button.left, MARGIN, window.width - width - MARGIN);
+  const roomBelow = window.height - button.bottom - GAP - MARGIN;
+  const roomAbove = button.top - GAP - MARGIN;
+  return roomBelow >= roomAbove
+    ? { left, top: button.bottom + GAP, maxHeight: roomBelow }
+    : { left, bottom: window.height - button.top + GAP, maxHeight: roomAbove };
+}

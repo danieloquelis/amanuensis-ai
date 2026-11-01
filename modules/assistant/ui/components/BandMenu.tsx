@@ -3,13 +3,11 @@ import { Plus, X } from "@phosphor-icons/react";
 import { InstrumentIcon } from "@/modules/editor/ui";
 import { INSTRUMENT_IDS, INSTRUMENTS, type InstrumentId } from "@/modules/score";
 import { IconButton } from "@/shared/ui/IconButton";
+import { placeMenu } from "@/shared/ui/floating-placement";
 import surface from "@/shared/ui/surface.module.css";
 import type { BandMember } from "../../application/musicians";
 import styles from "./assistant.module.css";
 
-/** The panel keeps this far (px) from its button and from the window's edges. */
-const GAP = 8;
-const EDGE_MARGIN = 12;
 /** Icons shown on the button; the rest are counted in its label. */
 const SHOWN = 4;
 const MAX_MEMBERS = 8;
@@ -28,9 +26,8 @@ type BandMenuProps = {
  */
 export function BandMenu({ on, members, onTurn, onMembers }: BandMenuProps) {
   const id = useId();
-  const anchor = useRef({ left: 0, top: 0 });
-  // Anchored by its bottom edge: turning the band on adds rows, and the panel grows upward.
-  const [position, setPosition] = useState({ left: EDGE_MARGIN, bottom: EDGE_MARGIN });
+  const anchor = useRef({ left: 0, top: 0, bottom: 0 });
+  const [position, setPosition] = useState<ReturnType<typeof placeMenu> | null>(null);
   const change = (index: number, patch: Partial<BandMember>) =>
     onMembers(members.map((member, i) => (i === index ? { ...member, ...patch } : member)));
   return (
@@ -45,7 +42,7 @@ export function BandMenu({ on, members, onTurn, onMembers }: BandMenuProps) {
         title={`Band Mode: ${on ? "on" : "off"}`}
         onClick={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
-          anchor.current = { left: rect.left, top: rect.top };
+          anchor.current = { left: rect.left, top: rect.top, bottom: rect.bottom };
         }}
       >
         <span className={styles.bandStack} aria-hidden="true">
@@ -63,15 +60,12 @@ export function BandMenu({ on, members, onTurn, onMembers }: BandMenuProps) {
         role="dialog"
         aria-label="Band Mode"
         className={`${surface.panel} ${surface.popover} ${styles.bandPanel}`}
-        style={position}
+        style={position ?? undefined}
         onToggle={(e) => {
           if (e.newState !== "open") return;
-          const { offsetWidth: width } = e.currentTarget;
-          const { left, top } = anchor.current;
-          setPosition({
-            left: Math.max(EDGE_MARGIN, Math.min(left, innerWidth - width - EDGE_MARGIN)),
-            bottom: innerHeight - top + GAP,
-          });
+          setPosition(
+            placeMenu(anchor.current, e.currentTarget.offsetWidth, { width: innerWidth, height: innerHeight }),
+          );
         }}
       >
         <label className={styles.bandSwitch}>
