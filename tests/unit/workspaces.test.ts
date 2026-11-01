@@ -10,7 +10,14 @@ import {
   type WorkspaceRepository,
 } from "@/modules/projects";
 import { applyCommand, createExample } from "@/modules/score";
-import { editedAgo, PREVIEW_PARTS, previewScore, removeSong } from "@/modules/workspace";
+import {
+  editedAgo,
+  followPlayhead,
+  PREVIEW_PARTS,
+  previewScore,
+  removeSong,
+  type SheetViews,
+} from "@/modules/workspace";
 
 test("touching a workspace records its times and moves it to the front", () => {
   let index = emptyWorkspaceIndex();
@@ -60,8 +67,9 @@ test("removing a song removes its conversation too", () => {
   const removed: string[] = [];
   const workspaces = { remove: (id: string) => removed.push(`score ${id}`) } as unknown as WorkspaceRepository;
   const chats = { remove: (id: string) => removed.push(`chat ${id}`) } as unknown as WorkspaceChats;
-  removeSong({ workspaces, chats }, "ws-a");
-  assert.deepEqual(removed, ["score ws-a", "chat ws-a"]);
+  const views = { remove: (id: string) => removed.push(`view ${id}`) } as unknown as SheetViews;
+  removeSong({ workspaces, chats, views }, "ws-a");
+  assert.deepEqual(removed, ["score ws-a", "chat ws-a", "view ws-a"]);
 });
 
 test("a new workspace is a blank song with a fresh identity", () => {
@@ -86,4 +94,17 @@ test("a card says when its song was last edited in words", () => {
   assert.equal(editedAgo(now - hours(20), now), "Edited 20 hours ago");
   assert.equal(editedAgo(now - hours(30), now), "Edited yesterday");
   assert.equal(editedAgo(now - hours(24 * 21), now), "Edited 3 weeks ago");
+});
+
+test("playback scrolls only when the line being played leaves the middle of the view, and to centre it", () => {
+  const view = { top: 0, bottom: 800, left: 0, right: 1000 };
+  const scroll = { top: 300, left: 0 };
+  const line = (top: number, left = 500) => ({ top, bottom: top + 200, left, right: left + 2 });
+  assert.equal(followPlayhead(view, line(300), scroll), null, "already in the middle");
+  // The next line, lower down: its middle (650) comes to the view's middle (400).
+  assert.deepEqual(followPlayhead(view, line(550), scroll), { top: 550, left: 0 });
+  // Near the right side (zoomed in), the view moves along to keep it clear of the edge.
+  assert.deepEqual(followPlayhead(view, line(300, 950), scroll), { top: 300, left: 800 });
+  // Never above the top of the sheet.
+  assert.deepEqual(followPlayhead(view, line(-400), { top: 100, left: 0 }), { top: 0, left: 0 });
 });

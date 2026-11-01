@@ -4,11 +4,15 @@ import { ScoreSurface, useTurnPreview, type ScoreEditor } from "@/modules/editor
 import { TempoNote } from "@/modules/engraving/ui";
 import type { TurnDraft } from "@/modules/editor";
 import { tempoMarking, type Command } from "@/modules/score";
+import { localSheetViews } from "../../infrastructure/local-sheet-views";
 import { usePinchZoom } from "../hooks/use-pinch-zoom";
+import { usePlaybackFollow } from "../hooks/use-playback-follow";
+import { useSheetView } from "../hooks/use-sheet-view";
 import styles from "./workspace.module.css";
 
 /** The paper: title, tempo marking, the editable sheet and footer. */
 export function ScoreCanvas({
+  workspaceId,
   editor,
   playBeat,
   zoom,
@@ -19,6 +23,8 @@ export function ScoreCanvas({
   live,
   draft,
 }: {
+  /** The song open, so its sheet opens where it was left. */
+  workspaceId: string;
   editor: ScoreEditor;
   playBeat: number | null;
   /** Sheet size in percent; pinching the trackpad (or Ctrl/⌘ + wheel) changes it. */
@@ -40,6 +46,9 @@ export function ScoreCanvas({
   const marking = tempoMarking(score.tempo, score.measures[0].meter);
   const canvas = useRef<HTMLDivElement>(null);
   usePinchZoom(canvas, zoom, onZoom);
+  // Playback keeps the line being played in view; the view stays put when it stops, and on reload.
+  usePlaybackFollow(canvas, playBeat);
+  useSheetView(canvas, workspaceId, editor.loaded, localSheetViews);
   return (
     <div ref={canvas} className={styles.canvas} onPointerDown={onPress}>
       <article className={styles.paper} style={{ "--zoom": zoom / 100 } as CSSProperties} aria-label="Music sheet">

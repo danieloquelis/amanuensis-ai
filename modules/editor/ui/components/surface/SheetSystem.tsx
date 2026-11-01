@@ -123,5 +123,15 @@ function Playhead({ system, playBeat }: { system: System; playBeat: number }) {
   const bar = system.bars.find((b) => playBeat >= b.beat && playBeat < b.beat + b.capacity);
   if (!bar) return null;
   const x = beatX(bar, playBeat);
-  return <line className={styles.playhead} x1={x} x2={x} y1={system.top - 20} y2={systemBottom(system) + 30} />;
+  // `data-playhead`: the workspace scrolls to keep it in view.
+  return (
+    <line
+      data-playhead=""
+      className={styles.playhead}
+      x1={x}
+      x2={x}
+      y1={system.top - 20}
+      y2={systemBottom(system) + 30}
+    />
+  );
 }

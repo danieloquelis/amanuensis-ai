@@ -4,8 +4,9 @@ import { localWorkspaceChats, type StartRequest } from "@/modules/assistant";
 import { localWorkspaceRepository } from "@/modules/projects";
 import { holdFirstRequest } from "../../application/first-request";
 import { openSongbook, removeSong, type Song, type SongStores } from "../../application/songbook";
+import { localSheetViews } from "../../infrastructure/local-sheet-views";
 
-const stores: SongStores = { workspaces: localWorkspaceRepository, chats: localWorkspaceChats };
+const stores: SongStores = { workspaces: localWorkspaceRepository, chats: localWorkspaceChats, views: localSheetViews };
 
 /** Home's songs and what can be done with them. */
 export function useSongbook() {

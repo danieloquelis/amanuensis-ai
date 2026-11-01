@@ -105,6 +105,7 @@ export function WorkspaceScreen({ workspaceId }: { workspaceId: string }) {
         aria-label="Score workspace"
       >
         <ScoreCanvas
+          workspaceId={workspaceId}
           editor={editor}
           playBeat={playback.playBeat}
           zoom={zoom}

@@ -1,9 +1,10 @@
 import type { WorkspaceChats } from "@/modules/assistant";
 import type { WorkspaceMeta, WorkspaceRepository } from "@/modules/projects";
 import type { Score } from "@/modules/score";
+import type { SheetViews } from "./sheet-view";
 
-/** Where songs and their conversations are kept. */
-export type SongStores = { workspaces: WorkspaceRepository; chats: WorkspaceChats };
+/** Where songs, their conversations and where their sheets were left are kept. */
+export type SongStores = { workspaces: WorkspaceRepository; chats: WorkspaceChats; views: SheetViews };
 
 /** One song on Home: its card data, and its score for the preview (null when it cannot be read). */
 export type Song = { meta: WorkspaceMeta; score: Score | null };
@@ -27,8 +28,9 @@ export function openSongbook({ workspaces, chats }: SongStores): Song[] {
   return workspaces.list().map((meta) => ({ meta, score: readScore(workspaces, meta) }));
 }
 
-/** Removes a song and its conversation for good. */
-export function removeSong({ workspaces, chats }: SongStores, workspaceId: string): void {
+/** Removes a song, its conversation and where its sheet was left, for good. */
+export function removeSong({ workspaces, chats, views }: SongStores, workspaceId: string): void {
   workspaces.remove(workspaceId);
   chats.remove(workspaceId);
+  views.remove(workspaceId);
 }
