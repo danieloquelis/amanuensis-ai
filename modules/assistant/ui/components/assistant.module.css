@@ -1244,75 +1244,6 @@
   }
 }
 
-/* Its panel: the switch, then who plays, one row per musician. */
-.bandPanel {
-  width: 420px;
-  /* Home centres its text: the panel reads as a form, left-aligned. */
-  text-align: left;
-  max-height: calc(100vh - 120px);
-  overflow-y: auto;
-  padding: 14px 16px;
-  border-radius: var(--r-lg);
-  corner-shape: squircle;
-  transform-origin: bottom left;
-}
-
-.bandSwitch {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  cursor: pointer;
-}
-
-.bandSwitch strong {
-  display: block;
-  font-size: 14px;
-}
-
-.bandSwitch span span {
-  display: block;
-  margin-top: 2px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.bandSwitch input {
-  flex: none;
-  width: 18px;
-  height: 18px;
-  margin-top: 2px;
-  accent-color: var(--accent);
-}
-
-.bandMembers {
-  display: grid;
-  gap: 6px;
-  margin: 12px 0 8px;
-  padding: 12px 0 0;
-  border-top: 1px solid var(--line-strong);
-  list-style: none;
-}
-
-.bandMembers li {
-  display: grid;
-  grid-template-columns: 24px 112px 80px 1fr 22px;
-  align-items: center;
-  gap: 6px;
-}
-
-.bandMembers select,
-.bandMembers input {
-  min-width: 0;
-  height: 28px;
-  padding: 0 6px;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-sm);
-  background: var(--paper);
-  color: var(--ink);
-  font-size: 12px;
-}
-
 .bandIcon {
   display: grid;
   flex: none;
@@ -1323,18 +1254,6 @@
   background: var(--paper);
   color: var(--ink-soft);
   box-shadow: inset 0 0 0 1px var(--line-strong);
-}
-
-.bandAdd {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--accent-ink);
-  font-size: 12px;
-  cursor: pointer;
 }
 
 /* The band in a turn: one row per musician, its state, and the line it is on. */

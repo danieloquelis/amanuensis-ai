@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   handleAssistantRequest,
   MAX_TOOL_STEPS,
+  musicianName,
   runAssistant,
   type ChatMessage,
   type ModelPort,
@@ -583,21 +584,27 @@ test("in Band Mode the band plays in rehearsal order, each musician only its own
     { content: "The band played bar 1.", toolCalls: [] },
   ]);
   const score = createExample();
-  const band = { on: true, members: [{ instrument: "bass" as const, name: "Luis", note: "reads treble clef" }] };
   const progress: string[] = [];
-  const result = await runAssistant(model, { ...request("arrange it"), score, band }, "t10", (event) => {
-    if (event.stage === "musician" && event.state !== "playing") progress.push(`${event.name} ${event.state}`);
-  });
-  assert.deepEqual(progress, ["Drums waiting", "Luis waiting", "Drums done", "Luis done"]);
+  const result = await runAssistant(
+    model,
+    { ...request("arrange it"), score, band: { on: true }, memory: ["The bassist reads treble clef"] },
+    "t10",
+    (event) => {
+      if (event.stage === "musician" && event.state !== "playing") progress.push(`${event.name} ${event.state}`);
+    },
+  );
+  const [drummer, bassist] = [musicianName("drums", "drums"), musicianName("bass", "bass")];
+  assert.deepEqual(progress, [`${drummer} waiting`, `${bassist} waiting`, `${drummer} done`, `${bassist} done`]);
   assert.deepEqual(
     result.band?.map((r) => [r.name, r.report]),
     [
-      ["Drums", "Rock groove in bar 1."],
-      ["Luis", "Root on 1."],
+      [drummer, "Rock groove in bar 1."],
+      [bassist, "Root on 1."],
     ],
   );
-  // The bassist's brief carried its player, and its try at the piano was refused.
-  assert.match(JSON.stringify(seen[3]), /Your player is Luis: reads treble clef/);
+  // The bassist has its name and what the agent knows about the band; its try at the piano was refused.
+  assert.match(JSON.stringify(seen[3]), new RegExp(`You are ${bassist}, the band's Bass`));
+  assert.match(JSON.stringify(seen[3]), /The bassist reads treble clef/);
   assert.match(JSON.stringify(seen[4].at(-1)), /You play Bass/);
   const after = executeAll(createSession(score), result.commands).score;
   assert.deepEqual(
@@ -605,4 +612,44 @@ test("in Band Mode the band plays in rehearsal order, each musician only its own
     ["piano", "bass", "drums"],
   );
   assert.equal(executeAll(createSession(score), result.commands).past.length, 1, "one undo step");
+  // Every model call of the turn is counted, the musicians' too: 3 by the bandleader, 2 drums, 3 bass.
+  assert.equal(result.thinkingMs.length, 8);
+});
+
+test("with the tune on the piano, the pianist comps on a left hand and a horn is told not to double the tune", async () => {
+  const { model, seen } = scriptedModel([
+    {
+      content: null,
+      toolCalls: [
+        call("band_arrange", {
+          feel: "a ballad",
+          parts: [
+            { part: "trumpet", brief: "play along" },
+            { part: "piano", brief: "comp the chords" },
+          ],
+        }),
+      ],
+    },
+    { content: "Comped.", toolCalls: [] },
+    { content: "Answered the tune.", toolCalls: [] },
+    { content: "Done.", toolCalls: [] },
+  ]);
+  const score = createExample();
+  const result = await runAssistant(model, { ...request("arrange it"), score, band: { on: true } }, "t11");
+  // The piano plays first (harmony before lead lines) and is told to keep the tune.
+  assert.match(JSON.stringify(seen[1]), /Your first staff holds the song's melody/);
+  assert.match(JSON.stringify(seen[2]), /already played by piano: don't double it note for note/);
+  const after = executeAll(createSession(score), result.commands).score;
+  assert.equal(after.parts[0].staves.length, 2, "a left-hand staff for the comping");
+});
+
+test("a reply that only promises more work gets one more step to do it", async () => {
+  const { model } = scriptedModel([
+    { content: null, toolCalls: [call("score_edit", chordEdit)] },
+    { content: "Added Am7. I'll verify the bar reads correctly.", toolCalls: [] },
+    { content: "Added Am7 to bar 2.", toolCalls: [] },
+  ]);
+  const result = await runAssistant(model, request("a chord"), "t12");
+  assert.equal(result.reply, "Added Am7 to bar 2.");
+  assert.equal(result.steps, 3);
 });

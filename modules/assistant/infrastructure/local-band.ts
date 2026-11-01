@@ -1,31 +1,21 @@
-import { bandSchema, type BandMember } from "../application/musicians";
+import { bandSchema } from "../application/musicians";
 
 const KEY = "amanuensis.band";
 
-/** Band Mode as the musician set it up in this browser: on or off, and who is in their band. */
-export type BandSetup = { on: boolean; members: BandMember[] };
-
-/** A band to start from: the line-up most rehearsal bands share. */
-export const STARTER_BAND: BandMember[] = [
-  { instrument: "drums" },
-  { instrument: "bass" },
-  { instrument: "piano" },
-  { instrument: "trumpet" },
-];
-
-export function loadBand(): BandSetup {
+/** Whether Band Mode is on in this browser; off when nothing was kept or storage is blocked. */
+export function loadBandMode(): boolean {
   try {
     const raw = localStorage.getItem(KEY);
     const parsed = bandSchema.safeParse(raw ? JSON.parse(raw) : null);
-    return parsed.success ? parsed.data : { on: false, members: [] };
+    return parsed.success && parsed.data.on;
   } catch {
-    return { on: false, members: [] };
+    return false;
   }
 }
 
-export function saveBand(setup: BandSetup): void {
+export function saveBandMode(on: boolean): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(setup));
+    localStorage.setItem(KEY, JSON.stringify({ on }));
   } catch {
     // Not kept: Band Mode starts off next time.
   }

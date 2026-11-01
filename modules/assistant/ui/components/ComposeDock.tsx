@@ -101,12 +101,7 @@ export function ComposeDock({ assistant, dock, context, revision, onUndo }: Comp
       }}
       accessory={
         <>
-          <BandMenu
-            on={assistant.band.on}
-            members={assistant.band.members}
-            onTurn={assistant.band.turn}
-            onMembers={assistant.band.setMembers}
-          />
+          <BandMenu on={assistant.band.on} onTurn={assistant.band.turn} />
           <ThinkingMenu level={assistant.thinking.level} onChange={assistant.thinking.choose} />
           {!sidebar && turns.length > 0 && (
             <IconButton

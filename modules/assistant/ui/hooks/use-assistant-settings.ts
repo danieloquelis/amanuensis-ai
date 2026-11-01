@@ -19,7 +19,7 @@ export function useAssistantSettings(chats: ChatRepository) {
       thinking: thinking.level,
       songNotes: memory.songNotes,
       memory: memory.facts,
-      ...(band.on ? { band: { on: true, members: band.members } } : {}),
+      ...(band.on ? { band: { on: true } } : {}),
     }),
   };
 }

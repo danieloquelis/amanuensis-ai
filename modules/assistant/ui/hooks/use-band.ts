@@ -1,25 +1,19 @@
 import { useEffect, useState } from "react";
-import type { BandMember } from "../../application/musicians";
-import { loadBand, saveBand, STARTER_BAND, type BandSetup } from "../../infrastructure/local-band";
+import { loadBandMode, saveBandMode } from "../../infrastructure/local-band";
 
-/**
- * Band Mode for this browser: whether arrangements go to the band, and the band itself. Turning
- * it on the first time starts from a usual line-up, ready to be named.
- */
+/** Band Mode for this browser: when on, music several parts play goes to a band the agent puts together. */
 export function useBand() {
-  const [setup, setSetup] = useState<BandSetup>({ on: false, members: [] });
+  const [on, setOn] = useState(false);
   // Read after mount, so the server and the first client render agree.
   useEffect(() => {
-    const frame = requestAnimationFrame(() => setSetup(loadBand()));
+    const frame = requestAnimationFrame(() => setOn(loadBandMode()));
     return () => cancelAnimationFrame(frame);
   }, []);
-  const keep = (next: BandSetup) => {
-    setSetup(next);
-    saveBand(next);
-  };
   return {
-    ...setup,
-    turn: (on: boolean) => keep({ on, members: on && !setup.members.length ? STARTER_BAND : setup.members }),
-    setMembers: (members: BandMember[]) => keep({ ...setup, members }),
+    on,
+    turn: (next: boolean) => {
+      setOn(next);
+      saveBandMode(next);
+    },
   };
 }

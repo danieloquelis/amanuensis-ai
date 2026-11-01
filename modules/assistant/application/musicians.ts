@@ -1,12 +1,30 @@
 import { z } from "zod";
-import { INSTRUMENT_IDS, INSTRUMENTS, type InstrumentId } from "@/modules/score";
+import { INSTRUMENTS, type InstrumentId } from "@/modules/score";
 
 /** What a part does in a band, which also sets the order the band rehearses in. */
 export type BandRole = "groove" | "bass" | "harmony" | "lead";
 const ROLE_ORDER: BandRole[] = ["groove", "bass", "harmony", "lead"];
 
-/** One of the musician's band, as they told it: an instrument, and who plays it. */
-export type BandMember = { instrument: InstrumentId; name?: string; note?: string };
+/**
+ * Each musician's name: short, funny and not a person's, chosen for its part once and kept for the
+ * whole song (the same part always gets the same name), so "Rumble, play it again" keeps working.
+ */
+const NAMES: Record<InstrumentId, string[]> = {
+  drums: ["Thump", "Boomer", "Snap", "Rattle"],
+  bass: ["Rumble", "Lowdown", "Thud", "Walker"],
+  piano: ["Ivory", "Plinky", "Hammers", "Keys"],
+  guitar: ["Twang", "Strummy", "Fretz", "Pluck"],
+  trumpet: ["Blaze", "Toot", "Brassy", "Sparks"],
+  flute: ["Whistle", "Breezy", "Flutter", "Puff"],
+  trombone: ["Slide", "Bonbon", "Wah", "Slinky"],
+};
+
+/** The name of the musician playing a part (by its handle), the same every time. */
+export function musicianName(instrument: InstrumentId, part: string): string {
+  const names = NAMES[instrument];
+  const hash = [...part].reduce((sum, char) => (sum * 31 + char.charCodeAt(0)) % 997, 7);
+  return names[hash % names.length];
+}
 
 /**
  * What each instrument does in a band and what its player knows: the craft the score tools
@@ -16,7 +34,7 @@ const CRAFT: Record<InstrumentId, { role: BandRole; craft: string }> = {
   drums: {
     role: "groove",
     craft:
-      'You keep time and set the feel. Start from putGroove when a named groove fits the meter and style; then shape it: a fill into each new section, lighter in verses, a crash on the first beat of a section. Hands are the upper voice ("bar 3 drums: <ride snare>q …"), feet the lower ("bar 3 drums v2: <kick>q …"); every hit is in <…>.',
+      'You keep time and set the feel. Start from putGroove when one of the grooves listed for this meter fits the style (it writes valid bars at once); then shape it: a fill into each new section, lighter in verses, a crash on the first beat of a section. Hands are the upper voice ("bar 3 drums: <ride snare>q …"), feet the lower ("bar 3 drums v2: <kick>q …"); every hit is in <…>.',
   },
   bass: {
     role: "bass",
@@ -61,24 +79,11 @@ const midiName = (midi: number) => {
   return `${names[midi % 12]}${Math.floor(midi / 12) - 1}`;
 };
 
-/** The brief a musician reads about its own instrument, and its player when the musician named them. */
-export function craftCard(instrument: InstrumentId, member?: BandMember): string {
-  const { name, clef, range } = INSTRUMENTS[instrument];
-  const player = member?.name ? ` Your player is ${member.name}${member.note ? `: ${member.note}` : ""}.` : "";
-  const note = !member?.name && member?.note ? ` The musician says: ${member.note}.` : "";
-  return `You are the band's ${name}. ${CRAFT[instrument].craft} Clef: ${clef}. Comfortable range ${midiName(range.low)}–${midiName(range.high)} (sounding).${player}${note}`;
+/** The brief a musician reads about its own instrument. */
+export function craftCard(instrument: InstrumentId, name: string): string {
+  const { name: instrumentName, clef, range } = INSTRUMENTS[instrument];
+  return `You are ${name}, the band's ${instrumentName}. ${CRAFT[instrument].craft} Clef: ${clef}. Comfortable range ${midiName(range.low)}–${midiName(range.high)} (sounding).`;
 }
 
-/** Band Mode as a request carries it: whether it is on, and the band as the musician described it. */
-export const bandSchema = z.strictObject({
-  on: z.boolean(),
-  members: z
-    .array(
-      z.strictObject({
-        instrument: z.enum(INSTRUMENT_IDS),
-        name: z.string().trim().max(40).optional(),
-        note: z.string().trim().max(160).optional(),
-      }),
-    )
-    .max(8),
-});
+/** Band Mode as a request carries it: on, the agent leads a band of musicians it puts together itself. */
+export const bandSchema = z.strictObject({ on: z.boolean() });

@@ -3,7 +3,6 @@ import type { Command, InstrumentId, Score } from "@/modules/score";
 import type { TakePart, VoiceTake } from "@/modules/voice";
 import type { PlanStep } from "./agent-state";
 import type { BandReport } from "./band-tools";
-import type { BandMember } from "./musicians";
 import type { Attachment } from "./attachments";
 import type { DraftEvent } from "./score-block-writer";
 import type { EditsEvent } from "./edit-feed";
@@ -27,8 +26,8 @@ export type AssistantRequest = {
   songNotes?: string;
   /** What the agent has learned about this musician, across songs. */
   memory?: string[];
-  /** Band Mode: arrangements go to the band, one musician per part, as the musician set it up. */
-  band?: { on: boolean; members: BandMember[] };
+  /** Band Mode: music several parts play goes to a band the agent puts together, one musician per part. */
+  band?: { on: boolean };
   /** Files sent with the request: pictures or PDFs of sheet music, or music written as text. */
   attachments?: Attachment[];
 };

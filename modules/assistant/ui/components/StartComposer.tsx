@@ -48,7 +48,7 @@ export function StartComposer({ onStart }: { onStart: (request: StartRequest) =>
         onStop={() => undefined}
         accessory={
           <>
-            <BandMenu on={band.on} members={band.members} onTurn={band.turn} onMembers={band.setMembers} />
+            <BandMenu on={band.on} onTurn={band.turn} />
             <ThinkingMenu level={thinking.level} onChange={thinking.choose} />
           </>
         }

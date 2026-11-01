@@ -35,6 +35,8 @@ export const GROOVES = {
   },
   disco: { "4/4": { step: 0.5, hands: "h o h+s o h o h+s o", feet: "k - k - k - k -" } },
   bossa: { "4/4": { step: 0.5, hands: "h+x h h h+x h h h+x h", feet: "k - f k k - f k" } },
+  // Written straight, read swung, as drum charts do: ride "ding, ding-a", feathered kick, hat foot on 2 and 4.
+  swing: { "4/4": { step: 0.5, hands: "r - r r r - r r", feet: "k - k+f - k - k+f -" } },
   waltz: { "3/4": { step: 1, hands: "h h+s h+s", feet: "k - -" } },
   ballad68: { "6/8": { step: 0.5, hands: "h h h h+s h h", feet: "k - - - - k" } },
 } satisfies Record<string, Record<string, Pattern>>;

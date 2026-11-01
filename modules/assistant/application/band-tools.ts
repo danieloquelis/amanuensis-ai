@@ -3,7 +3,6 @@ import {
   barEvents,
   findPart,
   INSTRUMENT_IDS,
-  INSTRUMENTS,
   isDrumKit,
   isPlayable,
   midiPitch,
@@ -12,7 +11,7 @@ import {
   type Score,
 } from "@/modules/score";
 import type { ToolSpec } from "./model-port";
-import { rehearsalOrder, type BandMember } from "./musicians";
+import { musicianName, rehearsalOrder, roleOf } from "./musicians";
 import { runMusician, type BandContext, type MusicianJob } from "./run-musician";
 import { toolError } from "./score-tool-gateway";
 import { toolParameters } from "./tool-definitions";
@@ -25,7 +24,11 @@ const arrangeSchema = z.strictObject({
   parts: z
     .array(
       z.strictObject({
-        part: z.string().describe('An existing part\'s handle ("piano", "bass"), or an instrument to add.'),
+        part: z
+          .string()
+          .describe(
+            'An existing part\'s handle ("piano", "bass"), or an instrument to add. List the parts already in the song too when the new ones change what they should play.',
+          ),
         brief: z.string().trim().min(1).max(400).describe("What this musician should play, in a musician's words."),
       }),
     )
@@ -84,10 +87,11 @@ function review(score: Score): string[] {
 
 /**
  * The band, for one turn: `band_arrange` runs each musician in rehearsal order on the turn's own
- * edits (one undo step), `band_review` checks the result. `members` are the musician's band, as
- * they described it; `reports` collects what each musician said.
+ * edits (one undo step), `band_review` checks the result. The bandleader puts the band together
+ * from the parts it names; each musician gets its part's name (see `musicianName`); `reports`
+ * collects what each musician said.
  */
-export function createBandTools(context: BandContext, members: BandMember[]) {
+export function createBandTools(context: BandContext) {
   const reports: BandReport[] = [];
 
   /** The part a brief names, added first when the score has no such part yet. */
@@ -132,15 +136,20 @@ export function createBandTools(context: BandContext, members: BandMember[]) {
 
   const arrange = async (raw: unknown): Promise<ToolResult> => {
     const { feel, parts } = arrangeSchema.parse(raw);
-    const unused = [...members];
+    let melodyOn: string | null = null;
     const jobs: MusicianJob[] = parts.map(({ part, brief }) => {
       const resolved = resolve(part);
-      const at = unused.findIndex((member) => member.instrument === resolved.instrument);
-      const member = at === -1 ? undefined : unused.splice(at, 1)[0];
       const kept = keepMelody(resolved.part, resolved.instrument);
-      const fullBrief = kept ? `${brief} ${kept}` : brief;
-      return { ...resolved, brief: fullBrief, member, name: member?.name ?? INSTRUMENTS[resolved.instrument].name };
+      if (kept) melodyOn = resolved.part;
+      const name = musicianName(resolved.instrument, resolved.part);
+      return { ...resolved, name, brief: kept ? `${brief} ${kept}` : brief };
     });
+    // The tune already sounds on the piano: a lead line answers it rather than doubling it.
+    for (const job of jobs) {
+      if (melodyOn && job.part !== melodyOn && roleOf(job.instrument) === "lead") {
+        job.brief += ` The song's melody is already played by ${melodyOn}: don't double it note for note; answer it, harmonise it or play a countermelody, unless your brief says you take the melody.`;
+      }
+    }
     const ordered = rehearsalOrder(jobs);
     for (const job of ordered) {
       context.onProgress({
@@ -174,14 +183,6 @@ export function createBandTools(context: BandContext, members: BandMember[]) {
   };
 }
 
-/** The band as the bandleader reads it in its context, when Band Mode is on. */
-export function bandContext(members: BandMember[]): string {
-  const line = (member: BandMember) => {
-    const who = member.name ? `${member.name}` : "";
-    const note = member.note ? `${who ? ": " : ""}${member.note}` : "";
-    return `- ${INSTRUMENTS[member.instrument].name}${who || note ? ` (${who}${note})` : ""}`;
-  };
-  return members.length
-    ? `Band Mode is on. The musician's band:\n${members.map(line).join("\n")}`
-    : "Band Mode is on. The band is whoever plays in the score.";
-}
+/** What the bandleader reads in its context when Band Mode is on. */
+export const BAND_CONTEXT =
+  "Band Mode is on: you lead the band. For music several parts play, put the band together yourself (the parts it needs, the ones already in the song too) and hand out the parts with band_arrange.";

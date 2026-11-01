@@ -1,8 +1,8 @@
-import { SCORE_TEXT_GUIDE, type InstrumentId, type Score } from "@/modules/score";
+import { groovesFor, SCORE_TEXT_GUIDE, type InstrumentId, type Score } from "@/modules/score";
 import { assistantTools } from "./assistant-tools";
 import type { ProgressListener } from "./assistant-types";
-import type { ChatMessage, ModelPort, ToolCall } from "./model-port";
-import { craftCard, type BandMember } from "./musicians";
+import type { ChatMessage, ModelPort, TokenUsage, ToolCall } from "./model-port";
+import { craftCard } from "./musicians";
 import { refuseOutsidePart } from "./part-scope";
 import { runScoreTool } from "./score-tool-call";
 import type { createScoreToolGateway } from "./score-tool-gateway";
@@ -37,12 +37,16 @@ export type BandContext = {
   onProgress: ProgressListener;
   /** The edits changed: the editor can show them now. */
   onEdits: () => void;
+  /** Hears each model call a musician makes (tokens and time), so the turn's cost counts the whole band. */
+  onModelCall?: (usage: TokenUsage | undefined, ms: number) => void;
+  /** What the agent knows about the musician and their band; the musicians follow it too. */
+  memory?: string[];
   /** Hears each tool call a musician makes, for the turn's trace. */
   onCall?: (entry: { tool: string; arguments: string; ok: boolean; error?: string }) => void;
 };
 
-/** One part to play: its handle, instrument, the bandleader's brief and who plays it. */
-export type MusicianJob = { part: string; instrument: InstrumentId; name: string; brief: string; member?: BandMember };
+/** One part to play: its handle, instrument, the musician's name and the bandleader's brief. */
+export type MusicianJob = { part: string; instrument: InstrumentId; name: string; brief: string };
 
 /**
  * One musician plays its part: a short agent loop with its own instructions (its instrument's
@@ -63,13 +67,17 @@ export async function runMusician(
     return result.score ?? "";
   };
   const messages: ChatMessage[] = [
-    { role: "system", content: `${MUSICIAN_PROMPT}\n\n${craftCard(job.instrument, job.member)}` },
+    { role: "system", content: `${MUSICIAN_PROMPT}\n\n${craftCard(job.instrument, job.name)}` },
     {
       role: "user",
       content: [
         `The band's feel: ${feel}`,
         `Your part (${job.part}): ${job.brief}`,
         before.length ? `What the others played:\n${before.map((line) => `- ${line}`).join("\n")}` : "You play first.",
+        ...(job.instrument === "drums" ? [`Grooves for this meter: ${grooves(score())}.`] : []),
+        ...(context.memory?.length
+          ? [`What you know about the musician and their band:\n${list(context.memory)}`]
+          : []),
         `[Score context, as score_get_context returns it]\n${scoreNow()}`,
       ].join("\n\n"),
     },
@@ -79,11 +87,13 @@ export async function runMusician(
   progress({ state: "playing" });
   for (let step = 1; step <= MUSICIAN_STEPS; step++) {
     if (signal?.aborted) break;
+    const asked = Date.now();
     const reply = await model.complete(messages, MUSICIAN_TOOLS, {
       signal,
       onThought: (thought) => progress({ state: "playing", thought }),
       cacheKey: `${turnId}-${job.part}`,
     });
+    context.onModelCall?.(reply.usage, Date.now() - asked);
     messages.push({
       role: "assistant",
       content: reply.content,
@@ -122,3 +132,7 @@ function withHarmonyKept(json: string): string {
     return json;
   }
 }
+
+const list = (lines: string[]) => lines.map((line) => `- ${line}`).join("\n");
+/** The grooves putGroove has for the song's meter, for the drummer to start from. */
+const grooves = (score: Score) => groovesFor(score.measures[0].meter).join(", ") || "none: write it by hand";

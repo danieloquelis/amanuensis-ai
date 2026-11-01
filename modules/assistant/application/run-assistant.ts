@@ -2,7 +2,7 @@ import { summarizeChange, type Operation } from "@/modules/score";
 import { agentToolSpecs, createAgentState, isAgentTool, PLAN_TOOL } from "./agent-state";
 import type { AssistantRequest, AssistantResult, ProgressListener, TraceEntry, TurnServices } from "./assistant-types";
 import { ASK_TOOL, askSchema, assistantTools } from "./assistant-tools";
-import { BAND_ARRANGE, bandContext as describeBand, bandToolSpecs, createBandTools, isBandTool } from "./band-tools";
+import { BAND_ARRANGE, BAND_CONTEXT, bandToolSpecs, createBandTools, isBandTool } from "./band-tools";
 import { createMusicTools, isMusicTool, musicToolSpecs } from "./music-tools";
 import type { ChatMessage, ContentPart, ModelPort, TokenUsage, ToolCall } from "./model-port";
 import { refuseHeardBarEdit, writtenLines } from "./heard-bars-guard";
@@ -16,6 +16,7 @@ import { createSourceTools, isSourceTool, sourceToolSpecs } from "./source-tools
 import { historyMessages, scoreContext, userMessage } from "./opening-messages";
 import { SYSTEM_PROMPT } from "./system-prompt";
 import { createTurnEdits } from "./turn-edits";
+import { FINISH_NUDGE, soundsUnfinished } from "./unfinished-reply";
 
 const TRANSCRIBE_TOOL = "voice_transcribe_melody";
 /** Hard cap on model round trips per instruction. */
@@ -94,9 +95,11 @@ export async function runAssistant(
   // Band Mode: arrangements are played by the band, one musician per part, on this turn's edits.
   const onCall = (entry: TraceEntry) =>
     trace.push({ ...entry, arguments: entry.arguments.slice(0, TRACE_ARGUMENT_ROOM) });
-  const bandContext = { model: musicians, tools, score: edits.score, turnId, signal, onProgress, onCall };
+  // The musicians' model calls count in the turn's tokens and time, like the bandleader's own.
+  const onModelCall = (used: TokenUsage | undefined, ms: number) => count(used, ms);
+  const bandContext = { model: musicians, tools, score: edits.score, turnId, signal, onProgress, onCall, onModelCall };
   const band = request.band?.on
-    ? createBandTools({ ...bandContext, onEdits: () => sendEdits() }, request.band.members)
+    ? createBandTools({ ...bandContext, memory: request.memory, onEdits: () => sendEdits() })
     : null;
   // A plan shown for a larger request raises the cap (see MAX_PLANNED_STEPS).
   let maxSteps = attachments.length ? MAX_SOURCE_STEPS : MAX_TOOL_STEPS;
@@ -116,18 +119,20 @@ export async function runAssistant(
     trace.push({ tool: "score_block", arguments: args.slice(0, TRACE_ARGUMENT_ROOM), ok: result.ok });
     return result;
   });
+  let nudged = false;
   const usage: TokenUsage = { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 };
+  const count = (used: TokenUsage | undefined, ms: number) => {
+    thinkingMs.push(ms);
+    usage.inputTokens += used?.inputTokens ?? 0;
+    usage.outputTokens += used?.outputTokens ?? 0;
+    usage.cachedInputTokens! += used?.cachedInputTokens ?? 0;
+  };
   const trace: TraceEntry[] = [];
   const thinkingMs: number[] = [];
   const messages: ChatMessage[] = [
     { role: "system", content: systemPrompt },
     ...historyMessages(request),
-    userMessage(
-      request,
-      [scoreContext(tools, request), agent.context(), ...(band ? [describeBand(request.band!.members)] : [])].join(
-        "\n\n",
-      ),
-    ),
+    userMessage(request, [scoreContext(tools, request), agent.context(), ...(band ? [BAND_CONTEXT] : [])].join("\n\n")),
   ];
   const finish = (reply: string, question: AssistantResult["question"], steps: number): AssistantResult => {
     // A server-side fault, caught here rather than as a failed replay in the musician's editor.
@@ -158,10 +163,7 @@ export async function runAssistant(
       onThought: (text) => onProgress({ stage: "thought", text }),
       cacheKey: turnId,
     });
-    thinkingMs.push(Date.now() - asked);
-    usage.inputTokens += reply.usage?.inputTokens ?? 0;
-    usage.outputTokens += reply.usage?.outputTokens ?? 0;
-    usage.cachedInputTokens! += reply.usage?.cachedInputTokens ?? 0;
+    count(reply.usage, Date.now() - asked);
     // The model's reasoning goes back with its reply, so the next step builds on it.
     messages.push({
       role: "assistant",
@@ -173,7 +175,14 @@ export async function runAssistant(
     sendEdits();
     // A reply with no tool calls ends the turn, unless a block it wrote was refused: then it may fix it.
     if (!reply.toolCalls.length && (!written || written.ok)) {
-      return finish(withoutScoreBlocks(reply.content ?? "") || "Done.", null, step);
+      const text = withoutScoreBlocks(reply.content ?? "");
+      // Once per turn: a reply that only promises more work gets one more step to do it.
+      if (!nudged && soundsUnfinished(text) && step < maxSteps) {
+        nudged = true;
+        messages.push({ role: "user", content: FINISH_NUDGE });
+        continue;
+      }
+      return finish(text || "Done.", null, step);
     }
     for (const call of reply.toolCalls) {
       onProgress({ stage: "tool", tool: call.name });

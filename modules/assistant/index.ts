@@ -54,3 +54,4 @@ export type { StartRequest } from "./application/start-request";
 export { askedAfter, withHeardWords, type AskedTake } from "./application/asked-take";
 export { DEFAULT_THINKING, THINKING_LEVELS, thinkingOf, type Thinking } from "./application/thinking";
 export { readableThought, withProgress } from "./application/work-log";
+export { musicianName } from "./application/musicians";
