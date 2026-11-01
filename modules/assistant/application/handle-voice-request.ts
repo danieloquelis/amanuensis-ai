@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { thinkingSchema } from "./thinking";
 import { parseScore } from "@/modules/score";
 import {
   createTake,
@@ -33,6 +34,10 @@ const payloadSchema = z.strictObject({
     .array(z.strictObject({ start: z.number(), end: z.number(), text: z.string().max(2000) }))
     .max(MAX_TURNS)
     .optional(),
+  /** The take was written last turn: the words are a follow-up, not an answer to a question. */
+  takeWritten: z.boolean().optional(),
+  /** How long the model may think; the route reads it (see `thinkingOf`). */
+  thinking: thinkingSchema.optional(),
 });
 
 /**

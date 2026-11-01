@@ -8,19 +8,22 @@ const take: AskedTake = {
 };
 const question = { question: { text: "Which key?", choices: ["F major", "F minor"] } };
 
-test("a take the agent asks about stays open for the answer, and closes once the agent acts", () => {
+test("a take the agent asks about stays open for the answer, and after it acts, for follow-ups", () => {
   const open = askedAfter(null, take, question);
   assert.equal(open, take);
   // The musician answers with words; the agent asks again: the take stays with the next answer.
   assert.equal(askedAfter(open, open, question), take);
-  // The agent writes the singing: the next words go alone.
-  assert.equal(askedAfter(open, open, { question: null }), null);
+  // The agent writes the singing: the take stays, as written, for "try again" or "only bar 2".
+  assert.deepEqual(askedAfter(open, open, { question: null }), { ...take, written: true });
+  assert.deepEqual(askedAfter(null, take, { question: null }), { ...take, written: true });
 });
 
-test("a take with no question closes; a failed turn keeps what was open", () => {
-  assert.equal(askedAfter(null, take, { question: null }), null);
+test("another take or attached files leave the old take behind; a failed turn keeps it", () => {
+  const other: AskedTake = { wav: new Uint8Array([9]) };
+  assert.deepEqual(askedAfter(take, other, { question: null }), { ...other, written: true });
+  assert.equal(askedAfter(take, null, { question: null }, true), null);
   assert.equal(askedAfter(take, take, null), take);
-  // Words alone, asked about: there is no take to keep.
+  // Words alone, with no take before: there is no take to keep.
   assert.equal(askedAfter(null, null, question), null);
 });
 
@@ -28,4 +31,10 @@ test("an answer carries the words heard in its take, so they are not recognized 
   const payload = { instruction: "F major" };
   assert.deepEqual(withHeardWords(payload, take), { instruction: "F major", speech: take.speech });
   assert.deepEqual(withHeardWords(payload, { wav: take.wav }), payload);
+  // A follow-up to a written take says so, so the agent hears it again only when asked.
+  assert.deepEqual(withHeardWords(payload, { ...take, written: true }), {
+    ...payload,
+    speech: take.speech,
+    takeWritten: true,
+  });
 });

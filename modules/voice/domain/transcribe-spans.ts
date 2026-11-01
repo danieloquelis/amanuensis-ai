@@ -27,6 +27,8 @@ export type SpansOptions = {
   /** Chords across the score, `beat` counted in quarter beats from the start of bar 1. */
   chords?: ChordContext[];
   snapToChordTones?: boolean;
+  /** Move the singing into `key` (they asked for it there); otherwise it stays at the pitch sung. */
+  transpose?: boolean;
 };
 
 const START_STEP = 0.5;
@@ -71,7 +73,7 @@ export function transcribeSpans(spans: PlacedSpan[], options: SpansOptions): Mel
         heard.flatMap((h) => h.notes),
         heard.flatMap((h) => h.onsets),
         options.key,
-        { meter: options.meter, chords: options.chords, startBeat: 0 },
+        { meter: options.meter, chords: options.chords, startBeat: 0, transpose: options.transpose },
       ).shift
     : undefined;
   return spans.map((span, i) => {

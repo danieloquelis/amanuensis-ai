@@ -9,13 +9,25 @@ const melody = (...notes: [string | null, number][]): SungNoteSpec[] =>
   notes.map(([name, beats]) => ({ midi: name ? midi(name) : null, beats }));
 const D_MAJOR = { fifths: 2, mode: "major" as const };
 
-test("a tune sung in another key, between semitones, is written in the key asked for", () => {
-  // Meant in D; sung a fourth lower (in A) and 30 cents sharp of that.
+test("a tune sung in another key, between semitones, is moved into the key asked for", () => {
+  // Meant in D ("put it in D"); sung a fourth lower (in A) and 30 cents sharp of that.
   const sung = melody(["A3", 1], ["B3", 1], ["C#4", 1], ["D4", 1], ["E4", 1], ["C#4", 1], ["A3", 2]);
-  const result = transcribeMelody(singMelody(sung, { bpm: 90, tuningCents: 30 }), { bpm: 90, key: D_MAJOR });
+  const options = { bpm: 90, key: D_MAJOR, transpose: true };
+  const result = transcribeMelody(singMelody(sung, { bpm: 90, tuningCents: 30 }), options);
   assert.deepEqual(
     result.bars.flat().map((e) => e.pitch && pitchName(e.pitch).slice(0, -1)),
     ["D", "E", "F♯", "G", "A", "F♯", "D"],
+  );
+});
+
+test("unless asked to move it, a take stays at the pitch sung, only its tuning taken out", () => {
+  // Sung in A, 30 cents sharp, over a score in D: it is written in A, as sung.
+  const sung = melody(["A3", 1], ["B3", 1], ["C#4", 1], ["D4", 1], ["E4", 1], ["C#4", 1], ["A3", 2]);
+  const result = transcribeMelody(singMelody(sung, { bpm: 90, tuningCents: 30 }), { bpm: 90, key: D_MAJOR });
+  assert.equal(result.transposedBy, 0);
+  assert.deepEqual(
+    result.bars.flat().map((e) => e.pitch && pitchName(e.pitch).slice(0, -1)),
+    ["A", "B", "C♯", "D", "E", "C♯", "A"],
   );
 });
 
@@ -45,7 +57,7 @@ test("in an arpeggio, a note sung nearly a semitone off lands on the chord tone"
   assert.equal(span.bars["bar 1"], "E4q G4q B4q G4q");
 });
 
-test("sung bits of one take, with talking between, are moved into the key by the same amount", () => {
+test("sung bits of one take, with talking between, are moved into the key asked for by the same amount", () => {
   // Meant as D F♯ A F♯ | A C♯ E C♯ in D; sung a fourth lower, 30 cents sharp, a pause between.
   const sing = (...notes: [string, number][]) => singMelody(melody(...notes), { bpm: 90, tuningCents: 30 });
   const first = sing(["A3", 1], ["C#4", 1], ["E4", 1], ["C#4", 1]);
@@ -59,7 +71,7 @@ test("sung bits of one take, with talking between, are moved into the key by the
       { signal: first, bar: 1, startBeat: 0 },
       { signal: second, bar: 2, startBeat: 0 },
     ],
-    { bpm: 90, meter: { numerator: 4, denominator: 4 }, key: D_MAJOR, chords },
+    { bpm: 90, meter: { numerator: 4, denominator: 4 }, key: D_MAJOR, chords, transpose: true },
   );
   const steps = (signal: (typeof results)[number]) =>
     signal.bars[0].map((e) => e.pitch && pitchName(e.pitch).slice(0, -1));

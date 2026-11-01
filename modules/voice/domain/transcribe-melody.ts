@@ -20,6 +20,8 @@ export type MelodyOptions = {
   snapToChordTones?: boolean;
   /** A transposition already fitted across the whole take (see `transcribeSpans`). */
   shift?: number;
+  /** Move the take into `key` (they asked for it there); otherwise it stays at the pitch sung. */
+  transpose?: boolean;
   /** How many bars the musician said the phrase fills; it settles double/half-tempo readings. */
   bars?: number;
   /** Pitch frames for the signal from a better tracker; YIN's own are used otherwise. */
@@ -136,6 +138,7 @@ export function transcribeMelody(signal: Signal, options: MelodyOptions = {}): M
         // The rhythm knows whether the phrase starts on or off the beat; chords say which beat.
         starts: Array.from({ length: measureCapacity(meter) }, (_, k) => (rhythmStart + k) % measureCapacity(meter)),
         shift: options.shift,
+        transpose: options.transpose,
       })
     : {
         transposedBy: 0,

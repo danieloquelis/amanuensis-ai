@@ -6,6 +6,7 @@ import type { Attachment } from "./attachments";
 import { createMusicTools, isMusicTool, musicToolSpecs } from "./music-tools";
 import type { ChatMessage, ContentPart, ModelPort, TokenUsage, ToolCall } from "./model-port";
 import { refuseHeardBarEdit, writtenLines } from "./heard-bars-guard";
+import type { HeardOption } from "./sung-figures";
 import { parseArguments, runScoreTool } from "./score-tool-call";
 import { createScoreToolGateway } from "./score-tool-gateway";
 import { createEditFeed, type EditsEvent } from "./edit-feed";
@@ -34,6 +35,8 @@ export type AssistantRequest = {
   history: AssistantTurn[];
   /** A recorded take: what was said (the instruction) and where singing happened. */
   take?: VoiceTake;
+  /** The take was recorded and written last turn; typed words now follow up on it. */
+  takeWritten?: boolean;
   /** Files sent with the request: pictures or PDFs of sheet music, or music written as text. */
   attachments?: Attachment[];
 };
@@ -99,6 +102,8 @@ export async function runAssistant(
   let toolWrites = 0;
   // Bars a transcription wrote this turn: the agent may not rewrite their notes (see the guard).
   const heard = new Set<string>();
+  // The changes to those bars that the singing itself supports (see heardOptions).
+  const options: HeardOption[] = [];
   let runningTool = "";
   // Tools that write (a transcription, a setup from a reading) commit through the same gateway as score_edit.
   const commit = (operation: Operation) => {
@@ -112,7 +117,11 @@ export async function runAssistant(
       writtenLines(edits.score(), operation).forEach((key) => heard.add(key));
     return result;
   };
-  const music = createMusicTools(request.take ?? null, { getScore: edits.score, commit });
+  const music = createMusicTools(request.take ?? null, {
+    getScore: edits.score,
+    commit,
+    allow: (more) => options.push(...more),
+  });
   const attachments = request.attachments ?? [];
   // Pictures a tool shows the model (labelled pages) go in a user message after the tool results.
   let shown: ContentPart[] = [];
@@ -125,7 +134,7 @@ export async function runAssistant(
   const maxSteps = attachments.length ? MAX_SOURCE_STEPS : MAX_TOOL_STEPS;
   const scoreTool = (call: ToolCall) =>
     runScoreTool(call, tools, turnId, edits.score, (operation, asked) =>
-      refuseHeardBarEdit(edits.score(), operation, heard, asked, musicianWords(request)),
+      refuseHeardBarEdit(edits.score(), operation, heard, asked, musicianWords(request), options),
     );
   const sendEdits = () => {
     const change = feed.update(edits.commands);

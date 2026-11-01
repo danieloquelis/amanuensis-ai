@@ -63,7 +63,8 @@ export const transcribeSchema = z.strictObject({
     .min(1)
     .max(16)
     .describe("Every sung span to write, in order. Give them all in one call."),
-  bpm: z
+  // A model sometimes writes the number as text ("196.0"): it is still the tempo meant.
+  bpm: z.coerce
     .number()
     .int()
     .min(TEMPO_RANGE.min)
@@ -75,7 +76,15 @@ export const transcribeSchema = z.strictObject({
   meter: meterSchema.optional().describe("Default: the score's meter."),
   key: keySignatureSchema
     .optional()
-    .describe("The key to write in. The take is transposed into it: singers rarely start on the written pitch."),
+    .describe(
+      "The key the music is in: notes are read and spelled in it, at the pitch they were sung (the singer's tuning taken out). Default: the key the singing implies.",
+    ),
+  transpose: z
+    .boolean()
+    .optional()
+    .describe(
+      'Only when they ask for it in another key ("put it in D", "higher"): move the take into key. Never to fit the score: takes stay at the pitch sung, so they fit each other.',
+    ),
   chords: z
     .array(
       z.strictObject({
@@ -91,6 +100,12 @@ export const transcribeSchema = z.strictObject({
     .boolean()
     .optional()
     .describe("The tune is built from chord tones (arpeggio, riff, guitar figure): notes near a chord tone become it."),
+  keep: z
+    .enum(["rhythm"])
+    .optional()
+    .describe(
+      '"rhythm" when they say the rhythm (the figures) is right but the notes are wrong: the notes already in those bars keep their lengths, ties and rests, and take the sung pitches in order. Give each span its bar (and bars). Default: the singing writes rhythm and pitches.',
+    ),
   write: z.boolean().default(true).describe("Write the bars into the score (default). False only listens."),
 });
 

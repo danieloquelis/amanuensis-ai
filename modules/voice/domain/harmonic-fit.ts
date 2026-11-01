@@ -21,6 +21,12 @@ export type HarmonicFit = {
  */
 const SHIFT_STEP = 0.1;
 const SHIFTS = Array.from({ length: 12 / SHIFT_STEP }, (_, i) => Math.round((i * SHIFT_STEP - 6) * 10) / 10);
+/**
+ * Without being asked to transpose, a take stays at the pitch it was sung: only the singer's own
+ * tuning (up to half a semitone either way) is taken out. Moving it to fit a key one take at a
+ * time put takes sung in one key a semitone apart.
+ */
+const TUNING_SHIFTS = SHIFTS.filter((shift) => Math.abs(shift) <= 0.5);
 const START_STEP = 0.5;
 const MAJOR_SCALE = [0, 2, 4, 5, 7, 9, 11];
 /** How much the key's tonal weighting (tonic, dominant) counts next to plain scale membership. */
@@ -79,8 +85,8 @@ function chordFit(notes: SungNote[], onsets: number[], chords: ChordContext[], s
 
 /**
  * Places a take in the music the musician asked for. Nobody sings from a reference pitch, so a
- * tune meant in D is often sung in A, and between semitones: every transposition (in tenths of a
- * semitone) is tried, scored by how closely the notes sit on the key's scale and, when known,
+ * take is often between semitones, and (with `transpose`) a tune meant in D may be sung in A:
+ * every shift (in tenths of a semitone; within half a semitone unless transposing) is tried, scored by how closely the notes sit on the key's scale and, when known,
  * on the chords under them. Drift within the take is then followed against the key. With chords, the bar position of the first
  * note is found the same way (a phrase starting after an eighth rest fits its chords only when
  * placed there). `onsets` are the notes' quantized starts in beats from the first note; `starts`
@@ -90,7 +96,15 @@ export function fitHarmony(
   notes: SungNote[],
   onsets: number[],
   key: KeySignature,
-  options: { meter: Meter; chords?: ChordContext[]; startBeat?: number; starts?: number[]; shift?: number },
+  options: {
+    meter: Meter;
+    chords?: ChordContext[];
+    startBeat?: number;
+    starts?: number[];
+    shift?: number;
+    /** Move the take into the key (they asked for it in that key), not just take out its tuning. */
+    transpose?: boolean;
+  },
 ): HarmonicFit {
   const chords = options.chords ?? [];
   const capacity = measureCapacity(options.meter);
@@ -100,7 +114,8 @@ export function fitHarmony(
       : (options.starts ?? Array.from({ length: Math.round(capacity / START_STEP) }, (_, i) => i * START_STEP));
   let best = { score: -Infinity, shift: 0, startBeat: starts[0] };
   const bestPerStart = new Map<number, number>();
-  for (const shift of options.shift === undefined ? SHIFTS : [options.shift]) {
+  const shifts = options.shift !== undefined ? [options.shift] : options.transpose ? SHIFTS : TUNING_SHIFTS;
+  for (const shift of shifts) {
     const shifted = notes.map((n) => ({ ...n, midi: n.midi + shift }));
     const profile = rankKeysForMelody(shifted).find((c) => sameKey(c.key, key))?.score ?? -1;
     const inKey = scaleFit(shifted, key) + PROFILE_WEIGHT * profile - SHIFT_COST * Math.abs(shift);
@@ -114,7 +129,7 @@ export function fitHarmony(
   const runnerUp = Math.max(...[...bestPerStart].filter(([start]) => start !== best.startBeat).map(([, s]) => s));
   const shifted = notes.map((n) => ({ ...n, midi: n.midi + best.shift }));
   return {
-    transposedBy: Math.round(best.shift),
+    transposedBy: Math.round(best.shift) || 0,
     shift: best.shift,
     startBeat: best.startBeat,
     startBeatSure: options.startBeat !== undefined || best.score - runnerUp >= START_MARGIN,

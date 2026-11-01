@@ -251,6 +251,8 @@ async function runCorpus(root: string) {
       frames: spanFrames(take, span.id)!,
       bpm: truth.bpm,
       key: truth.key ? keyFromName(truth.key) : undefined,
+      // Labels are the notes meant in the key named, wherever it was sung: as asked for "in D".
+      transpose: Boolean(truth.key),
       chords: chordsByBar(truth.chords),
       startBeat: truth.startBeat,
       snapToChordTones: truth.snap,

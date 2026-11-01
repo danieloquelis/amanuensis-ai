@@ -6,6 +6,7 @@ import {
   durationCode,
   pitchName,
   pitchText,
+  scoreKey,
   type Meter,
   type Operation,
   type Score,
@@ -23,6 +24,8 @@ import {
   type VoiceTake,
 } from "@/modules/voice";
 import { transcribeSchema } from "./music-tool-schemas";
+import { heardOptions, type HeardOption } from "./sung-figures";
+import { writeSungPitches } from "./sung-pitches";
 import {
   barsInOrder,
   keptBars,
@@ -39,8 +42,15 @@ import {
 
 type ToolResult = { ok: true; [key: string]: unknown } | { ok: false; error: string };
 
-/** How a tool may change the score: through the same validated, undoable path as score_edit. */
-export type ScoreAccess = { getScore: () => Score; commit: (operation: Operation) => ToolResult };
+/**
+ * How a tool may change the score: through the same validated, undoable path as score_edit.
+ * `allow` hears the changes a transcription's own singing supports (see `heardOptions`).
+ */
+export type ScoreAccess = {
+  getScore: () => Score;
+  commit: (operation: Operation) => ToolResult;
+  allow?: (options: HeardOption[]) => void;
+};
 
 const FOUR_FOUR: Meter = { numerator: 4, denominator: 4 };
 
@@ -80,7 +90,7 @@ export function transcribeIntoScore(
     if (!signal) throw new Error(`There is no sung span ${spanId}${take ? "" : " (no voice take this turn)"}.`);
     return { signal, startBeat, bars, frames: spanFrames(take, spanId)! };
   });
-  const { key, snapToChordTones } = args;
+  const { key, snapToChordTones, transpose } = args;
   // The score's tempo is the piece's tempo: a hint the singing is read around.
   const heardTempo = args.bpm === undefined ? tempoOfSinging(heardSpans, capacity, score?.tempo) : null;
   const bpm = args.bpm ?? heardTempo!.bpm;
@@ -93,7 +103,7 @@ export function transcribeIntoScore(
       bar: starts[i],
       register: registerOf(score, lineOf(args.spans[i].voice)),
     }));
-    const results = transcribeSpans(placed, { bpm: tempo, meter, key, chords, snapToChordTones });
+    const results = transcribeSpans(placed, { bpm: tempo, meter, key, chords, snapToChordTones, transpose });
     const nexts = nextStartsOfLine(args.spans, starts);
     return { starts, results, kept: results.map((result, i) => keptBars(result.bars, placed[i], nexts[i])) };
   };
@@ -102,6 +112,10 @@ export function transcribeIntoScore(
   const { starts, results, kept } = readAt(bpm);
   const written = kept.flatMap((bars, i) =>
     bars.map((events, offset) => ({ bar: starts[i] + offset, line: lineOf(args.spans[i].voice), events })),
+  );
+  // What the singing itself supports changing: runner-up notes, and figures sung elsewhere.
+  const heardBy = results.map((result, i) =>
+    heardOptions(kept[i], result.uncertain, starts[i], lineOf(args.spans[i].voice), key ?? scoreKey(score ?? {})),
   );
   const spans = results.map((result, i) => {
     const { spanId } = args.spans[i];
@@ -122,8 +136,9 @@ export function transcribeIntoScore(
         return `bar ${at(e.bar)}: ${e.confidence}, ${e.offCents} cents off, ${e.corrected} corrected${similar}`;
       }),
       doubtful: result.uncertain.map(
-        (u) => `bar ${at(u.bar)} beat ${u.beat}: ${pitchName(u.written)} or ${pitchName(u.alternative)}`,
+        (u) => `bar ${at(u.bar)} beat ${u.beat + 1}: ${pitchName(u.written)} or ${pitchName(u.alternative)}`,
       ),
+      ...(heardBy[i].figures.length ? { figures: heardBy[i].figures } : {}),
       ...(result.triplets.length
         ? {
             soundsLikeTriplets: result.triplets.map(
@@ -147,6 +162,19 @@ export function transcribeIntoScore(
     },
   };
   if (!args.write || !access) return { ok: true, ...tempo, ...transposed, spans, written: false };
+  if (args.keep === "rhythm") {
+    const repitched = writeSungPitches(
+      access,
+      args.spans.map(({ bars, voice }, i) => ({
+        bar: starts[i],
+        count: bars ?? kept[i].length,
+        line: lineOf(voice),
+        sung: kept[i],
+      })),
+    );
+    if (repitched.ok) access.allow?.(heardBy.flatMap((heard) => heard.options));
+    return repitched.ok ? { ...repitched, ...transposed, spans, written: true } : repitched;
+  }
   const commit = writeBars(access, written);
   if (!commit.ok) return commit;
   const now = args.spans.map(({ spanId, voice }, i) => ({
@@ -168,6 +196,7 @@ export function transcribeIntoScore(
     if (!cleared.ok) return cleared;
   }
   for (const span of now) places.set(placeKey(span.spanId, span.line), { bar: span.bar, bars: span.bars });
+  access.allow?.(heardBy.flatMap((heard) => heard.options));
   return { ok: true, ...tempo, ...transposed, spans, written: true, changes: commit.changes };
 }
 

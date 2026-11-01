@@ -8,7 +8,7 @@ import {
   type ModelPort,
   type ModelReply,
 } from "@/modules/assistant";
-import { barEvents, createExample, createSession, executeAll, midiPitch, numberedVoice } from "@/modules/score";
+import { barEvents, beats, createExample, createSession, executeAll, midiPitch, numberedVoice } from "@/modules/score";
 import { createTake, type VoiceTake } from "@/modules/voice";
 import { midi, singMelody } from "../support/synthetic-voice";
 
@@ -405,5 +405,65 @@ test("a sung span can be written into the second voice, under the melody", async
     barEvents(score.measures[0]).map((e) => e.id),
     barEvents(createExample().measures[0]).map((e) => e.id),
     "the melody is untouched",
+  );
+});
+
+test("singing over a bar whose rhythm is right changes only its notes", async () => {
+  // Bar 2 of the example is D4 quarter, F4 G4 eighths, A4 half; the take sings other notes, evenly.
+  const sung = singMelody(
+    ["E4", "G4", "C5", "B4"].map((name) => ({ midi: midi(name), beats: 1 })),
+    { bpm: 120 },
+  );
+  const take = createTake(sung, []);
+  const transcribe = { spans: [{ spanId: "sung-1", bar: 2, bars: 1 }], bpm: 120, keep: "rhythm" };
+  const { model } = scriptedModel([
+    { content: null, toolCalls: [call("voice_transcribe_melody", transcribe)] },
+    { content: "Took the notes from your voice.", toolCalls: [] },
+  ]);
+  const score = createExample();
+  const result = await runAssistant(model, { ...request("keep the rhythm"), score, take });
+  const bar = barEvents(executeAll(createSession(score), result.commands).score.measures[1]);
+  assert.deepEqual(
+    bar.map((event) => beats(event.duration)),
+    [1, 0.5, 0.5, 2],
+    "the rhythm stays",
+  );
+  assert.deepEqual(
+    bar.map((event) => event.pitch?.step),
+    ["E", "G", "C", "B"],
+    "the notes are the sung ones",
+  );
+});
+
+test("a bar that breaks a sung figure can be made to repeat it, but heard notes take nothing else", async () => {
+  // Bar 2 sings bar 1's figure again with one note changed (F for E): the singing supports E there.
+  const sung = singMelody(
+    ["C4", "D4", "E4", "C4", "C4", "D4", "F4", "C4"].map((name) => ({ midi: midi(name), beats: 1 })),
+    { bpm: 120 },
+  );
+  const take = createTake(sung, []);
+  const transcribe = { spans: [{ spanId: "sung-1", bar: 1 }], bpm: 120, key: { fifths: 0, mode: "major" } };
+  const setPitch = (requestId: string, eventId: string, step: string) =>
+    call("score_edit", {
+      requestId,
+      expectedRevision: 1,
+      operation: { type: "setPitch", eventId, pitch: { step, alter: 0, octave: 4 } },
+    });
+  const { model, seen } = scriptedModel([
+    { content: null, toolCalls: [call("voice_transcribe_melody", transcribe)] },
+    { content: null, toolCalls: [setPitch("repeat", "2#3", "E")] },
+    { content: null, toolCalls: [setPitch("invented", "2#4", "G")] },
+    { content: "Bar 2 now repeats bar 1.", toolCalls: [] },
+  ]);
+  const result = await runAssistant(model, { ...request(""), take });
+  const transcribed = (seen[1].at(-1) as { content: string }).content;
+  assert.match(transcribed, /bar 2 repeats bar 1's figure except beat 3 F4 where it gives E4/);
+  assert.deepEqual(
+    result.trace.map((entry) => [entry.tool, entry.ok]),
+    [
+      ["voice_transcribe_melody", true],
+      ["score_edit", true],
+      ["score_edit", false],
+    ],
   );
 });
