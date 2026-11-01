@@ -2,8 +2,10 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { Sparkle } from "@phosphor-icons/react";
 import type { StartRequest } from "../../application/start-request";
 import { useAttachments } from "../hooks/use-attachments";
+import { useBand } from "../hooks/use-band";
 import { useThinking } from "../hooks/use-thinking";
 import { Composer } from "./Composer";
+import { BandMenu } from "./BandMenu";
 import { ThinkingMenu } from "./ThinkingMenu";
 import styles from "./assistant.module.css";
 
@@ -25,6 +27,8 @@ export function StartComposer({ onStart }: { onStart: (request: StartRequest) =>
   const attachments = useAttachments();
   // Chosen here, kept in this browser: the new song's first turn runs at this level.
   const thinking = useThinking();
+  // Band Mode, likewise: the new song's first request goes to the band when it is on.
+  const band = useBand();
   const start = (request: StartRequest) => {
     if (started) return;
     setStarted(true);
@@ -42,7 +46,12 @@ export function StartComposer({ onStart }: { onStart: (request: StartRequest) =>
         onSend={(text, files) => start({ kind: "text", text, files })}
         onTake={(wav) => start({ kind: "take", wav })}
         onStop={() => undefined}
-        accessory={<ThinkingMenu level={thinking.level} onChange={thinking.choose} />}
+        accessory={
+          <>
+            <BandMenu on={band.on} members={band.members} onTurn={band.turn} onMembers={band.setMembers} />
+            <ThinkingMenu level={thinking.level} onChange={thinking.choose} />
+          </>
+        }
       />
       <div className={styles.suggestions} data-visible="true" role="group" aria-label="Ideas">
         {STARTERS.map((idea) => (
