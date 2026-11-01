@@ -1,4 +1,4 @@
-import type { Score } from "@/modules/score";
+import type { InstrumentId, Score } from "@/modules/score";
 
 /** One workspace as the Home list shows it. Timestamps are epoch milliseconds. */
 export type WorkspaceMeta = {
@@ -6,7 +6,8 @@ export type WorkspaceMeta = {
   title: string;
   bars: number;
   tempo: number;
-  instruments: string[];
+  /** Each part in score order: what it is (for its icon) and what it is called. */
+  instruments: { instrument: InstrumentId; name: string }[];
   createdAt: number;
   updatedAt: number;
   /** The saved score could not be read: listed so it can be removed, its data left untouched. */
@@ -51,7 +52,7 @@ export function workspaceMeta(id: string, score: Score, times: WorkspaceTimes): 
     title: score.title,
     bars: score.measures.length,
     tempo: score.tempo,
-    instruments: score.parts.map((part) => part.name),
+    instruments: score.parts.map(({ instrument, name }) => ({ instrument, name })),
     createdAt: times.createdAt,
     updatedAt: times.updatedAt,
   };

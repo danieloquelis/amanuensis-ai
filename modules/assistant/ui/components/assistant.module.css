@@ -475,9 +475,6 @@
   max-height: min(42vh, 400px);
   border-radius: var(--r-xl);
   corner-shape: squircle;
-  background: var(--glass-strong);
-  backdrop-filter: var(--glass-blur);
-  box-shadow: var(--shadow-popover);
   transform-origin: bottom center;
   animation: lift var(--medium) var(--ease-out) both;
 }
@@ -519,9 +516,6 @@
   width: min(400px, calc(100vw - 32px));
   border-radius: var(--r-xl);
   corner-shape: squircle;
-  background: var(--glass-strong);
-  backdrop-filter: var(--glass-blur);
-  box-shadow: var(--shadow-popover);
   animation: slide-in var(--medium) var(--ease-out) both;
 }
 

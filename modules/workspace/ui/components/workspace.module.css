@@ -14,14 +14,6 @@
 .studio {
   position: relative;
   height: 100%;
-  /* A quiet dot grid on the canvas around the sheet (the paper itself stays clean). */
-  background:
-    radial-gradient(circle, rgb(52 72 48 / 16%) 1px, transparent 1.4px) 0 0 / 22px 22px,
-    radial-gradient(55% 45% at 12% 8%, rgb(196 222 186 / 55%) 0%, transparent 70%),
-    radial-gradient(45% 40% at 92% 12%, rgb(205 225 220 / 60%) 0%, transparent 70%),
-    radial-gradient(60% 50% at 85% 100%, rgb(236 226 205 / 65%) 0%, transparent 70%),
-    radial-gradient(50% 45% at 5% 95%, rgb(214 230 205 / 55%) 0%, transparent 70%),
-    var(--background);
 }
 
 .overlay {

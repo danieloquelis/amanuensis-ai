@@ -46,10 +46,6 @@
   border-radius: var(--r-lg);
   corner-shape: squircle;
   padding: 8px;
-  background: var(--glass-strong);
-  backdrop-filter: var(--glass-blur);
-  box-shadow: var(--shadow-popover);
-  color: var(--ink);
   transform-origin: top left;
   animation: menu-in var(--medium) var(--ease-out) both;
 }

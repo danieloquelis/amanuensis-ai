@@ -9,6 +9,7 @@ import type { SheetMenuTarget } from "../surface/sheet-interactions";
 import { MeterGrid } from "../toolbar/MeterGrid";
 import { IndicationMenuSection } from "./IndicationMenuSection";
 import { LabelMenuSection } from "./LabelMenuSection";
+import surface from "@/shared/ui/surface.module.css";
 import styles from "./sheet-menu.module.css";
 
 const MENU_SIZE = { width: 272, height: 260 };
@@ -95,7 +96,7 @@ export function SheetContextMenu({ target, score, onCommand, onClose }: SheetCon
       ref={menuRef}
       role="dialog"
       aria-label={MENU_LABELS[target.kind]}
-      className={styles.menu}
+      className={`${surface.panel} ${styles.menu}`}
       style={{
         left: Math.max(VIEWPORT_MARGIN, Math.min(target.x, window.innerWidth - MENU_SIZE.width)),
         top: Math.max(VIEWPORT_MARGIN, Math.min(target.y, window.innerHeight - MENU_SIZE.height)),

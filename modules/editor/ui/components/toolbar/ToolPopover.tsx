@@ -1,4 +1,5 @@
 import { useId, useRef, useState, type ReactNode } from "react";
+import surface from "@/shared/ui/surface.module.css";
 import styles from "./toolbar.module.css";
 
 const EDGE_MARGIN = 12;
@@ -42,7 +43,7 @@ export function ToolPopover({ icon, label, accessibleLabel, disabled, children }
         popover="auto"
         role="dialog"
         aria-label={accessibleLabel}
-        className={styles.popover}
+        className={`${surface.panel} ${surface.popover} ${styles.popover}`}
         style={position}
         onToggle={(e) => {
           if (e.newState !== "open") return;

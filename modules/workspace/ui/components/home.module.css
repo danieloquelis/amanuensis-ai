@@ -1,152 +1,274 @@
-/* Home: a songbook on flat paper. Glass and canvas textures stay with the workspace. */
+/*
+ * Home: the rail, one question and one action, then the songs. Each song is a sheet of paper
+ * lying on a frosted tile, with its title and details under it.
+ */
 
+/* Clears the rail: its width plus the gaps either side of it. */
 .home {
+  --rail-space: 132px;
   min-height: 100dvh;
-  padding: 40px 20px 72px;
   color: var(--ink);
-  background: var(--surface);
 }
 
-.header {
+.content {
+  padding: 14px 32px 96px var(--rail-space);
+}
+
+.hero {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 14px;
-  max-width: 960px;
-  margin: 0 auto;
+  max-width: 720px;
+  margin: 48px auto 0;
+  text-align: center;
 }
 
-.title {
-  flex: 1;
+.question {
   margin: 0;
   font:
-    500 30px var(--font-serif),
+    500 clamp(34px, 5vw, 54px) / 1.1 var(--font-serif),
     Georgia,
     serif;
-  letter-spacing: 0;
+  letter-spacing: -0.015em;
 }
 
-.subline {
-  max-width: 960px;
-  margin: 14px auto 24px;
+.lede {
+  margin: 14px 0 30px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 16px;
 }
 
 .create {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 18px;
+  height: 48px;
+  padding: 0 24px 0 20px;
   border: 0;
-  border-radius: var(--r-md);
+  border-radius: var(--r-lg);
   corner-shape: squircle;
   background: var(--accent);
-  color: white;
-  font-size: 14px;
+  color: #fffdf2;
+  font-size: 15px;
   font-weight: 600;
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255 / 30%),
+    0 8px 22px -8px rgb(47 90 62 / 60%);
   transition:
     background var(--fast) var(--ease-out),
-    transform var(--fast) var(--ease-out);
+    transform var(--medium) var(--ease-spring);
 }
 
 .create:hover {
   background: var(--accent-hover);
+  transform: translateY(-1px);
 }
 
 .create:active {
   transform: scale(0.97);
 }
 
-.empty {
-  max-width: 960px;
-  margin: 64px auto 0;
+.songs {
+  max-width: 1120px;
+  margin: 72px auto 0;
 }
 
-.emptyTitle {
-  margin: 0 0 8px;
+.sectionTitle {
+  margin: 0 0 18px;
   font:
-    italic 500 24px var(--font-serif),
+    500 26px var(--font-serif),
     Georgia,
     serif;
-  color: var(--ink-soft);
-}
-
-.emptyText {
-  margin: 0;
-  color: var(--muted);
-  font-size: 14px;
+  letter-spacing: -0.01em;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 16px;
-  max-width: 960px;
-  margin: 0 auto;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 32px 20px;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .card {
-  display: flex;
-  flex-direction: column;
-  padding: 16px 18px 10px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  corner-shape: squircle;
-  background: var(--paper);
-  transition:
-    border-color var(--fast) var(--ease-out),
-    box-shadow var(--fast) var(--ease-out);
-}
-
-.card:hover {
-  border-color: var(--line-strong);
-  box-shadow: 0 10px 28px -14px rgb(30 45 30 / 18%);
+  position: relative;
+  min-width: 0;
 }
 
 .cardLink {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  min-width: 0;
+  gap: 4px;
   color: inherit;
   text-decoration: none;
+  border-radius: var(--r-lg);
+  corner-shape: squircle;
 }
 
-/* Same height on every card, so titles line up whether a song has one staff or several. */
-.previewFrame {
-  height: 120px;
-  margin-bottom: 8px;
+/* Frosted, like every control that floats over the canvas. */
+.tile {
+  display: block;
+  height: 184px;
+  padding: 14px;
+  border-radius: var(--r-lg);
+  corner-shape: squircle;
+  background: var(--glass);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-glass);
+  transition:
+    transform var(--medium) var(--ease-out),
+    box-shadow var(--medium) var(--ease-out);
 }
 
-/* The music is scaled to fit and centred in the frame. */
-.preview {
-  width: 100%;
+.cardLink:hover .tile {
+  transform: translateY(-3px);
+  box-shadow:
+    var(--glass-edge),
+    0 0 0 0.5px rgb(30 45 30 / 16%),
+    0 18px 40px -14px rgb(30 45 30 / 30%);
+}
+
+/* The song's first page, drawn like the editor's sheet: title at the top, then the music. */
+.sheet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   height: 100%;
+  padding: 12px 12px 8px;
+  border-radius: var(--r-md);
+  corner-shape: squircle;
+  background: var(--paper);
+  box-shadow:
+    0 0 0 1px rgb(52 72 48 / 6%),
+    0 2px 6px rgb(30 45 30 / 6%);
+}
+
+.sheetTitle {
+  max-width: 100%;
+  overflow: hidden;
+  font:
+    500 13px var(--font-serif),
+    Georgia,
+    serif;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The music fills the rest of the page, scaled to fit and centred. */
+.preview {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
   color: var(--ink);
 }
 
-.cardTitle {
+.unreadable {
+  margin: auto 0;
+  color: var(--muted);
   font:
-    500 22px var(--font-serif),
+    italic 15px var(--font-serif),
     Georgia,
     serif;
-  line-height: 1.2;
+}
+
+.cardTitle {
+  margin-top: 12px;
+  overflow: hidden;
+  font:
+    500 19px / 1.25 var(--font-serif),
+    Georgia,
+    serif;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .cardMeta {
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.cardFoot {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px solid var(--line);
+  gap: 8px;
+  min-width: 0;
+  margin-top: 2px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* Instruments as round icons overlapping like avatars, each ringed in paper so the overlap reads. */
+.stack {
+  display: flex;
+  flex: none;
+}
+
+.stackItem {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink-soft);
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 1px 3px rgb(30 45 30 / 12%);
+}
+
+.stackItem + .stackItem {
+  margin-left: -7px;
+}
+
+.stackMore {
+  background: color-mix(in srgb, var(--accent) 14%, var(--paper));
+  color: var(--accent-ink);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Over the tile's corner; shown on hover or focus, and always on touch. */
+.actions {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  opacity: 0;
+  transition: opacity var(--fast) var(--ease-out);
+}
+
+.card:hover .actions,
+.card:focus-within .actions,
+.actions:has(:popover-open) {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .actions {
+    opacity: 1;
+  }
+}
+
+.empty {
+  margin: 56px auto 0;
+  color: var(--muted);
+  font:
+    italic 17px var(--font-serif),
+    Georgia,
+    serif;
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .home {
+    padding: 14px 16px 0;
+  }
+
+  .content {
+    padding: 0 0 72px;
+  }
+
+  .hero {
+    margin-top: 32px;
+  }
+
+  .songs {
+    margin-top: 48px;
+  }
 }

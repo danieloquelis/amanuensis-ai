@@ -10,6 +10,7 @@ import { usePlayback } from "@/modules/playback/ui";
 import { localWorkspaceRepository, workspaceProject } from "@/modules/projects";
 import { useAnchorRect } from "@/shared/ui/hooks/use-anchor-rect";
 import { useBottomInset } from "@/shared/ui/hooks/use-bottom-inset";
+import surface from "@/shared/ui/surface.module.css";
 import { useNoteAudition } from "../hooks/use-note-audition";
 import { ZOOM_RANGE } from "../hooks/use-pinch-zoom";
 import { useWorkspaceShortcuts } from "../hooks/use-workspace-shortcuts";
@@ -94,7 +95,12 @@ export function WorkspaceScreen({ workspaceId }: { workspaceId: string }) {
 
   return (
     <main className={styles.app}>
-      <section ref={studio} className={styles.studio} data-chat={dock.chatMode} aria-label="Score workspace">
+      <section
+        ref={studio}
+        className={`${styles.studio} ${surface.canvas}`}
+        data-chat={dock.chatMode}
+        aria-label="Score workspace"
+      >
         <ScoreCanvas
           editor={editor}
           playBeat={playback.playBeat}

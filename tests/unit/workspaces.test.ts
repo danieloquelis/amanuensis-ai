@@ -10,7 +10,7 @@ import {
   type WorkspaceRepository,
 } from "@/modules/projects";
 import { applyCommand, createExample } from "@/modules/score";
-import { PREVIEW_PARTS, previewScore, removeSong } from "@/modules/workspace";
+import { editedAgo, PREVIEW_PARTS, previewScore, removeSong } from "@/modules/workspace";
 
 test("touching a workspace records its times and moves it to the front", () => {
   let index = emptyWorkspaceIndex();
@@ -28,14 +28,14 @@ test("re-saving keeps the first-created time and refreshes the rest", () => {
   assert.deepEqual(index.order, ["ws-a"], "no duplicates");
 });
 
-test("a card is keyed by workspace and reads title, length, tempo and instrument names from the score", () => {
+test("a card is keyed by workspace and reads title, length, tempo and instruments from the score", () => {
   const score = createExample();
   const meta = workspaceMeta("ws-a", score, { createdAt: 1000, updatedAt: 2000 });
   assert.equal(meta.id, "ws-a", "the card is keyed by workspace, never by score id");
   assert.equal(meta.title, score.title);
   assert.equal(meta.bars, score.measures.length);
   assert.equal(meta.tempo, score.tempo);
-  assert.deepEqual(meta.instruments, ["Piano"], "shown names, not instrument ids");
+  assert.deepEqual(meta.instruments, [{ instrument: "piano", name: "Piano" }]);
 });
 
 test("a preview draws at most three instruments and leaves the song untouched", () => {
@@ -77,4 +77,13 @@ test("removing forgets the workspace and ignores unknown ids", () => {
   assert.deepEqual(removeWorkspace(index, "missing"), index);
   const removed = removeWorkspace(index, "ws-a");
   assert.deepEqual(removed, { order: [], times: {} });
+});
+
+test("a card says when its song was last edited in words", () => {
+  const now = Date.UTC(2026, 10, 1, 12);
+  const hours = (count: number) => count * 60 * 60 * 1000;
+  assert.equal(editedAgo(now - 20_000, now), "Edited just now");
+  assert.equal(editedAgo(now - hours(20), now), "Edited 20 hours ago");
+  assert.equal(editedAgo(now - hours(30), now), "Edited yesterday");
+  assert.equal(editedAgo(now - hours(24 * 21), now), "Edited 3 weeks ago");
 });

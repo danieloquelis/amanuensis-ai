@@ -1,3 +1,55 @@
+/* The light behind a screen, without the editor's dot grid (Home). */
+.wash {
+  background: var(--wash);
+}
+
+/* The editor's canvas: the wash under a quiet dot grid, so it reads as a work surface. Paper stays clean. */
+.canvas {
+  background:
+    radial-gradient(circle, rgb(52 72 48 / 16%) 1px, transparent 1.4px) 0 0 / 22px 22px,
+    var(--wash);
+}
+
+/*
+ * A floating panel (menu, popover, chat): frosted glass, lifted off what is behind it. Shape and
+ * size stay with each panel.
+ */
+.panel {
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-popover);
+  color: var(--ink);
+}
+
+/* A panel opened as a native popover: placed by its owner, eased in and out. */
+.popover {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  border: 0;
+  transition:
+    opacity var(--fast) var(--ease-out),
+    transform var(--medium) var(--ease-out),
+    overlay var(--medium) allow-discrete,
+    display var(--medium) allow-discrete;
+}
+
+.popover:not(:popover-open) {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.97);
+}
+
+@starting-style {
+  .popover:popover-open {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.94);
+  }
+}
+
+.popover::backdrop {
+  background: transparent;
+}
+
 /* Frosted glass: the look of everything that floats over the score. */
 .glass {
   background: var(--glass);

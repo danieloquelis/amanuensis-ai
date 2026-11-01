@@ -69,43 +69,14 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Popovers: glass panels that grow out of their trigger. */
+/* Popovers (surface panel + popover): shaped here, growing out of their trigger. */
 .popover {
-  position: fixed;
-  inset: auto;
-  margin: 0;
   width: max-content;
   max-width: calc(100vw - 24px);
   padding: 10px;
-  border: 0;
   border-radius: var(--r-lg);
   corner-shape: squircle;
-  background: var(--glass-strong);
-  backdrop-filter: var(--glass-blur);
-  color: var(--ink);
-  box-shadow: var(--shadow-popover);
   transform-origin: top center;
-  transition:
-    opacity var(--fast) var(--ease-out),
-    transform var(--medium) var(--ease-out),
-    overlay var(--medium) allow-discrete,
-    display var(--medium) allow-discrete;
-}
-
-.popover:not(:popover-open) {
-  opacity: 0;
-  transform: translateY(-4px) scale(0.97);
-}
-
-@starting-style {
-  .popover:popover-open {
-    opacity: 0;
-    transform: translateY(-8px) scale(0.94);
-  }
-}
-
-.popover::backdrop {
-  background: transparent;
 }
 
 .grid {

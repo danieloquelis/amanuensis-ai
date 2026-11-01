@@ -635,20 +635,21 @@ test("a new song keeps the current song and its chat, and starts blank", async (
   await expect(page.getByRole("button", { name: "Show chat" })).toBeVisible();
 });
 
-test("Home starts empty, creates songs, and removes one only when confirmed", async ({ page }) => {
+test("Home starts empty, creates songs, and deletes one from its menu", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("No songs yet")).toBeVisible();
   await page.getByRole("button", { name: "New song", exact: true }).click();
   await expect(page).toHaveURL(/\/workspace\/.+/);
   await page.goto("/");
-  await expect(page.getByRole("link", { name: /Untitled/ })).toBeVisible();
-  await page.getByRole("button", { name: "Remove Untitled" }).click();
-  // One click arms the confirm, which renames the button; the song is still listed.
-  await expect(page.getByRole("link", { name: /Untitled/ })).toBeVisible();
-  const confirm = page.getByRole("button", { name: "Confirm removing Untitled" });
-  await expect(confirm).toHaveAttribute("aria-pressed", "true");
-  await confirm.click();
-  await expect(page.getByRole("link", { name: /Untitled/ })).toHaveCount(0);
+  const song = page.getByRole("link", { name: /Untitled/ });
+  await expect(song).toBeVisible();
+  // The menu button shows on hover; its menu names the song before what can be done with it.
+  await song.hover();
+  await page.getByRole("button", { name: "More actions for Untitled" }).click();
+  const menu = page.getByRole("menu", { name: "Untitled" });
+  await expect(menu.getByText(/Edited/)).toBeVisible();
+  await menu.getByRole("menuitem", { name: "Delete" }).click();
+  await expect(song).toHaveCount(0);
   await expect(page.getByText("No songs yet")).toBeVisible();
 });
 

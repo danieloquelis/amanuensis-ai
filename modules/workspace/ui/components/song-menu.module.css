@@ -1,0 +1,77 @@
+/* A song's "⋯" button and menu. */
+
+.trigger {
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-glass);
+}
+
+.trigger:hover:not(:disabled) {
+  background: var(--glass-strong);
+}
+
+/* Shaped here; frosted and eased in by the shared surface panel and popover. */
+.menu {
+  width: 248px;
+  padding: 6px;
+  border-radius: var(--r-lg);
+  corner-shape: squircle;
+  transform-origin: top right;
+}
+
+.header {
+  padding: 10px 12px 8px;
+}
+
+.title {
+  margin: 0;
+  overflow: hidden;
+  font:
+    500 17px / 1.25 var(--font-serif),
+    Georgia,
+    serif;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.edited {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.divider {
+  height: 1px;
+  margin: 4px 8px;
+  background: var(--line-strong);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: var(--r-sm);
+  corner-shape: squircle;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 14px;
+  text-align: left;
+  text-decoration: none;
+  transition: background var(--fast) var(--ease-out);
+}
+
+.item:hover,
+.item:focus-visible {
+  background: var(--hover);
+  color: var(--ink);
+  outline: none;
+}
+
+.danger,
+.danger:hover,
+.danger:focus-visible {
+  color: #9b3b2f;
+}

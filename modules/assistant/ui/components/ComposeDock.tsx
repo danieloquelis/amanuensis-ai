@@ -2,6 +2,7 @@ import { CaretDown, ChatsCircle, SidebarSimple, Sparkle, X } from "@phosphor-ico
 import type { ReactNode } from "react";
 import { IconButton } from "@/shared/ui/IconButton";
 import { DOCKED_PANEL } from "@/shared/ui/hooks/use-bottom-inset";
+import surface from "@/shared/ui/surface.module.css";
 import type { Assistant, RequestContext } from "../hooks/use-assistant";
 import { useAttachments } from "../hooks/use-attachments";
 import type { ComposeDockState } from "../hooks/use-compose-dock";
@@ -94,7 +95,7 @@ export function ComposeDock({ assistant, dock, context, revision, onUndo }: Comp
 
   if (sidebar) {
     return (
-      <aside className={styles.sidebar} aria-label="Chat">
+      <aside className={`${surface.panel} ${styles.sidebar}`} aria-label="Chat">
         {thread(
           <button className={styles.dismiss} aria-label="Close chat" onClick={dock.closeChat}>
             <X size={15} weight="bold" />
@@ -109,7 +110,7 @@ export function ComposeDock({ assistant, dock, context, revision, onUndo }: Comp
     <div className={styles.dock}>
       <div className={styles.above}>
         {dock.chatMode === "floating" && turns.length > 0 ? (
-          <section className={styles.chat} aria-label="Chat" {...{ [DOCKED_PANEL]: true }}>
+          <section className={`${surface.panel} ${styles.chat}`} aria-label="Chat" {...{ [DOCKED_PANEL]: true }}>
             {thread(
               <>
                 <button className={styles.dismiss} aria-label="Expand chat" onClick={dock.expandChat}>

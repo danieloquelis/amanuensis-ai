@@ -6,32 +6,30 @@ import { openSongbook, removeSong, type Song, type SongStores } from "../../appl
 
 const stores: SongStores = { workspaces: localWorkspaceRepository, chats: localWorkspaceChats };
 
-/**
- * Home's songs and what can be done with them. Removing takes two presses on the same song: the
- * first arms it (`armed`), the second removes it; `disarm` cancels.
- */
+/** Home's songs and what can be done with them. */
 export function useSongbook() {
   const router = useRouter();
   const [songs, setSongs] = useState<Song[]>([]);
-  const [armed, setArmed] = useState<string | null>(null);
+  // When the list was read: "Edited 20 hours ago" is measured from here, never during render.
+  const [now, setNow] = useState(0);
 
   // Storage is read after mount, so the server and the first client render agree.
   useEffect(() => {
-    const frame = requestAnimationFrame(() => setSongs(openSongbook(stores)));
+    const frame = requestAnimationFrame(() => {
+      setSongs(openSongbook(stores));
+      setNow(Date.now());
+    });
     return () => cancelAnimationFrame(frame);
   }, []);
 
   const create = () => router.push(`/workspace/${stores.workspaces.create()}`);
 
+  /** Deletes a song and its chat for good: picking Delete in its menu is the deliberate step. */
   const remove = (workspaceId: string) => {
-    if (armed !== workspaceId) {
-      setArmed(workspaceId);
-      return;
-    }
     removeSong(stores, workspaceId);
-    setArmed(null);
     setSongs((all) => all.filter((song) => song.meta.id !== workspaceId));
   };
 
-  return { songs, armed, create, remove, disarm: () => setArmed(null) };
+  // `now` is set when the list is read, so it doubles as "loaded": nothing flashes as empty first.
+  return { songs, now, loaded: now > 0, create, remove };
 }

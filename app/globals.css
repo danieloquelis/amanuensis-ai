@@ -46,6 +46,13 @@
     0 12px 32px -10px rgb(30 45 30 / 22%);
   --shadow-popover: var(--glass-edge), 0 0 0 0.5px rgb(30 45 30 / 16%), 0 18px 48px -12px rgb(30 45 30 / 32%);
 
+  /* The wash behind every screen: soft sage, mist and sand light from the corners. */
+  --wash:
+    radial-gradient(55% 45% at 12% 8%, rgb(196 222 186 / 55%) 0%, transparent 70%),
+    radial-gradient(45% 40% at 92% 12%, rgb(205 225 220 / 60%) 0%, transparent 70%),
+    radial-gradient(60% 50% at 85% 100%, rgb(236 226 205 / 65%) 0%, transparent 70%),
+    radial-gradient(50% 45% at 5% 95%, rgb(214 230 205 / 55%) 0%, transparent 70%), var(--background);
+
   /* AI identity: a slow-turning sage, mint and moss gradient. */
   --ai-gradient: conic-gradient(from var(--ai-angle), #5fb47c, #2c6a4e, #8fd0a0, #3a8f86, #c6e38f, #5fb47c);
   /* The orb: the gradient under a glassy highlight, so it reads as a sphere. */

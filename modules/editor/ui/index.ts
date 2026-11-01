@@ -3,6 +3,7 @@ export { BarActions } from "./components/selection/BarActions";
 export { NoteActions } from "./components/selection/NoteActions";
 export { RangeActions } from "./components/selection/RangeActions";
 export { ScoreSurface } from "./components/surface/ScoreSurface";
+export { InstrumentIcon } from "./components/toolbar/InstrumentIcon";
 export { MixerTool } from "./components/toolbar/MixerTool";
 export { ScoreToolMenus } from "./components/toolbar/ScoreToolMenus";
 export { useClipboardShortcuts } from "./hooks/use-clipboard-shortcuts";
