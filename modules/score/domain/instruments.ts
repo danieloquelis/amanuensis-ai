@@ -1,7 +1,7 @@
 import type { Clef, Part } from "./schema";
 
 /** The instruments a part can be played on. */
-export const INSTRUMENT_IDS = ["piano", "guitar", "trumpet", "flute", "trombone", "drums"] as const;
+export const INSTRUMENT_IDS = ["piano", "guitar", "bass", "trumpet", "flute", "trombone", "drums"] as const;
 
 export type InstrumentId = (typeof INSTRUMENT_IDS)[number];
 
@@ -28,6 +28,14 @@ export const INSTRUMENTS: Record<InstrumentId, Instrument> = {
     clef: "treble8vb",
     transposition: { steps: 7, semitones: 12 },
     range: { low: 40, high: 88 },
+  },
+  // Bass guitar, like every bass part, is written an octave above its sound, on a plain bass clef.
+  bass: {
+    name: "Bass",
+    abbreviation: "Bass",
+    clef: "bass",
+    transposition: { steps: 7, semitones: 12 },
+    range: { low: 28, high: 67 },
   },
   trumpet: {
     name: "Trumpet in B♭",

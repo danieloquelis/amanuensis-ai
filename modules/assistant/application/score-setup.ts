@@ -26,6 +26,8 @@ type InstrumentId = (typeof INSTRUMENT_IDS)[number];
 const SOUNDS_LIKE: [RegExp, InstrumentId][] = [
   [/drum|kit|percussion/i, "drums"],
   [/trumpet|cornet|flugel/i, "trumpet"],
+  // Before "guitar": a bass guitar is a bass. "Bass" alone never means the bass drum here (drums come first).
+  [/\bbass\b|bajo|contrabass|double bass|upright/i, "bass"],
   [/trombone|tuba|euphonium|baritone/i, "trombone"],
   [/guitar|ukulele|banjo/i, "guitar"],
   [/flute|piccolo|recorder|violin|voice|vocal|soprano|alto|tenor|sax|clarinet|oboe|melody|lead/i, "flute"],

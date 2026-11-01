@@ -8,8 +8,11 @@ import { join, relative } from "node:path";
 // sounds:fetch` downloads them after `yarn install`).
 
 const ROOT = join(import.meta.dirname, "..", "..", "public", "sounds", "v1");
-/** Every sample set together (piano, the wind and guitar sounds, drums) stays under this. */
-const BUDGET_BYTES = 25_000_000;
+/**
+ * Every sample set together (piano, the wind, guitar and bass sounds, drums) stays under this. A
+ * song loads only its own instruments' sounds, so this bounds what is hosted, not each page.
+ */
+const BUDGET_BYTES = 28_000_000;
 const OWN_FILES = new Set(["manifest.json", "CREDITS.md"]);
 
 type Entry = { file: string; bytes: number; sha256: string; source: string; license: string };

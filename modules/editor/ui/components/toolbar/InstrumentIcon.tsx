@@ -28,6 +28,17 @@ function Flute({ size }: { size: number }) {
   );
 }
 
+/** A bass guitar: an offset body, a long neck and the headstock, four strings down the neck. */
+function Bass({ size }: { size: number }) {
+  return (
+    <LineIcon size={size}>
+      <path d="M92 132c-28-8-60 8-64 40s20 60 52 56 48-28 44-56" />
+      <path d="M104 152l116-116M212 28l20 20" />
+      <path d="M96 144l16 16M64 188h0" />
+    </LineIcon>
+  );
+}
+
 /** The bell section over the U-shaped slide. */
 function Trombone({ size }: { size: number }) {
   return (
@@ -62,6 +73,8 @@ export function InstrumentIcon({ instrument, size }: { instrument: InstrumentId;
       return <Trumpet size={size} />;
     case "flute":
       return <Flute size={size} />;
+    case "bass":
+      return <Bass size={size} />;
     case "trombone":
       return <Trombone size={size} />;
     case "drums":

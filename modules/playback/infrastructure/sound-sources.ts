@@ -68,6 +68,7 @@ export function pianoPreset(): SmplrPreset {
 type FluidSound = Exclude<SoundId, "piano" | "drums">;
 const FLUID_R3: Record<FluidSound, string> = {
   guitar: "acoustic_guitar_nylon",
+  bass: "electric_bass_finger",
   trumpet: "trumpet",
   flute: "flute",
   trombone: "trombone",
