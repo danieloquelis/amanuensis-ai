@@ -429,9 +429,18 @@
 }
 
 .dock:focus-within .suggestions,
-.dock:hover .suggestions {
+.dock:hover .suggestions,
+.suggestions[data-visible="true"] {
   opacity: 1;
   transform: none;
+}
+
+/* The bar before a song exists (Home): ideas sit under it, always shown. */
+.start {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: min(700px, 100%);
 }
 
 .suggestions button,

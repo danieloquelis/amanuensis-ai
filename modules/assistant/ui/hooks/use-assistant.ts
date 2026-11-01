@@ -233,6 +233,8 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
   return {
     turns,
     busy,
+    /** The earlier conversation has been read: a turn sent now is never overwritten by it. */
+    ready: restored,
     live: live.commands,
     draft: live.draft,
     stop: live.stop,

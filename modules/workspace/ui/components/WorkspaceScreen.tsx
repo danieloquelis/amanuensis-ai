@@ -11,6 +11,7 @@ import { localWorkspaceRepository, workspaceProject } from "@/modules/projects";
 import { useAnchorRect } from "@/shared/ui/hooks/use-anchor-rect";
 import { useBottomInset } from "@/shared/ui/hooks/use-bottom-inset";
 import surface from "@/shared/ui/surface.module.css";
+import { useFirstRequest } from "../hooks/use-first-request";
 import { useNoteAudition } from "../hooks/use-note-audition";
 import { ZOOM_RANGE } from "../hooks/use-pinch-zoom";
 import { useWorkspaceShortcuts } from "../hooks/use-workspace-shortcuts";
@@ -65,6 +66,8 @@ export function WorkspaceScreen({ workspaceId }: { workspaceId: string }) {
   const bottomDock = useRef<HTMLDivElement>(null);
   const reserved = useBottomInset(studio, bottomDock);
   const dock = useComposeDock();
+  // A song started from Home runs that request as its first turn, once the song and its chat are read.
+  useFirstRequest({ workspaceId, ready: loaded && assistant.ready, assistant, openChat: dock.openChat });
   // Opening the floating chat folds the card away (the selection stays, for the chat); a press on the score brings it back.
   const chatOpen = dock.chatMode === "floating";
   const selectionOpen = editor.ready && !menuOpen && !chatOpen && editor.picked.length > 0 && anchor !== null;

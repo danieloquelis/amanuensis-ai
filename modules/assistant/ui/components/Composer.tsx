@@ -10,8 +10,10 @@ import styles from "./assistant.module.css";
 
 type ComposerProps = {
   busy: boolean;
-  /** What a request is about: the selection's name, or the whole score. */
-  subject: string;
+  /** What a request is about: the selection's name, or the whole score. None before a song exists. */
+  subject?: string;
+  /** What the empty field invites. */
+  placeholder?: string;
   inputRef: RefObject<HTMLTextAreaElement | null>;
   /** The text typed so far; held by the caller so it survives the bar moving to the sidebar. */
   draft: string;
@@ -48,7 +50,8 @@ const WAVE_SHAPE = [
  * pill around the orb, a live waveform and the time, and opens out again after.
  */
 export function Composer(props: ComposerProps) {
-  const { busy, subject, inputRef, draft, onDraft, onSend, onTake, onStop, accessory, attachments } = props;
+  const { busy, subject, placeholder = "Sing, hum, or describe a change…", inputRef, draft, onDraft, onSend } = props;
+  const { onTake, onStop, accessory, attachments } = props;
   const picker = useRef<HTMLInputElement>(null);
   const recorder = useVoiceRecorder(onTake);
   const recording = recorder.status === "recording";
@@ -92,14 +95,16 @@ export function Composer(props: ComposerProps) {
           <CaptureStatus recorder={recorder} />
         ) : (
           <div className={styles.field}>
-            <span key={subject} className={styles.subject}>
-              {subject}
-            </span>
+            {subject && (
+              <span key={subject} className={styles.subject}>
+                {subject}
+              </span>
+            )}
             <textarea
               ref={inputRef}
               className={styles.input}
               aria-label="Describe the music"
-              placeholder="Sing, hum, or describe a change…"
+              placeholder={placeholder}
               value={draft}
               rows={1}
               onChange={(e) => onDraft(e.target.value)}

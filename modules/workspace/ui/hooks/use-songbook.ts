@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { localWorkspaceChats } from "@/modules/assistant";
+import { localWorkspaceChats, type StartRequest } from "@/modules/assistant";
 import { localWorkspaceRepository } from "@/modules/projects";
+import { holdFirstRequest } from "../../application/first-request";
 import { openSongbook, removeSong, type Song, type SongStores } from "../../application/songbook";
 
 const stores: SongStores = { workspaces: localWorkspaceRepository, chats: localWorkspaceChats };
@@ -22,7 +23,15 @@ export function useSongbook() {
     return () => cancelAnimationFrame(frame);
   }, []);
 
+  /** A blank song. */
   const create = () => router.push(`/workspace/${stores.workspaces.create()}`);
+
+  /** A new song that opens running this request as its first turn. */
+  const start = (request: StartRequest) => {
+    const workspaceId = stores.workspaces.create();
+    holdFirstRequest(workspaceId, request);
+    router.push(`/workspace/${workspaceId}`);
+  };
 
   /** Deletes a song and its chat for good: picking Delete in its menu is the deliberate step. */
   const remove = (workspaceId: string) => {
@@ -31,5 +40,5 @@ export function useSongbook() {
   };
 
   // `now` is set when the list is read, so it doubles as "loaded": nothing flashes as empty first.
-  return { songs, now, loaded: now > 0, create, remove };
+  return { songs, now, loaded: now > 0, create, start, remove };
 }

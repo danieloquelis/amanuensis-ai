@@ -48,4 +48,5 @@ export { scoreBlocks, withoutScoreBlocks, type ScoreBlock } from "./application/
 export { createScoreToolGateway } from "./application/score-tool-gateway";
 export { SCORE_TOOL_NAMES, scoreTools, toolParameters, type ScoreToolName } from "./application/tool-definitions";
 export { localWorkspaceChats } from "./infrastructure/local-chat";
+export type { StartRequest } from "./application/start-request";
 export { askedAfter, withHeardWords, type AskedTake } from "./application/asked-take";

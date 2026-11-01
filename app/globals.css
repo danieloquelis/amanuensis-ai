@@ -109,7 +109,8 @@
 }
 body {
   margin: 0;
-  background: var(--background);
+  /* Screens scroll inside themselves (Home, the editor's canvas); the page itself never does. */
+  background: var(--wash);
   color: var(--foreground);
   font-family: var(--font-ui);
   letter-spacing: -0.005em;

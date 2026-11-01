@@ -638,7 +638,7 @@ test("a new song keeps the current song and its chat, and starts blank", async (
 test("Home starts empty, creates songs, and deletes one from its menu", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("No songs yet")).toBeVisible();
-  await page.getByRole("button", { name: "New song", exact: true }).click();
+  await page.getByRole("button", { name: "Create", exact: true }).click();
   await expect(page).toHaveURL(/\/workspace\/.+/);
   await page.goto("/");
   const song = page.getByRole("link", { name: /Untitled/ });
@@ -651,6 +651,49 @@ test("Home starts empty, creates songs, and deletes one from its menu", async ({
   await menu.getByRole("menuitem", { name: "Delete" }).click();
   await expect(song).toHaveCount(0);
   await expect(page.getByText("No songs yet")).toBeVisible();
+});
+
+test("a request sent from Home starts a new song and runs there as its first turn", async ({ page }) => {
+  const sent: { instruction: string; title: string }[] = [];
+  await page.route("/api/assistant", async (route) => {
+    const { instruction, score } = route.request().postDataJSON();
+    sent.push({ instruction, title: score.title });
+    await route.fulfill(
+      streamed({
+        reply: "Put C in bar 1.",
+        question: null,
+        commands: [
+          {
+            requestId: "mock-start",
+            expectedRevision: score.revision,
+            operation: { type: "putChord", measureId: score.measures[0].id, beat: 0, symbol: "C" },
+          },
+        ],
+        changes: ["Bar 1: changed"],
+        steps: 1,
+      }),
+    );
+  });
+  await page.goto("/");
+  const instruction = page.getByLabel("Describe the music");
+  await instruction.fill("Start with a C chord");
+  await instruction.press("Enter");
+  await expect(page).toHaveURL(/\/workspace\/.+/);
+  // The new, blank song runs the request once, with the chat open on it.
+  await expect(page.getByRole("region", { name: "Chat" }).getByText("Put C in bar 1.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Chord C", exact: true })).toBeVisible();
+  expect(sent).toEqual([{ instruction: "Start with a C chord", title: "Untitled" }]);
+  // Back on Home (kept alive while the song was open), the bar is ready for the next song.
+  await page.goBack();
+  await expect(page.getByRole("button", { name: "A waltz in D minor for piano" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Stop" })).toHaveCount(0);
+  await page.goForward();
+  // It is a song like any other: kept, and listed on Home.
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Chord C", exact: true })).toBeVisible();
+  expect(sent).toHaveLength(1);
+  await page.goto("/");
+  await expect(page.getByRole("link", { name: /Untitled/ })).toBeVisible();
 });
 
 test("an unknown workspace id goes back Home", async ({ page }) => {
