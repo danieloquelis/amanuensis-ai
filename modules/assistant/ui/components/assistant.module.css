@@ -1061,9 +1061,44 @@
   color: var(--muted);
 }
 
-/* Live, only the latest few show: the rest is in the summary once the answer is in. */
-.workLog[data-live="true"] li:not(:nth-last-child(-n + 4)) {
-  display: none;
+/* Live: its latest thought, two lines at most, each new sentence sliding in over the last. */
+.liveThought {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 8px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.4;
+  animation: thought-in 360ms var(--ease-out) both;
+}
+
+.liveThought svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--accent);
+}
+
+.liveThought span {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+@keyframes thought-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liveThought {
+    animation: none;
+  }
 }
 
 .workSummary {

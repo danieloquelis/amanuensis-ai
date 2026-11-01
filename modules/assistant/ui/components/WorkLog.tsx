@@ -24,10 +24,34 @@ export function PlanChecklist({ steps }: { steps: PlanStep[] }) {
   );
 }
 
-/** Its thinking and steps, in order: thoughts as short paragraphs, each step as a line. */
-export function WorkEntries({ log, live = false }: { log: WorkEntry[]; live?: boolean }) {
+/** A thought's sentences: the summary streams in sentence by sentence. */
+const sentencesOf = (text: string) =>
+  text
+    .trim()
+    .split(/(?<=[.!?])\s+/)
+    .filter(Boolean);
+
+/**
+ * While it works: only its latest thought, the sentence being written, in at most two lines.
+ * Each new sentence slides in over the last; everything is in the summary once it answers.
+ */
+export function LiveThought({ log }: { log: WorkEntry[] }) {
+  const index = log.findLastIndex((entry) => entry.kind === "thought" && entry.text.trim());
+  if (index === -1) return null;
+  const sentences = sentencesOf((log[index] as Extract<WorkEntry, { kind: "thought" }>).text);
+  const current = sentences.length - 1;
   return (
-    <ol className={styles.workLog} data-live={live}>
+    <p key={`${index}-${current}`} className={styles.liveThought} aria-live="polite">
+      <Lightbulb size={13} aria-hidden="true" />
+      <span>{sentences[current]}</span>
+    </p>
+  );
+}
+
+/** Its thinking and steps, in order: thoughts as short paragraphs, each step as a line. */
+export function WorkEntries({ log }: { log: WorkEntry[] }) {
+  return (
+    <ol className={styles.workLog}>
       {log.map((entry, i) =>
         entry.kind === "thought" ? (
           entry.text.trim() && (
