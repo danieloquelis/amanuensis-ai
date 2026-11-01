@@ -2,7 +2,7 @@ import { summarizeChange, type Operation } from "@/modules/score";
 import { agentToolSpecs, createAgentState, isAgentTool, PLAN_TOOL } from "./agent-state";
 import type { AssistantRequest, AssistantResult, ProgressListener, TraceEntry, TurnServices } from "./assistant-types";
 import { ASK_TOOL, askSchema, assistantTools } from "./assistant-tools";
-import { BAND_ARRANGE, bandContext, bandToolSpecs, createBandTools, isBandTool } from "./band-tools";
+import { BAND_ARRANGE, bandContext as describeBand, bandToolSpecs, createBandTools, isBandTool } from "./band-tools";
 import { createMusicTools, isMusicTool, musicToolSpecs } from "./music-tools";
 import type { ChatMessage, ContentPart, ModelPort, TokenUsage, ToolCall } from "./model-port";
 import { refuseHeardBarEdit, writtenLines } from "./heard-bars-guard";
@@ -92,20 +92,11 @@ export async function runAssistant(
     ...(request.band?.on ? bandToolSpecs : []),
   ];
   // Band Mode: arrangements are played by the band, one musician per part, on this turn's edits.
+  const onCall = (entry: TraceEntry) =>
+    trace.push({ ...entry, arguments: entry.arguments.slice(0, TRACE_ARGUMENT_ROOM) });
+  const bandContext = { model: musicians, tools, score: edits.score, turnId, signal, onProgress, onCall };
   const band = request.band?.on
-    ? createBandTools(
-        {
-          model: musicians,
-          tools,
-          score: edits.score,
-          turnId,
-          signal,
-          onProgress,
-          onEdits: () => sendEdits(),
-          onCall: (entry) => trace.push({ ...entry, arguments: entry.arguments.slice(0, TRACE_ARGUMENT_ROOM) }),
-        },
-        request.band.members,
-      )
+    ? createBandTools({ ...bandContext, onEdits: () => sendEdits() }, request.band.members)
     : null;
   // A plan shown for a larger request raises the cap (see MAX_PLANNED_STEPS).
   let maxSteps = attachments.length ? MAX_SOURCE_STEPS : MAX_TOOL_STEPS;
@@ -133,7 +124,7 @@ export async function runAssistant(
     ...historyMessages(request),
     userMessage(
       request,
-      [scoreContext(tools, request), agent.context(), ...(band ? [bandContext(request.band!.members)] : [])].join(
+      [scoreContext(tools, request), agent.context(), ...(band ? [describeBand(request.band!.members)] : [])].join(
         "\n\n",
       ),
     ),
