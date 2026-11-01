@@ -505,3 +505,41 @@ test("the agent shows its plan as it works, and keeps notes on the song and what
   assert.equal(result.songNotes, "Key C. Bar 2 harmonized with Am7.");
   assert.deepEqual(result.memory, ["Sings slightly flat", "Likes seventh chords"]);
 });
+
+test("checking a take finds a note struck without a pitch, and the bars may be rewritten to include it, but nothing else", async () => {
+  // E4, a rest with a short unpitched strike in it (a muted pluck), then E4 G4: three E's played, two heard.
+  const spec = [
+    { midi: midi("E4"), beats: 1 },
+    { midi: null, beats: 1 },
+    { midi: midi("E4"), beats: 1 },
+    { midi: midi("G4"), beats: 1 },
+  ];
+  const sung = singMelody(spec, { bpm: 120 });
+  const strike = Math.round(0.7 * sung.sampleRate);
+  for (let i = 0; i < 0.04 * sung.sampleRate; i++) sung.samples[strike + i] += 0.4 * (Math.random() * 2 - 1);
+  const take = createTake(sung, []);
+  const write = (requestId: string, text: string) =>
+    call("score_write", { requestId, expectedRevision: 1, text }, requestId);
+  const { model, seen } = scriptedModel([
+    {
+      content: null,
+      toolCalls: [call("voice_transcribe_melody", { spans: [{ spanId: "sung-1", bar: 1 }], bpm: 120 })],
+    },
+    { content: null, toolCalls: [call("voice_check", {})] },
+    { content: null, toolCalls: [write("invented", "bar 1: E4q C5q E4q G4q")] },
+    { content: null, toolCalls: [write("repeat", "bar 1: E4q E4q E4q G4q")] },
+    { content: "Added the E you played softly.", toolCalls: [] },
+  ]);
+  const result = await runAssistant(model, { ...request(""), take });
+  const check = (seen[2].at(-1) as { content: string }).content;
+  assert.match(check, /probably another E4/);
+  assert.deepEqual(
+    result.trace.map((entry) => [entry.tool, entry.ok]),
+    [
+      ["voice_transcribe_melody", true],
+      ["voice_check", true],
+      ["score_write", false],
+      ["score_write", true],
+    ],
+  );
+});

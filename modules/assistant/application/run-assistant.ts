@@ -5,7 +5,7 @@ import { ASK_TOOL, askSchema, assistantTools } from "./assistant-tools";
 import { createMusicTools, isMusicTool, musicToolSpecs } from "./music-tools";
 import type { ChatMessage, ContentPart, ModelPort, TokenUsage, ToolCall } from "./model-port";
 import { refuseHeardBarEdit, writtenLines } from "./heard-bars-guard";
-import type { HeardOption } from "./sung-figures";
+import type { HeardAllowances } from "./heard-notes";
 import { parseArguments, runScoreTool } from "./score-tool-call";
 import { createScoreToolGateway } from "./score-tool-gateway";
 import { createEditFeed } from "./edit-feed";
@@ -56,8 +56,8 @@ export async function runAssistant(
   let toolWrites = 0;
   // Bars a transcription wrote this turn: the agent may not rewrite their notes (see the guard).
   const heard = new Set<string>();
-  // The changes to those bars that the singing itself supports (see heardOptions).
-  const options: HeardOption[] = [];
+  // The changes to those bars that the singing itself supports (see heardOptions, voice_check).
+  const allowances: HeardAllowances = { options: [], repeats: new Map() };
   let runningTool = "";
   // Tools that write (a transcription, a setup from a reading) commit through the same gateway as score_edit.
   const commit = (operation: Operation) => {
@@ -74,7 +74,8 @@ export async function runAssistant(
   const music = createMusicTools(request.take ?? null, {
     getScore: edits.score,
     commit,
-    allow: (more) => options.push(...more),
+    allow: (more) => allowances.options.push(...more),
+    allowRepeats: (voice, count) => allowances.repeats.set(voice, Math.max(count, allowances.repeats.get(voice) ?? 0)),
   });
   // Its plan, the song's notes and what it knows about the musician, beyond the score.
   const agent = createAgentState(request.songNotes, request.memory);
@@ -92,7 +93,7 @@ export async function runAssistant(
   let maxSteps = attachments.length ? MAX_SOURCE_STEPS : MAX_TOOL_STEPS;
   const scoreTool = (call: ToolCall) =>
     runScoreTool(call, tools, turnId, edits.score, (operation, asked) =>
-      refuseHeardBarEdit(edits.score(), operation, heard, asked, musicianWords(request), options),
+      refuseHeardBarEdit(edits.score(), operation, heard, asked, musicianWords(request), allowances),
     );
   const sendEdits = () => {
     const change = feed.update(edits.commands);

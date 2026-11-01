@@ -44,12 +44,15 @@ type ToolResult = { ok: true; [key: string]: unknown } | { ok: false; error: str
 
 /**
  * How a tool may change the score: through the same validated, undoable path as score_edit.
- * `allow` hears the changes a transcription's own singing supports (see `heardOptions`).
+ * `allow` hears the changes a transcription's own singing supports (see `heardOptions`), and
+ * `allowRepeats` the repeats voice_check found room for.
  */
 export type ScoreAccess = {
   getScore: () => Score;
   commit: (operation: Operation) => ToolResult;
   allow?: (options: HeardOption[]) => void;
+  /** Hears how many repeats voice_check allows in a heard voice (1 is the main line). */
+  allowRepeats?: (voice: number, count: number) => void;
 };
 
 const FOUR_FOUR: Meter = { numerator: 4, denominator: 4 };

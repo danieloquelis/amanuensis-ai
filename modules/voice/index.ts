@@ -56,4 +56,5 @@ export { fft, soundFrames, type SoundFrame } from "./domain/spectrum";
 export { FEATURES as SINGING_FEATURES, singingFeatures, wordsInFrames } from "./domain/singing-evidence";
 export { decodeSinging, singingProbabilities, sungStretches, type SingingModel } from "./domain/singing-decoder";
 export { SINGING_MODEL } from "./domain/singing-model";
+export { missedAttacks } from "./domain/missed-attacks";
 export { transcribeSpans, type PlacedSpan, type SpansOptions } from "./domain/transcribe-spans";

@@ -1,15 +1,5 @@
-import {
-  barEvents,
-  eventOnsets,
-  findEvent,
-  findVoiceId,
-  midiPitch,
-  SCORE_LIMITS,
-  voiceNumber,
-  type Operation,
-  type Score,
-} from "@/modules/score";
-import type { HeardOption } from "./sung-figures";
+import { findEvent, SCORE_LIMITS, voiceNumber, type Operation, type Score } from "@/modules/score";
+import { keepsHeardNotes, type HeardAllowances } from "./heard-notes";
 
 /** Operations that change notes or rhythm. Chords, marks and text on heard bars stay allowed. */
 const NOTE_EDITS = new Set<Operation["type"]>([
@@ -86,36 +76,16 @@ export function quotesMusician(quote: string | undefined, said: string): boolean
   return wanted.split(" ").length >= MIN_QUOTE_WORDS && ` ${words(said)} `.includes(` ${wanted} `);
 }
 
-const BEAT_TOLERANCE = 1e-6;
-
-/** Whether a note change is one the singing itself supports: a heard option for that note. */
-function supported(score: Score, op: Operation, options: HeardOption[]): boolean {
-  if (op.type !== "setPitch" || !op.pitch) return false;
-  const found = findEvent(score, op.eventId);
-  if (!found) return false;
-  const bar = score.measures.indexOf(found.measure) + 1;
-  const events = barEvents(found.measure, found.voiceId);
-  const beat = eventOnsets(events)[events.findIndex((event) => event.id === op.eventId)];
-  const voice = voiceNumber(score, found.voiceId);
-  const midi = midiPitch(op.pitch);
-  return options.some(
-    (option) =>
-      option.bar === bar &&
-      Math.abs(option.beat - beat) < BEAT_TOLERANCE &&
-      voiceNumber(score, findVoiceId(score, option.line) ?? "") === voice &&
-      midiPitch(option.pitch) === midi,
-  );
-}
-
 /**
  * What the musician sang is kept as heard, unless the singing itself says otherwise: within the
  * turn that transcribed it, the agent may change those lines' notes (`heard` holds
  * "measureId:voice" keys from `writtenLines`) when the musician asked for it, quoting their words
- * (`asked`, checked against what they said or typed, `said`), or when every changed note takes
- * one of the `options` the take supports (a runner-up the ear nearly heard, or the note that
- * completes a figure sung elsewhere). This stops the agent rewriting a transcription from its own
- * idea of the tune, while letting it judge like a musician. Returns the reason an edit is
- * refused, or null when it may go ahead.
+ * (`asked`, checked against what they said or typed, `said`), or when the edit keeps the notes
+ * heard (`keepsHeardNotes`: any rhythm, the same notes in order, a note changed only to an option
+ * the take supports, a repeat added only where voice_check found an unpitched attack). This stops
+ * the agent rewriting a transcription from its own idea of the tune, while letting it fix the
+ * rhythm and judge like a musician. Returns the reason an edit is refused, or null when it may go
+ * ahead.
  */
 export function refuseHeardBarEdit(
   score: Score,
@@ -123,7 +93,7 @@ export function refuseHeardBarEdit(
   heard: Set<string>,
   asked: string | undefined,
   said: string,
-  options: HeardOption[] = [],
+  allowances: HeardAllowances = { options: [], repeats: new Map() },
 ): string | null {
   const touched = [
     ...new Set(
@@ -133,11 +103,23 @@ export function refuseHeardBarEdit(
     ),
   ];
   if (!touched.length || quotesMusician(asked, said)) return null;
-  const changes = flatten(operation).filter((op) => NOTE_EDITS.has(op.type));
-  if (changes.every((op) => supported(score, op, options))) return null;
+  if (keepsHeardNotes(score, operation, heardLinesOf(score, heard), allowances)) return null;
   const bars = touched.map((id) => score.measures.findIndex((m) => m.id === id) + 1).sort((a, b) => a - b);
   const which = `Bar${bars.length > 1 ? "s" : ""} ${bars.join(", ")}`;
   if (asked)
     return `${which}: "${asked}" is not what the musician said. Quote their words exactly, or keep the notes as heard.`;
-  return `${which} hold what the musician just sang. Change a note there only to one of the transcription's options (a doubtful note's other pitch, or the note that completes a figure it lists), one setPitch per note; or, if they asked for another change, call again with asked set to their words, quoted exactly. Otherwise keep the notes as heard and mention any doubt in your reply.`;
+  return `${which} hold what the musician just sang. You may rewrite their rhythm, but keep the notes heard, in order: change a note only to one of the transcription's options (a doubtful note's other pitch, or the note that completes a figure it lists), and add a note only as a repeat where voice_check found an unpitched attack. If they asked for another change, call again with asked set to their words, quoted exactly. Otherwise keep the notes as heard and mention any doubt in your reply.`;
+}
+
+/** The heard lines by voice number, each with its bars in score order. */
+function heardLinesOf(score: Score, heard: Set<string>): Map<number, string[]> {
+  const lines = new Map<number, string[]>();
+  for (const measure of score.measures) {
+    for (const key of heard) {
+      if (measureOfLine(key) !== measure.id) continue;
+      const voice = Number(key.slice(key.lastIndexOf(":") + 1));
+      lines.set(voice, [...(lines.get(voice) ?? []), measure.id]);
+    }
+  }
+  return lines;
 }

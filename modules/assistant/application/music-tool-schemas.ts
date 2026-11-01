@@ -23,6 +23,9 @@ export const inferTempoSchema = z.strictObject({
     .describe("How many bars the singing fills, when they said so or named one chord per bar. Settles double time."),
 });
 export const hearNotesSchema = z.strictObject({ spanId });
+export const voiceCheckSchema = z.strictObject({
+  spanIds: z.array(spanId).max(16).optional().describe("The spans to check. Default: every span written this turn."),
+});
 export const transcribeSchema = z.strictObject({
   spans: z
     .array(

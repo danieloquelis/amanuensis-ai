@@ -18,7 +18,9 @@ import {
   inferTempoSchema,
   suggestChordsSchema,
   transcribeSchema,
+  voiceCheckSchema,
 } from "./music-tool-schemas";
+import { checkTake } from "./voice-check-tool";
 import { hearNotes } from "./voice-listen-tool";
 import type { SpanPlaces } from "./transcription-placement";
 import { transcribeIntoScore, type ScoreAccess } from "./voice-transcription-tool";
@@ -31,6 +33,7 @@ export const MUSIC_TOOL_NAMES = [
   "music_suggest_chords",
   "voice_hear_notes",
   "voice_transcribe_melody",
+  "voice_check",
 ] as const;
 export type MusicToolName = (typeof MUSIC_TOOL_NAMES)[number];
 type ToolResult = { ok: true; [key: string]: unknown } | { ok: false; error: string };
@@ -67,6 +70,12 @@ const specs: Record<MusicToolName, ToolSpec> = {
     description:
       "The notes heard in one sung span, as sung (time, pitch, length, how clearly). Read-only. Use it to check the raw singing when a transcription looks wrong, e.g. to count notes per bar or spot a repeated figure.",
     parameters: toolParameters(hearNotesSchema),
+  },
+  voice_check: {
+    name: "voice_check",
+    description:
+      "After writing sung spans, check the bars against the take: the notes written bar by bar next to the notes heard with their times, and where something was struck or sung that the ear could not pitch (often a repeat of the note around it). Then fix what does not match. Read-only.",
+    parameters: toolParameters(voiceCheckSchema),
   },
   voice_transcribe_melody: {
     name: "voice_transcribe_melody",
@@ -164,6 +173,12 @@ export function createMusicTools(take: VoiceTake | null, access: ScoreAccess | n
 
     voice_transcribe_melody(raw) {
       return transcribeIntoScore(take, raw, access, places);
+    },
+
+    voice_check(raw) {
+      if (!access) throw new Error("There is no score to check.");
+      const { spanIds } = voiceCheckSchema.parse(raw);
+      return checkTake(take, spanIds, access.getScore(), places, access.allowRepeats ?? (() => {}));
     },
   };
 
