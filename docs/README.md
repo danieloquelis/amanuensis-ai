@@ -13,6 +13,7 @@ Start with the [product brief](product/product-brief.md), then the [architecture
 | [Code conventions](architecture/code-conventions.md) | Module layers, imports, components vs hooks, enforced checks |
 | [Score and tool contracts](architecture/score-and-tools.md) | Musical state, agent tools, edits, conflicts and undo |
 | [Delivery plan](planning/delivery-plan.md) | Research spikes, implementation order, acceptance gates, unresolved choices |
+| [Band agents plan](planning/band-agents-plan.md) | One agent per instrument, rehearsing in order under the chat's agent as bandleader: pieces, evaluation, risks |
 | [Triplets plan](planning/triplets-plan.md) | Triplets (3:2): representation, phases, files, tests, what is left out |
 | [Instruments and voices plan](planning/instruments-voices-plan.md) | Sampled instruments, voices on a staff, several instruments, drums |
 | [Sheet reading plan](planning/sheet-reading-plan.md) | From a photo, PDF, handwritten page or text to the score: read and reason first, then write |
