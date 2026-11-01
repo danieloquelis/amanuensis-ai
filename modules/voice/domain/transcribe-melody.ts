@@ -6,6 +6,7 @@ import { segmentNotes, type SungNote } from "./notes";
 import { trackPitch, type PitchFrame, type Signal } from "./pitch-tracker";
 import { placeNotes, toBars } from "./rhythm";
 import { beatAt, readRhythm, typicalTempo } from "./tempo-map";
+import { tripletFeel, type TripletFeel } from "./triplet-feel";
 
 export type MelodyOptions = {
   bpm?: number;
@@ -54,6 +55,8 @@ export type MelodyTranscription = {
   uncertain: { bar: number; beat: number; written: Pitch; alternative: Pitch }[];
   /** Per bar: how sure the ear is, and which bars share a rhythm (a repeated figure). */
   evidence: BarEvidence[];
+  /** Beats where three notes were sung evenly but written straight: likely triplets (not written as such). */
+  triplets: TripletFeel[];
   warnings: string[];
 };
 
@@ -85,12 +88,14 @@ function octaveShiftFor(notes: SungNote[], register: Register): number {
 /**
  * The rhythm of the sung notes, read on a tempo that may drift (see `readRhythm`): their places
  * in beats from the first note, the typical tempo, and where the rhythm alone puts the first
- * note in its bar (harmony may move it by whole beats).
+ * note in its bar (harmony may move it by whole beats); with each note's start in seconds and
+ * written position, for spotting triplets the grid wrote straight.
  */
 function readTiming(notes: SungNote[], meter: Meter, options: MelodyOptions) {
   if (!notes.length) {
     const bpm = options.bpm ?? 0;
-    return { placed: [], bpm, drift: [bpm, bpm] as [number, number], rhythmStart: options.startBeat ?? 0 };
+    const drift: [number, number] = [bpm, bpm];
+    return { placed: [], bpm, drift, rhythmStart: options.startBeat ?? 0, onsets: [], positions: [] };
   }
   const onsets = notes.map((n) => n.start);
   const reading = readRhythm(onsets, {
@@ -106,7 +111,8 @@ function readTiming(notes: SungNote[], meter: Meter, options: MelodyOptions) {
     notes.map((n) => beatAt(onsets, reading, n.end) - first),
   );
   const drift: [number, number] = [Math.min(...reading.tempi), Math.max(...reading.tempi)];
-  return { placed, bpm: options.bpm ?? typicalTempo(reading), drift, rhythmStart: first };
+  const positions = reading.positions.map((p) => p - first);
+  return { placed, bpm: options.bpm ?? typicalTempo(reading), drift, rhythmStart: first, onsets, positions };
 }
 
 /**
@@ -119,7 +125,8 @@ export function transcribeMelody(signal: Signal, options: MelodyOptions = {}): M
   const meter = options.meter ?? FOUR_FOUR;
   const raw = segmentNotes(options.frames ?? trackPitch(signal));
   // Rhythm depends only on timing, so it is settled first; harmony then uses the onsets.
-  const { placed, bpm, drift, rhythmStart } = readTiming(raw, meter, options);
+  const timing = readTiming(raw, meter, options);
+  const { placed, bpm, drift, rhythmStart } = timing;
   const sungOnsets = placed.filter((p) => p.midi !== null).map((p) => p.start);
   const fit = options.key
     ? fitHarmony(raw, sungOnsets, options.key, {
@@ -192,6 +199,12 @@ export function transcribeMelody(signal: Signal, options: MelodyOptions = {}): M
       return [{ bar, beat, written: spellMidi(note.pitch, key), alternative: spellMidi(note.alternative, key) }];
     }),
     evidence: barEvidence(notes, onsets, bars, capacity),
+    triplets: tripletFeel(
+      timing.onsets,
+      timing.positions.map((p) => p + fit.startBeat),
+      bpm,
+      capacity,
+    ),
     warnings: notes.length ? [] : ["No sung notes were found."],
   };
 }

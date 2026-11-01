@@ -6,7 +6,14 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdtempSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createExample, describeScore, parseChordSymbol, rankKeysForChords, type Score } from "@/modules/score";
+import {
+  applyCommand,
+  createExample,
+  describeScore,
+  parseChordSymbol,
+  rankKeysForChords,
+  type Score,
+} from "@/modules/score";
 import { decodeWav, encodeWav, type SpeechTurn } from "@/modules/voice";
 
 /** What the musician meant. `bars` uses the eval notation: "r/0.5 E4/0.5 … | C♯4/0.5 …". */
@@ -66,14 +73,18 @@ export const keyFromName = (name: string) => rankKeysForChords([parseChordSymbol
 /** The four example bars cleared to rests: a blank page for the agent to write a take into. */
 export function blankScore(): Score {
   const score = createExample();
-  return {
-    ...score,
-    title: "Take",
-    measures: score.measures.map((m) => ({
-      ...m,
-      events: [{ id: `${m.id}-rest`, pitch: null, duration: { numerator: 4, denominator: 1 }, measureRest: true }],
-    })),
-  };
+  // Through the one mutation path, so the page has whatever shape a score has today.
+  return applyCommand(score, {
+    requestId: "blank",
+    expectedRevision: score.revision,
+    operation: {
+      type: "batch",
+      operations: [
+        ...score.measures.map((m) => ({ type: "clearMeasure" as const, measureId: m.id })),
+        { type: "rename" as const, title: "Take" },
+      ],
+    },
+  });
 }
 
 /** The score's bars in the eval notation. */

@@ -124,6 +124,13 @@ export function transcribeIntoScore(
       doubtful: result.uncertain.map(
         (u) => `bar ${at(u.bar)} beat ${u.beat}: ${pitchName(u.written)} or ${pitchName(u.alternative)}`,
       ),
+      ...(result.triplets.length
+        ? {
+            soundsLikeTriplets: result.triplets.map(
+              (t) => `bar ${at(t.bar)} beat ${t.beat + 1}: three even notes, written straight (a triplet is 3[…])`,
+            ),
+          }
+        : {}),
       ...(result.warnings.length ? { warnings: result.warnings } : {}),
     };
   });

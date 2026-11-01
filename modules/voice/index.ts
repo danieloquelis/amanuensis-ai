@@ -29,6 +29,7 @@ export {
   type VoiceTake,
 } from "./domain/take";
 export { transcribeMelody, type MelodyOptions, type MelodyTranscription } from "./domain/transcribe-melody";
+export { tripletFeel, type TripletFeel } from "./domain/triplet-feel";
 export { fitHarmony, fitToChords, snapToChordTones, type HarmonicFit } from "./domain/harmonic-fit";
 export {
   estimateKey,
