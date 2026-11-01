@@ -32,6 +32,7 @@ export type {
   ToolCall,
   ToolSpec,
 } from "./application/model-port";
+export { SYSTEM_PROMPT } from "./application/system-prompt";
 export {
   MAX_TOOL_STEPS,
   runAssistant,

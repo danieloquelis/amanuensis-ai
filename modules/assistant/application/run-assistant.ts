@@ -81,6 +81,8 @@ export type TurnServices = {
   pageImages?: PageImages | null;
   /** Stops the turn: the model call in flight is cancelled and no further step starts. */
   signal?: AbortSignal;
+  /** Evaluations only: the instructions to run with instead of `SYSTEM_PROMPT` (e.g. with one rule left out). */
+  systemPrompt?: string;
 };
 /** Trace arguments are cut to this length: enough to judge a decision, small enough to keep. */
 const TRACE_ARGUMENT_ROOM = 400;
@@ -95,7 +97,7 @@ export async function runAssistant(
   request: AssistantRequest,
   turnId: string = crypto.randomUUID().slice(0, 8),
   onProgress: ProgressListener = () => {},
-  { pageImages = null, signal }: TurnServices = {},
+  { pageImages = null, signal, systemPrompt = SYSTEM_PROMPT }: TurnServices = {},
 ): Promise<AssistantResult> {
   let session: Session = createSession(request.score);
   const tools = createScoreToolGateway(
@@ -166,7 +168,7 @@ export async function runAssistant(
   const trace: TraceEntry[] = [];
   const thinkingMs: number[] = [];
   const messages: ChatMessage[] = [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: systemPrompt },
     ...historyMessages(request),
     userMessage(request, scoreContext(tools, request)),
   ];

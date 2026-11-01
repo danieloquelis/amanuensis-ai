@@ -24,6 +24,7 @@ const UNSUPPORTED_NOTATION = [
   "hairpins",
   "nested repeats and alternate endings",
   "mid-score key, clef or instrument changes",
+  "turning sung or beatboxed rhythms into drums",
 ];
 
 type StoredPreview = { command: Command; applied: boolean };
