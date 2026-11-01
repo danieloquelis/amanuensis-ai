@@ -24,7 +24,7 @@ const ATTACK_FRAMES = 3;
 /** Frames this far (semitones) from their neighbours are octave errors, folded back. */
 const OCTAVE_JUMP = 10;
 const NEIGHBOURHOOD = 5;
-const MIN_NOTE_SECONDS = 0.07;
+const MIN_NOTE_SECONDS = 0.05;
 /** Unvoiced frames tolerated inside a note (a consonant or a crack). */
 const MAX_INNER_GAP_FRAMES = 3;
 
