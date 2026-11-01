@@ -1,19 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import {
-  barEvents,
-  applyCommand,
-  beats,
-  createExample,
-  createSession,
-  execute,
-  meterName,
-  parseScore,
-  type Operation,
-} from "@/modules/score";
+import { barEvents, applyCommand, beats, createExample, meterName, parseScore, type Operation } from "@/modules/score";
 import { createPlaybackPlan } from "@/modules/playback";
 import { layoutScore } from "@/modules/engraving";
-import { createScoreToolGateway, scoreTools } from "@/modules/assistant";
+import { createScoreToolGateway, createTurnEdits, scoreTools } from "@/modules/assistant";
 
 const edit = (score: ReturnType<typeof createExample>, operation: Operation, requestId = "test") =>
   applyCommand(score, { expectedRevision: score.revision, requestId, operation });
@@ -154,13 +144,8 @@ test("v1 files migrate without losing identity or edits", () => {
 });
 
 test("AI tool previews do not mutate; stale applies fail; duplicate apply is safe", () => {
-  let session = createSession(createExample());
-  const tools = createScoreToolGateway(
-    () => session,
-    (next) => {
-      session = next;
-    },
-  );
+  const edits = createTurnEdits(createExample());
+  const tools = createScoreToolGateway(edits);
   assert.equal(scoreTools.length, 6);
   const command = {
     requestId: "ai",
@@ -168,13 +153,13 @@ test("AI tool previews do not mutate; stale applies fail; duplicate apply is saf
     operation: { type: "putAnnotation", targetId: "bar-1", kind: "text", text: "espressivo" },
   };
   assert.equal(tools("score_preview", command).ok, true);
-  assert.equal(session.score.annotations.length, 0);
-  session = execute(session, { requestId: "human", expectedRevision: 0, operation: { type: "setTempo", tempo: 100 } });
+  assert.equal(edits.score().annotations.length, 0);
+  edits.execute({ requestId: "human", expectedRevision: 0, operation: { type: "setTempo", tempo: 100 } });
   assert.equal(tools("score_apply", { previewId: "ai", expectedRevision: 0 }).ok, false);
   assert.equal(tools("score_preview", { ...command, requestId: "fresh", expectedRevision: 1 }).ok, true);
   assert.equal(tools("score_apply", { previewId: "fresh", expectedRevision: 1 }).ok, true);
   assert.equal(tools("score_apply", { previewId: "fresh", expectedRevision: 1 }).ok, true);
-  assert.equal(session.score.annotations.length, 1);
+  assert.equal(edits.score().annotations.length, 1);
   assert.equal(tools("score_preview", { ...command, operation: { type: "arbitraryCode" } }).ok, false);
 });
 

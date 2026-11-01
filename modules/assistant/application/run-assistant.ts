@@ -1,20 +1,12 @@
 import type { PageImages } from "@/modules/page";
-import {
-  commandSchema,
-  createSession,
-  summarizeChange,
-  type Command,
-  type Operation,
-  type Score,
-  type Session,
-} from "@/modules/score";
+import { summarizeChange, type Command, type Operation, type Score } from "@/modules/score";
 import type { TakePart, VoiceTake } from "@/modules/voice";
 import { ASK_TOOL, askSchema, assistantTools } from "./assistant-tools";
 import type { Attachment } from "./attachments";
 import { createMusicTools, isMusicTool, musicToolSpecs } from "./music-tools";
 import type { ChatMessage, ContentPart, ModelPort, TokenUsage, ToolCall } from "./model-port";
 import { refuseHeardBarEdit, writtenLines } from "./heard-bars-guard";
-import { parseArguments, recordCommand, runScoreTool } from "./score-tool-call";
+import { parseArguments, runScoreTool } from "./score-tool-call";
 import { createScoreToolGateway } from "./score-tool-gateway";
 import { createEditFeed, type EditsEvent } from "./edit-feed";
 import { createScoreBlockWriter, type DraftEvent } from "./score-block-writer";
@@ -22,6 +14,7 @@ import { withoutScoreBlocks } from "./score-blocks";
 import { createSourceTools, isSourceTool, sourceToolSpecs } from "./source-tools";
 import { historyMessages, scoreContext, userMessage } from "./opening-messages";
 import { SYSTEM_PROMPT } from "./system-prompt";
+import { createTurnEdits } from "./turn-edits";
 
 const TRANSCRIBE_TOOL = "voice_transcribe_melody";
 /** Hard cap on model round trips per instruction. */
@@ -99,44 +92,31 @@ export async function runAssistant(
   onProgress: ProgressListener = () => {},
   { pageImages = null, signal, systemPrompt = SYSTEM_PROMPT }: TurnServices = {},
 ): Promise<AssistantResult> {
-  let session: Session = createSession(request.score);
-  const tools = createScoreToolGateway(
-    () => session,
-    (next) => {
-      session = next;
-    },
-  );
-  const commands: Command[] = [];
+  // The working copy and the commands the editor replays, kept by one owner.
+  const edits = createTurnEdits(request.score);
+  const tools = createScoreToolGateway(edits);
   const feed = createEditFeed();
   let toolWrites = 0;
   // Bars a transcription wrote this turn: the agent may not rewrite their notes (see the guard).
   const heard = new Set<string>();
   let runningTool = "";
-  // Tools that write (a transcription) commit through the same gateway as score_edit.
   // Tools that write (a transcription, a setup from a reading) commit through the same gateway as score_edit.
   const commit = (operation: Operation) => {
     const command = {
       requestId: `${turnId}-tool-${++toolWrites}`,
-      expectedRevision: session.score.revision,
+      expectedRevision: edits.score().revision,
       operation,
     };
     const result = tools("score_edit", command);
-    if (result.ok) recordCommand(commands, commandSchema.parse(command), request.score.revision);
     if (result.ok && runningTool === TRANSCRIBE_TOOL)
-      writtenLines(session.score, operation).forEach((key) => heard.add(key));
+      writtenLines(edits.score(), operation).forEach((key) => heard.add(key));
     return result;
   };
-  const music = createMusicTools(request.take ?? null, { getScore: () => session.score, commit });
+  const music = createMusicTools(request.take ?? null, { getScore: edits.score, commit });
   const attachments = request.attachments ?? [];
   // Pictures a tool shows the model (labelled pages) go in a user message after the tool results.
   let shown: ContentPart[] = [];
-  const sources = createSourceTools(
-    attachments,
-    pageImages,
-    () => session.score,
-    (parts) => shown.push(...parts),
-    commit,
-  );
+  const sources = createSourceTools(attachments, pageImages, edits.score, (parts) => shown.push(...parts), commit);
   const toolList = [
     ...assistantTools,
     ...musicToolSpecs(Boolean(request.take)),
@@ -144,22 +124,16 @@ export async function runAssistant(
   ];
   const maxSteps = attachments.length ? MAX_SOURCE_STEPS : MAX_TOOL_STEPS;
   const scoreTool = (call: ToolCall) =>
-    runScoreTool(
-      call,
-      tools,
-      commands,
-      request.score.revision,
-      turnId,
-      () => session.score,
-      (operation, asked) => refuseHeardBarEdit(session.score, operation, heard, asked, musicianWords(request)),
+    runScoreTool(call, tools, turnId, edits.score, (operation, asked) =>
+      refuseHeardBarEdit(edits.score(), operation, heard, asked, musicianWords(request)),
     );
   const sendEdits = () => {
-    const edits = feed.update(commands);
-    if (edits) onProgress(edits);
+    const change = feed.update(edits.commands);
+    if (change) onProgress(change);
   };
   // Bars written in <score> blocks go through score_write, under the request ID their draft used.
   const blocks = createScoreBlockWriter(turnId, onProgress, (requestId, text, pitches) => {
-    const args = JSON.stringify({ requestId, expectedRevision: session.score.revision, text, pitches });
+    const args = JSON.stringify({ requestId, expectedRevision: edits.score().revision, text, pitches });
     const call = { id: requestId, name: "score_write", arguments: args };
     const result = sources.refuseUnread(call.name) ?? scoreTool(call);
     trace.push({ tool: "score_block", arguments: args.slice(0, TRACE_ARGUMENT_ROOM), ok: result.ok });
@@ -173,16 +147,20 @@ export async function runAssistant(
     ...historyMessages(request),
     userMessage(request, scoreContext(tools, request)),
   ];
-  const finish = (reply: string, question: AssistantResult["question"], steps: number): AssistantResult => ({
-    reply,
-    question,
-    commands,
-    changes: commands.length ? summarizeChange(request.score, session.score) : [],
-    steps,
-    usage,
-    trace,
-    thinkingMs,
-  });
+  const finish = (reply: string, question: AssistantResult["question"], steps: number): AssistantResult => {
+    // A server-side fault, caught here rather than as a failed replay in the musician's editor.
+    edits.verify();
+    return {
+      reply,
+      question,
+      commands: [...edits.commands],
+      changes: edits.commands.length ? summarizeChange(request.score, edits.score()) : [],
+      steps,
+      usage,
+      trace,
+      thinkingMs,
+    };
+  };
 
   for (let step = 1; step <= maxSteps; step++) {
     if (signal?.aborted) return finish("Stopped.", null, step - 1);

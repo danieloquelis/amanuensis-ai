@@ -127,6 +127,18 @@ test("edits after an undo in the turn still replay in the editor, as one step fr
   );
 });
 
+test("an edit the model sends twice is made once, and the turn still replays", async () => {
+  const { model } = scriptedModel([
+    { content: null, toolCalls: [call("score_edit", chordEdit)] },
+    { content: null, toolCalls: [call("score_edit", chordEdit)] },
+    { content: "Added Am7.", toolCalls: [] },
+  ]);
+  const score = createExample();
+  const result = await runAssistant(model, { ...request("a chord"), score }, "t8");
+  assert.equal(result.commands.length, 1);
+  assert.equal(executeAll(createSession(score), result.commands).score.chords.length, 1);
+});
+
 test("a model that never stops is cut off at the step limit", async () => {
   const forever: ModelPort = {
     async complete() {

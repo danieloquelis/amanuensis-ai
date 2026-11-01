@@ -3,18 +3,16 @@ import {
   anchorIds,
   applyCommand,
   commandSchema,
-  execute,
   positionOf,
   resolvePositions,
   SCORE_VOCABULARY,
   scoreText,
   summarizeChange,
-  travel,
   writeBars,
   type Command,
-  type Session,
   operationsTaking,
 } from "@/modules/score";
+import type { TurnEdits } from "./turn-edits";
 import { applyPreviewSchema, readContextSchema, undoSchema, writeSchema, type ScoreToolName } from "./tool-definitions";
 
 const PREVIEW_LIMIT = 128;
@@ -32,27 +30,27 @@ type ToolResult = { ok: true; [key: string]: unknown } | { ok: false; error: str
 type ToolHandler = (raw: unknown) => ToolResult;
 
 /**
- * Executes model-requested score tools against one session. Bind one gateway to one authorized
- * project; the model never chooses the repository. This in-process gateway is single-writer:
- * a server adapter must add authentication and durable idempotency receipts.
+ * Executes model-requested score tools against one turn's edits. Bind one gateway to one
+ * authorized project; the model never chooses the repository. This in-process gateway is
+ * single-writer: a server adapter must add authentication and durable idempotency receipts.
  */
-export function createScoreToolGateway(getSession: () => Session, setSession: (session: Session) => void) {
+export function createScoreToolGateway(edits: TurnEdits) {
   const previews = new Map<string, StoredPreview>();
 
   /** Commands from the model may name notes and bars by position; they become IDs here. */
-  const parseCommand = (raw: unknown): Command => commandSchema.parse(resolvePositions(getSession().score, raw));
+  const parseCommand = (raw: unknown): Command => commandSchema.parse(resolvePositions(edits.score(), raw));
 
   const commit = (command: Command): ToolResult => {
-    const session = getSession();
-    const next = execute(session, command);
-    setSession(next);
-    return { ok: true, revision: next.score.revision, changes: summarizeChange(session.score, next.score) };
+    const before = edits.score();
+    edits.execute(command);
+    const after = edits.score();
+    return { ok: true, revision: after.revision, changes: summarizeChange(before, after) };
   };
 
   const handlers: Record<ScoreToolName, ToolHandler> = {
     score_get_context(raw) {
       const { selectedIds, includeRaw, parts, bars } = readContextSchema.parse(raw);
-      const { score } = getSession();
+      const score = edits.score();
       const valid = new Set([
         ...anchorIds(score.measures),
         ...score.chords.map((c) => c.id),
@@ -79,19 +77,15 @@ export function createScoreToolGateway(getSession: () => Session, setSession: (s
 
     score_write(raw) {
       const { expectedRevision, text, requestId, pitches } = writeSchema.parse(raw);
-      const session = getSession();
-      if (expectedRevision !== session.score.revision) {
+      if (expectedRevision !== edits.score().revision) {
         throw new Error("The score changed. Read the latest revision before writing.");
       }
-      const { command } = writeBars(session.score, text, requestId, pitches);
-      const next = execute(session, command);
-      setSession(next);
-      return { ok: true, revision: next.score.revision, changes: summarizeChange(session.score, next.score), command };
+      return commit(writeBars(edits.score(), text, requestId, pitches).command);
     },
 
     score_preview(raw) {
       const command = parseCommand(raw);
-      const before = getSession().score;
+      const before = edits.score();
       const proposed = applyCommand(before, command);
       rememberPreview(command.requestId, command);
       return {
@@ -108,7 +102,7 @@ export function createScoreToolGateway(getSession: () => Session, setSession: (s
       const preview = previews.get(previewId);
       if (!preview) throw new Error("Preview not found. Preview the operation first.");
       if (expectedRevision !== preview.command.expectedRevision) throw new Error("Preview revision does not match.");
-      if (preview.applied) return { ok: true, duplicate: true, revision: getSession().score.revision };
+      if (preview.applied) return { ok: true, duplicate: true, revision: edits.score().revision };
       const result = commit(preview.command);
       preview.applied = true;
       return result;
@@ -116,18 +110,13 @@ export function createScoreToolGateway(getSession: () => Session, setSession: (s
 
     score_undo(raw) {
       const { expectedRevision } = undoSchema.parse(raw);
-      const session = getSession();
-      if (expectedRevision !== session.score.revision) {
+      const before = edits.score();
+      if (expectedRevision !== before.revision) {
         throw new Error("The score changed. Read the latest revision before undo.");
       }
-      const next = travel(session, "undo");
-      setSession(next);
-      return {
-        ok: true,
-        revision: next.score.revision,
-        changed: next !== session,
-        changes: summarizeChange(session.score, next.score),
-      };
+      const changed = edits.undo();
+      const after = edits.score();
+      return { ok: true, revision: after.revision, changed, changes: summarizeChange(before, after) };
     },
   };
 

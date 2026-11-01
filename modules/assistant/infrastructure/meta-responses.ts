@@ -1,4 +1,5 @@
 import type { ChatMessage, ContentPart, ModelReply, ToolSpec } from "../application/model-port";
+import { endedEarly } from "./model-retry";
 
 // Meta's Responses API (`/v1/responses`): unlike Chat Completions, it streams the reply's text
 // while tools are offered, so the editor can draw bars as they are written.
@@ -88,8 +89,10 @@ export async function readResponsesStream(
   const reader = response.body!.pipeThrough(new TextDecoderStream()).getReader();
   let buffered = "";
   let finished: ResponseBody | null = null;
+  let textSent = false;
   for (;;) {
-    const { value, done } = await reader.read();
+    // A connection dropped mid-answer reads as its end, and is caught below as one cut off.
+    const { value, done } = await reader.read().catch(() => ({ value: "", done: true }));
     if (done) break;
     onChunk();
     buffered += value;
@@ -99,14 +102,16 @@ export async function readResponsesStream(
       const data = line.startsWith("data:") ? line.slice("data:".length).trim() : "";
       if (!data || data === "[DONE]") continue;
       const event = JSON.parse(data) as StreamEvent;
-      if (event.type === "response.output_text.delta" && event.delta) onText(event.delta);
-      else if (event.type === "response.completed" && event.response) finished = event.response;
+      if (event.type === "response.output_text.delta" && event.delta) {
+        textSent = true;
+        onText(event.delta);
+      } else if (event.type === "response.completed" && event.response) finished = event.response;
       else if (event.type === "response.failed" || event.type === "error") {
         const message = event.response?.error?.message ?? event.message ?? "the response failed";
         throw new Error(`The model request failed: ${String(message).slice(0, 200)}`);
       }
     }
   }
-  if (!finished) throw new Error("The model's answer ended early. Please try again.");
+  if (!finished) throw endedEarly(textSent);
   return responseReply(finished);
 }

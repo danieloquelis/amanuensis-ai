@@ -47,6 +47,7 @@ export {
 export { createMusicTools, MUSIC_TOOL_NAMES, musicToolSpecs, type MusicToolName } from "./application/music-tools";
 export { scoreBlocks, withoutScoreBlocks, type ScoreBlock } from "./application/score-blocks";
 export { createScoreToolGateway } from "./application/score-tool-gateway";
+export { createTurnEdits, REPLAY_MISMATCH, type TurnEdits } from "./application/turn-edits";
 export { SCORE_TOOL_NAMES, scoreTools, toolParameters, type ScoreToolName } from "./application/tool-definitions";
 export { localWorkspaceChats } from "./infrastructure/local-chat";
 export type { StartRequest } from "./application/start-request";

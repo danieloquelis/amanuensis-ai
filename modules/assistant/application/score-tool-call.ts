@@ -1,4 +1,4 @@
-import { commandSchema, resolvePositions, writeBars, type Command, type Operation, type Score } from "@/modules/score";
+import { commandSchema, resolvePositions, writeBars, type Operation, type Score } from "@/modules/score";
 import type { ToolCall } from "./model-port";
 import type { createScoreToolGateway } from "./score-tool-gateway";
 
@@ -28,25 +28,13 @@ function namespaced(args: unknown, turnId: string): unknown {
 }
 
 /**
- * Records a committed command as the editor will replay it. The editor runs the turn's commands
- * in order from the request's revision, so each expects exactly the ones before it to have run.
- * The session's own revision can be further on: an undo is a new revision here, but takes a
- * command out of the replay, so the next command's revision must not count it.
- */
-export function recordCommand(commands: Command[], command: Command, startRevision: number): void {
-  commands.push({ ...command, expectedRevision: startRevision + commands.length });
-}
-
-/**
- * Executes one score tool, keeping `commands` in step with what the session actually holds.
+ * Executes one score tool through the gateway, which records what it changes for the replay.
  * Edits may name notes and bars by position; they are resolved against the current score first,
  * so the heard-bars guard and the replayed commands see real IDs.
  */
 export function runScoreTool(
   call: ToolCall,
   tools: Gateway,
-  commands: Command[],
-  startRevision: number,
   turnId: string,
   score: () => Score,
   refuse: RefuseEdit,
@@ -66,9 +54,7 @@ export function runScoreTool(
     if (!command.success) return tools(call.name, args);
     const refusal = refuse(command.data.operation, quoted);
     if (refusal) return { ok: false, error: refusal };
-    const result = tools(call.name, command.data);
-    if (result.ok) recordCommand(commands, command.data, startRevision);
-    return result;
+    return tools(call.name, command.data);
   }
   if (call.name === "score_write") {
     const request = namespaced(args, turnId) as { requestId?: string; text?: unknown; pitches?: "written" };
@@ -81,17 +67,10 @@ export function runScoreTool(
     } catch (error) {
       return { ok: false, error: (error as Error).message };
     }
-    const result = tools(call.name, request);
-    if (!result.ok) return result;
-    // The command is replayed by the editor; the model only needs to know what changed.
-    const { command, ...reply } = result;
-    recordCommand(commands, command as Command, startRevision);
-    return reply as ToolResult;
+    return tools(call.name, request);
   }
   if (call.name !== "score_get_context" && call.name !== "score_undo") {
     return { ok: false, error: `Unknown tool ${call.name}.` };
   }
-  const result = tools(call.name, parsed);
-  if (call.name === "score_undo" && result.ok && result.changed) commands.pop();
-  return result;
+  return tools(call.name, parsed);
 }

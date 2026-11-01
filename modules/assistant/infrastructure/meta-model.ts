@@ -8,10 +8,12 @@ import type {
 } from "../application/model-port";
 import { readCompletionStream } from "./meta-stream";
 import { readResponsesStream, responseReply, responsesRequest } from "./meta-responses";
+import { FIRST_RETRY_MS, isRetryStatus, retryAfterMs, TransientError, withRetries } from "./model-retry";
 
 /** Which Meta endpoint carries the conversation: Chat Completions, or the Responses API (streams text while tools are offered). */
 export type MetaApi = "chat" | "responses";
-export type MetaSettings = { api?: MetaApi; idleMs?: number };
+/** `retryMs` is the first wait before another try (tests shorten it). */
+export type MetaSettings = { api?: MetaApi; idleMs?: number; retryMs?: number };
 
 const BASE_URL = "https://api.meta.ai/v1";
 export const DEFAULT_META_MODEL = "muse-spark-1.3";
@@ -22,6 +24,7 @@ export const DEFAULT_META_MODEL = "muse-spark-1.3";
  */
 const TIMEOUT_MS = 180_000;
 const TIMEOUT_MESSAGE = "The assistant went quiet for three minutes. Please try again.";
+const UNREACHABLE_MESSAGE = "The assistant couldn't be reached. Please try again.";
 
 type MetaToolCall = { id: string; type: "function"; function: { name: string; arguments: string } };
 
@@ -53,12 +56,14 @@ export function toMetaPart(part: ContentPart) {
  * Meta Model API adapter (server-only: it holds the API key). One tool call per turn keeps the
  * loop easy to follow and every edit validated against the latest revision. `reasoningEffort`
  * (minimal … max) trades thinking time for depth; the model's default is used when it is unset.
+ * A call that fails before its answer begins (busy, a provider fault, a dropped connection) is
+ * tried again a couple of times (see `model-retry.ts`).
  */
 export function createMetaModel(
   apiKey: string,
   model = DEFAULT_META_MODEL,
   reasoningEffort?: string,
-  { api = "chat", idleMs = TIMEOUT_MS }: MetaSettings = {},
+  { api = "chat", idleMs = TIMEOUT_MS, retryMs = FIRST_RETRY_MS }: MetaSettings = {},
 ): ModelPort {
   /** The endpoint and request body for one call on the chosen API. */
   const request = (messages: ChatMessage[], tools: ToolSpec[]) =>
@@ -88,45 +93,52 @@ export function createMetaModel(
             ...(reasoningEffort ? { reasoning_effort: reasoningEffort } : {}),
           },
         };
-  return {
-    async complete(messages: ChatMessage[], tools: ToolSpec[], options: CompleteOptions = {}): Promise<ModelReply> {
-      // The deadline counts from the last sign of life: a streamed answer may take long, but not go quiet.
-      const idle = new AbortController();
-      let timer = setTimeout(() => idle.abort(new DOMException("idle", "TimeoutError")), idleMs);
-      const alive = () => {
-        clearTimeout(timer);
-        timer = setTimeout(() => idle.abort(new DOMException("idle", "TimeoutError")), idleMs);
-      };
-      const signal = options.signal ? AbortSignal.any([options.signal, idle.signal]) : idle.signal;
-      try {
-        const { url, body } = request(messages, tools);
-        const response = await fetch(url, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-          signal,
-        });
-        if (!response.ok) {
-          const body = await response.json().catch(() => null);
-          const detail = body?.error?.message ? `: ${String(body.error.message).slice(0, 200)}` : "";
-          throw new Error(`The model request failed (${response.status})${detail}`);
+  /** One try. The deadline counts from the last sign of life: an answer may take long, but not go quiet. */
+  async function once(messages: ChatMessage[], tools: ToolSpec[], options: CompleteOptions): Promise<ModelReply> {
+    const idle = new AbortController();
+    let timer = setTimeout(() => idle.abort(new DOMException("idle", "TimeoutError")), idleMs);
+    const alive = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => idle.abort(new DOMException("idle", "TimeoutError")), idleMs);
+    };
+    const signal = options.signal ? AbortSignal.any([options.signal, idle.signal]) : idle.signal;
+    try {
+      const { url, body } = request(messages, tools);
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal,
+      }).catch((error) => {
+        // Not stopped by us: the network failed before an answer began.
+        throw signal.aborted ? error : new TransientError(UNREACHABLE_MESSAGE);
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        const detail = body?.error?.message ? `: ${String(body.error.message).slice(0, 200)}` : "";
+        const message = `The model request failed (${response.status})${detail}`;
+        if (isRetryStatus(response.status)) {
+          throw new TransientError(message, retryAfterMs(response.headers.get("retry-after")));
         }
-        const streamed = response.headers.get("content-type")?.includes("text/event-stream");
-        if (api === "responses") {
-          return streamed
-            ? await readResponsesStream(response, options.onText, alive)
-            : responseReply(await response.json());
-        }
-        return streamed
-          ? await readCompletionStream(response, options.onText, alive)
-          : wholeReply(await response.json());
-      } catch (error) {
-        if (idle.signal.aborted && !options.signal?.aborted) throw new Error(TIMEOUT_MESSAGE);
-        throw error;
-      } finally {
-        clearTimeout(timer);
+        throw new Error(message);
       }
-    },
+      const streamed = response.headers.get("content-type")?.includes("text/event-stream");
+      if (api === "responses") {
+        return streamed
+          ? await readResponsesStream(response, options.onText, alive)
+          : responseReply(await response.json());
+      }
+      return streamed ? await readCompletionStream(response, options.onText, alive) : wholeReply(await response.json());
+    } catch (error) {
+      if (idle.signal.aborted && !options.signal?.aborted) throw new Error(TIMEOUT_MESSAGE);
+      throw error;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  return {
+    complete: (messages: ChatMessage[], tools: ToolSpec[], options: CompleteOptions = {}) =>
+      withRetries(() => once(messages, tools, options), { signal: options.signal, firstDelayMs: retryMs }),
   };
 }
 

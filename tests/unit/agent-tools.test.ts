@@ -1,17 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { createScoreToolGateway, scoreTools } from "@/modules/assistant";
-import { barStyle, barEvents, createExample, createSession, type Session } from "@/modules/score";
+import { createScoreToolGateway, createTurnEdits, scoreTools } from "@/modules/assistant";
+import { barStyle, barEvents, createExample } from "@/modules/score";
 
 function gateway() {
-  let session: Session = createSession(createExample());
-  const call = createScoreToolGateway(
-    () => session,
-    (next) => {
-      session = next;
-    },
-  );
-  return { call, current: () => session };
+  const edits = createTurnEdits(createExample());
+  return { call: createScoreToolGateway(edits), current: () => ({ score: edits.score() }) };
 }
 
 type Context = { revision: number; score: string; selected: string[]; vocabulary: { chordExamples: string[] } };

@@ -159,3 +159,37 @@ test("on the Responses API, the conversation becomes input items and the text st
   assert.deepEqual(reply.toolCalls, [{ id: "c2", name: "page_check", arguments: '{"attachment":1}' }]);
   assert.deepEqual(reply.usage, { inputTokens: 90, outputTokens: 12, cachedInputTokens: 60 });
 });
+
+/** Answers each request with the next response in `replies`, counting the requests. */
+function serve(...replies: (() => Response)[]) {
+  let calls = 0;
+  globalThis.fetch = (async () => replies[Math.min(calls++, replies.length - 1)]()) as unknown as typeof fetch;
+  return () => calls;
+}
+const sse = (chunks: unknown[], done = true) =>
+  new Response([...chunks.map((c) => `data: ${JSON.stringify(c)}\n\n`), done ? "data: [DONE]\n\n" : ""].join(""), {
+    headers: { "Content-Type": "text/event-stream" },
+  });
+const quick = () => createMetaModel("key", undefined, undefined, { retryMs: 1 });
+
+test("a busy or failing provider is asked again; a request it refuses is not", async () => {
+  const busy = () => Response.json({ error: { message: "overloaded" } }, { status: 503 });
+  let calls = serve(busy, () => sse([{ choices: [{ delta: { content: "Ok." }, finish_reason: "stop" }] }]));
+  assert.equal((await ask(quick())).content, "Ok.");
+  assert.equal(calls(), 2);
+  calls = serve(() => Response.json({ error: { message: "bad tool schema" } }, { status: 400 }));
+  await assert.rejects(ask(quick()), /\(400\): bad tool schema/);
+  assert.equal(calls(), 1);
+  calls = serve(busy);
+  await assert.rejects(ask(quick()), /\(503\)/);
+  assert.equal(calls(), 3, "gives up after a few tries");
+});
+
+test("a stream cut off before its text began is asked again; once its text is shown, it fails", async () => {
+  const cut = () => sse([{ choices: [{ delta: {} }] }], false);
+  const calls = serve(cut, () => sse([{ choices: [{ delta: { content: "Ok." } }] }]));
+  assert.equal((await ask(quick())).content, "Ok.");
+  assert.equal(calls(), 2);
+  serve(() => sse([{ choices: [{ delta: { content: "<score>\nbar 1:" } }] }], false));
+  await assert.rejects(ask(quick()), /ended early/);
+});
