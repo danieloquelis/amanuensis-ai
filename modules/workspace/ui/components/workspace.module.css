@@ -243,15 +243,16 @@
 }
 
 /*
- * The chat expanded into the left column (16 px margin + 400 px + 16 px gap): the toolbar row and
- * the sheet move into the rest together, so the toolbar stays centred over the score.
+ * The chat expanded into the left column (16 px margin + its width, `--chat-width`, set as it is
+ * dragged): the toolbar row and the sheet move into the rest together, so the toolbar stays
+ * centred over the score.
  */
 .studio[data-chat="sidebar"] .overlay {
-  left: 416px;
+  left: calc(var(--chat-width, 520px) + 16px);
 }
 
 .studio[data-chat="sidebar"] .canvas {
-  padding-left: calc(416px + 48px);
+  padding-left: calc(var(--chat-width, 520px) + 16px + 48px);
 }
 
 /* Not much room beside the docked chat: the tempo's name steps aside until the chat is closed. */

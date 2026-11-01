@@ -4,6 +4,7 @@ import { parseScore } from "@/modules/score";
 import { readUploads, type Upload } from "./attachments";
 import type { ModelPort } from "./model-port";
 import { runAssistant, type AssistantResult, type ProgressListener } from "./run-assistant";
+import { thinkingSchema } from "./thinking";
 
 export const MAX_REQUEST_BYTES = 1_000_000;
 const HISTORY_LIMIT = 6;
@@ -18,6 +19,8 @@ const requestSchema = z.strictObject({
     .array(z.strictObject({ instruction: z.string().max(2000), reply: z.string().max(2000) }))
     .max(HISTORY_LIMIT)
     .default([]),
+  /** How long the model may think; the route reads it (see `thinkingOf`). */
+  thinking: thinkingSchema.optional(),
 });
 
 export type AssistantResponse = { status: number; body: AssistantResult | { error: string } };

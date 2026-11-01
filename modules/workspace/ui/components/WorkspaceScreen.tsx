@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { partOf } from "@/modules/score";
 import { localWorkspaceChats } from "@/modules/assistant";
@@ -102,6 +102,7 @@ export function WorkspaceScreen({ workspaceId }: { workspaceId: string }) {
         ref={studio}
         className={`${styles.studio} ${surface.canvas}`}
         data-chat={dock.chatMode}
+        style={{ "--chat-width": `${dock.chatWidth}px` } as CSSProperties}
         aria-label="Score workspace"
       >
         <ScoreCanvas

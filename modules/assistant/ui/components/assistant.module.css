@@ -28,6 +28,7 @@
 
 .bar {
   position: relative;
+  container-type: inline-size;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -90,6 +91,12 @@
   border-radius: 999px;
   background: var(--ai-gradient);
   filter: blur(26px);
+  /*
+   * Its own layer: Safari otherwise leaves the blurred glow's old area painted (two pale boxes
+   * either side) when the bar draws in to record.
+   */
+  transform: translateZ(0);
+  will-change: transform;
   opacity: 0.25;
   animation: ai-turn 12s linear infinite;
   transition:
@@ -522,7 +529,7 @@
   left: 16px;
   display: flex;
   flex-direction: column;
-  width: min(400px, calc(100vw - 32px));
+  width: min(var(--chat-width, 520px), calc(100vw - 32px));
   border-radius: var(--r-xl);
   corner-shape: squircle;
   animation: slide-in var(--medium) var(--ease-out) both;
@@ -852,4 +859,122 @@
   .dock {
     display: none !important;
   }
+}
+
+/* How long the assistant may think: a quiet button in the bar, its level as a word. */
+.thinking {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  corner-shape: squircle;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background var(--fast) var(--ease-out);
+}
+
+.thinking:hover,
+.thinking:focus-visible {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+/* A narrow bar (the chat at its narrowest, a phone) keeps the field's room: the level shows on hover and in the menu. */
+@container (max-width: 600px) {
+  .thinkingLabel {
+    display: none;
+  }
+
+  .thinking {
+    padding: 0 9px;
+  }
+}
+
+/* Shaped here; frosted and eased in by the shared surface panel and popover. */
+.thinkingMenu {
+  width: 260px;
+  padding: 6px;
+  border-radius: var(--r-lg);
+  corner-shape: squircle;
+  transform-origin: bottom left;
+}
+
+.thinkingItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: var(--r-sm);
+  corner-shape: squircle;
+  background: transparent;
+  color: var(--ink-soft);
+  text-align: left;
+  transition: background var(--fast) var(--ease-out);
+}
+
+.thinkingItem:hover,
+.thinkingItem:focus-visible {
+  background: var(--hover);
+  color: var(--ink);
+  outline: none;
+}
+
+.thinkingItem[aria-checked="true"] {
+  color: var(--accent-ink);
+}
+
+.thinkingName {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.thinkingHint {
+  display: block;
+  margin-top: 1px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* The expanded chat's right edge: a strip to drag it wider; a line shows on hover or focus. */
+.resizeHandle {
+  position: absolute;
+  top: 24px;
+  right: -8px;
+  bottom: 24px;
+  width: 16px;
+  cursor: col-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+.resizeHandle::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 7px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity var(--fast) var(--ease-out);
+}
+
+.resizeHandle:hover::after,
+.resizeHandle:focus-visible::after {
+  opacity: 0.5;
+}
+
+.resizeHandle:focus-visible {
+  outline: none;
 }

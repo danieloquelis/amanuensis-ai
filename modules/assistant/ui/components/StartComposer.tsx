@@ -2,7 +2,9 @@ import { useLayoutEffect, useRef, useState } from "react";
 import { Sparkle } from "@phosphor-icons/react";
 import type { StartRequest } from "../../application/start-request";
 import { useAttachments } from "../hooks/use-attachments";
+import { useThinking } from "../hooks/use-thinking";
 import { Composer } from "./Composer";
+import { ThinkingMenu } from "./ThinkingMenu";
 import styles from "./assistant.module.css";
 
 /** Ideas for a first request, sent as they are. */
@@ -21,6 +23,8 @@ export function StartComposer({ onStart }: { onStart: (request: StartRequest) =>
   // for the next visit, rather than still showing the request it sent.
   useLayoutEffect(() => () => setStarted(false), []);
   const attachments = useAttachments();
+  // Chosen here, kept in this browser: the new song's first turn runs at this level.
+  const thinking = useThinking();
   const start = (request: StartRequest) => {
     if (started) return;
     setStarted(true);
@@ -38,6 +42,7 @@ export function StartComposer({ onStart }: { onStart: (request: StartRequest) =>
         onSend={(text, files) => start({ kind: "text", text, files })}
         onTake={(wav) => start({ kind: "take", wav })}
         onStop={() => undefined}
+        accessory={<ThinkingMenu level={thinking.level} onChange={thinking.choose} />}
       />
       <div className={styles.suggestions} data-visible="true" role="group" aria-label="Ideas">
         {STARTERS.map((idea) => (

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { CHAT_WIDTH, clampChatWidth } from "../../application/chat-width";
+import { loadChatWidth, saveChatWidth } from "../../infrastructure/local-chat-width";
 
 /** Closed; floating above the compose bar; or expanded into a sidebar that holds the bar too. */
 export type ChatMode = "closed" | "floating" | "sidebar";
@@ -12,6 +14,17 @@ export function useComposeDock() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState("");
   const [chatMode, setChatMode] = useState<ChatMode>("closed");
+  // The expanded chat's width, as the musician last dragged it in this browser (read after mount).
+  const [chatWidth, setChatWidth] = useState<number>(CHAT_WIDTH.min);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setChatWidth(clampChatWidth(loadChatWidth(), innerWidth)));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  /** Keeps a width the musician settled on. */
+  const keepChatWidth = useCallback((width: number) => {
+    setChatWidth(width);
+    saveChatWidth(width);
+  }, []);
 
   const focus = useCallback(() => inputRef.current?.focus(), []);
   const toggleChat = useCallback(() => setChatMode((mode) => (mode === "closed" ? "floating" : "closed")), []);
@@ -33,7 +46,21 @@ export function useComposeDock() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [focus, dismissChat]);
 
-  return { inputRef, draft, setDraft, focus, chatMode, toggleChat, openChat, expandChat, closeChat, dismissChat };
+  return {
+    inputRef,
+    draft,
+    setDraft,
+    focus,
+    chatMode,
+    toggleChat,
+    openChat,
+    expandChat,
+    closeChat,
+    dismissChat,
+    chatWidth,
+    setChatWidth,
+    keepChatWidth,
+  };
 }
 
 export type ComposeDockState = ReturnType<typeof useComposeDock>;

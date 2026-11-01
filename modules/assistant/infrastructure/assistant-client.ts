@@ -1,3 +1,4 @@
+import type { Thinking } from "../application/thinking";
 import type { VoiceResult } from "../application/handle-voice-request";
 import type { AssistantResult, AssistantTurn, ProgressListener } from "../application/run-assistant";
 import type { StreamLine } from "./progress-stream";
@@ -11,6 +12,8 @@ export type AssistantPayload = {
   /** What the selection is called ("Bars 3–6"); the musician may refer to it by name. */
   selectionName?: string;
   history: AssistantTurn[];
+  /** How long the model may think. */
+  thinking?: Thinking;
   /** With a take sent again: the words already heard in it, so they are not recognized twice. */
   speech?: SpeechTurn[];
 };

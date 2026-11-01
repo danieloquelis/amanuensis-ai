@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Command, Score } from "@/modules/score";
 import { takeParts, type TakePart } from "@/modules/voice";
 import { askedAfter, withHeardWords, type AskedTake } from "../../application/asked-take";
+import { useThinking } from "./use-thinking";
 import { attachmentKind } from "../../application/attachments";
 import type { ChatRepository, Turn } from "../../application/chat-history";
 import type { HeardTake } from "../../application/handle-voice-request";
@@ -61,9 +62,11 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
   const [restored, setRestored] = useState(false);
   // Holds a take's audio too, so retrying never asks the musician to sing again.
   const attempts = useRef(new Map<string, Attempt>());
+  // The last take, which typed words go with: an answer about it, or a follow-up once written.
   const asked = useRef<AskedTake | null>(null);
   const busy = turns.some((turn) => turn.status === "working");
   const live = useLiveTurn();
+  const thinking = useThinking();
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -118,7 +121,7 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
     const took = () => ({ seconds: (Date.now() - started) / 1000 });
     const signal = live.begin();
     try {
-      const payload = { instruction, score: getScore(), ...selection, history };
+      const payload = { instruction, score: getScore(), ...selection, history, thinking: thinking.level };
       const result = await request(
         payload,
         (activity) => {
@@ -202,7 +205,8 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
       : (payload, progress, signal) => requestAssistant(payload, progress, files, signal);
     const attached = files.map((file) => ({ name: file.name, kind: attachmentKind(file.type, file.name) ?? "text" }));
     const result = await run(text, { instruction: text, request, context }, false, undefined, attached);
-    asked.current = askedAfter(asked.current, take, result);
+    // Attached files start something else: the take is left behind.
+    asked.current = askedAfter(asked.current, take, result, files.length > 0);
   };
 
   const sendTake = async (wav: Uint8Array, context: RequestContext) => {
@@ -243,5 +247,7 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
     canRetry,
     retry,
     clear,
+    /** How long the model may think, as the musician chose it. */
+    thinking,
   };
 }

@@ -8,6 +8,8 @@ import { useAttachments } from "../hooks/use-attachments";
 import type { ComposeDockState } from "../hooks/use-compose-dock";
 import { ChatThread } from "./ChatThread";
 import { Composer } from "./Composer";
+import { ChatResizeHandle } from "./ChatResizeHandle";
+import { ThinkingMenu } from "./ThinkingMenu";
 import styles from "./assistant.module.css";
 
 const SUGGESTIONS = ["Chords C, F, G7, C — one per bar", "Add D.C. al Fine at the end", "Make it waltz time"];
@@ -77,18 +79,20 @@ export function ComposeDock({ assistant, dock, context, revision, onUndo }: Comp
         void sendTake(wav, context);
       }}
       accessory={
-        !sidebar &&
-        turns.length > 0 && (
-          <IconButton
-            label={`${dock.chatMode === "floating" ? "Hide chat" : "Show chat"}${working ? ", the assistant is working" : ""}`}
-            aria-pressed={dock.chatMode === "floating"}
-            className={styles.chatButton}
-            onClick={dock.toggleChat}
-          >
-            <ChatsCircle size={21} />
-            {working && <span className={styles.activityDot} aria-hidden="true" />}
-          </IconButton>
-        )
+        <>
+          <ThinkingMenu level={assistant.thinking.level} onChange={assistant.thinking.choose} />
+          {!sidebar && turns.length > 0 && (
+            <IconButton
+              label={`${dock.chatMode === "floating" ? "Hide chat" : "Show chat"}${working ? ", the assistant is working" : ""}`}
+              aria-pressed={dock.chatMode === "floating"}
+              className={styles.chatButton}
+              onClick={dock.toggleChat}
+            >
+              <ChatsCircle size={21} />
+              {working && <span className={styles.activityDot} aria-hidden="true" />}
+            </IconButton>
+          )}
+        </>
       }
     />
   );
@@ -102,6 +106,7 @@ export function ComposeDock({ assistant, dock, context, revision, onUndo }: Comp
           </button>,
         )}
         <div className={styles.sidebarComposer}>{composer}</div>
+        <ChatResizeHandle width={dock.chatWidth} onResize={dock.setChatWidth} onDone={dock.keepChatWidth} />
       </aside>
     );
   }
