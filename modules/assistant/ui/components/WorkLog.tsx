@@ -1,6 +1,6 @@
 import { CheckCircle, Circle, Lightbulb, Wrench } from "@phosphor-icons/react";
 import type { PlanStep } from "../../application/agent-state";
-import type { WorkEntry } from "../../application/work-log";
+import { readableThought, type WorkEntry } from "../../application/work-log";
 import { stepLine } from "../hooks/use-activity-line";
 import styles from "./assistant.module.css";
 
@@ -26,7 +26,7 @@ export function PlanChecklist({ steps }: { steps: PlanStep[] }) {
 
 /** A thought's sentences: the summary streams in sentence by sentence. */
 const sentencesOf = (text: string) =>
-  text
+  readableThought(text)
     .trim()
     .split(/(?<=[.!?])\s+/)
     .filter(Boolean);
@@ -57,7 +57,7 @@ export function WorkEntries({ log }: { log: WorkEntry[] }) {
           entry.text.trim() && (
             <li key={i} className={styles.thought}>
               <Lightbulb size={13} aria-hidden="true" />
-              <span>{entry.text.trim()}</span>
+              <span>{readableThought(entry.text.trim())}</span>
             </li>
           )
         ) : (
