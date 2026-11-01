@@ -1,5 +1,9 @@
-import { UsersThree } from "@phosphor-icons/react";
+import { InstrumentIcon } from "@/modules/editor/ui";
+import type { InstrumentId } from "@/modules/score";
 import styles from "./assistant.module.css";
+
+/** The band the button pictures, as a little triangle: piano on top, drums and bass below. */
+const PICTURED: InstrumentId[] = ["piano", "drums", "bass"];
 
 /**
  * Band Mode in the compose bar: one press turns it on or off. On, music several parts play goes to
@@ -20,7 +24,13 @@ export function BandMenu({ on, onTurn }: { on: boolean; onTurn: (on: boolean) =>
       title={label}
       onClick={() => onTurn(!on)}
     >
-      <UsersThree size={18} weight={on ? "fill" : "regular"} aria-hidden="true" />
+      <span className={styles.bandTriangle} aria-hidden="true">
+        {PICTURED.map((instrument) => (
+          <span key={instrument}>
+            <InstrumentIcon instrument={instrument} size={9} />
+          </span>
+        ))}
+      </span>
       <span className={styles.bandLabel}>Band</span>
     </button>
   );
