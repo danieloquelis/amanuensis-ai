@@ -23,6 +23,8 @@ Start with the [product brief](product/product-brief.md), then the [architecture
 | [Melody transcription](research/melody-transcription.md) | Sung audio → notes and rhythm: model findings, pipeline, measured accuracy |
 | [Instrument sounds](research/instrument-sounds.md) | Sample sources, licenses and sizes for piano, winds, guitar and drums |
 | [Interaction research](research/interaction-and-motion.md) | Rive, interaction states and accessibility |
+| [Agent architecture review](research/agent-architecture-review.md) | Is the agent built soundly: multimodality, Meta SDKs and frameworks, ranked recommendations |
+| [Prompt rules evaluation](research/prompt-rules-eval.md) | Which system-prompt rules change what the agent does, measured by leaving each out |
 
 ## Working decisions
 
