@@ -16,7 +16,12 @@ import { parseBarsText, type WrittenBar, type WrittenEvent } from "./score-text-
  */
 function spelled(events: WrittenEvent[], meter: Meter): WrittenEvent[] {
   let at = 0;
-  return events.flatMap((event) => {
+  return events.flatMap((event, i) => {
+    // A triplet is written as given; the next value starts where the whole group ends.
+    if (event.tuplet !== null) {
+      if (events[i + 1]?.tuplet !== event.tuplet) at = Math.round((at + soundingLength(events, i)) * 8) / 8;
+      return [event];
+    }
     const silent = event.pitch === null && !event.drums.length;
     const parts = spellRhythm(at, event.duration, meter, silent);
     at += event.duration;
@@ -43,6 +48,13 @@ function spelled(events: WrittenEvent[], meter: Meter): WrittenEvent[] {
       };
     });
   });
+}
+
+/** How long the triplet ending at `last` sounds: its written values in two thirds of their time. */
+function soundingLength(events: WrittenEvent[], last: number): number {
+  let written = 0;
+  for (let i = last; i >= 0 && events[i].tuplet === events[last].tuplet; i--) written += events[i].duration;
+  return (written * 2) / 3;
 }
 
 /** How a line's pitches are given: as they sound (concert, the default) or as the part's page shows them. */
@@ -137,12 +149,13 @@ export function writeBars(
     if (events) {
       const meter = meterOf(bar);
       const parts = spelled(pitches === "written" ? soundingLine(score, staff, events) : events, meter);
-      const notes = parts.map(({ pitch, stack, drums, duration, tie }) => ({
+      const notes = parts.map(({ pitch, stack, drums, duration, tie, tuplet }) => ({
         pitch,
         ...(stack.length ? { stack } : {}),
         ...(drums.length ? { drums } : {}),
         duration,
         tie,
+        ...(tuplet !== null ? { tuplet } : {}),
       }));
       operations.push({ type: "replaceMeasure", measureId, events: notes, ...(voice > 1 || staff ? { voiceId } : {}) });
       parts.forEach((event, k) => written.push({ ...event, line: voiceId, id: createdNoteId(requestId, index, k) }));

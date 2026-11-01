@@ -15,6 +15,7 @@ import { drumOperationSchemas } from "./drum-schemas";
 import { ensembleOperationSchemas } from "./ensemble-schemas";
 import { phraseOperationSchemas } from "./phrase-schemas";
 import { timeOperationSchemas } from "./time-schemas";
+import { tupletOperationSchemas } from "./tuplet-schemas";
 
 /** Room for a whole score written at once: 8 parts × 32 bars of notes, with chords and sections. */
 export const OPERATION_BATCH_LIMIT = 1024;
@@ -45,7 +46,9 @@ export const operationSchema = z.discriminatedUnion("type", [
     ),
   z
     .strictObject({ type: z.literal("setDuration"), eventId, duration: durationSchema.describe("Quarter-note beats.") })
-    .describe("Change a note's written value. Growing uses only the rests after it; shrinking leaves rests."),
+    .describe(
+      "Change a note's written value. Growing uses only the rests after it; shrinking leaves rests. Inside a triplet, values change within it: a triplet eighth can grow into the triplet's rests after it, and the triplet keeps its length.",
+    ),
   z.strictObject({ type: z.literal("removeEvent"), eventId }).describe("Turn a note into a rest of the same length."),
   z
     .strictObject({
@@ -112,6 +115,7 @@ export const operationSchema = z.discriminatedUnion("type", [
   ...notationOperationSchemas,
   ...phraseOperationSchemas,
   ...timeOperationSchemas,
+  ...tupletOperationSchemas,
   ...measureOperationSchemas,
   ...partOperationSchemas,
   ...voiceOperationSchemas,

@@ -1,4 +1,5 @@
 import { getMeasure } from "../queries";
+import { renameTuplets } from "../tuplets";
 import { createMeasure, measureEvents, replaceVoiceBars, voiceBars } from "../voice-access";
 import { copyAnchored, type CopyMap } from "./copy-anchored";
 import { copyStaffBars } from "./copy-staff-bars";
@@ -46,6 +47,7 @@ export function copyBars(draft: Draft, op: OperationOf<"copyBars">, context: Ope
         return { ...event, id };
       }),
     }));
+    bars.forEach((bar, v) => renameTuplets(bar.events, `${idPrefix}-${k}v${v}`));
     replaceVoiceBars(target, bars);
     map.first.set(source.id, targetId);
     chords

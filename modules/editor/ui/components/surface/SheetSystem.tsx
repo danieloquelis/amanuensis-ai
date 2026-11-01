@@ -1,5 +1,5 @@
 import { beatX, systemBottom, type System } from "@/modules/engraving";
-import { BeamLines, ChordSymbol, IndicationText, SystemStaves, TieArcs } from "@/modules/engraving/ui";
+import { BeamLines, ChordSymbol, IndicationText, SystemStaves, TieArcs, TupletMarks } from "@/modules/engraving/ui";
 import styles from "./score-surface.module.css";
 import { BarArea } from "./BarArea";
 import { SheetBar } from "./SheetBar";
@@ -20,7 +20,7 @@ type SheetSystemProps = {
   arriving?: ReadonlyMap<string, number>;
 };
 
-/** One line of music. Children are drawn in paint order: staves, bars, notes, beams, ties and slurs, overlays. */
+/** One line of music. Children are drawn in paint order: staves, bars, notes, beams, triplets, ties and slurs, overlays. */
 export function SheetSystem(props: SheetSystemProps) {
   const { system, eventOrder, partNames, laneNames, playBeat, interactions, arriving } = props;
   const events = [...system.events].sort((a, b) => eventOrder.get(a.event.id)! - eventOrder.get(b.event.id)!);
@@ -67,6 +67,7 @@ export function SheetSystem(props: SheetSystemProps) {
         />
       ))}
       <BeamLines beams={system.beams} />
+      <TupletMarks tuplets={system.tuplets} />
       <TieArcs ties={system.ties} />
       {system.slurs.map((slur) => (
         <SheetSlur key={slur.id} slur={slur} interactions={interactions} />

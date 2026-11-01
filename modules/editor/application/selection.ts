@@ -1,4 +1,13 @@
-import { barEvents, eventOnsets, findEvent, measureEvents, partOf, type Score, type ScoreEvent } from "@/modules/score";
+import {
+  barEvents,
+  eventOnsets,
+  findEvent,
+  groupOf,
+  measureEvents,
+  partOf,
+  type Score,
+  type ScoreEvent,
+} from "@/modules/score";
 
 export type Selection = { event: ScoreEvent; measureIndex: number };
 
@@ -31,7 +40,9 @@ export function toolTarget(
   const measure = score.measures[selection.measureIndex];
   const events = findEvent(score, selection.event.id)?.voiceBar.events ?? barEvents(measure);
   const index = events.findIndex((e) => e.id === selection.event.id);
-  const beat = eventOnsets(events)[index];
+  // A triplet's notes fall between the beats chords and marks sit on: its tools act from where it starts.
+  const group = groupOf(events, selection.event.id);
+  const beat = eventOnsets(events)[group ? group.first : index];
   const partId = partOf(score, selection.event.id).id;
   return { barIndex: selection.measureIndex, measureId: measure.id, eventId: selection.event.id, beat, partId };
 }

@@ -6,7 +6,7 @@ export { copyFromSelection, cutEdit, pasteBarsText, pasteEdit, type Clip } from 
 export { hasSecondVoice, secondVoiceEdit } from "./application/voice-edits";
 export { addToChordEdit, typedLetterEdit } from "./application/chord-edits";
 export { findSelection, selectionAfterEdit, type Selection } from "./application/selection";
-export { letterNoteEdit, toggleRestOperation, type Edit } from "./application/note-edits";
+export { letterNoteEdit, toggleRestOperation, tripletEdit, type Edit } from "./application/note-edits";
 export { addDrumPieceEdit, drumDragEdit, drumRestEdit, stepDrumEdit } from "./application/drum-edits";
 export {
   allHave,

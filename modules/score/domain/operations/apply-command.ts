@@ -24,6 +24,7 @@ import { addPart, movePart, removePart, renamePart, setPartMix, setStaffCount } 
 import { putGroove, setDrums } from "./drum-operations";
 import { putSlur, shapeSlur, transpose } from "./phrase-operations";
 import { shiftTime, stretchTime } from "./time-operations";
+import { makeTuplet, removeTuplet } from "./tuplet-operations";
 import { putAnnotation, putRepeat, removeNotation, removeTempo, rename, setKey, setTempo } from "./notation-operations";
 import { commandSchema, type Command, type OperationOf, type OperationType } from "./schema";
 
@@ -78,6 +79,8 @@ const handlers: OperationHandlers = {
   setPartMix,
   setDrums,
   putGroove,
+  makeTuplet,
+  removeTuplet,
 };
 
 /**

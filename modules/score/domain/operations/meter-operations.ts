@@ -93,7 +93,7 @@ function trimTrailingRests(events: ScoreEvent[], excess: number, meter: Meter, p
   const removedIds: string[] = [];
   while (excess > 0) {
     const last = events.at(-1)!;
-    if (isNote(last)) {
+    if (isNote(last) || last.tuplet) {
       throw new Error(
         `Changing to ${meterName(meter)} would cut notes. Choose Fit rhythm or make room with rests first.`,
       );

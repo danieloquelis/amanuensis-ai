@@ -1,6 +1,6 @@
 import { formatChord, isNote, type Score } from "@/modules/score";
 import { ARTICULATION_HALF_HEIGHT, articulationPlace } from "./articulation";
-import { beatX, type EngravedEvent, type System } from "./scene";
+import { beatX, tupletInk, type EngravedEvent, type System } from "./scene";
 import { staffOf } from "./staff-layout";
 
 /** Space between the topmost ink and the chord row, and between rows. */
@@ -29,7 +29,8 @@ function eventTop(item: EngravedEvent, systemTop: number): number {
 export function placeAboveStaff(system: System, score: Score): void {
   const topStaff = system.events.filter((e) => staffOf(e) === 0);
   const beamTops = system.beams.filter((b) => !b.down).map((b) => Math.min(b.y1, b.y2));
-  const inkTop = Math.min(system.top, ...topStaff.map((e) => eventTop(e, system.top)), ...beamTops);
+  const tupletTops = system.tuplets.filter((t) => t.above && !t.staff).map((t) => tupletInk(t).top);
+  const inkTop = Math.min(system.top, ...topStaff.map((e) => eventTop(e, system.top)), ...beamTops, ...tupletTops);
   system.chordY = Math.min(system.top - 14, inkTop - CHORD_CLEARANCE);
   system.chords = system.bars.flatMap((bar) =>
     score.chords
@@ -55,5 +56,6 @@ export function systemCeiling(system: System): number {
     system.chords.length ? system.chordY - ROW_TEXT_HEIGHT : Infinity,
     hasMarks ? system.markY - ROW_TEXT_HEIGHT : Infinity,
     ...system.labels.filter((l) => l.kind === "text").map((l) => l.y - 12),
+    ...system.tuplets.filter((t) => t.above && !t.staff).map((t) => tupletInk(t).top),
   );
 }

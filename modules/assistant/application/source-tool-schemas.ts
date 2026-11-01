@@ -50,7 +50,7 @@ export const readSourceSchema = z.strictObject({
     .max(16)
     .optional()
     .describe(
-      'Notation the score cannot hold (see Not yet supported), with where: "triplets in bars 9–10", "hairpins", "lyrics".',
+      'Notation the score cannot hold (see Not yet supported), with where: "quintuplets in bar 9", "hairpins", "lyrics". Triplets in simple meters are not listed here: write them (3[…]).',
     ),
   unclear: z
     .array(z.string().max(160))

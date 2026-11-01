@@ -8,6 +8,7 @@ export { StaticSystem } from "./components/StaticSystem";
 export { SystemStaves } from "./components/SystemStaves";
 export { TempoNote } from "./components/TempoNote";
 export { TieArcs } from "./components/TieArcs";
+export { TupletMarks } from "./components/TupletMarks";
 export {
   ChordSymbol,
   EndMarkText,

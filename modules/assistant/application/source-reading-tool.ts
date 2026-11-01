@@ -10,9 +10,16 @@ type ToolResult = { ok: true; [key: string]: unknown } | { ok: false; error: str
 /** What the reading tools keep within one turn: whether the source was read, and each page's detected heads. */
 export type SourceState = { read: boolean; pages: Map<number, PageDetection> };
 
-/** How notation the score cannot hold is written, matched by what the reading calls it. */
+/**
+ * How notation the score cannot hold is written, matched by what the reading calls it. Triplets
+ * are written as triplets (3[…]); only other tuplets, and triplets in 2/2 or compound meters, land here.
+ */
 const APPROXIMATIONS: [RegExp, string][] = [
-  [/triplet|tuplet/i, "write the nearest straight rhythm"],
+  [
+    /tuplet|duplet|quadruplet|quintuplet|sextuplet|septuplet/i,
+    "write a triplet where it fits, else the nearest straight rhythm",
+  ],
+  [/triplet/i, "write the nearest straight rhythm (triplets are written only in simple meters such as 2/4, 3/4, 4/4)"],
   [/hairpin|wedge|crescendo|diminuendo/i, "leave out"],
   [/ending|volta/i, "write out in full"],
   [/lyric/i, "leave out (keep the chord symbols above them)"],

@@ -65,6 +65,11 @@ export const eventSchema = z.strictObject({
   stack: z.array(pitchSchema).min(1).max(5).optional(),
   /** A drum hit: the kit pieces struck together, lowest on the staff first; `pitch` is then null. */
   drums: z.array(z.enum(DRUM_PIECE_CODES)).min(1).max(MAX_DRUM_HITS).optional(),
+  /**
+   * A member of a triplet: three written values in the time of two. `duration` stays the written
+   * value; every member of a group carries the same mark, and the group's span is derived.
+   */
+  tuplet: z.strictObject({ id: idSchema, actual: z.literal(3), normal: z.literal(2) }).optional(),
 });
 
 export const CLEFS = ["treble", "bass", "treble8vb", "percussion"] as const;

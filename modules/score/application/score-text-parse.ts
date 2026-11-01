@@ -18,6 +18,8 @@ export type WrittenEvent = {
   articulation: Articulation | null;
   opensSlur: boolean;
   closesSlur: boolean;
+  /** Its triplet within the bar (1, 2…), from "3[…]"; null outside one. */
+  tuplet: number | null;
 };
 export type WrittenBar = {
   bar: number;
@@ -42,8 +44,11 @@ const PITCH = /^([A-G])([#bn]?)(\d)$/;
 const BARE_DRUM = new RegExp(
   `^(\\(?)(${[...DRUM_PIECE_CODES].sort((a, b) => b.length - a.length).join("|")})([whqes].*)$`,
 );
-/** Tokens are split on spaces, except inside a chord's angle brackets. */
-const TOKENS = /\(?<[^>]*>\S*|\S+/g;
+/** Tokens are split on spaces, except inside a chord's angle brackets (also right after "3["). */
+const TOKENS = /\(?(?:3\[)?<[^>]*>\S*|\S+/g;
+/** A triplet's opening "3[" after any slur start, and its closing "]" before any slur end. */
+const TRIPLET_START = /^(\(?)3\[/;
+const TRIPLET_END = /\](\)?)$/;
 const ALTERS: Record<string, -1 | 0 | 1> = { b: -1, "": 0, n: 0, "#": 1 };
 
 /** Slips that can only mean one thing, read as meant: a trailing comma, a drum piece without its brackets. */
@@ -79,7 +84,44 @@ function parseToken(token: string, bar: number): WrittenEvent {
     articulation: (ARTICULATIONS as readonly string[]).includes(articulation) ? (articulation as Articulation) : null,
     opensSlur: open === "(",
     closesSlur: close === ")",
+    tuplet: null,
   };
+}
+
+/**
+ * A line's notes, with triplets numbered in order: "3[" opens one (before a note, after a slur's
+ * "(", or as a token of its own) and "]" closes it (after a note, before a slur's ")", or alone).
+ */
+function parseNotes(tokens: string[], bar: number): WrittenEvent[] {
+  const events: WrittenEvent[] = [];
+  let open: number | null = null;
+  let groups = 0;
+  const begin = () => {
+    if (open !== null) throw new Error(`Bar ${bar}: a triplet cannot start inside another; close it with "]" first.`);
+    open = ++groups;
+  };
+  const close = () => {
+    if (open === null) throw new Error(`Bar ${bar}: "]" closes a triplet that was not opened with "3[".`);
+    open = null;
+  };
+  for (const raw of tokens) {
+    if (raw === "3[") begin();
+    else if (raw === "]") close();
+    else {
+      let token = raw.replace(/,+$/, "");
+      const start = TRIPLET_START.exec(token);
+      if (start) {
+        token = start[1] + token.slice(start[0].length);
+        begin();
+      }
+      const end = TRIPLET_END.exec(token);
+      if (end) token = token.slice(0, end.index) + (end[1] ?? "");
+      events.push({ ...parseToken(forgiven(token), bar), tuplet: open });
+      if (end) close();
+    }
+  }
+  if (open !== null) throw new Error(`Bar ${bar}: a triplet opened with "3[" is never closed with "]".`);
+  return events;
 }
 
 /** Parses "bar N: notes ; chords … ; section …" and "bar N vK: …" lines; read-only parts are ignored. */
@@ -104,8 +146,7 @@ export function parseBarsText(text: string): WrittenBar[] {
       ...(staff ? { staff } : {}),
       voice,
       remove,
-      events:
-        remove || (tokens.length === 1 && tokens[0] === "R") ? null : tokens.map((t) => parseToken(forgiven(t), bar)),
+      events: remove || (tokens.length === 1 && tokens[0] === "R") ? null : parseNotes(tokens, bar),
       chords: [],
       section: null,
     };

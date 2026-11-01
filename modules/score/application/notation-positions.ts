@@ -13,6 +13,11 @@ const HANDLE = /^(chord|slur|mark|repeat|dynamic|text)\s+(.+)$/;
 const AT_BEAT = /^(?:([a-z][\w-]*(?:\.\d)?)\/)?(\d+)(?:v(\d))?:(\d+(?:\.\d+)?)$/;
 const AT_ORDER = /^(?:([a-z][\w-]*(?:\.\d)?)\/)?(\d+)(?:v(\d))?#(\d+)$/;
 const EPSILON = 1e-9;
+/**
+ * How close a written beat must be to a note's onset: "1.33" names a triplet's second note (1⅓). A
+ * third of a beat is at least 1/24 beat from any eighth-grid position, so this never picks the wrong one.
+ */
+const BEAT_TOLERANCE = 0.01;
 
 export const isNotationHandle = (value: unknown): value is string => typeof value === "string" && HANDLE.test(value);
 
@@ -29,7 +34,7 @@ function eventAt(score: Score, where: string): { id: string; bar: number; beat: 
   const onsets = eventOnsets(events);
   const index = AT_ORDER.test(where)
     ? Number(place) - 1
-    : onsets.findIndex((onset) => Math.abs(onset - (Number(place) - 1)) < EPSILON);
+    : onsets.findIndex((onset) => Math.abs(onset - (Number(place) - 1)) < BEAT_TOLERANCE);
   const event = events[index];
   return event ? { id: event.id, bar, beat: onsets[index] } : null;
 }

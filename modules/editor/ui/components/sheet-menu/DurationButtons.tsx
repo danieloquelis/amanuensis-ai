@@ -5,8 +5,8 @@ import type { CommitEdit } from "../../hooks/use-score-editor";
 import styles from "./sheet-menu.module.css";
 
 /**
- * Note values, drawn as rests when the event is a rest; then the dot, with `children` (the tie)
- * in the same group.
+ * Note values, drawn as rests when the event is a rest; then the dot, with `children` (triplet
+ * and tie) in the same group. A triplet's notes take no dot.
  */
 export function DurationButtons({
   event,
@@ -32,11 +32,11 @@ export function DurationButtons({
           </button>
         ))}
       </div>
-      <div className={styles.durations} role="group" aria-label="Dot and tie">
+      <div className={styles.durations} role="group" aria-label="Dot, triplet and tie">
         <button
           aria-label="Dotted duration"
           aria-pressed={dotted && !event.measureRest}
-          disabled={event.measureRest}
+          disabled={event.measureRest || !!event.tuplet}
           onClick={() => onCommand(toggleDotOperation(event), "Changed dotted duration")}
         >
           <span className={styles.dot}>·</span>

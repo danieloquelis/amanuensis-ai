@@ -36,18 +36,24 @@ export function add(a: Fraction, b: Fraction): Fraction {
 
 export const beats = (value: Fraction) => value.numerator / value.denominator;
 
+/** What timing needs of an event: its written value, and its triplet mark if it has one. */
+type Timed = Pick<ScoreEvent, "duration"> & { tuplet?: ScoreEvent["tuplet"] };
+
 /**
  * How long an event sounds, as an exact fraction of quarter-note beats. `event.duration` is the
  * written value, which decides how the note looks; time arithmetic (onsets, bar totals, playback)
- * uses this instead, so a written value that sounds shorter (a triplet eighth) needs one change here.
+ * uses this instead: a triplet member sounds two thirds of its written value.
  */
-export const soundingDuration = (event: Pick<ScoreEvent, "duration">): Fraction => event.duration;
+export function soundingDuration(event: Timed): Fraction {
+  const { duration, tuplet } = event;
+  return tuplet ? fraction(duration.numerator * tuplet.normal, duration.denominator * tuplet.actual) : duration;
+}
 
 /** How long an event sounds, in quarter-note beats. */
-export const soundingBeats = (event: Pick<ScoreEvent, "duration">) => beats(soundingDuration(event));
+export const soundingBeats = (event: Timed) => beats(soundingDuration(event));
 
 /** Where each event starts in its bar, in beats from 0, summed exactly so positions never drift. */
-export function eventOnsets(events: readonly Pick<ScoreEvent, "duration">[]): number[] {
+export function eventOnsets(events: readonly Timed[]): number[] {
   let at = fraction(0);
   return events.map((event) => {
     const onset = beats(at);

@@ -17,6 +17,7 @@ import { validateSlurs } from "./slurs";
 import { validateStack } from "./stacks";
 import { validateAnnotationStaff, validateStructure } from "./structure-validation";
 import { validateTies } from "./ties";
+import { validateTuplets } from "./tuplets";
 import { isNote, isRest, voiceBars } from "./voice-access";
 
 /** Parses and validates a native score, migrating older files without changing IDs, notes or revision. */
@@ -72,7 +73,7 @@ function validateVoiceBar(events: ScoreEvent[], meter: Meter, ids: IdRegistry) {
       throw new Error("A full-measure rest must occupy the measure alone.");
     }
     if (!event.measureRest && !isSupportedDuration(beats(event.duration))) {
-      throw new Error("Unsupported duration; tuplets are not available yet.");
+      throw new Error("Unsupported duration. Use a whole, half, quarter, eighth or sixteenth, dotted or not.");
     }
     validateStack(event);
     if (isRest(event) && event.articulation && event.articulation !== "fermata") {
@@ -80,6 +81,7 @@ function validateVoiceBar(events: ScoreEvent[], meter: Meter, ids: IdRegistry) {
     }
     total = add(total, soundingDuration(event));
   }
+  validateTuplets(events, meter, ids);
   const capacity = measureCapacity(meter);
   if (beats(total) !== capacity) {
     throw new Error(

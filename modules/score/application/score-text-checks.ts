@@ -15,7 +15,9 @@ export function checkFills(bars: WrittenBar[], meterOf: (bar: number) => Meter):
   const off = bars.flatMap((line) => {
     if (!line.events) return [];
     const meter = meterOf(line.bar);
-    const total = line.events.reduce((sum, event) => sum + event.duration, 0);
+    // A triplet's written values sound in two thirds of their time.
+    const sounding = line.events.reduce((sum, event) => sum + event.duration * (event.tuplet !== null ? 2 / 3 : 1), 0);
+    const total = Math.round(sounding * 1000) / 1000;
     const capacity = measureCapacity(meter);
     if (Math.abs(total - capacity) < SAME_BEATS) return [];
     const name = `bar ${line.bar}${line.staff ? ` ${line.staff}` : ""}${line.voice > 1 ? ` v${line.voice}` : ""}`;

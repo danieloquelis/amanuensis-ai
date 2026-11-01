@@ -5,12 +5,13 @@ import { AccidentalButtons } from "../sheet-menu/AccidentalButtons";
 import { ArticulationButtons } from "../sheet-menu/ArticulationButtons";
 import { DurationButtons } from "../sheet-menu/DurationButtons";
 import { TieButton } from "../sheet-menu/TieButton";
+import { TripletButton } from "../sheet-menu/TripletButton";
 import styles from "./selection.module.css";
 import { MakeRestButton, StackButtons } from "./StackButtons";
 
 /**
  * Everything about one note or rest, in one layout for notes, chords, rests and drum hits. The top
- * row is how long (values | dot, tie | rest), the bottom how it sounds (accidental | articulations |
+ * row is how long (values | dot, triplet, tie | rest), the bottom how it sounds (accidental | articulations |
  * notes on its stem); rest and stem share a column at the right, its places kept so nothing moves. A rest needs one row: rest
  * values, fermata and Add note. With one head of a chord picked, the accidental and the remove
  * button act on that head. A drum hit has no tie or accidentals; which piece a head strikes is set
@@ -33,6 +34,7 @@ export function NoteActions({ editor, event }: { editor: ScoreEditor; event: Sco
     >
       <div className={styles.actions}>
         <DurationButtons event={event} onCommand={editor.commit}>
+          <TripletButton score={editor.score} event={event} onCommand={editor.commit} />
           {!drums && <TieButton event={event} onCommand={editor.commit} />}
         </DurationButtons>
         {isNote(event) && <MakeRestButton editor={editor} event={event} />}

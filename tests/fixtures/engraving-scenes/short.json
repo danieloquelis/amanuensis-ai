@@ -143,6 +143,7 @@
       ],
       "beams": [{ "x1": 274, "y1": 156, "x2": 330.25, "y2": 153, "level": 1, "down": true }],
       "beamedIds": ["sp2", "sp3"],
+      "tuplets": [],
       "ties": [],
       "slurs": [],
       "labels": [],

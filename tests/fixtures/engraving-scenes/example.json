@@ -383,6 +383,7 @@
       ],
       "beams": [{ "x1": 402.34003664459306, "y1": 87, "x2": 439.8931673703107, "y2": 84, "level": 1, "down": false }],
       "beamedIds": ["note-1-1", "note-1-2"],
+      "tuplets": [],
       "ties": [],
       "slurs": [],
       "labels": [],

@@ -1,4 +1,5 @@
 import { getMeasure, getStaff } from "../queries";
+import { renameTuplets } from "../tuplets";
 import { measureCapacity } from "../rhythm";
 import { barEvents, createMeasure, putVoiceBar, removeVoiceBar, voiceBars } from "../voice-access";
 import { copyAnchored, type CopyMap } from "./copy-anchored";
@@ -52,6 +53,7 @@ export function copyStaffBars(draft: Draft, op: OperationOf<"copyBars">, { idPre
         map.last.set(event.id, id);
         return { ...event, id };
       });
+      renameTuplets(events, `${idPrefix}-${k}v${v}`);
       putVoiceBar(draft, measure, voice.id, events);
     });
     // The target staff's bar dynamics give way to the copied staff's.

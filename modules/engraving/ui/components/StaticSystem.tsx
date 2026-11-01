@@ -8,10 +8,11 @@ import { SlurCurve } from "./SlurCurve";
 import { StaticBar } from "./StaticBar";
 import { SystemStaves } from "./SystemStaves";
 import { TieArcs } from "./TieArcs";
+import { TupletMarks } from "./TupletMarks";
 
 /**
  * One line of music, read-only, for previews and anywhere else nothing is edited. Same paint
- * order as the editable sheet: staves, bars, notes, beams, ties and slurs, indications, chords.
+ * order as the editable sheet: staves, bars, notes, beams, triplets, ties and slurs, indications, chords.
  */
 export function StaticSystem({ system }: { system: System }) {
   return (
@@ -29,6 +30,7 @@ export function StaticSystem({ system }: { system: System }) {
         />
       ))}
       <BeamLines beams={system.beams} />
+      <TupletMarks tuplets={system.tuplets} />
       <TieArcs ties={system.ties} />
       {system.slurs.map((slur) => (
         <SlurCurve key={slur.id} slur={slur} />

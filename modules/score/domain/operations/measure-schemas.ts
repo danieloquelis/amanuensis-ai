@@ -31,11 +31,22 @@ export const measureOperationSchemas = [
                 "Tie into the next note, which must share a pitch with it; the last note ties into the next bar.",
               ),
             drums: drumHitSchema.optional().describe("On a drum part: the pieces struck (pitch is then null)."),
+            tuplet: z
+              .number()
+              .int()
+              .min(1)
+              .max(SCORE_LIMITS.eventsPerMeasure)
+              .optional()
+              .describe(
+                "Triplet group number within this bar (1, 2…): notes sharing it are three written values in the time of two, e.g. three eighths with tuplet 1 fill one beat. Give the written values; the bar total counts their sounding two thirds.",
+              ),
           }),
         )
         .min(1)
         .max(SCORE_LIMITS.eventsPerMeasure)
-        .describe("New notes and rests; their beats must add up exactly to the bar's length."),
+        .describe(
+          "New notes and rests; their beats (a triplet's as two thirds) must add up exactly to the bar's length.",
+        ),
       voiceId: handleSchema
         .optional()
         .describe(
@@ -83,7 +94,9 @@ export const measureOperationSchemas = [
         .optional()
         .describe("Also change the following bars up to the next time-signature change, like a notation editor."),
     })
-    .describe("Change the time signature of bars. Never cuts notes or invents tuplets."),
+    .describe(
+      "Change the time signature of bars. Never cuts notes or invents tuplets. Bars with triplets cannot go into 2/2, 6/8, 9/8 or 12/8.",
+    ),
   z
     .strictObject({
       type: z.literal("setMeasureWidth"),

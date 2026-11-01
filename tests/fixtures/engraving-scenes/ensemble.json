@@ -409,6 +409,7 @@
       ],
       "beams": [],
       "beamedIds": [],
+      "tuplets": [],
       "ties": [],
       "slurs": [],
       "labels": [
@@ -1241,6 +1242,7 @@
         "w2-15-n2",
         "w2-15-n3"
       ],
+      "tuplets": [],
       "ties": [],
       "slurs": [],
       "labels": [

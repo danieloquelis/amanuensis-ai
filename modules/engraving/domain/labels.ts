@@ -1,5 +1,5 @@
 import type { Annotation } from "@/modules/score";
-import { STAFF_HEIGHT, type System } from "./scene";
+import { STAFF_HEIGHT, TUPLET_HALF_HEIGHT, type System } from "./scene";
 import { eventInk, staffOf, staffTop } from "./staff-layout";
 
 const TEXT_CHARS_PER_LINE = 38;
@@ -40,7 +40,10 @@ export function textLineCount(annotations: Annotation[]): number {
 function dynamicsY(system: System, staff: number): number {
   if (!system.staves) return system.top + DYNAMIC_OFFSET_BELOW_TOP;
   const top = staffTop(system, staff);
-  const ink = system.events.filter((e) => staffOf(e) === staff && !e.hidden).map((e) => eventInk(e, top).bottom);
+  const ink = [
+    ...system.events.filter((e) => staffOf(e) === staff && !e.hidden).map((e) => eventInk(e, top).bottom),
+    ...system.tuplets.filter((t) => !t.above && (t.staff ?? 0) === staff).map((t) => t.y + TUPLET_HALF_HEIGHT),
+  ];
   return Math.max(top + STAFF_HEIGHT + DYNAMIC_GAP_BELOW_STAFF, ...ink.map((y) => y + DYNAMIC_GAP_BELOW_INK));
 }
 

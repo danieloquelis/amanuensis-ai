@@ -1,7 +1,16 @@
 import type { CSSProperties } from "react";
 import { staffOf, staffTop, type EngravedEvent, type System } from "@/modules/engraving";
 import { EventGlyph } from "@/modules/engraving/ui";
-import { drumNames, eventPitches, pitchName, soundingBeats, type Pitch } from "@/modules/score";
+import {
+  beats,
+  drumNames,
+  DURATIONS,
+  eventPitches,
+  pitchName,
+  soundingBeats,
+  type Pitch,
+  type ScoreEvent,
+} from "@/modules/score";
 import { classNames } from "@/shared/ui/class-names";
 import styles from "./score-surface.module.css";
 import {
@@ -12,6 +21,16 @@ import {
   sheetRefAttribute,
   type SheetInteractions,
 } from "./sheet-interactions";
+
+/** A beat from 1, a triplet's to two decimals ("1.33"). */
+const beatLabel = (localBeat: number) => Math.round((localBeat + 1) * 100) / 100;
+
+/** "1 beats", or for a triplet's note its written value ("triplet eighth"). */
+function valueLabel(event: ScoreEvent, length: number): string {
+  if (!event.tuplet) return `${length} beats`;
+  const name = DURATIONS.find((d) => d.value === beats(event.duration))?.label.toLowerCase();
+  return `triplet ${name}`;
+}
 
 type SheetEventProps = {
   item: EngravedEvent;
@@ -66,7 +85,7 @@ export function SheetEvent({ item, system, partName, selected, playBeat, interac
       style={arrival !== undefined ? ({ "--arrive-delay": `${arrival}ms` } as CSSProperties) : undefined}
       role="button"
       tabIndex={0}
-      aria-label={`${partName ? `${partName}, bar` : "Bar"} ${item.measure + 1}, beat ${item.localBeat + 1}, ${item.voice > 1 ? `voice ${item.voice}, ` : ""}${pitchLabel(item)}, ${length} beats`}
+      aria-label={`${partName ? `${partName}, bar` : "Bar"} ${item.measure + 1}, beat ${beatLabel(item.localBeat)}, ${item.voice > 1 ? `voice ${item.voice}, ` : ""}${pitchLabel(item)}, ${valueLabel(event, length)}`}
       aria-pressed={selected}
       onFocus={() => focusEvent(event.id)}
       // A Shift/⌘ click adds to the selection without moving focus (which would select only this).

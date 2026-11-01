@@ -1,0 +1,612 @@
+{
+  "schemaVersion": 3,
+  "id": "tuplets",
+  "revision": 0,
+  "title": "Triplets",
+  "tempo": 96,
+  "key": {
+    "fifths": 0,
+    "mode": "major"
+  },
+  "parts": [
+    {
+      "id": "tup-part",
+      "instrument": "piano",
+      "name": "Piano",
+      "staves": [
+        {
+          "id": "tup-staff",
+          "clef": "treble",
+          "voices": [
+            {
+              "id": "tup-voice"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "measures": [
+    {
+      "id": "tup-bar-1",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "voices": [
+        {
+          "voiceId": "tup-voice",
+          "events": [
+            {
+              "id": "tup-n0",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "C",
+                "alter": 0,
+                "octave": 5
+              },
+              "tuplet": {
+                "id": "tup-g1",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n1",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "D",
+                "alter": 0,
+                "octave": 5
+              },
+              "tuplet": {
+                "id": "tup-g1",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n2",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "E",
+                "alter": 0,
+                "octave": 5
+              },
+              "tuplet": {
+                "id": "tup-g1",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n3",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": {
+                "step": "F",
+                "alter": 0,
+                "octave": 4
+              }
+            },
+            {
+              "id": "tup-n4",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": {
+                "step": "G",
+                "alter": 0,
+                "octave": 4
+              },
+              "tuplet": {
+                "id": "tup-g2",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n5",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": {
+                "step": "A",
+                "alter": 0,
+                "octave": 4
+              },
+              "tuplet": {
+                "id": "tup-g2",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n6",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": {
+                "step": "B",
+                "alter": 0,
+                "octave": 4
+              },
+              "tuplet": {
+                "id": "tup-g2",
+                "actual": 3,
+                "normal": 2
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tup-bar-2",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "voices": [
+        {
+          "voiceId": "tup-voice",
+          "events": [
+            {
+              "id": "tup-n7",
+              "duration": {
+                "numerator": 1,
+                "denominator": 4
+              },
+              "pitch": {
+                "step": "E",
+                "alter": 0,
+                "octave": 5
+              },
+              "tuplet": {
+                "id": "tup-g3",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n8",
+              "duration": {
+                "numerator": 1,
+                "denominator": 4
+              },
+              "pitch": {
+                "step": "F",
+                "alter": 0,
+                "octave": 5
+              },
+              "tuplet": {
+                "id": "tup-g3",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n9",
+              "duration": {
+                "numerator": 1,
+                "denominator": 4
+              },
+              "pitch": {
+                "step": "G",
+                "alter": 0,
+                "octave": 5
+              },
+              "tuplet": {
+                "id": "tup-g3",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n10",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "A",
+                "alter": 0,
+                "octave": 5
+              }
+            },
+            {
+              "id": "tup-n11",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": {
+                "step": "C",
+                "alter": 0,
+                "octave": 5
+              },
+              "tuplet": {
+                "id": "tup-g4",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n12",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "B",
+                "alter": 0,
+                "octave": 4
+              },
+              "tuplet": {
+                "id": "tup-g4",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n13",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "A",
+                "alter": 0,
+                "octave": 4
+              },
+              "tuplet": {
+                "id": "tup-g5",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n14",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "tuplet": {
+                "id": "tup-g5",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n15",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "F",
+                "alter": 0,
+                "octave": 4
+              },
+              "tuplet": {
+                "id": "tup-g5",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n16",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": {
+                "step": "E",
+                "alter": 0,
+                "octave": 4
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tup-bar-3",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "voices": [
+        {
+          "voiceId": "tup-voice",
+          "events": [
+            {
+              "id": "tup-n17",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": {
+                "step": "C",
+                "alter": 0,
+                "octave": 5
+              },
+              "tie": true
+            },
+            {
+              "id": "tup-n18",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "C",
+                "alter": 0,
+                "octave": 5
+              },
+              "tuplet": {
+                "id": "tup-g6",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n19",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "D",
+                "alter": 0,
+                "octave": 5
+              },
+              "tuplet": {
+                "id": "tup-g6",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n20",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "E",
+                "alter": 0,
+                "octave": 5
+              },
+              "tuplet": {
+                "id": "tup-g6",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n21",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "tuplet": {
+                "id": "tup-g7",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n22",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "tuplet": {
+                "id": "tup-g7",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n23",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": null,
+              "tuplet": {
+                "id": "tup-g7",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n24",
+              "duration": {
+                "numerator": 1,
+                "denominator": 1
+              },
+              "pitch": {
+                "step": "G",
+                "alter": 0,
+                "octave": 4
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tup-bar-4",
+      "meter": {
+        "numerator": 4,
+        "denominator": 4
+      },
+      "voices": [
+        {
+          "voiceId": "tup-voice",
+          "events": [
+            {
+              "id": "tup-n25",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "C",
+                "alter": 0,
+                "octave": 6
+              },
+              "tuplet": {
+                "id": "tup-g8",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n26",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "B",
+                "alter": 0,
+                "octave": 5
+              },
+              "tuplet": {
+                "id": "tup-g8",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n27",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "A",
+                "alter": 0,
+                "octave": 5
+              },
+              "tuplet": {
+                "id": "tup-g8",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n28",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "A",
+                "alter": 0,
+                "octave": 3
+              },
+              "tuplet": {
+                "id": "tup-g9",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n29",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "B",
+                "alter": 0,
+                "octave": 3
+              },
+              "tuplet": {
+                "id": "tup-g9",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n30",
+              "duration": {
+                "numerator": 1,
+                "denominator": 2
+              },
+              "pitch": {
+                "step": "C",
+                "alter": 0,
+                "octave": 4
+              },
+              "tuplet": {
+                "id": "tup-g9",
+                "actual": 3,
+                "normal": 2
+              }
+            },
+            {
+              "id": "tup-n31",
+              "duration": {
+                "numerator": 2,
+                "denominator": 1
+              },
+              "pitch": {
+                "step": "C",
+                "alter": 0,
+                "octave": 5
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "annotations": [],
+  "repeats": [],
+  "chords": [
+    {
+      "id": "tup-c1",
+      "measureId": "tup-bar-1",
+      "beat": 0,
+      "root": {
+        "step": "C",
+        "alter": 0
+      },
+      "quality": ""
+    },
+    {
+      "id": "tup-c2",
+      "measureId": "tup-bar-4",
+      "beat": 0,
+      "root": {
+        "step": "A",
+        "alter": 0
+      },
+      "quality": "m"
+    }
+  ],
+  "marks": [],
+  "slurs": []
+}

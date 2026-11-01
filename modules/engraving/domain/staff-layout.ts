@@ -1,7 +1,14 @@
 import { INSTRUMENTS, isNote, scoreKey, type Clef, type KeySignature, type Score } from "@/modules/score";
 import { ARTICULATION_HALF_HEIGHT, articulationPlace } from "./articulation";
 import { keySignatureMarks } from "./header";
-import { STAFF_HEIGHT, STAFF_LEFT, type EngravedEvent, type StaffScene, type System } from "./scene";
+import {
+  STAFF_HEIGHT,
+  STAFF_LEFT,
+  TUPLET_HALF_HEIGHT,
+  type EngravedEvent,
+  type StaffScene,
+  type System,
+} from "./scene";
 
 /**
  * The staves of a system, top down. A piano's two staves are joined by a brace and sit closer
@@ -112,6 +119,11 @@ export function spacedTops(system: System, plan: StaffPlan[], tops: number[]): n
     const staff = ink[staffOf(item)];
     staff.top = Math.min(staff.top, top);
     staff.bottom = Math.max(staff.bottom, bottom);
+  }
+  for (const mark of system.tuplets) {
+    const staff = ink[mark.staff ?? 0];
+    staff.top = Math.min(staff.top, mark.y - TUPLET_HALF_HEIGHT);
+    staff.bottom = Math.max(staff.bottom, mark.y + TUPLET_HALF_HEIGHT);
   }
   for (const label of system.labels.filter((l) => l.kind === "dynamic")) {
     const staff = ink[label.staff ?? 0];

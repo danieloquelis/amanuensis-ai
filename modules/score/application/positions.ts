@@ -23,7 +23,11 @@ const STAFF_PREFIX = "(?:([a-z][\\w-]*(?:\\.\\d)?)\\/)?";
 const EVENT_POSITION = new RegExp(`^${STAFF_PREFIX}(\\d+)(?:v(\\d))?:(\\d+(?:\\.\\d+)?)$`);
 const EVENT_ORDER = new RegExp(`^${STAFF_PREFIX}(\\d+)(?:v(\\d))?#(\\d+)$`);
 const BAR_POSITION = /^\d+$/;
-const EPSILON = 1e-9;
+/**
+ * How close a written beat must be to a note's onset: "1.33" names a triplet's second note (1⅓). A
+ * third of a beat is at least 1/24 beat from any eighth-grid position, so this never picks the wrong one.
+ */
+const BEAT_TOLERANCE = 0.01;
 
 const isEventPosition = (value: unknown): value is string =>
   typeof value === "string" && (EVENT_POSITION.test(value) || EVENT_ORDER.test(value));
@@ -57,7 +61,7 @@ function eventAt(score: Score, position: string): string {
   const [, staff, bar, voice, beat] = EVENT_POSITION.exec(position)!;
   const events = voiceEventsAt(score, staff, bar, voice);
   const onsets = eventOnsets(events);
-  const at = onsets.findIndex((onset) => Math.abs(onset + 1 - Number(beat)) < EPSILON);
+  const at = onsets.findIndex((onset) => Math.abs(onset + 1 - Number(beat)) < BEAT_TOLERANCE);
   if (at !== -1) return events[at].id;
   throw new Error(`No note or rest starts at bar ${bar}, beat ${beat}.`);
 }

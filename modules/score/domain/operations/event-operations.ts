@@ -8,6 +8,7 @@ import { nextEvent, tieChain } from "../ties";
 import { isNote, isRest, setBarStyle } from "../voice-access";
 import { detachFrom, type Draft, type OperationContext } from "./draft";
 import { makeRests, onsetOf } from "./rests";
+import { setMemberDuration } from "./tuplet-operations";
 import type { OperationOf } from "./schema";
 
 /**
@@ -92,15 +93,20 @@ export function moveEvent(draft: Draft, op: OperationOf<"moveEvent">) {
 }
 
 /**
- * Lengthening consumes only the rests directly after the note; it never overwrites notes.
- * Shortening fills the remainder with rests, so the bar stays complete and silent there.
+ * Lengthening consumes only the rests directly after the note; it never overwrites notes, nor
+ * reaches into a triplet. Shortening fills the remainder with rests, so the bar stays complete and
+ * silent there. A triplet's note changes within its triplet (see `setMemberDuration`).
  */
 export function setDuration(draft: Draft, op: OperationOf<"setDuration">, { idPrefix }: OperationContext) {
   const { measure, voiceBar, eventIndex, event } = locateEvent(draft, op.eventId);
   const events = voiceBar.events;
+  if (event.tuplet) return setMemberDuration(draft, events, eventIndex, op.duration, idPrefix);
   let available = soundingBeats(event);
   let consumed = 1;
-  const restAfter = () => events[eventIndex + consumed] && isRest(events[eventIndex + consumed]);
+  const restAfter = () => {
+    const next = events[eventIndex + consumed];
+    return next !== undefined && isRest(next) && !next.tuplet;
+  };
   while (available < op.duration && restAfter()) {
     available += soundingBeats(events[eventIndex + consumed]);
     consumed++;

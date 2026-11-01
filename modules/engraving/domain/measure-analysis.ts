@@ -116,7 +116,10 @@ export function analyzeScore(score: Score, staffKeys: Map<string, KeySignature> 
 
 const isMeasureRest = (events: ScoreEvent[]) => events.length === 1 && Boolean(events[0].measureRest);
 
-/** One voice's consecutive eighths and shorter, within one beat group (a dotted quarter in compound time). */
+/**
+ * One voice's consecutive eighths and shorter, within one beat group (a dotted quarter in compound
+ * time). A triplet's members beam among themselves, across a beat too (a quarter-note triplet's eighths).
+ */
 function findBeamGroups(measure: Measure, events: AnalyzedEvent[], voiceId: string): number[][] {
   const groupLength = beatGroupLength(measure.meter);
   const groups: number[][] = [];
@@ -129,8 +132,9 @@ function findBeamGroups(measure: Measure, events: AnalyzedEvent[], voiceId: stri
     if (item.voiceId !== voiceId) return;
     const beamable = isNote(item.event) && durationNotation(item.event.duration).base <= 0.5;
     if (!beamable) return flush();
-    const beatGroup = (beat: number) => Math.floor(beat / groupLength);
-    if (current.length && beatGroup(item.localBeat) !== beatGroup(events[current[0]].localBeat)) flush();
+    const group = (at: AnalyzedEvent) =>
+      at.event.tuplet ? `triplet ${at.event.tuplet.id}` : `beat ${Math.floor(at.localBeat / groupLength)}`;
+    if (current.length && group(item) !== group(events[current[0]])) flush();
     current.push(index);
   });
   flush();

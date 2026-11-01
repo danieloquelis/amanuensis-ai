@@ -11,6 +11,10 @@ import type { OperationOf } from "./schema";
 /** Exact comparison of beat positions, which are sums of written values. */
 const EPSILON = 1e-9;
 
+/** Copying respells notes for their new place, which a triplet cannot survive. */
+const NO_TRIPLETS =
+  "Copying notes into or out of a triplet isn't supported yet. Copy whole bars, or remove the triplet first.";
+
 /** The copied notes, checked to be a run of consecutive events of one voice. */
 function copiedRun(draft: Draft, eventIds: string[]): ScoreEvent[] {
   const line = voiceLine(draft, eventIds[0]);
@@ -28,7 +32,9 @@ function copiedRun(draft: Draft, eventIds: string[]): ScoreEvent[] {
  * place in the bar. An old note cut by the end of the copy leaves a rest for its remainder.
  */
 export function copyNotes(draft: Draft, op: OperationOf<"copyNotes">, { idPrefix }: OperationContext) {
-  const pieces = copiedRun(draft, op.eventIds).map((event) => ({ event, left: soundingBeats(event) }));
+  const run = copiedRun(draft, op.eventIds);
+  if (run.some((event) => event.tuplet)) throw new Error(NO_TRIPLETS);
+  const pieces = run.map((event) => ({ event, left: soundingBeats(event) }));
   const before = { annotations: structuredClone(draft.annotations), slurs: structuredClone(draft.slurs) };
   const target = locateEvent(draft, op.toEventId);
   const { voiceId } = target;
@@ -55,6 +61,7 @@ export function copyNotes(draft: Draft, op: OperationOf<"copyNotes">, { idPrefix
     const keptBefore = events.filter((_, i) => onsets[i] < at - EPSILON);
     const keptAfter = events.filter((_, i) => onsets[i] >= end - EPSILON);
     const overwritten = events.filter((e) => !keptBefore.includes(e) && !keptAfter.includes(e));
+    if (overwritten.some((event) => event.tuplet)) throw new Error(NO_TRIPLETS);
     detachFrom(
       draft,
       overwritten.map((e) => e.id),

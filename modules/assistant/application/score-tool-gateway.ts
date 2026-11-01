@@ -20,7 +20,7 @@ import { applyPreviewSchema, readContextSchema, undoSchema, writeSchema, type Sc
 const PREVIEW_LIMIT = 128;
 const UNSUPPORTED_NOTATION = [
   "more than two voices on a staff in the editor, and moving notes between voices",
-  "tuplets",
+  "tuplets other than triplets (3:2), and triplets in 2/2 or compound meters",
   "hairpins",
   "nested repeats and alternate endings",
   "mid-score key, clef or instrument changes",

@@ -408,6 +408,7 @@
         "s14",
         "s15"
       ],
+      "tuplets": [],
       "ties": [],
       "slurs": [],
       "labels": [
@@ -721,6 +722,7 @@
         { "x1": 667.0000000005512, "y1": 390, "x2": 782.333333334007, "y2": 402, "level": 1, "down": true }
       ],
       "beamedIds": ["t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10", "t11"],
+      "tuplets": [],
       "ties": [],
       "slurs": [],
       "labels": [{ "id": "an3", "annotationId": "an3", "x": 154, "y": 472, "text": "ff", "kind": "dynamic" }],
@@ -1001,6 +1003,7 @@
         }
       ],
       "beamedIds": ["d0", "d1"],
+      "tuplets": [],
       "ties": [],
       "slurs": [],
       "labels": [],

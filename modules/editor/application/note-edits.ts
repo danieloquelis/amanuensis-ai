@@ -54,6 +54,13 @@ export function stepPitchEdit(score: Score, eventId: string, steps: number): Edi
   };
 }
 
+/** Makes a note or rest a triplet, or (for a triplet's note) turns its triplet back into one value. */
+export function tripletEdit(event: ScoreEvent): Edit {
+  return event.tuplet
+    ? { operation: { type: "removeTuplet", eventId: event.id }, receipt: "Removed triplet" }
+    : { operation: { type: "makeTuplet", eventId: event.id }, receipt: "Made triplet" };
+}
+
 /** Adds or removes a dot while keeping the undotted written value. */
 export function toggleDotOperation(event: ScoreEvent): Operation {
   const { base, dotted } = durationNotation(event.duration);

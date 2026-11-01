@@ -45,6 +45,30 @@ export type EngravedEvent = {
 /** A beam segment. `y1`/`y2` are the stem tips (outer edge); thickness grows toward the noteheads. */
 export type Beam = { x1: number; y1: number; x2: number; y2: number; level: number; down: boolean };
 
+/**
+ * A triplet's "3": centred between `x1` and `x2` at `y`, on its stem side (`above`), with a
+ * bracket across that span when the group is not beamed on its own.
+ */
+export type TupletMark = {
+  id: string;
+  x1: number;
+  x2: number;
+  y: number;
+  above: boolean;
+  bracket: boolean;
+  /** Its staff in the system, counted from 0; absent on the first. */
+  staff?: number;
+};
+
+/** Half the height of a triplet's "3" and of its bracket's hooks: how far a mark reaches either side of its `y`. */
+export const TUPLET_HALF_HEIGHT = 7;
+
+/** How far a triplet mark reaches up and down, for whatever must keep clear of it. */
+export const tupletInk = (mark: TupletMark) => ({
+  top: mark.y - TUPLET_HALF_HEIGHT,
+  bottom: mark.y + TUPLET_HALF_HEIGHT,
+});
+
 /** One tie arc between two noteheads at `y`, or one half of a tie broken by a line break. */
 export type TieArc = { id: string; x1: number; x2: number; y: number; above: boolean };
 
@@ -149,6 +173,7 @@ export type System = {
   events: EngravedEvent[];
   beams: Beam[];
   beamedIds: string[];
+  tuplets: TupletMark[];
   ties: TieArc[];
   slurs: SlurArc[];
   labels: SceneLabel[];

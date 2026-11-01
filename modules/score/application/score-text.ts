@@ -26,6 +26,7 @@ Each bar's durations must add up to its meter exactly (4/4: 4 quarter beats; 2/2
 Notes sounding together on one stem (a chord within the voice): <C4 E4 G4>q; tied <C4 E4>h~.
 After a note: ~ ties it into the next note (same pitch, may be in the next bar); !staccato, !accent, !tenuto or !fermata.
 Slurs: ( before the first note and ) after the last note of the phrase; may span bars.
+Triplets: 3[…] puts three written values in the time of two: 3[C4e D4e E4e] = 1 beat, 3[C4q D4e] = 1 beat, 3[C4q D4q E4q] = 2 beats, 3[C4s D4s E4s] = half a beat. Write the written values (no dots inside), starting on a beat, in simple meters (not 2/2 or 6/8); slurs and ties go around: (3[C4e D4e E4e~] E4q). Name triplet notes by order (2#3); their beats are thirds (2:1.33).
 A staff may hold two voices: "bar 2 v2: …" is the second line of bar 2 (stems down, e.g. a bass under the melody), complete in itself; "bar 2 v2: -" removes it; its notes are 2v2#1, 2v2:3. Chords, section and marks belong to the bar's first line.
 Drums: <hat snare>e are pieces struck together (kick snare stick tom1 tom2 tom3 hat hatopen hatfoot crash ride bell); hands (cymbals, snare, toms) in the main line, feet (kick, hatfoot) in v2; "bar N v2: -" leaves a bar without feet. A hit sounds once: no ties.
 With several staves, a "parts:" line lists their handles and every line names its staff: "bar 3 trumpet: …", "bar 3 piano.2 v2: …"; notes there are trumpet/3#2, piano.2/3v2:1.
@@ -60,8 +61,8 @@ export function eventText(event: ScoreEvent): string {
   return `${head}${event.tie ? "~" : ""}${event.articulation ? `!${event.articulation}` : ""}`;
 }
 
-/** "@2.5" for a beat (0-based) inside the bar; nothing for the downbeat. */
-const at = (beat: number) => (beat ? `@${beat + 1}` : "");
+/** "@2.5" for a beat (0-based) inside the bar, "@1.33" inside a triplet; nothing for the downbeat. */
+const at = (beat: number) => (beat ? `@${Math.round((beat + 1) * 100) / 100}` : "");
 
 /**
  * Indications on these events, and those on the bar that belong to this line's staff (`staffId`;
@@ -109,8 +110,12 @@ export function scoreText(score: Score, only: ScoreTextFilter = {}): string {
       const { events } = voiceBar;
       const starts = eventOnsets(events);
       const onsets = new Map(events.map((event, i) => [event.id, starts[i]]));
-      const notes = events.map((event) => {
-        return `${opens.has(event.id) ? "(" : ""}${eventText(event)}${closes.has(event.id) ? ")" : ""}`;
+      const notes = events.map((event, i) => {
+        // A triplet is bracketed: "3[" before its first note, "]" after its last, inside any slur marks.
+        const group = event.tuplet?.id;
+        const starts = group && events[i - 1]?.tuplet?.id !== group ? "3[" : "";
+        const ends = group && events[i + 1]?.tuplet?.id !== group ? "]" : "";
+        return `${opens.has(event.id) ? "(" : ""}${starts}${eventText(event)}${ends}${closes.has(event.id) ? ")" : ""}`;
       });
       const main = k === 0;
       const chords = score.chords.filter((c) => c.measureId === measure.id).sort((a, b) => a.beat - b.beat);

@@ -185,6 +185,32 @@ test("empty measures become full-bar rests and allow note entry", async ({ page 
   await page.getByRole("button", { name: "Undo", exact: true }).click();
   await expect(page.getByRole("button", { name: "Bar 1, beat 1, Rest, 3 beats", exact: true })).toBeVisible();
 });
+test("a quarter becomes a triplet from its card, changes inside it, and goes back", async ({ page }) => {
+  await openExample(page);
+  await page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true }).click();
+  const card = page.getByRole("toolbar", { name: "Selected note actions" });
+  await card.getByRole("button", { name: "Triplet" }).click();
+  // Three triplet eighths in the time of the quarter: the note, then two rests.
+  const first = page.getByRole("button", { name: "Bar 1, beat 1, C4, triplet eighth", exact: true });
+  await expect(first).toBeVisible();
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1.33, Rest, triplet eighth", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1.67, Rest, triplet eighth", exact: true })).toBeVisible();
+  const sheet = page.locator("svg[aria-label$='Select a note to edit.']");
+  await expect(sheet.locator("text").filter({ hasText: /^3$/ })).toHaveCount(1);
+  // A quarter inside the triplet takes the rest after it: 3[q e].
+  await first.click();
+  await card.getByRole("button", { name: "Quarter duration", exact: true }).click();
+  const quarter = page.getByRole("button", { name: "Bar 1, beat 1, C4, triplet quarter", exact: true });
+  await expect(quarter).toBeVisible();
+  await expect(card.getByRole("button", { name: "Dotted duration" })).toBeDisabled();
+  // Pressed on a triplet's note, Triplet turns it back into one value.
+  await expect(card.getByRole("button", { name: "Triplet" })).toHaveAttribute("aria-pressed", "true");
+  await card.getByRole("button", { name: "Triplet" }).click();
+  await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true })).toBeVisible();
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect(quarter).toBeVisible();
+});
+
 test("the card stacks notes on a stem, and one note of a chord can be picked and deleted", async ({ page }) => {
   await openExample(page);
   const note = page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true });

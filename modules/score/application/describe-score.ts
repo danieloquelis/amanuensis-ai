@@ -12,10 +12,14 @@ import type { Score, ScoreEvent } from "../domain/schema";
 import { partHandles } from "../domain/handles";
 import { barEvents, barStyle, voiceBars } from "../domain/voice-access";
 
-const durationName = (event: ScoreEvent) =>
-  event.measureRest
-    ? "whole bar"
-    : (DURATIONS.find((d) => d.value === beats(event.duration))?.label.toLowerCase() ?? "");
+/** "quarter", "dotted eighth", "triplet eighth" (a triplet's member is named by its written value). */
+const durationName = (event: ScoreEvent) => {
+  if (event.measureRest) return "whole bar";
+  const name = DURATIONS.find((d) => d.value === beats(event.duration))?.label.toLowerCase() ?? "";
+  return event.tuplet ? `triplet ${name}` : name;
+};
+/** Beats as a musician reads them: a triplet's thirds to two decimals (1.33), others exact. */
+const rounded = (value: number) => Math.round(value * 100) / 100;
 
 /**
  * A compact, readable view of a score for language models: bars numbered from 1, beats counted
@@ -30,7 +34,7 @@ export function describeScore(score: Score) {
       const events = barEvents(measure);
       const onsets = eventOnsets(events);
       const at = events.findIndex((event) => event.id === targetId);
-      if (at !== -1) return `bar ${index + 1}, beat ${onsets[at] + 1}`;
+      if (at !== -1) return `bar ${index + 1}, beat ${rounded(onsets[at] + 1)}`;
     }
     return "missing anchor";
   };
@@ -52,14 +56,15 @@ export function describeScore(score: Score) {
         ...(measure.tempo ? { tempo: measure.tempo } : {}),
         events: barEvents(measure).map((event, i) => ({
           id: event.id,
-          beat: onsets[i] + 1,
+          beat: rounded(onsets[i] + 1),
           pitch: event.drums
             ? drumNames(event.drums)
             : event.pitch
               ? eventPitches(event).map(pitchName).join(" ")
               : "rest",
           duration: durationName(event),
-          beats: soundingBeats(event),
+          beats: rounded(soundingBeats(event)),
+          ...(event.tuplet ? { tuplet: "3:2" } : {}),
           ...(event.articulation ? { articulation: event.articulation } : {}),
           ...(event.tie ? { tiedToNext: true } : {}),
         })),
@@ -104,6 +109,8 @@ export const SCORE_VOCABULARY = {
   slurs:
     "A slur joins a phrase of notes into one legato line (one breath, or one syllable over several notes). Use putSlur.",
   ties: "tiedToNext: the note is held into the next note (same pitch), across a barline too; they sound as one. Use setTie, or tie in replaceMeasure.",
+  tuplets:
+    "Triplets (3:2): three written values in the time of two, 3[C4e D4e E4e] in score text. A triplet fills half a beat (sixteenths), a beat (eighths, or a quarter and an eighth) or two beats (quarters), starts on a beat, in simple meters only. makeTuplet splits a value, removeTuplet undoes it; inside a triplet setDuration changes values within it. Other ratios (quintuplets, duplets) are not available.",
   dynamics: DYNAMICS,
   chordQualities: CHORD_QUALITY_NAMES.map((q) => q || "(major triad)"),
   chordExamples: ["C", "Am7", "F#m7b5", "Bbmaj7/D", "G7#9", "Dsus4", "Eø", "C6/9"],

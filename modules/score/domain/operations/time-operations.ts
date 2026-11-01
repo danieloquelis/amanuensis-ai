@@ -59,6 +59,11 @@ function reflow(
   idPrefix: string,
 ) {
   const lines = voiceId ? [resolveVoice(draft, voiceId)] : voiceIds(draft);
+  // The music is rewritten from where notes start and how long they last, which loses a triplet.
+  const moving = draft.measures.slice(from).flatMap((measure) => voiceBars(measure));
+  if (moving.some((bar) => lines.includes(bar.voiceId) && bar.events.some((event) => event.tuplet))) {
+    throw new Error("Shifting or stretching music with triplets isn't supported yet. Remove the triplets first.");
+  }
   const changed = lines.map((line, k) => {
     const { notes, rests } = lineNotes(draft.measures.slice(from), line);
     const after = change(notes, `${idPrefix}-l${k}`);

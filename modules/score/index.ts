@@ -47,6 +47,7 @@ export {
   type StartMark,
 } from "./domain/navigation";
 export { ARTICULATIONS, DYNAMICS, REPEAT_PASSES, type Articulation, type Dynamic } from "./domain/notation";
+export { groupOf, TRIPLET_SPANS, tupletGroups, tupletSpan, type TupletGroup } from "./domain/tuplets";
 export { applyCommand } from "./domain/operations/apply-command";
 export { commandSchemaWithout } from "./domain/operations/command-subset";
 export {

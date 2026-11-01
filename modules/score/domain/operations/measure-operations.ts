@@ -1,6 +1,7 @@
 import { getMeasure, getStaff, resolveVoice } from "../queries";
 import { sortDrums } from "../drums";
 import { durationFromBeats } from "../rhythm";
+import { renameTuplets } from "../tuplets";
 import { chordFrom } from "../stacks";
 import {
   allStaves,
@@ -55,6 +56,7 @@ export function duplicateMeasure(draft: Draft, op: OperationOf<"duplicateMeasure
       copiedIds.set(event.id, id);
       event.id = id;
     });
+    renameTuplets(voiceBar.events, k === 0 ? idPrefix : `${idPrefix}-v${k}`);
   });
   const annotations = draft.annotations
     .filter((a) => copiedIds.has(a.targetId))
@@ -98,6 +100,7 @@ export function replaceMeasure(draft: Draft, op: OperationOf<"replaceMeasure">, 
     duration: durationFromBeats(event.duration),
     ...(event.tie && event.pitch ? { tie: true as const } : {}),
     ...(event.drums && !event.pitch ? { drums: sortDrums(event.drums) } : {}),
+    ...(event.tuplet ? { tuplet: { id: `${idPrefix}-t${event.tuplet}`, actual: 3 as const, normal: 2 as const } } : {}),
   }));
   putVoiceBar(draft, measure, voiceId, events);
   setBarStyle(measure, undefined, voiceId);

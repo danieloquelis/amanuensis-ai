@@ -6,6 +6,7 @@ import { layoutLabels } from "./labels";
 import type { Line } from "./line-breaking";
 import type { AnalyzedBar } from "./measure-analysis";
 import { placeBar } from "./place-bar";
+import { placeTuplets } from "./tuplets";
 import type { System } from "./scene";
 import { barWidth, fixedWidth } from "./spacing";
 import { lineIndent, staffScenes, type StaffPlan } from "./staff-layout";
@@ -45,6 +46,7 @@ export function layoutSystem(
     events: [],
     beams: [],
     beamedIds: [],
+    tuplets: [],
     ties: [],
     slurs: [],
     labels: [],
@@ -69,6 +71,7 @@ export function layoutSystem(
     system.events.push(...placed.events);
     system.beams.push(...beamBar(bar, placed.events, tops));
     system.beamedIds.push(...bar.beamGroups.flat().map((i) => bar.events[i].event.id));
+    system.tuplets.push(...placeTuplets(bar, placed.events, tops));
     x += widths[index];
   });
   system.endX = x;
