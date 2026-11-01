@@ -28,6 +28,16 @@ function namespaced(args: unknown, turnId: string): unknown {
 }
 
 /**
+ * Records a committed command as the editor will replay it. The editor runs the turn's commands
+ * in order from the request's revision, so each expects exactly the ones before it to have run.
+ * The session's own revision can be further on: an undo is a new revision here, but takes a
+ * command out of the replay, so the next command's revision must not count it.
+ */
+export function recordCommand(commands: Command[], command: Command, startRevision: number): void {
+  commands.push({ ...command, expectedRevision: startRevision + commands.length });
+}
+
+/**
  * Executes one score tool, keeping `commands` in step with what the session actually holds.
  * Edits may name notes and bars by position; they are resolved against the current score first,
  * so the heard-bars guard and the replayed commands see real IDs.
@@ -36,6 +46,7 @@ export function runScoreTool(
   call: ToolCall,
   tools: Gateway,
   commands: Command[],
+  startRevision: number,
   turnId: string,
   score: () => Score,
   refuse: RefuseEdit,
@@ -56,7 +67,7 @@ export function runScoreTool(
     const refusal = refuse(command.data.operation, quoted);
     if (refusal) return { ok: false, error: refusal };
     const result = tools(call.name, command.data);
-    if (result.ok) commands.push(command.data);
+    if (result.ok) recordCommand(commands, command.data, startRevision);
     return result;
   }
   if (call.name === "score_write") {
@@ -74,7 +85,7 @@ export function runScoreTool(
     if (!result.ok) return result;
     // The command is replayed by the editor; the model only needs to know what changed.
     const { command, ...reply } = result;
-    commands.push(command as Command);
+    recordCommand(commands, command as Command, startRevision);
     return reply as ToolResult;
   }
   if (call.name !== "score_get_context" && call.name !== "score_undo") {

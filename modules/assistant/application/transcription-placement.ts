@@ -123,3 +123,28 @@ export function writeBars(access: Access, bars: { bar: number; line: string; eve
   );
   return access.commit({ type: "batch", operations: [...addLines, ...writes] });
 }
+
+/**
+ * Where each sung span was written this turn, by span and line. Transcribing a span again (at
+ * another tempo, say) writes it there again instead of after itself.
+ */
+export type SpanPlaces = Map<string, { bar: number; bars: number }>;
+export const placeKey = (spanId: string, line: string) => `${spanId} ${line}`;
+
+/**
+ * Bars an earlier writing of these spans filled that the new one leaves out (a faster reading
+ * needs fewer bars): they go back to rests, so no stale notes stay behind.
+ */
+export function staleBars(
+  places: SpanPlaces,
+  spans: { spanId: string; line: string; bar: number; bars: number }[],
+): { bar: number; line: string }[] {
+  const now = new Set(spans.flatMap((s) => Array.from({ length: s.bars }, (_, k) => `${s.bar + k} ${s.line}`)));
+  return spans.flatMap(({ spanId, line }) => {
+    const before = places.get(placeKey(spanId, line));
+    if (!before) return [];
+    return Array.from({ length: before.bars }, (_, k) => ({ bar: before.bar + k, line })).filter(
+      ({ bar }) => !now.has(`${bar} ${line}`),
+    );
+  });
+}

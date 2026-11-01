@@ -103,6 +103,30 @@ test("an undo inside the turn removes the undone command", async () => {
   assert.equal((await runAssistant(model, request("try"), "t5")).commands.length, 0);
 });
 
+test("edits after an undo in the turn still replay in the editor, as one step from the request", async () => {
+  // Each edit names the server's revision; the undo made one more there, which the replay never sees.
+  const chord = (requestId: string, beat: number, symbol: string, expectedRevision: number) => ({
+    requestId,
+    expectedRevision,
+    operation: { type: "putChord", measureId: "bar-2", beat, symbol },
+  });
+  const { model } = scriptedModel([
+    { content: null, toolCalls: [call("score_edit", chord("a", 0, "C", 0))] },
+    { content: null, toolCalls: [call("score_edit", chord("b", 2, "Am7", 1))] },
+    { content: null, toolCalls: [call("score_undo", { expectedRevision: 2 })] },
+    { content: null, toolCalls: [call("score_edit", chord("c", 2, "F", 3))] },
+    { content: "Added C and F.", toolCalls: [] },
+  ]);
+  const score = createExample();
+  const result = await runAssistant(model, { ...request("chords"), score }, "t7");
+  assert.equal(result.commands.length, 2);
+  const replayed = executeAll(createSession(score), result.commands).score;
+  assert.deepEqual(
+    replayed.chords.map((c) => `${c.root.step}${c.quality}@${c.beat}`),
+    ["C@0", "F@2"],
+  );
+});
+
 test("a model that never stops is cut off at the step limit", async () => {
   const forever: ModelPort = {
     async complete() {
@@ -217,6 +241,41 @@ test("the request carries the score, so the agent can act in its first step", as
   assert.match(message, /\[Score context, as score_get_context returns it\]/);
   assert.match(message, /\[Selected: 2\]/);
   assert.match(message, /^bar 2: D4q F4e G4e A4h$/m);
+});
+
+test("transcribing a take again at another tempo rewrites its bars instead of adding a second copy", async () => {
+  // Eight quarters at 120: two bars; read at half the tempo they become eighths in one bar.
+  const sung = singMelody(
+    ["C4", "E4", "G4", "E4", "D4", "F4", "A4", "G4"].map((name) => ({ midi: midi(name), beats: 1 })),
+    { bpm: 120 },
+  );
+  const take = createTake(sung, []);
+  const transcribe = (bpm: number) =>
+    call("voice_transcribe_melody", { spans: [{ spanId: "sung-1" }], bpm, write: true });
+  const { model } = scriptedModel([
+    { content: null, toolCalls: [transcribe(120)] },
+    { content: null, toolCalls: [transcribe(60)] },
+    { content: "Done.", toolCalls: [] },
+  ]);
+  const blank = executeAll(createSession(createExample()), [
+    {
+      requestId: "blank",
+      expectedRevision: 0,
+      operation: {
+        type: "batch",
+        operations: ["bar-1", "bar-2", "bar-3", "bar-4"].map((measureId) => ({
+          type: "clearMeasure" as const,
+          measureId,
+        })),
+      },
+    },
+  ]).score;
+  const result = await runAssistant(model, { ...request(""), score: blank, take });
+  const after = executeAll(createSession(blank), result.commands).score;
+  const notes = after.measures.map((m) => barEvents(m).filter((e) => e.pitch).length);
+  // One copy, in bar 1 (the second reading's), and bar 2 back to rest: nothing left from the first.
+  assert.equal(notes[0], 8, `notes per bar ${notes}`);
+  assert.deepEqual(notes.slice(1), [0, 0, 0]);
 });
 
 test("what was just sung stays as heard: the agent cannot rewrite those notes in the same turn", async () => {

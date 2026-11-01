@@ -14,7 +14,7 @@ import type { Attachment } from "./attachments";
 import { createMusicTools, isMusicTool, musicToolSpecs } from "./music-tools";
 import type { ChatMessage, ContentPart, ModelPort, TokenUsage, ToolCall } from "./model-port";
 import { refuseHeardBarEdit, writtenLines } from "./heard-bars-guard";
-import { parseArguments, runScoreTool } from "./score-tool-call";
+import { parseArguments, recordCommand, runScoreTool } from "./score-tool-call";
 import { createScoreToolGateway } from "./score-tool-gateway";
 import { createEditFeed, type EditsEvent } from "./edit-feed";
 import { createScoreBlockWriter, type DraftEvent } from "./score-block-writer";
@@ -121,7 +121,7 @@ export async function runAssistant(
       operation,
     };
     const result = tools("score_edit", command);
-    if (result.ok) commands.push(commandSchema.parse(command));
+    if (result.ok) recordCommand(commands, commandSchema.parse(command), request.score.revision);
     if (result.ok && runningTool === TRANSCRIBE_TOOL)
       writtenLines(session.score, operation).forEach((key) => heard.add(key));
     return result;
@@ -148,6 +148,7 @@ export async function runAssistant(
       call,
       tools,
       commands,
+      request.score.revision,
       turnId,
       () => session.score,
       (operation, asked) => refuseHeardBarEdit(session.score, operation, heard, asked, musicianWords(request)),

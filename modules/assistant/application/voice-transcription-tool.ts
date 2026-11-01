@@ -29,8 +29,11 @@ import {
   lastBarWithNotes,
   lineOf,
   nextStartsOfLine,
+  placeKey,
   registerOf,
+  staleBars,
   writeBars,
+  type SpanPlaces,
   type WrittenBar,
 } from "./transcription-placement";
 
@@ -53,11 +56,18 @@ const barText = (bar: WrittenBar) =>
  * often says so: "in the second bar…"). Writing goes through score edits, so the whole turn
  * stays one undo step. Returns compact bars and the ear's evidence for the agent's review.
  */
-export function transcribeIntoScore(take: VoiceTake | null, raw: unknown, access: ScoreAccess | null): ToolResult {
+export function transcribeIntoScore(
+  take: VoiceTake | null,
+  raw: unknown,
+  access: ScoreAccess | null,
+  places: SpanPlaces = new Map(),
+): ToolResult {
   const args = transcribeSchema.parse(raw);
   const score = access?.getScore();
   const firstLine = lineOf(args.spans[0].voice);
-  const firstBar = args.spans[0].bar ?? (score ? lastBarWithNotes(score, firstLine) + 1 : 1);
+  // A span already written this turn goes back where it was, replacing that reading.
+  const earlier = places.get(placeKey(args.spans[0].spanId, firstLine));
+  const firstBar = args.spans[0].bar ?? earlier?.bar ?? (score ? lastBarWithNotes(score, firstLine) + 1 : 1);
   const meter = args.meter ?? score?.measures[firstBar - 1]?.meter ?? score?.measures.at(-1)?.meter ?? FOUR_FOUR;
   const capacity = measureCapacity(meter);
   const chords = (args.chords ?? []).map(({ bar, beat, symbol }): ChordContext => {
@@ -131,7 +141,27 @@ export function transcribeIntoScore(take: VoiceTake | null, raw: unknown, access
   };
   if (!args.write || !access) return { ok: true, ...tempo, ...transposed, spans, written: false };
   const commit = writeBars(access, written);
-  return commit.ok ? { ok: true, ...tempo, ...transposed, spans, written: true, changes: commit.changes } : commit;
+  if (!commit.ok) return commit;
+  const now = args.spans.map(({ spanId, voice }, i) => ({
+    spanId,
+    line: lineOf(voice),
+    bar: starts[i],
+    bars: kept[i].length,
+  }));
+  const stale = staleBars(places, now);
+  if (stale.length) {
+    const cleared = access.commit({
+      type: "batch",
+      operations: stale.map(({ bar, line }) => ({
+        type: "clearMeasure",
+        measureId: access.getScore().measures[bar - 1].id,
+        voiceId: line,
+      })),
+    });
+    if (!cleared.ok) return cleared;
+  }
+  for (const span of now) places.set(placeKey(span.spanId, span.line), { bar: span.bar, bars: span.bars });
+  return { ok: true, ...tempo, ...transposed, spans, written: true, changes: commit.changes };
 }
 
 /**

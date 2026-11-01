@@ -20,6 +20,7 @@ import {
   transcribeSchema,
 } from "./music-tool-schemas";
 import { hearNotes } from "./voice-listen-tool";
+import type { SpanPlaces } from "./transcription-placement";
 import { transcribeIntoScore, type ScoreAccess } from "./voice-transcription-tool";
 import { toolError } from "./score-tool-gateway";
 import { toolParameters } from "./tool-definitions";
@@ -95,6 +96,8 @@ function parseChords(symbols: string[]): ChordSymbol[] {
  * writes what it heard into the score.
  */
 export function createMusicTools(take: VoiceTake | null, access: ScoreAccess | null = null) {
+  // Where each sung span was written in this turn, so writing it again replaces it.
+  const places: SpanPlaces = new Map();
   const sungNotes = (id: string) => {
     const frames = take && spanFrames(take, id);
     if (!frames) throw new Error(`There is no sung span ${id}${take ? "" : " (no voice take this turn)"}.`);
@@ -160,7 +163,7 @@ export function createMusicTools(take: VoiceTake | null, access: ScoreAccess | n
     },
 
     voice_transcribe_melody(raw) {
-      return transcribeIntoScore(take, raw, access);
+      return transcribeIntoScore(take, raw, access, places);
     },
   };
 
