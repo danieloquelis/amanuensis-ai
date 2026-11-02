@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { barEvents, applyCommand, beats, createExample, meterName, parseScore, type Operation } from "@/modules/score";
 import { createPlaybackPlan } from "@/modules/playback";
-import { layoutScore } from "@/modules/engraving";
+import { layoutScore, LINE_END } from "@/modules/engraving";
 import { createScoreToolGateway, createTurnEdits, scoreTools } from "@/modules/assistant";
 
 const edit = (score: ReturnType<typeof createExample>, operation: Operation, requestId = "test") =>
@@ -193,10 +193,10 @@ test("bar spacing changes engraving but never musical timing, and persists", () 
   const wider = edit(original, { type: "setMeasureWidth", measureId: "bar-1", width: naturalWidth + 40 });
   assert.deepEqual(createPlaybackPlan(wider), createPlaybackPlan(original));
   assert.deepEqual(barEvents(wider.measures[0]), barEvents(original.measures[0]));
-  // The override sets the bar's engraved width; the rest of the line re-justifies around it.
+  // The override sets the bar's engraved width; the rest of the line is justified around it.
   const widened = layoutScore(wider).systems[0];
   assert.equal(widened.bars[0].width, naturalWidth + 40);
-  assert.equal(widened.endX, layoutScore(original).systems[0].endX);
+  assert.ok(Math.abs(widened.endX - LINE_END) < 0.01);
   assert.equal(parseScore(JSON.parse(JSON.stringify(wider))).measures[0].width, naturalWidth + 40);
   assert.throws(() => edit(original, { type: "setMeasureWidth", measureId: "bar-1", width: 800 }), /Invalid operation/);
   assert.deepEqual(

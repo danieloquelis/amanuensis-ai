@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
-import { beatX, layoutScore, type Scene } from "@/modules/engraving";
+import { beatX, layoutScore, LINE_END, type Scene } from "@/modules/engraving";
 import {
   applyCommand,
   createExample,
@@ -13,7 +13,6 @@ import {
 } from "@/modules/score";
 
 const FIXTURES = "tests/fixtures/engraving";
-const LINE_END = 846;
 const STEM_LENGTH = 42;
 const EPSILON = 0.01;
 
@@ -71,7 +70,7 @@ test("bars are contiguous and justified lines end exactly at the margin", () => 
 test("line breaking balances lines and leaves a short final phrase ragged", () => {
   assert.deepEqual(
     layoutScore(fixture("long")).systems.map((s) => s.bars.length),
-    [4, 4, 4],
+    [6, 6],
   );
   assert.equal(layoutScore(createExample()).systems.length, 1);
   const short = layoutScore(fixture("short")).systems[0];

@@ -31,7 +31,7 @@
   grid-template-areas:
     "top-start top-center top-end"
     ". . ."
-    ". bottom-center .";
+    "bottom-center bottom-center bottom-center";
   gap: 12px;
   padding: 14px 16px 20px;
   pointer-events: none;
@@ -72,10 +72,13 @@
   align-items: flex-start;
 }
 
+/* The compose bar spans the whole row, so it is centred on the screen whatever the toolbar's width. */
 .bottomCenter {
   grid-area: bottom-center;
+  justify-self: center;
   justify-content: center;
-  width: min(760px, calc(100vw - 32px));
+  width: 100%;
+  max-width: 760px;
 }
 
 /* App mark */
@@ -472,6 +475,7 @@
   }
 
   .bottomCenter {
+    justify-self: stretch;
     width: auto;
   }
 

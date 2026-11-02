@@ -1,30 +1,51 @@
 {
-  "width": 900,
-  "height": 543,
+  "width": 1240,
+  "height": 313,
   "systems": [
     {
       "top": 98,
       "firstMeasure": 0,
-      "endX": 846,
+      "endX": 1186,
       "clef": "treble",
-      "keySignature": [{ "x": 88, "y": 122, "alter": -1 }],
+      "keySignature": [
+        {
+          "x": 88,
+          "y": 122,
+          "alter": -1
+        }
+      ],
       "bars": [
         {
           "id": "A1",
           "number": 1,
           "x": 131,
-          "endX": 346.5171948752936,
-          "width": 215.51719487529363,
-          "meter": { "numerator": 4, "denominator": 4 },
+          "endX": 298.00559264848187,
+          "width": 167.00559264848184,
+          "meter": {
+            "numerator": 4,
+            "denominator": 4
+          },
           "meterX": 115,
           "beat": 0,
           "capacity": 4,
           "notesX": 151,
           "columns": [
-            { "beat": 0, "x": 151 },
-            { "beat": 1, "x": 210.60890087661392 },
-            { "beat": 2, "x": 270.21780175322783 },
-            { "beat": 4, "x": 336.5171948752936 }
+            {
+              "beat": 0,
+              "x": 151
+            },
+            {
+              "beat": 1,
+              "x": 195.81877824648836
+            },
+            {
+              "beat": 2,
+              "x": 240.63755649297673
+            },
+            {
+              "beat": 4,
+              "x": 288.00559264848187
+            }
           ],
           "repeatStartX": null,
           "repeatEnd": null,
@@ -39,20 +60,38 @@
         {
           "id": "A2",
           "number": 2,
-          "x": 346.5171948752936,
-          "endX": 595.5643964936826,
-          "width": 249.04720161838895,
-          "meter": { "numerator": 4, "denominator": 4 },
+          "x": 298.00559264848187,
+          "endX": 490.22174806061344,
+          "width": 192.21615541213154,
+          "meter": {
+            "numerator": 4,
+            "denominator": 4
+          },
           "meterX": null,
           "beat": 4,
           "capacity": 4,
-          "notesX": 366.5171948752936,
+          "notesX": 318.00559264848187,
           "columns": [
-            { "beat": 4, "x": 366.5171948752936 },
-            { "beat": 4.5, "x": 413.08664868514825 },
-            { "beat": 5, "x": 459.65610249500287 },
-            { "beat": 6, "x": 519.2650033716168 },
-            { "beat": 8, "x": 585.5643964936826 }
+            {
+              "beat": 4,
+              "x": 318.00559264848187
+            },
+            {
+              "beat": 4.5,
+              "x": 353.0202631535509
+            },
+            {
+              "beat": 5,
+              "x": 388.03493365861993
+            },
+            {
+              "beat": 6,
+              "x": 432.8537119051083
+            },
+            {
+              "beat": 8,
+              "x": 480.22174806061344
+            }
           ],
           "repeatStartX": null,
           "repeatEnd": null,
@@ -60,35 +99,230 @@
           "style": null,
           "slashXs": [],
           "section": null,
-          "marks": [{ "id": "mk-A2-segno", "kind": "segno" }],
+          "marks": [
+            {
+              "id": "mk-A2-segno",
+              "kind": "segno"
+            }
+          ],
           "repeatStartId": null,
           "repeatEndId": null
         },
         {
           "id": "A3",
           "number": 3,
-          "x": 595.5643964936826,
-          "endX": 846,
-          "width": 250.43560350631742,
-          "meter": { "numerator": 4, "denominator": 4 },
+          "x": 490.22174806061344,
+          "endX": 681.4968610465669,
+          "width": 191.27511298595346,
+          "meter": {
+            "numerator": 4,
+            "denominator": 4
+          },
           "meterX": null,
           "beat": 8,
           "capacity": 4,
-          "notesX": 607.5643964936826,
+          "notesX": 502.22174806061344,
           "columns": [
-            { "beat": 8, "x": 636.1188469319723 },
-            { "beat": 9, "x": 693.2277478085516 },
-            { "beat": 10, "x": 750.336648685131 },
-            { "beat": 11, "x": 807.4455495617103 },
-            { "beat": 12, "x": 836 }
+            {
+              "beat": 8,
+              "x": 523.3811371838576
+            },
+            {
+              "beat": 9,
+              "x": 565.699915430346
+            },
+            {
+              "beat": 10,
+              "x": 608.0186936768343
+            },
+            {
+              "beat": 11,
+              "x": 650.3374719233227
+            },
+            {
+              "beat": 12,
+              "x": 671.4968610465669
+            }
           ],
           "repeatStartX": null,
           "repeatEnd": null,
           "final": false,
           "style": "slashes",
-          "slashXs": [636.1188469319723, 693.2277478085516, 750.336648685131, 807.4455495617103],
+          "slashXs": [523.3811371838576, 565.699915430346, 608.0186936768343, 650.3374719233227],
           "section": null,
           "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        },
+        {
+          "id": "A4",
+          "number": 4,
+          "x": 681.4968610465669,
+          "endX": 768.1948247907142,
+          "width": 86.69796374414727,
+          "meter": {
+            "numerator": 4,
+            "denominator": 4
+          },
+          "meterX": null,
+          "beat": 12,
+          "capacity": 4,
+          "notesX": 693.4968610465669,
+          "columns": [
+            {
+              "beat": 12,
+              "x": 693.4968610465669
+            },
+            {
+              "beat": 16,
+              "x": 758.1948247907142
+            }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": false,
+          "style": "repeat",
+          "slashXs": [],
+          "section": null,
+          "marks": [
+            {
+              "id": "mk-A4-toCoda",
+              "kind": "toCoda"
+            }
+          ],
+          "repeatStartId": null,
+          "repeatEndId": null
+        },
+        {
+          "id": "B1",
+          "number": 5,
+          "x": 768.1948247907142,
+          "endX": 899.2938007358216,
+          "width": 131.0989759451075,
+          "meter": {
+            "numerator": 4,
+            "denominator": 4
+          },
+          "meterX": null,
+          "beat": 16,
+          "capacity": 4,
+          "notesX": 788.1948247907142,
+          "columns": [
+            {
+              "beat": 16,
+              "x": 788.1948247907142
+            },
+            {
+              "beat": 19,
+              "x": 854.4750224893332
+            },
+            {
+              "beat": 20,
+              "x": 889.2938007358216
+            }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "tempo": 96,
+          "final": false,
+          "style": null,
+          "slashXs": [],
+          "section": "B",
+          "marks": [],
+          "repeatStartId": null,
+          "repeatEndId": null
+        },
+        {
+          "id": "B2",
+          "number": 6,
+          "x": 899.2938007358216,
+          "endX": 1090.568913721775,
+          "width": 191.27511298595346,
+          "meter": {
+            "numerator": 4,
+            "denominator": 4
+          },
+          "meterX": null,
+          "beat": 20,
+          "capacity": 4,
+          "notesX": 911.2938007358216,
+          "columns": [
+            {
+              "beat": 20,
+              "x": 932.4531898590658
+            },
+            {
+              "beat": 21,
+              "x": 974.7719681055542
+            },
+            {
+              "beat": 22,
+              "x": 1017.0907463520425
+            },
+            {
+              "beat": 23,
+              "x": 1059.4095245985309
+            },
+            {
+              "beat": 24,
+              "x": 1080.568913721775
+            }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": false,
+          "style": "slashes",
+          "slashXs": [932.4531898590658, 974.7719681055542, 1017.0907463520425, 1059.4095245985309],
+          "section": null,
+          "marks": [
+            {
+              "id": "mk-B2-dsAlCoda",
+              "kind": "dsAlCoda"
+            },
+            {
+              "id": "mk-B2-fine",
+              "kind": "fine"
+            }
+          ],
+          "repeatStartId": null,
+          "repeatEndId": null
+        },
+        {
+          "id": "C1",
+          "number": 7,
+          "x": 1090.568913721775,
+          "endX": 1186,
+          "width": 95.43108627822504,
+          "meter": {
+            "numerator": 4,
+            "denominator": 4
+          },
+          "meterX": null,
+          "beat": 24,
+          "capacity": 4,
+          "notesX": 1112.568913721775,
+          "columns": [
+            {
+              "beat": 24,
+              "x": 1112.568913721775
+            },
+            {
+              "beat": 28,
+              "x": 1176
+            }
+          ],
+          "repeatStartX": null,
+          "repeatEnd": null,
+          "final": true,
+          "style": null,
+          "slashXs": [],
+          "section": null,
+          "marks": [
+            {
+              "id": "mk-C1-coda",
+              "kind": "coda"
+            }
+          ],
           "repeatStartId": null,
           "repeatEndId": null
         }
@@ -97,8 +331,15 @@
         {
           "event": {
             "id": "a1",
-            "duration": { "numerator": 1, "denominator": 1 },
-            "pitch": { "step": "A", "alter": 0, "octave": 4 }
+            "duration": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "pitch": {
+              "step": "A",
+              "alter": 0,
+              "octave": 4
+            }
           },
           "voice": 1,
           "x": 151,
@@ -117,11 +358,18 @@
         {
           "event": {
             "id": "a2",
-            "duration": { "numerator": 1, "denominator": 1 },
-            "pitch": { "step": "C", "alter": 0, "octave": 5 }
+            "duration": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "pitch": {
+              "step": "C",
+              "alter": 0,
+              "octave": 5
+            }
           },
           "voice": 1,
-          "x": 210.60890087661392,
+          "x": 195.81877824648836,
           "y": 116,
           "beat": 1,
           "localBeat": 1,
@@ -130,18 +378,25 @@
           "stemEnd": 158,
           "ledgerLines": [],
           "accidental": null,
-          "left": 202.60890087661392,
-          "right": 218.60890087661392,
+          "left": 187.81877824648836,
+          "right": 203.81877824648836,
           "hidden": false
         },
         {
           "event": {
             "id": "a3",
-            "duration": { "numerator": 2, "denominator": 1 },
-            "pitch": { "step": "F", "alter": 0, "octave": 5 }
+            "duration": {
+              "numerator": 2,
+              "denominator": 1
+            },
+            "pitch": {
+              "step": "F",
+              "alter": 0,
+              "octave": 5
+            }
           },
           "voice": 1,
-          "x": 270.21780175322783,
+          "x": 240.63755649297673,
           "y": 98,
           "beat": 2,
           "localBeat": 2,
@@ -150,18 +405,25 @@
           "stemEnd": 140,
           "ledgerLines": [],
           "accidental": null,
-          "left": 262.21780175322783,
-          "right": 278.21780175322783,
+          "left": 232.63755649297673,
+          "right": 248.63755649297673,
           "hidden": false
         },
         {
           "event": {
             "id": "b1",
-            "duration": { "numerator": 1, "denominator": 2 },
-            "pitch": { "step": "E", "alter": 0, "octave": 5 }
+            "duration": {
+              "numerator": 1,
+              "denominator": 2
+            },
+            "pitch": {
+              "step": "E",
+              "alter": 0,
+              "octave": 5
+            }
           },
           "voice": 1,
-          "x": 366.5171948752936,
+          "x": 318.00559264848187,
           "y": 104,
           "beat": 4,
           "localBeat": 0,
@@ -170,18 +432,25 @@
           "stemEnd": 149,
           "ledgerLines": [],
           "accidental": null,
-          "left": 358.5171948752936,
-          "right": 374.5171948752936,
+          "left": 310.00559264848187,
+          "right": 326.00559264848187,
           "hidden": false
         },
         {
           "event": {
             "id": "b2",
-            "duration": { "numerator": 1, "denominator": 2 },
-            "pitch": { "step": "D", "alter": 0, "octave": 5 }
+            "duration": {
+              "numerator": 1,
+              "denominator": 2
+            },
+            "pitch": {
+              "step": "D",
+              "alter": 0,
+              "octave": 5
+            }
           },
           "voice": 1,
-          "x": 413.08664868514825,
+          "x": 353.0202631535509,
           "y": 110,
           "beat": 4.5,
           "localBeat": 0.5,
@@ -190,18 +459,25 @@
           "stemEnd": 152,
           "ledgerLines": [],
           "accidental": null,
-          "left": 405.08664868514825,
-          "right": 421.08664868514825,
+          "left": 345.0202631535509,
+          "right": 361.0202631535509,
           "hidden": false
         },
         {
           "event": {
             "id": "b3",
-            "duration": { "numerator": 1, "denominator": 1 },
-            "pitch": { "step": "C", "alter": 0, "octave": 5 }
+            "duration": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "pitch": {
+              "step": "C",
+              "alter": 0,
+              "octave": 5
+            }
           },
           "voice": 1,
-          "x": 459.65610249500287,
+          "x": 388.03493365861993,
           "y": 116,
           "beat": 5,
           "localBeat": 1,
@@ -210,18 +486,25 @@
           "stemEnd": 158,
           "ledgerLines": [],
           "accidental": null,
-          "left": 451.65610249500287,
-          "right": 467.65610249500287,
+          "left": 380.03493365861993,
+          "right": 396.03493365861993,
           "hidden": false
         },
         {
           "event": {
             "id": "b4",
-            "duration": { "numerator": 2, "denominator": 1 },
-            "pitch": { "step": "B", "alter": -1, "octave": 4 }
+            "duration": {
+              "numerator": 2,
+              "denominator": 1
+            },
+            "pitch": {
+              "step": "B",
+              "alter": -1,
+              "octave": 4
+            }
           },
           "voice": 1,
-          "x": 519.2650033716168,
+          "x": 432.8537119051083,
           "y": 122,
           "beat": 6,
           "localBeat": 2,
@@ -230,14 +513,22 @@
           "stemEnd": 164,
           "ledgerLines": [],
           "accidental": null,
-          "left": 511.2650033716168,
-          "right": 527.2650033716168,
+          "left": 424.8537119051083,
+          "right": 440.8537119051083,
           "hidden": false
         },
         {
-          "event": { "id": "c0", "duration": { "numerator": 4, "denominator": 1 }, "pitch": null, "measureRest": true },
+          "event": {
+            "id": "c0",
+            "duration": {
+              "numerator": 4,
+              "denominator": 1
+            },
+            "pitch": null,
+            "measureRest": true
+          },
           "voice": 1,
-          "x": 726.7821982468413,
+          "x": 591.8593045535902,
           "y": 122,
           "beat": 8,
           "localBeat": 0,
@@ -246,250 +537,208 @@
           "stemEnd": 164,
           "ledgerLines": [],
           "accidental": null,
-          "left": 713.7821982468413,
-          "right": 734.7821982468413,
+          "left": 578.8593045535902,
+          "right": 599.8593045535902,
           "hidden": true
-        }
-      ],
-      "beams": [{ "x1": 360.5171948752936, "y1": 149, "x2": 407.08664868514825, "y2": 152, "level": 1, "down": true }],
-      "beamedIds": ["b1", "b2"],
-      "tuplets": [],
-      "ties": [],
-      "slurs": [],
-      "labels": [{ "id": "t1-0", "annotationId": "t1", "x": 171, "y": 20, "text": "swing feel", "kind": "text" }],
-      "chords": [
-        { "id": "h1", "x": 147, "text": "Fmaj7" },
-        { "id": "h2", "x": 362.5171948752936, "text": "Gm7" },
-        { "id": "h3", "x": 515.2650033716168, "text": "C7/E" },
-        { "id": "h4", "x": 632.1188469319723, "text": "F" }
-      ],
-      "chordY": 76,
-      "markY": 54
-    },
-    {
-      "top": 328,
-      "firstMeasure": 3,
-      "endX": 846,
-      "clef": "treble",
-      "keySignature": [{ "x": 88, "y": 352, "alter": -1 }],
-      "bars": [
-        {
-          "id": "A4",
-          "number": 4,
-          "x": 107,
-          "endX": 233.6439446698787,
-          "width": 126.64394466987869,
-          "meter": { "numerator": 4, "denominator": 4 },
-          "meterX": null,
-          "beat": 12,
-          "capacity": 4,
-          "notesX": 119,
-          "columns": [
-            { "beat": 12, "x": 119 },
-            { "beat": 16, "x": 223.6439446698787 }
-          ],
-          "repeatStartX": null,
-          "repeatEnd": null,
-          "final": false,
-          "style": "repeat",
-          "slashXs": [],
-          "section": null,
-          "marks": [{ "id": "mk-A4-toCoda", "kind": "toCoda" }],
-          "repeatStartId": null,
-          "repeatEndId": null
         },
         {
-          "id": "B1",
-          "number": 5,
-          "x": 233.6439446698787,
-          "endX": 424.15494942439636,
-          "width": 190.51100475451767,
-          "meter": { "numerator": 4, "denominator": 4 },
-          "meterX": null,
-          "beat": 16,
-          "capacity": 4,
-          "notesX": 253.6439446698787,
-          "columns": [
-            { "beat": 16, "x": 253.6439446698787 },
-            { "beat": 19, "x": 355.36858262246915 },
-            { "beat": 20, "x": 414.15494942439636 }
-          ],
-          "repeatStartX": null,
-          "repeatEnd": null,
-          "tempo": 96,
-          "final": false,
-          "style": null,
-          "slashXs": [],
-          "section": "B",
-          "marks": [],
-          "repeatStartId": null,
-          "repeatEndId": null
-        },
-        {
-          "id": "B2",
-          "number": 6,
-          "x": 424.15494942439636,
-          "endX": 711.3004166321052,
-          "width": 287.14546720770886,
-          "meter": { "numerator": 4, "denominator": 4 },
-          "meterX": null,
-          "beat": 20,
-          "capacity": 4,
-          "notesX": 436.15494942439636,
-          "columns": [
-            { "beat": 20, "x": 469.29813282535997 },
-            { "beat": 21, "x": 535.5844996272872 },
-            { "beat": 22, "x": 601.8708664292144 },
-            { "beat": 23, "x": 668.1572332311416 },
-            { "beat": 24, "x": 701.3004166321052 }
-          ],
-          "repeatStartX": null,
-          "repeatEnd": null,
-          "final": false,
-          "style": "slashes",
-          "slashXs": [469.29813282535997, 535.5844996272872, 601.8708664292144, 668.1572332311416],
-          "section": null,
-          "marks": [
-            { "id": "mk-B2-dsAlCoda", "kind": "dsAlCoda" },
-            { "id": "mk-B2-fine", "kind": "fine" }
-          ],
-          "repeatStartId": null,
-          "repeatEndId": null
-        },
-        {
-          "id": "C1",
-          "number": 7,
-          "x": 711.3004166321052,
-          "endX": 846,
-          "width": 134.69958336789477,
-          "meter": { "numerator": 4, "denominator": 4 },
-          "meterX": null,
-          "beat": 24,
-          "capacity": 4,
-          "notesX": 733.3004166321052,
-          "columns": [
-            { "beat": 24, "x": 733.3004166321052 },
-            { "beat": 28, "x": 836 }
-          ],
-          "repeatStartX": null,
-          "repeatEnd": null,
-          "final": true,
-          "style": null,
-          "slashXs": [],
-          "section": null,
-          "marks": [{ "id": "mk-C1-coda", "kind": "coda" }],
-          "repeatStartId": null,
-          "repeatEndId": null
-        }
-      ],
-      "events": [
-        {
-          "event": { "id": "d0", "duration": { "numerator": 4, "denominator": 1 }, "pitch": null, "measureRest": true },
+          "event": {
+            "id": "d0",
+            "duration": {
+              "numerator": 4,
+              "denominator": 1
+            },
+            "pitch": null,
+            "measureRest": true
+          },
           "voice": 1,
-          "x": 176.32197233493935,
-          "y": 352,
+          "x": 730.8458429186405,
+          "y": 122,
           "beat": 12,
           "localBeat": 0,
           "measure": 3,
           "stemDown": true,
-          "stemEnd": 394,
+          "stemEnd": 164,
           "ledgerLines": [],
           "accidental": null,
-          "left": 163.32197233493935,
-          "right": 184.32197233493935,
+          "left": 717.8458429186405,
+          "right": 738.8458429186405,
           "hidden": true
         },
         {
           "event": {
             "id": "e1",
-            "duration": { "numerator": 3, "denominator": 1 },
-            "pitch": { "step": "G", "alter": 0, "octave": 4 }
+            "duration": {
+              "numerator": 3,
+              "denominator": 1
+            },
+            "pitch": {
+              "step": "G",
+              "alter": 0,
+              "octave": 4
+            }
           },
           "voice": 1,
-          "x": 253.6439446698787,
-          "y": 364,
+          "x": 788.1948247907142,
+          "y": 134,
           "beat": 16,
           "localBeat": 0,
           "measure": 4,
           "stemDown": false,
-          "stemEnd": 322,
+          "stemEnd": 92,
           "ledgerLines": [],
           "accidental": null,
-          "left": 245.6439446698787,
-          "right": 270.6439446698787,
+          "left": 780.1948247907142,
+          "right": 805.1948247907142,
           "hidden": false
         },
         {
           "event": {
             "id": "e2",
-            "duration": { "numerator": 1, "denominator": 1 },
-            "pitch": { "step": "A", "alter": 0, "octave": 4 }
+            "duration": {
+              "numerator": 1,
+              "denominator": 1
+            },
+            "pitch": {
+              "step": "A",
+              "alter": 0,
+              "octave": 4
+            }
           },
           "voice": 1,
-          "x": 355.36858262246915,
-          "y": 358,
+          "x": 854.4750224893332,
+          "y": 128,
           "beat": 19,
           "localBeat": 3,
           "measure": 4,
           "stemDown": false,
-          "stemEnd": 316,
+          "stemEnd": 86,
           "ledgerLines": [],
           "accidental": null,
-          "left": 347.36858262246915,
-          "right": 363.36858262246915,
+          "left": 846.4750224893332,
+          "right": 862.4750224893332,
           "hidden": false
         },
         {
-          "event": { "id": "f0", "duration": { "numerator": 4, "denominator": 1 }, "pitch": null, "measureRest": true },
+          "event": {
+            "id": "f0",
+            "duration": {
+              "numerator": 4,
+              "denominator": 1
+            },
+            "pitch": null,
+            "measureRest": true
+          },
           "voice": 1,
-          "x": 573.7276830282508,
-          "y": 352,
+          "x": 1000.9313572287983,
+          "y": 122,
           "beat": 20,
           "localBeat": 0,
           "measure": 5,
           "stemDown": true,
-          "stemEnd": 394,
+          "stemEnd": 164,
           "ledgerLines": [],
           "accidental": null,
-          "left": 560.7276830282508,
-          "right": 581.7276830282508,
+          "left": 987.9313572287983,
+          "right": 1008.9313572287983,
           "hidden": true
         },
         {
           "event": {
             "id": "g1",
-            "duration": { "numerator": 4, "denominator": 1 },
-            "pitch": { "step": "F", "alter": 0, "octave": 4 }
+            "duration": {
+              "numerator": 4,
+              "denominator": 1
+            },
+            "pitch": {
+              "step": "F",
+              "alter": 0,
+              "octave": 4
+            }
           },
           "voice": 1,
-          "x": 733.3004166321052,
-          "y": 370,
+          "x": 1112.568913721775,
+          "y": 140,
           "beat": 24,
           "localBeat": 0,
           "measure": 6,
           "stemDown": false,
-          "stemEnd": 328,
+          "stemEnd": 98,
           "ledgerLines": [],
           "accidental": null,
-          "left": 723.3004166321052,
-          "right": 743.3004166321052,
+          "left": 1102.568913721775,
+          "right": 1122.568913721775,
           "hidden": false
         }
       ],
-      "beams": [],
-      "beamedIds": [],
+      "beams": [
+        {
+          "x1": 312.00559264848187,
+          "y1": 149,
+          "x2": 347.0202631535509,
+          "y2": 152,
+          "level": 1,
+          "down": true
+        }
+      ],
+      "beamedIds": ["b1", "b2"],
       "tuplets": [],
       "ties": [],
       "slurs": [],
-      "labels": [],
-      "chords": [
-        { "id": "h5", "x": 249.6439446698787, "text": "B♭maj7" },
-        { "id": "h6", "x": 465.29813282535997, "text": "Em7♭5" },
-        { "id": "h7", "x": 597.8708664292144, "text": "A7♭9" },
-        { "id": "h8", "x": 729.3004166321052, "text": "F6/9" }
+      "labels": [
+        {
+          "id": "t1-0",
+          "annotationId": "t1",
+          "x": 171,
+          "y": 20,
+          "text": "swing feel",
+          "kind": "text"
+        }
       ],
-      "chordY": 306,
-      "markY": 284
+      "chords": [
+        {
+          "id": "h1",
+          "x": 147,
+          "text": "Fmaj7"
+        },
+        {
+          "id": "h2",
+          "x": 314.00559264848187,
+          "text": "Gm7"
+        },
+        {
+          "id": "h3",
+          "x": 428.8537119051083,
+          "text": "C7/E"
+        },
+        {
+          "id": "h4",
+          "x": 519.3811371838576,
+          "text": "F"
+        },
+        {
+          "id": "h5",
+          "x": 784.1948247907142,
+          "text": "B♭maj7"
+        },
+        {
+          "id": "h6",
+          "x": 928.4531898590658,
+          "text": "Em7♭5"
+        },
+        {
+          "id": "h7",
+          "x": 1013.0907463520425,
+          "text": "A7♭9"
+        },
+        {
+          "id": "h8",
+          "x": 1108.568913721775,
+          "text": "F6/9"
+        }
+      ],
+      "chordY": 76,
+      "markY": 54
     }
   ]
 }

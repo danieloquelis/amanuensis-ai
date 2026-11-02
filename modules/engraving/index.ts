@@ -3,6 +3,7 @@ export { layoutScore, type LayoutOptions } from "./domain/layout-score";
 export { CLEF_NAMES } from "./domain/clefs";
 export {
   beatX,
+  LINE_END,
   SCENE_WIDTH,
   STAFF_GAP,
   STAFF_LEFT,

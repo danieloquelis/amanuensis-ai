@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { SCENE_WIDTH } from "@/modules/engraving";
 import { EXAMPLE_WORKSPACE, openExample } from "./workspace-helpers";
 
 test("edit, undo, redo and reload preserve the musical document", async ({ page }) => {
@@ -95,7 +96,7 @@ test("pointer drag and keyboard editing operate on the same note", async ({ page
   const svg = (await page.locator("svg[aria-label*='treble clef']").boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - (12 * svg.width) / 900, { steps: 4 });
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - (12 * svg.width) / SCENE_WIDTH, { steps: 4 });
   await page.mouse.up();
   const edited = page.getByRole("button", { name: "Bar 1, beat 1, E4, 1 beats", exact: true });
   await expect(edited).toBeVisible();
@@ -225,7 +226,7 @@ test("the card stacks notes on a stem, and one note of a chord can be picked and
   // Pick the upper head (E4) alone: the card names it, and Delete takes only it off the stem.
   const box = (await chord.locator("rect").boundingBox())!;
   const svg = (await page.locator("svg[aria-label$='Select a note to edit.']").boundingBox())!;
-  const scale = svg.width / 900;
+  const scale = svg.width / SCENE_WIDTH;
   await page.mouse.click(box.x + box.width / 2, box.y + 22 * scale);
   await expect(page.getByRole("region", { name: "Selection" })).toContainText("E4 · bar 1");
   await page.keyboard.press("Delete");
@@ -261,9 +262,15 @@ test("a run of notes gets a slur, an articulation and an octave from its card", 
   await card.getByRole("button", { name: "Up an octave", exact: true }).click();
   await expect(page.getByRole("button", { name: "Bar 1, beat 3, G5, 1 beats", exact: true })).toBeVisible();
   const slur = page.getByRole("button", { name: "Slur, bar 1", exact: true });
-  await slur.click();
-  // ↑/↓ reshape the selected slur; the drawn curve changes.
   const curve = slur.locator("path").last();
+  // Pressed on the curve itself (the middle of its box is on a note).
+  const onCurve = await curve.evaluate((path: SVGPathElement) => {
+    const point = path.getPointAtLength(path.getTotalLength() / 2).matrixTransform(path.getScreenCTM()!);
+    return { x: point.x, y: point.y };
+  });
+  await page.mouse.click(onCurve.x, onCurve.y);
+  await expect(slur).toHaveAttribute("aria-pressed", "true");
+  // ↑/↓ reshape the selected slur; the drawn curve changes.
   const shape = (await curve.getAttribute("d"))!;
   await slur.press("ArrowUp");
   await expect(curve).not.toHaveAttribute("d", shape);
@@ -280,7 +287,7 @@ test("drag a bar divider, undo it, and restore persisted spacing", async ({ page
   const svg = (await page.locator("svg[aria-label*='treble clef']").boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
-  await page.mouse.move(box.x + box.width / 2 + (40 * svg.width) / 900, box.y + box.height / 2, { steps: 6 });
+  await page.mouse.move(box.x + box.width / 2 + (40 * svg.width) / SCENE_WIDTH, box.y + box.height / 2, { steps: 6 });
   await page.mouse.up();
   await expect(divider).toHaveAttribute("aria-valuenow", String(natural + 40));
   await page.reload();
@@ -769,7 +776,7 @@ test("a note sounds when pressed, at each pitch while dragged, and when changed 
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
   await expect.poll(heard).toEqual([60]);
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - (12 * svg.width) / 900, { steps: 8 });
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - (12 * svg.width) / SCENE_WIDTH, { steps: 8 });
   await page.mouse.up();
   await expect(page.getByRole("button", { name: "Bar 1, beat 1, E4, 1 beats", exact: true })).toBeVisible();
   // C4, then D4 and E4 while dragging; releasing on E4 does not sound it again.
@@ -901,7 +908,7 @@ test("a drum hit is dragged through the kit, sounding each piece, and plays on t
   const svg = (await page.locator("svg[aria-label$='Select a note to edit.']").boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - (12 * svg.width) / 900, { steps: 8 });
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - (12 * svg.width) / SCENE_WIDTH, { steps: 8 });
   await page.mouse.up();
   await expect(page.getByRole("button", { name: /^Drums, bar 1, beat 1, Mid tom, 1 beats/ })).toBeVisible();
   await expect.poll(() => heardNotes(page)).toEqual([38, 37, 47]);
@@ -976,10 +983,10 @@ test("a note of a chord can be dragged on its own; the others stay", async ({ pa
   // Grab the upper note (G4) and drag it up two steps, to B4.
   const box = (await chord.locator("rect").boundingBox())!;
   const svg = (await page.locator("svg[aria-label$='Select a note to edit.']").boundingBox())!;
-  const step = (6 * svg.width) / 900;
-  await page.mouse.move(box.x + box.width / 2, box.y + 22 * (svg.width / 900));
+  const step = (6 * svg.width) / SCENE_WIDTH;
+  await page.mouse.move(box.x + box.width / 2, box.y + 22 * (svg.width / SCENE_WIDTH));
   await page.mouse.down();
-  await page.mouse.move(box.x + box.width / 2, box.y + 22 * (svg.width / 900) - 2 * step, { steps: 6 });
+  await page.mouse.move(box.x + box.width / 2, box.y + 22 * (svg.width / SCENE_WIDTH) - 2 * step, { steps: 6 });
   await page.mouse.up();
   await expect(page.getByRole("button", { name: "Bar 1, beat 1, C4 and B4, 1 beats", exact: true })).toBeVisible();
 });

@@ -185,7 +185,13 @@ export type System = {
 
 export type Scene = { width: number; height: number; systems: System[] };
 
-export const SCENE_WIDTH = 900;
+/**
+ * The page's width, in the units everything is drawn in: an A4 page's printable width (about
+ * 180 mm) with a standard 7 mm staff (`STAFF_HEIGHT`), so a line holds what a printed part would.
+ */
+export const SCENE_WIDTH = 1240;
+/** Room kept free at the right of a line. */
+const RIGHT_MARGIN = 54;
 /** Distance between staff lines. */
 export const STAFF_GAP = 12;
 /** Distance between adjacent staff positions (a line and the next space). */
@@ -193,7 +199,7 @@ export const STAFF_STEP = STAFF_GAP / 2;
 export const STAFF_HEIGHT = STAFF_GAP * 4;
 export const STAFF_LEFT = 35;
 /** Right edge available to a justified system. */
-export const LINE_END = 846;
+export const LINE_END = SCENE_WIDTH - RIGHT_MARGIN;
 export const SYSTEM_HEIGHT = 230;
 export const STEM_LENGTH = STAFF_GAP * 3.5;
 export const STEM_OFFSET = 6;
