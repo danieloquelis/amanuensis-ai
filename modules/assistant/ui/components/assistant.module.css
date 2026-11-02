@@ -124,6 +124,25 @@
   padding-left: 2px;
 }
 
+/*
+ * Long text: the field takes a row of its own above the orb and the controls, which sit on the
+ * row below, the orb on the left and the buttons on the right (as a chat app does).
+ */
+.bar[data-expanded="true"] {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+.bar[data-expanded="true"] .field {
+  order: -1;
+  flex: 0 0 100%;
+  padding: 0 8px;
+}
+
+.bar[data-expanded="true"] .attach {
+  margin-left: auto;
+}
+
 /* What the request is about: "Whole score", "F4 · bar 2", "Bars 2–4". */
 .subject {
   flex: none;

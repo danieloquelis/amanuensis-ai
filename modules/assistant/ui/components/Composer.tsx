@@ -1,5 +1,5 @@
 import { ArrowUp, Paperclip, Stop, X } from "@phosphor-icons/react";
-import { useRef, type ReactNode, type RefObject } from "react";
+import { useRef, useState, type ReactNode, type RefObject } from "react";
 import { useVoiceRecorder } from "@/modules/voice/ui";
 import { IconButton } from "@/shared/ui/IconButton";
 import { ATTACHMENT_LIMITS } from "../../application/attachments";
@@ -32,6 +32,12 @@ type ComposerProps = {
 /** What the file picker offers: pictures, PDFs and music written as text. */
 const ACCEPTED_FILES = "image/*,application/pdf,text/plain,.txt,.abc,.tab,.md,.cho,.chordpro";
 
+/**
+ * A field taller than this (px) has run past two lines: with its padding, one line is about 41 and
+ * two about 62. Up to two lines stay beside the orb; more get a row of their own.
+ */
+const TWO_LINES = 70;
+
 const formatSeconds = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 /**
  * Relative heights of the waveform's bars, scaled by the live input level: uneven on purpose, so
@@ -54,6 +60,9 @@ export function Composer(props: ComposerProps) {
   const { busy, subject, placeholder = "Sing, hum, or describe a change…", inputRef, draft, onDraft, onSend } = props;
   const { onTake, onStop, accessory, attachments } = props;
   const picker = useRef<HTMLInputElement>(null);
+  // Once the text runs past two lines it gets a row of its own, above the orb and the buttons, until the field is empty again.
+  const [wrapped, setWrapped] = useState(false);
+  const expanded = wrapped && draft.length > 0;
   const recorder = useVoiceRecorder(onTake);
   const recording = recorder.status === "recording";
   const preparing = recorder.status === "processing";
@@ -76,6 +85,7 @@ export function Composer(props: ComposerProps) {
       <form
         className={styles.bar}
         data-state={state}
+        data-expanded={expanded && !capturing}
         aria-label="Compose"
         onSubmit={(e) => {
           e.preventDefault();
@@ -108,7 +118,13 @@ export function Composer(props: ComposerProps) {
               placeholder={placeholder}
               value={draft}
               rows={1}
-              onChange={(e) => onDraft(e.target.value)}
+              onChange={(e) => {
+                onDraft(e.target.value);
+                // Measured as typed (the field has already grown). Typing into an empty field (after a
+                // send, say) starts over on one row.
+                const wraps = e.target.scrollHeight > TWO_LINES;
+                if (wraps || !draft) setWrapped(wraps);
+              }}
               onPaste={(e) => {
                 const files = [...e.clipboardData.files];
                 const text = e.clipboardData.getData("text/plain");
