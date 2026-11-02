@@ -13,8 +13,8 @@ const LEVELS: Record<Thinking, { name: string; hint: string }> = {
 };
 
 /**
- * How long the assistant may think before it acts: a small button in the compose bar showing the
- * level, and a menu to change it. A native popover, so a click elsewhere or Escape closes it.
+ * How long the assistant may think before it acts: a small icon in the compose bar (the level in
+ * its label and tooltip), and a menu to change it. A native popover, so a click elsewhere or Escape closes it.
  */
 export function ThinkingMenu({ level, onChange }: { level: Thinking; onChange: (level: Thinking) => void }) {
   const id = useId();
@@ -36,7 +36,6 @@ export function ThinkingMenu({ level, onChange }: { level: Thinking; onChange: (
         }}
       >
         <Brain size={18} aria-hidden="true" />
-        <span className={styles.thinkingLabel}>{LEVELS[level].name}</span>
       </button>
       <div
         id={id}

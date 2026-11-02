@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CHAT_WIDTH, clampChatWidth } from "../../application/chat-width";
+import { clampChatWidth, defaultChatWidth } from "../../application/chat-width";
 import { loadChatWidth, saveChatWidth } from "../../infrastructure/local-chat-width";
+
+/** The chat's width before the window is known (the server render). */
+const DEFAULT_WIDTH = 420;
 
 /** Closed; floating above the compose bar; or expanded into a sidebar that holds the bar too. */
 export type ChatMode = "closed" | "floating" | "sidebar";
@@ -14,11 +17,19 @@ export function useComposeDock() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState("");
   const [chatMode, setChatMode] = useState<ChatMode>("closed");
-  // The expanded chat's width, as the musician last dragged it in this browser (read after mount).
-  const [chatWidth, setChatWidth] = useState<number>(CHAT_WIDTH.min);
+  // The expanded chat's width: as the musician last dragged it in this browser, or a share of the
+  // window (read after mount), and kept within what the window allows as it is resized.
+  const [chatWidth, setChatWidth] = useState(DEFAULT_WIDTH);
   useEffect(() => {
-    const frame = requestAnimationFrame(() => setChatWidth(clampChatWidth(loadChatWidth(), innerWidth)));
-    return () => cancelAnimationFrame(frame);
+    const fit = () => setChatWidth((width) => clampChatWidth(width, innerWidth));
+    const frame = requestAnimationFrame(() =>
+      setChatWidth(clampChatWidth(loadChatWidth() ?? defaultChatWidth(innerWidth), innerWidth)),
+    );
+    window.addEventListener("resize", fit);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("resize", fit);
+    };
   }, []);
   /** Keeps a width the musician settled on. */
   const keepChatWidth = useCallback((width: number) => {

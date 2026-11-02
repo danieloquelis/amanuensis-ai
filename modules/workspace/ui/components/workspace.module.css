@@ -248,11 +248,11 @@
  * centred over the score.
  */
 .studio[data-chat="sidebar"] .overlay {
-  left: calc(var(--chat-width, 520px) + 16px);
+  left: calc(var(--chat-width, 420px) + 16px);
 }
 
 .studio[data-chat="sidebar"] .canvas {
-  padding-left: calc(var(--chat-width, 520px) + 16px + 48px);
+  padding-left: calc(var(--chat-width, 420px) + 16px + 48px);
 }
 
 /* Not much room beside the docked chat: the tempo's name steps aside until the chat is closed. */

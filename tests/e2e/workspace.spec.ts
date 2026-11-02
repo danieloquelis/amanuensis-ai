@@ -520,9 +520,11 @@ test("cmd-click adds a note to the selection, and cmd-clicking it again removes 
 test("the compose bar follows the selection, and ⌘K focuses it from anywhere", async ({ page }) => {
   await openExample(page);
   const compose = page.getByRole("form", { name: "Compose" });
-  await expect(compose.getByText("Whole score", { exact: true })).toBeVisible();
+  // Nothing selected: a request is about the whole score, and the bar names nothing.
+  const subject = compose.getByText("C4 · bar 1", { exact: true });
+  await expect(subject).toHaveCount(0);
   await page.getByRole("button", { name: "Bar 1, beat 1, C4, 1 beats", exact: true }).click();
-  await expect(compose.getByText("C4 · bar 1", { exact: true })).toBeVisible();
+  await expect(subject).toBeVisible();
   await page.keyboard.press("ControlOrMeta+k");
   await expect(compose.getByLabel("Describe the music")).toBeFocused();
 });

@@ -129,12 +129,12 @@
   flex: none;
   max-width: 40%;
   overflow: hidden;
-  padding: 5px 10px;
+  padding: 3px 8px;
   border-radius: var(--r-xs);
   corner-shape: squircle;
   background: var(--accent-soft);
   color: var(--accent-ink);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -166,7 +166,10 @@
 }
 
 .input::placeholder {
+  overflow: hidden;
   color: var(--muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .input:focus-visible {
@@ -212,10 +215,55 @@
   cursor: default;
 }
 
-.chatButton {
+/* The bar with the chat's button floating just outside it, on the right. */
+.barRow {
   position: relative;
-  width: 42px;
-  height: 42px;
+}
+
+/* Lined up with the bar itself (files waiting above it make the row taller). */
+.chatButton {
+  position: absolute;
+  bottom: 9px;
+  left: calc(100% + 12px);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  corner-shape: round;
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-glass);
+}
+
+/* Glass like the bar, whether the chat shows or not (the shared icon button would clear it). */
+.barRow .chatButton,
+.barRow .chatButton:hover:not(:disabled) {
+  background: var(--glass-strong);
+}
+
+.barRow .chatButton[aria-pressed="true"] {
+  background: var(--glass-strong);
+  color: var(--accent-ink);
+}
+
+/* No room beside the bar (a narrow window, a phone): the button sits in line after it instead. */
+@media (max-width: 840px) {
+  .barRow {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+  }
+
+  .barRow > :first-child {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .chatButton {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    flex: none;
+    margin-bottom: 9px;
+  }
 }
 
 /* The chat is hidden but the AI is still working: a small pulsing dot says so. */
@@ -303,59 +351,94 @@
   font-size: 12px;
 }
 
-/* Files waiting to go with the next request, just above the bar. */
+/* Files waiting to go with the next request, just above the bar: small square tiles in one row,
+ * above the bar's glow (which would tint them). */
 .attachments {
+  position: relative;
+  z-index: 1;
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
+  min-width: 0;
   margin: 0 0 8px;
-  padding: 0 12px;
+  padding: 4px 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
   list-style: none;
 }
 
 .attachment {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 220px;
-  padding: 4px;
+  position: relative;
+  flex: none;
+  width: 52px;
+  height: 52px;
+  padding: 3px;
   border-radius: var(--r-sm);
   corner-shape: squircle;
   background: var(--surface-raised);
-  box-shadow: 0 0 0 1px var(--line-strong);
-  color: var(--ink);
-  font-size: 12px;
+  box-shadow:
+    0 0 0 1px rgb(20 40 28 / 10%),
+    0 6px 16px -6px rgb(20 40 28 / 40%);
   animation: chip-in var(--medium) var(--ease-spring);
 }
 
+/* The picture inside a white frame, so even a pale one has a clear edge. */
 .attachment img {
-  width: 28px;
-  height: 28px;
+  display: block;
+  width: 100%;
+  height: 100%;
   border-radius: 6px;
   object-fit: cover;
 }
 
-.attachment span {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.attachment button {
+/* A file that is not a picture: its icon over its extension. */
+.attachmentFile {
   display: grid;
   place-items: center;
-  flex: none;
-  width: 20px;
-  height: 20px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--muted);
+  align-content: center;
+  gap: 1px;
+  height: 100%;
+  color: var(--ink-soft);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
-.attachment button:hover {
-  background: var(--accent-soft);
-  color: var(--ink);
+/* Remove: a small dark badge in the tile's corner, shown on hover (always, on touch screens). */
+.attachment button {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(20 30 24 / 72%);
+  color: white;
+  opacity: 0;
+  transition: opacity var(--fast) var(--ease-out);
+}
+
+.attachment:hover button,
+.attachment:focus-within button {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .attachment button {
+    opacity: 1;
+  }
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 /* The files a sent request carried, in its bubble. */
@@ -512,12 +595,19 @@
   gap: 2px;
 }
 
+/*
+ * The conversation scrolls inside the panel: kept a little in from its rounded edge, with a thin
+ * scrollbar on no track, so the bar never sits on (or past) the panel's border.
+ */
 .chat .turnList,
 .sidebar .turnList {
   flex: 1;
   min-height: 0;
+  margin-right: 6px;
   overflow-y: auto;
-  padding: 16px 18px 20px;
+  padding: 16px 12px 20px 18px;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(20 40 28 / 22%) transparent;
 }
 
 /* Expanded: the chat as the screen's left column, top to bottom, with the compose bar at its foot. */
@@ -529,7 +619,7 @@
   left: 16px;
   display: flex;
   flex-direction: column;
-  width: min(var(--chat-width, 520px), calc(100vw - 32px));
+  width: min(var(--chat-width, 420px), calc(100vw - 32px));
   border-radius: var(--r-xl);
   corner-shape: squircle;
   animation: slide-in var(--medium) var(--ease-out) both;
@@ -861,14 +951,14 @@
   }
 }
 
-/* How long the assistant may think: a quiet button in the bar, its level as a word. */
+/* How long the assistant may think: a quiet icon in the bar, its level in the tooltip and menu. */
 .thinkingButton {
-  display: inline-flex;
+  display: inline-grid;
   flex: none;
-  align-items: center;
-  gap: 6px;
+  place-items: center;
+  width: 36px;
   height: 36px;
-  padding: 0 10px;
+  padding: 0;
   border: 0;
   border-radius: var(--r-sm);
   corner-shape: squircle;
@@ -883,17 +973,6 @@
 .thinkingButton:focus-visible {
   background: var(--hover);
   color: var(--ink);
-}
-
-/* A narrow bar (the chat at its narrowest, a phone) keeps the field's room: the level shows on hover and in the menu. */
-@container (max-width: 600px) {
-  .thinkingLabel {
-    display: none;
-  }
-
-  .thinkingButton {
-    padding: 0 9px;
-  }
 }
 
 /* Shaped here; frosted and eased in by the shared surface panel and popover. */
@@ -1189,14 +1268,14 @@
   cursor: pointer;
 }
 
-/* Band Mode in the compose bar: a quiet toggle like Thinking, lit when on. */
+/* Band Mode in the compose bar: a quiet icon like Thinking, lit when on, opening its panel. */
 .bandButton {
-  display: inline-flex;
+  display: inline-grid;
   flex: none;
-  align-items: center;
-  gap: 6px;
+  place-items: center;
+  width: 36px;
   height: 36px;
-  padding: 0 10px;
+  padding: 0;
   border: 0;
   border-radius: var(--r-sm);
   corner-shape: squircle;
@@ -1205,51 +1284,6 @@
   font-size: 13px;
   font-weight: 500;
   transition: background var(--fast) var(--ease-out);
-}
-
-/* Three instrument circles in a triangle, overlapping: about the room of one icon. */
-.bandTriangle {
-  position: relative;
-  flex: none;
-  width: 24px;
-  height: 22px;
-}
-
-.bandTriangle span {
-  position: absolute;
-  display: grid;
-  place-items: center;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--paper);
-  color: var(--ink-soft);
-  box-shadow:
-    inset 0 0 0 1px var(--line-strong),
-    0 0 0 1.5px var(--surface);
-}
-
-.bandTriangle span:nth-child(1) {
-  top: 0;
-  left: 5px;
-  z-index: 1;
-}
-
-.bandTriangle span:nth-child(2) {
-  bottom: 0;
-  left: 0;
-}
-
-.bandTriangle span:nth-child(3) {
-  right: 0;
-  bottom: 0;
-}
-
-.bandButton[data-on="true"] .bandTriangle span {
-  color: var(--accent-ink);
-  box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent),
-    0 0 0 1.5px var(--surface);
 }
 
 .bandButton:hover,
@@ -1263,10 +1297,31 @@
   color: var(--accent-ink);
 }
 
-@container (max-width: 600px) {
-  .bandLabel {
-    display: none;
-  }
+/* Shaped here; frosted and eased in by the shared surface panel and popover. */
+.bandPanel {
+  width: 280px;
+  padding: 14px 16px;
+  border-radius: var(--r-lg);
+  corner-shape: squircle;
+  text-align: left;
+  transform-origin: bottom left;
+}
+
+.bandSwitch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--ink);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.bandAbout {
+  margin: 8px 0 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .bandIcon {

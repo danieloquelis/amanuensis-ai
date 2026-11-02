@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { CHAT_WIDTH, clampChatWidth } from "../../application/chat-width";
+import { clampChatWidth, maxChatWidth, minChatWidth } from "../../application/chat-width";
 import styles from "./assistant.module.css";
 
 /** One arrow-key press widens or narrows the chat by this much (px). */
@@ -25,8 +25,8 @@ export function ChatResizeHandle({
       role="separator"
       aria-orientation="vertical"
       aria-label="Chat width"
-      aria-valuemin={CHAT_WIDTH.min}
-      aria-valuemax={resize(CHAT_WIDTH.max)}
+      aria-valuemin={minChatWidth(innerWidth)}
+      aria-valuemax={maxChatWidth(innerWidth)}
       aria-valuenow={width}
       tabIndex={0}
       className={styles.resizeHandle}

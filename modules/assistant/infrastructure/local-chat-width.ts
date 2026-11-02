@@ -1,14 +1,13 @@
-import { CHAT_WIDTH } from "../application/chat-width";
+/** Versioned: widths kept before the chat scaled with the window were never narrower than 520 px. */
+const KEY = "amanuensis.chatWidth.v2";
 
-const KEY = "amanuensis.chatWidth";
-
-/** The width this browser last dragged the chat to; the narrowest when none was kept. */
-export function loadChatWidth(): number {
+/** The width this browser last dragged the chat to; none when nothing was kept. */
+export function loadChatWidth(): number | null {
   try {
     const width = Number(localStorage.getItem(KEY));
-    return Number.isFinite(width) && width > 0 ? width : CHAT_WIDTH.min;
+    return Number.isFinite(width) && width > 0 ? width : null;
   } catch {
-    return CHAT_WIDTH.min;
+    return null;
   }
 }
 
@@ -16,6 +15,6 @@ export function saveChatWidth(width: number): void {
   try {
     localStorage.setItem(KEY, String(width));
   } catch {
-    // Not kept: the chat opens at its narrowest next time.
+    // Not kept: the chat opens at the window's default width next time.
   }
 }

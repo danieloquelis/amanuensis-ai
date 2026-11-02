@@ -10,7 +10,7 @@ import styles from "./assistant.module.css";
 
 type ComposerProps = {
   busy: boolean;
-  /** What a request is about: the selection's name, or the whole score. None before a song exists. */
+  /** What the selection is, shown before the text; none when a request is about the whole score. */
   subject?: string;
   /** What the empty field invites. */
   placeholder?: string;
@@ -25,7 +25,7 @@ type ComposerProps = {
   attachments: Attachments;
   /** Stops the turn that is running; what it wrote so far is kept. */
   onStop: () => void;
-  /** Controls before the send button (the chat toggle). */
+  /** Controls before the send button (Band Mode, thinking). */
   accessory?: ReactNode;
 };
 
@@ -44,9 +44,10 @@ const WAVE_SHAPE = [
 
 /**
  * The compose bar: tap the orb and sing, hum or talk (tap again to send it, or ✕ or Escape to
- * throw it away), or type and press Enter. What a request is about (the selection, or the whole score) shows as a chip before the
- * text. Sheet music (a picture, a PDF or text) is attached with the paperclip, dropped on the bar
- * or pasted, and waits above it. While a take is recorded or read, the bar draws in to a compact
+ * throw it away), or type and press Enter. What is selected (a request is about it) shows as a tag
+ * before the text; with nothing selected, a request is about the whole score and no tag shows.
+ * Sheet music waiting to go (a picture, a PDF or text, attached with the paperclip, dropped on the
+ * bar or pasted) waits just above the bar. While a take is recorded or read, the bar draws in to a compact
  * pill around the orb, a live waveform and the time, and opens out again after.
  */
 export function Composer(props: ComposerProps) {

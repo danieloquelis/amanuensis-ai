@@ -8,6 +8,7 @@ export {
   type AttachmentKind,
   type Upload,
 } from "./application/attachments";
+export { clampChatWidth, defaultChatWidth, maxChatWidth, minChatWidth } from "./application/chat-width";
 export {
   restoreTurns,
   turnsToSave,

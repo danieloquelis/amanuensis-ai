@@ -44,7 +44,7 @@ test("an attached page is sent with the request, and the reply's commands apply"
     .locator("input[type=file]")
     .setInputFiles({ name: "page.png", mimeType: "image/png", buffer: PIXEL });
   const waiting = page.getByRole("list", { name: "Attached files" });
-  await expect(waiting.getByText("page.png")).toBeVisible();
+  await expect(waiting.getByRole("img", { name: "page.png" })).toBeVisible();
   // Files alone are a request: the send button appears without words.
   await page.getByRole("button", { name: "Send", exact: true }).click();
   const chat = page.getByRole("region", { name: "Chat" });

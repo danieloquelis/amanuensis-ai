@@ -20,7 +20,7 @@ const SUGGESTIONS = ["Chords C, F, G7, C — one per bar", "Add D.C. al Fine at 
 type ComposeDockProps = {
   assistant: Assistant;
   dock: ComposeDockState;
-  /** What a request is about: the current selection (picked on the sheet), or the whole score. */
+  /** What a request is about: the current selection (picked on the sheet), or, unnamed, the whole score. */
   context: RequestContext;
   revision: number;
   onUndo: () => void;
@@ -28,8 +28,9 @@ type ComposeDockProps = {
 
 /**
  * The AI: the compose bar, which always knows what is selected on the sheet, and the chat. At
- * rest the bar sits at the bottom centre with the chat floating above it; expanded, the chat
- * becomes a sidebar on the left with the bar at its foot, until it is closed again.
+ * rest the bar sits at the bottom centre with the chat floating above it (a round button beside
+ * the bar shows or hides it); expanded, the chat becomes a sidebar on the left with the bar at
+ * its foot, until it is closed again.
  */
 export function ComposeDock({ assistant, dock, context, revision, onUndo }: ComposeDockProps) {
   const { turns, busy, send, sendTake, canRetry, retry, stop } = assistant;
@@ -88,7 +89,7 @@ export function ComposeDock({ assistant, dock, context, revision, onUndo }: Comp
   const composer = (
     <Composer
       busy={busy}
-      subject={context.name ?? "Whole score"}
+      subject={context.name ?? undefined}
       inputRef={dock.inputRef}
       draft={dock.draft}
       onDraft={dock.setDraft}
@@ -103,17 +104,6 @@ export function ComposeDock({ assistant, dock, context, revision, onUndo }: Comp
         <>
           <BandMenu on={assistant.band.on} onTurn={assistant.band.turn} />
           <ThinkingMenu level={assistant.thinking.level} onChange={assistant.thinking.choose} />
-          {!sidebar && turns.length > 0 && (
-            <IconButton
-              label={`${dock.chatMode === "floating" ? "Hide chat" : "Show chat"}${working ? ", the assistant is working" : ""}`}
-              aria-pressed={dock.chatMode === "floating"}
-              className={styles.chatButton}
-              onClick={dock.toggleChat}
-            >
-              <ChatsCircle size={21} />
-              {working && <span className={styles.activityDot} aria-hidden="true" />}
-            </IconButton>
-          )}
         </>
       }
     />
@@ -153,7 +143,20 @@ export function ComposeDock({ assistant, dock, context, revision, onUndo }: Comp
           !turns.length && suggestions
         )}
       </div>
-      {composer}
+      <div className={styles.barRow}>
+        {composer}
+        {turns.length > 0 && (
+          <IconButton
+            label={`${dock.chatMode === "floating" ? "Hide chat" : "Show chat"}${working ? ", the assistant is working" : ""}`}
+            aria-pressed={dock.chatMode === "floating"}
+            className={styles.chatButton}
+            onClick={dock.toggleChat}
+          >
+            <ChatsCircle size={22} />
+            {working && <span className={styles.activityDot} aria-hidden="true" />}
+          </IconButton>
+        )}
+      </div>
     </div>
   );
 }
