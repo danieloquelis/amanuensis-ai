@@ -56,3 +56,28 @@ test("an attached page is sent with the request, and the reply's commands apply"
   expect(sent!.body).toContain('filename="page.png"');
   expect(sent!.body).toContain('name="request"');
 });
+
+test("an attached PDF becomes one picture per page, read like photos", async ({ page }) => {
+  let sent = "";
+  await page.route("/api/assistant", async (route) => {
+    sent = route.request().postDataBuffer()?.toString("latin1") ?? "";
+    await route.fulfill(streamed({ reply: "Read both pages.", question: null, commands: [], changes: [], steps: 1 }));
+  });
+  // A two-page PDF, printed by the browser itself.
+  const printer = await page.context().newPage();
+  await printer.setContent('<p style="break-after: page">Page one</p><p>Page two</p>');
+  const pdf = await printer.pdf({ format: "A4" });
+  await printer.close();
+  await openExample(page);
+  await page
+    .getByRole("form", { name: "Compose" })
+    .locator("input[type=file]")
+    .setInputFiles({ name: "Sonata.pdf", mimeType: "application/pdf", buffer: pdf });
+  const waiting = page.getByRole("list", { name: "Attached files" });
+  await expect(waiting.getByRole("img", { name: "Sonata – page 1.jpg" })).toBeVisible();
+  await expect(waiting.getByRole("img", { name: "Sonata – page 2.jpg" })).toBeVisible();
+  await page.getByRole("button", { name: "Send", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Chat" }).getByText("Read both pages.")).toBeVisible();
+  expect(sent).toContain("page 2.jpg");
+  expect(sent).toContain("Content-Type: image/jpeg");
+});

@@ -62,7 +62,7 @@ flowchart LR
 | Spoken words | **Text only.** Muse Voice Transcribe turns with ms times, rendered as a take timeline (`said: "…"`) | `modules/voice/infrastructure/muse-transcriber.ts`; `modules/voice/domain/timeline.ts` 26–39 |
 | Singing | **No audio.** SwiftF0 (MIT ONNX, server-side) plus local domain code find spans, notes and rhythm. The model sees span IDs and lengths, then calls `voice_*` tools that return notes and evidence as JSON | `modules/voice/infrastructure/swift-f0.ts`; `application/music-tools.ts`, `voice-transcription-tool.ts` |
 | Pictures of sheet music | **Image parts.** Labelled pictures from the notehead detector are shown again after the tool results, plus the detected heads as text | `application/attachments.ts` 69–85; `infrastructure/meta-model.ts` 46–50; `application/source-reading-tool.ts` 77–90; `run-assistant.ts` 132, 227–229 |
-| PDFs | **File parts**, read by eye only. The detector runs on pictures only | `source-reading-tool.ts` 69–71 |
+| PDFs | Turned into one picture per page in the browser when attached (pdf.js, `assistant/ui/pdf-pages.ts`), so the detector and the page check run on them like photos. A PDF that cannot be drawn still goes as a file part, read by eye | `use-attachments.ts` |
 | Text files (ABC, chord charts) | Inline text | `attachments.ts` 72 |
 | The score | Score text in the first user message | `opening-messages.ts` 39–50 |
 | Output | Text and tool calls. No speech output | — |
@@ -80,7 +80,7 @@ flowchart LR
 - **Telling speech from singing: possibly.** The recognizer writes short sung syllables down as words. The fix today is a hand-built heuristic ([detached sung syllables](../solutions/voice/detached-sung-syllables-read-as-speech.md)). Spark 1.2 found the spans correctly in the one measured take. A tool that asks a Meta model "is this short clip speech or singing?" only for spans the heuristics find ambiguous is a Meta-first candidate. It needs evaluation on labelled takes first (recommendation 9).
 - **Style and intent ("swing it", "like a lullaby"):** this would be speculative. Nothing in the corpus shows the agent failing for lack of hearing the tone.
 
-**Vision is used well.** The model cannot place noteheads ([sheet-reading.md](sheet-reading.md) line 72), so a detector labels them, and the model reads the labelled picture with the heads as text. That is the right split between perception and reasoning. One gap: PDFs skip the detector.
+**Vision is used well.** The model cannot place noteheads ([sheet-reading.md](sheet-reading.md) line 72), so a detector labels them, and the model reads the labelled picture with the heads as text. That is the right split between perception and reasoning. PDFs now go through it too, page by page.
 
 ## Meta ecosystem, November 2026
 
