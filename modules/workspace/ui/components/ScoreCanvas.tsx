@@ -7,7 +7,9 @@ import { findPart, tempoMarking, type Command, type Score } from "@/modules/scor
 import { localSheetViews } from "../../infrastructure/local-sheet-views";
 import { usePinchZoom } from "../hooks/use-pinch-zoom";
 import { usePlaybackFollow } from "../hooks/use-playback-follow";
+import { usePrinting } from "../hooks/use-printing";
 import { useSheetView } from "../hooks/use-sheet-view";
+import { PrintSheet } from "./PrintSheet";
 import styles from "./workspace.module.css";
 
 /** The paper: title, tempo marking, the editable sheet and footer. */
@@ -45,6 +47,8 @@ export function ScoreCanvas({
   const { ready, commit } = editor;
   // While the assistant works, the sheet shows its edits so far, arriving as they are made.
   const { score, arriving, working } = useTurnPreview(editor.score, live, draft);
+  // Printing draws the saved score system by system (see PrintSheet), titled after the song.
+  const printing = usePrinting(editor.score.title);
   const barCount = score.measures.length;
   const marking = tempoMarking(score.tempo, score.measures[0].meter);
   const canvas = useRef<HTMLDivElement>(null);
@@ -84,6 +88,7 @@ export function ScoreCanvas({
           </span>
           <span>Melody</span>
         </div>
+        {printing && <PrintSheet score={editor.score} />}
         <ScoreSurface
           score={score}
           playBeat={playBeat}

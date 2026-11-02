@@ -14,6 +14,7 @@ import surface from "@/shared/ui/surface.module.css";
 import { useFirstRequest } from "../hooks/use-first-request";
 import { useNoteAudition } from "../hooks/use-note-audition";
 import { ZOOM_RANGE } from "../hooks/use-pinch-zoom";
+import { usePrintOnOpen } from "../hooks/use-print-on-open";
 import { useWorkspaceShortcuts } from "../hooks/use-workspace-shortcuts";
 import { BrandMark } from "./BrandMark";
 import { DocumentControls } from "./DocumentControls";
@@ -72,6 +73,7 @@ export function WorkspaceScreen({ workspaceId }: { workspaceId: string }) {
   const chatOpen = dock.chatMode === "floating";
   const selectionOpen = editor.ready && !menuOpen && !chatOpen && editor.picked.length > 0 && anchor !== null;
   useWorkspaceShortcuts(playback.stop, editor.undoRedo);
+  usePrintOnOpen(editor.ready);
   useClipboardShortcuts(editor);
   const { audition: soundPitch } = playback;
   // A note sounds on its own part's instrument.

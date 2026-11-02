@@ -152,7 +152,16 @@ select {
     transition: none !important;
   }
 }
+/* Printed on A4 with no page margins, so the browser prints no header or footer; the sheet brings its own. */
 @page {
   size: A4;
-  margin: 15mm;
+  margin: 0;
+}
+
+/* On paper, the page is plain white: no wash behind the sheet. */
+@media print {
+  html,
+  body {
+    background: white !important;
+  }
 }

@@ -16,7 +16,7 @@
   padding: 6px;
   border-radius: var(--r-lg);
   corner-shape: squircle;
-  transform-origin: top right;
+  transform-origin: top left;
 }
 
 .header {
@@ -74,4 +74,15 @@
 .danger:hover,
 .danger:focus-visible {
   color: #9b3b2f;
+}
+
+/* An item with a second, quieter line saying what it is for. */
+.label {
+  display: grid;
+  gap: 1px;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 12px;
 }

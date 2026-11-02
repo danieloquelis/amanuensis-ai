@@ -12,6 +12,7 @@ export {
   type ScoreTextFilter,
 } from "./application/score-text";
 export { parseBarsText } from "./application/score-text-parse";
+export { scoreToMusicXml } from "./application/musicxml";
 export { writeBars, type WrittenPitches } from "./application/score-text-write";
 export {
   CHORD_QUALITIES,
@@ -152,6 +153,7 @@ export {
   createPart,
   INSTRUMENT_IDS,
   INSTRUMENTS,
+  GENERAL_MIDI_PROGRAM,
   isDrumKit,
   isPlayable,
   type Instrument,

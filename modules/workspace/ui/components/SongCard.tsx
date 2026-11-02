@@ -1,18 +1,19 @@
 import Link from "next/link";
 import { editedAgo } from "../../application/edited-ago";
+import { downloadSong, printSongHref } from "../export-song";
 import type { Song } from "../../application/songbook";
 import { InstrumentStack } from "./InstrumentStack";
 import { ScorePreview } from "./ScorePreview";
 import { SongMenu } from "./SongMenu";
 import styles from "./home.module.css";
 
-type SongCardProps = { song: Song; now: number; onDelete: () => void };
+type SongCardProps = { song: Song; now: number; onCopy: () => void; onDelete: () => void };
 
 /**
  * A song on Home: its first page on a frosted tile, the title under it, then its instruments (as
  * icons) and when it was last edited. Its "⋯" menu shows on hover (always on touch).
  */
-export function SongCard({ song, now, onDelete }: SongCardProps) {
+export function SongCard({ song, now, onCopy, onDelete }: SongCardProps) {
   const { meta, score } = song;
   const href = `/workspace/${meta.id}`;
   const edited = editedAgo(meta.updatedAt, now);
@@ -32,7 +33,16 @@ export function SongCard({ song, now, onDelete }: SongCardProps) {
         </span>
       </Link>
       <div className={styles.actions}>
-        <SongMenu title={meta.title} edited={edited} href={href} onDelete={onDelete} />
+        <SongMenu
+          title={meta.title}
+          edited={edited}
+          href={href}
+          readable={Boolean(score)}
+          onCopy={onCopy}
+          onPrint={() => window.open(printSongHref(meta.id), "_blank", "noopener")}
+          onDownload={(file) => score && downloadSong(score, file)}
+          onDelete={onDelete}
+        />
       </div>
     </li>
   );

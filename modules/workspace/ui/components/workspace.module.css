@@ -449,6 +449,47 @@
     display: block;
     font: 36px var(--font-serif);
   }
+
+  /* The page has no margins of its own (no room for the browser's header and footer): the paper gives them. */
+  .paper {
+    padding: 14mm 14mm 10mm;
+    background: white;
+  }
+
+  /* The interactive sheet gives way to the print sheet, system by system. */
+  .paper:has(.printSheet) > :not(.printSheet, .scoreHeading, .scoreMeta, .paperFooter) {
+    display: none;
+  }
+
+  .printSheet {
+    display: block;
+  }
+
+  /*
+   * Each system whole on a page, with room above and below it: as padding, it is kept at a page's
+   * top and bottom too, where it is the page's margin.
+   */
+  .printSystem {
+    padding: 7mm 0;
+    break-inside: avoid;
+  }
+
+  .printSystem svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .paperFooter {
+    break-inside: avoid;
+  }
+}
+
+/* Only drawn while printing; on screen the interactive sheet is the sheet. */
+@media screen {
+  .printSheet {
+    display: none;
+  }
 }
 
 /* Phones: tools on their own scrolling row; the bottom bar spans the width. */

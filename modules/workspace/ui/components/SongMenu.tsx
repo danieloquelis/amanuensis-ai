@@ -1,86 +1,77 @@
-import { useId, useRef, useState } from "react";
-import { ArrowSquareOut, DotsThree, Trash } from "@phosphor-icons/react";
-import { IconButton } from "@/shared/ui/IconButton";
-import { moveMenuFocus } from "@/shared/ui/menu-keyboard";
-import surface from "@/shared/ui/surface.module.css";
+import { ArrowSquareOut, Copy, DotsThree, Trash } from "@phosphor-icons/react";
+import type { SongFile } from "../export-song";
+import { ActionMenu } from "./ActionMenu";
+import { ExportItems } from "./ExportItems";
 import styles from "./song-menu.module.css";
-
-/** The menu keeps this far (px) from its button and from the window's edges. */
-const GAP = 8;
-const EDGE_MARGIN = 12;
 
 type SongMenuProps = {
   title: string;
   /** "Edited 20 hours ago", under the title. */
   edited: string;
   href: string;
+  /** Copying and saving need a score that can be read; without one, only Delete is offered. */
+  readable: boolean;
+  onCopy: () => void;
+  onPrint: () => void;
+  onDownload: (file: SongFile) => void;
   onDelete: () => void;
 };
 
 /**
- * A song's "⋯" button and its menu: the song's name and age, then what can be done with it.
- * A native popover, so a click elsewhere or Escape closes it.
+ * A song's "⋯" button and its menu: the song's name and age, then what can be done with it:
+ * open it in a new tab, make a copy, save it as a PDF, MusicXML or MIDI, or delete it.
  */
-export function SongMenu({ title, edited, href, onDelete }: SongMenuProps) {
-  const id = useId();
-  const anchor = useRef({ right: 0, bottom: 0 });
-  const [position, setPosition] = useState({ left: EDGE_MARGIN, top: EDGE_MARGIN });
-  const close = () => document.getElementById(id)?.hidePopover();
+export function SongMenu({ title, edited, href, readable, onCopy, onPrint, onDownload, onDelete }: SongMenuProps) {
   return (
-    <>
-      <IconButton
-        className={styles.trigger}
-        label={`More actions for ${title}`}
-        popoverTarget={id}
-        aria-haspopup="menu"
-        onClick={(e) => {
-          const rect = e.currentTarget.getBoundingClientRect();
-          anchor.current = { right: rect.right, bottom: rect.bottom };
-        }}
-      >
-        <DotsThree size={20} weight="bold" aria-hidden="true" />
-      </IconButton>
-      <div
-        id={id}
-        popover="auto"
-        role="menu"
-        aria-label={title}
-        className={`${surface.panel} ${surface.popover} ${styles.menu}`}
-        style={position}
-        onKeyDown={moveMenuFocus}
-        onToggle={(e) => {
-          if (e.newState !== "open") return;
-          // Right-aligned under the button, kept inside the window, now that the menu can be measured.
-          const { offsetWidth: width, offsetHeight: height } = e.currentTarget;
-          const { right, bottom } = anchor.current;
-          const left = Math.max(EDGE_MARGIN, Math.min(right - width, innerWidth - width - EDGE_MARGIN));
-          const top = Math.max(EDGE_MARGIN, Math.min(bottom + GAP, innerHeight - height - EDGE_MARGIN));
-          setPosition({ left, top });
-          e.currentTarget.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
-        }}
-      >
-        <div className={styles.header}>
-          <p className={styles.title}>{title}</p>
-          <p className={styles.edited}>{edited}</p>
-        </div>
-        <a role="menuitem" className={styles.item} href={href} target="_blank" rel="noopener" onClick={close}>
-          <ArrowSquareOut size={18} aria-hidden="true" />
-          Open in new tab
-        </a>
-        <div className={styles.divider} role="separator" />
-        <button
-          type="button"
-          role="menuitem"
-          className={`${styles.item} ${styles.danger}`}
-          onClick={() => {
-            close();
-            onDelete();
-          }}
-        >
-          <Trash size={18} aria-hidden="true" />
-          Delete
-        </button>
-      </div>
-    </>
+    <ActionMenu
+      label={`More actions for ${title}`}
+      menuLabel={title}
+      icon={<DotsThree size={20} weight="bold" aria-hidden="true" />}
+      triggerClassName={styles.trigger}
+    >
+      {(close) => (
+        <>
+          <div className={styles.header}>
+            <p className={styles.title}>{title}</p>
+            <p className={styles.edited}>{edited}</p>
+          </div>
+          <a role="menuitem" className={styles.item} href={href} target="_blank" rel="noopener" onClick={close}>
+            <ArrowSquareOut size={18} aria-hidden="true" />
+            Open in new tab
+          </a>
+          {readable && (
+            <>
+              <button
+                type="button"
+                role="menuitem"
+                className={styles.item}
+                onClick={() => {
+                  close();
+                  onCopy();
+                }}
+              >
+                <Copy size={18} aria-hidden="true" />
+                Make a copy
+              </button>
+              <div className={styles.divider} role="separator" />
+              <ExportItems onPrint={onPrint} onDownload={onDownload} close={close} />
+            </>
+          )}
+          <div className={styles.divider} role="separator" />
+          <button
+            type="button"
+            role="menuitem"
+            className={`${styles.item} ${styles.danger}`}
+            onClick={() => {
+              close();
+              onDelete();
+            }}
+          >
+            <Trash size={18} aria-hidden="true" />
+            Delete
+          </button>
+        </>
+      )}
+    </ActionMenu>
   );
 }

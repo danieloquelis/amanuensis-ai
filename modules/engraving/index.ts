@@ -23,4 +23,5 @@ export {
   type TupletMark,
 } from "./domain/scene";
 export { nameRight, staffOf, staffTop, stavesLeft, systemBottom } from "./domain/staff-layout";
+export { systemCeiling } from "./domain/above-staff";
 export { barlineStaves, barStaves, closesWithFinalBarline, placeBarMarks, type BarStaff } from "./domain/bar-furniture";

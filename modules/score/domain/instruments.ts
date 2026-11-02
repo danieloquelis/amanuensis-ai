@@ -72,3 +72,17 @@ export function createPart(instrument: InstrumentId, ids: { part: string; staff:
     staves: [{ id: ids.staff, clef: INSTRUMENTS[instrument].clef, voices }],
   };
 }
+
+/**
+ * Each instrument's General MIDI program (0-based), for files other tools read; the drums play on
+ * the percussion channel instead, where each note is a kit piece.
+ */
+export const GENERAL_MIDI_PROGRAM: Record<InstrumentId, number> = {
+  piano: 0,
+  guitar: 25,
+  bass: 33,
+  trumpet: 56,
+  flute: 73,
+  trombone: 57,
+  drums: 0,
+};

@@ -3,3 +3,4 @@ export { createPlaybackPlan, type ChordSound, type PlaybackEvent, type PlaybackP
 export { soundsBetween, type PlannedSound } from "./domain/schedule-window";
 export { ACCENT_VELOCITY, CHORD_VELOCITY, DYNAMIC_VELOCITY, LOUD_SAMPLE_VELOCITY } from "./domain/dynamics";
 export { scoreSounds } from "./application/score-sounds";
+export { scoreToMidi } from "./application/midi-file";

@@ -12,7 +12,7 @@ import styles from "./home.module.css";
  * this device, most recently edited first.
  */
 export function HomeScreen() {
-  const { songs, now, loaded, create, start, remove } = useSongbook();
+  const { songs, now, loaded, create, start, remove, copy } = useSongbook();
   return (
     <div className={styles.home}>
       <SideRail onCreate={create} />
@@ -28,7 +28,13 @@ export function HomeScreen() {
             </h2>
             <ul className={styles.grid}>
               {songs.map((song) => (
-                <SongCard key={song.meta.id} song={song} now={now} onDelete={() => remove(song.meta.id)} />
+                <SongCard
+                  key={song.meta.id}
+                  song={song}
+                  now={now}
+                  onCopy={() => copy(song)}
+                  onDelete={() => remove(song.meta.id)}
+                />
               ))}
             </ul>
           </section>

@@ -34,3 +34,22 @@ export function removeSong({ workspaces, chats, views }: SongStores, workspaceId
   chats.remove(workspaceId);
   views.remove(workspaceId);
 }
+
+/** A score title may be this long. */
+const TITLE_MAX = 100;
+const COPY = " (copy)";
+
+/**
+ * Makes a copy of a song: its score, as it is, under a new song titled "… (copy)", listed first.
+ * Its conversation is not copied: the copy starts a fresh chat. Returns the new song's ID, or
+ * null for a song whose score cannot be read.
+ */
+export function copySong({ workspaces }: SongStores, song: Song): string | null {
+  if (!song.score) return null;
+  const id = workspaces.create();
+  // The new song's own score ID (from the blank it was created with), the copied music and title.
+  const blank = workspaces.load(id)!;
+  const title = `${song.score.title.slice(0, TITLE_MAX - COPY.length)}${COPY}`;
+  workspaces.save(id, { ...song.score, id: blank.id, title });
+  return id;
+}

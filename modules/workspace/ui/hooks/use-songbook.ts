@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { localWorkspaceChats, type StartRequest } from "@/modules/assistant";
 import { localWorkspaceRepository } from "@/modules/projects";
 import { holdFirstRequest } from "../../application/first-request";
-import { openSongbook, removeSong, type Song, type SongStores } from "../../application/songbook";
+import { copySong, openSongbook, removeSong, type Song, type SongStores } from "../../application/songbook";
 import { localSheetViews } from "../../infrastructure/local-sheet-views";
 
 const stores: SongStores = { workspaces: localWorkspaceRepository, chats: localWorkspaceChats, views: localSheetViews };
@@ -40,6 +40,12 @@ export function useSongbook() {
     setSongs((all) => all.filter((song) => song.meta.id !== workspaceId));
   };
 
+  /** A copy of a song, listed first. */
+  const copy = (song: Song) => {
+    if (!copySong(stores, song)) return;
+    setSongs(openSongbook(stores));
+  };
+
   // `now` is set when the list is read, so it doubles as "loaded": nothing flashes as empty first.
-  return { songs, now, loaded: now > 0, create, start, remove };
+  return { songs, now, loaded: now > 0, create, start, remove, copy };
 }
