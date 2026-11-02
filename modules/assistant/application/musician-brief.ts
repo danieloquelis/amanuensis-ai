@@ -1,12 +1,20 @@
 import { groovesFor, SCORE_TEXT_GUIDE, type InstrumentId, type Score } from "@/modules/score";
 import { z } from "zod";
 import type { Listening } from "./band-listen";
+import type { KeptBar } from "./tune-line";
 import type { ToolSpec } from "./model-port";
 import { craftCard } from "./musicians";
 import { toolParameters } from "./tool-definitions";
 
 /** One part to play: its handle, instrument, the musician's name and the bandleader's brief. */
-export type MusicianJob = { part: string; instrument: InstrumentId; name: string; brief: string };
+export type MusicianJob = {
+  part: string;
+  instrument: InstrumentId;
+  name: string;
+  brief: string;
+  /** The tune's bars this musician carries as planned: it may phrase them, not change their notes. */
+  kept?: KeptBar[];
+};
 
 /**
  * Which pass a musician is on: the first time through (hearing those who played before), or a
@@ -43,7 +51,7 @@ How to work:
 - Your part may already hold music (a lead sheet's melody on the piano): keep it unless your brief says to replace it, and put yours beside it, on a second staff (setStaffCount, then "bar N piano.2: …") or a second voice ("bar N piano v2: …").
 - Play like a musician, not a loop: shape the part over the song (build into sections, vary the figure, leave space, mark the endings of phrases).
 - Fit the band: follow the chords, the feel in the brief and what the others play (lock with the drums' kick, stay out of the melody's register, leave room where another part speaks).
-- Write in one score_write call (every bar you are writing, all your staves), then look at the score once and fix what is off.
+- Write in one score_write call (every bar you are writing, all your staves). Its reply shows your part as it now stands: check it there and fix what is off, without reading the score again.
 - When something in a bandmate's part gets in your way, tell them with band_note: by name, one concrete sentence with the bars.
 - Then reply to the bandleader in one or two short sentences: what you played and why, as a musician would say it.
 

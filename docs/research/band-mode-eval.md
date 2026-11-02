@@ -22,7 +22,7 @@ Does Band Mode (one musician agent per part, rehearsing in order under the chat'
   - **Drum bars:** bars with hits in both the hands and the feet voice.
   - **Melody kept:** melody bars whose pitches (octave aside) are still played in order on some line.
   - **Cost:** the chat agent's steps plus the musicians' model calls, refused tool calls, wall-clock seconds, and dollars from the tokens of every model call, the musicians' included (Muse Spark prices from `api-compare.mts`).
-- Each run's score is saved as score text, with the reply, in `test-results/band-eval/` (as JSON too, so `yarn eval:band --regrade` measures again for free).
+- Each run's score is saved as score text, with the reply, in `eval-results/band-eval/` (as JSON too, so `yarn eval:band --regrade` measures again for free).
 
 ## Results
 
@@ -71,3 +71,29 @@ Also seen: both single-agent lead-sheet runs ended with unfinished reasoning as 
 ## Limits
 
 12 runs on three short songs, one wording per song, no listening. The measures check register, roots, range and completeness. They do not check whether the voicings fit the chords (the single agent's G-major chord over Gm was found by reading, not by a measure), whether the rhythm swings, or whether the parts sound good together. The register gap is the only measured difference, and it could come from a prompt line rather than from the band itself. Test that by giving the single agent the pianist's craft line before deciding that the band is needed for it.
+
+## Later rounds: rehearsal, then a tune plan
+
+Two changes were measured on 2 November 2026 with the band arm only (`yarn eval:band --confirm --arms band`, 3 songs × 2 runs, same model and thinking). The single-agent numbers above still stand. The table adds two columns: **Heard**, the problems `listenToBand` reports after the band's first pass and at the end of the turn, and **Notes**, the notes the musicians (and the bandleader) passed to each other.
+
+**Rehearsal** (`b4f855e`). After the first pass the band rehearses: each musician hears the whole band, reads the notes sent to it, and fixes its own part. The bandleader may ask for one more round.
+
+| Song | Parts filled | Crowded | Bass roots | Melody kept | Heard (first → final) | Notes | Steps + musician calls | Seconds | $ |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| lead sheet | 25/28 · 28/28 | 0/0 · 0/4 | 7/7 · 7/7 | 1/4 · 4/4 | 4 → 1 · 4 → 0 | 3 · 5 | 5+34 · 5+39 | 169 · 209 | 0.52 · 0.54 |
+| waltz | 32/32 · 32/32 | 0/8 · 0/8 | 8/8 · 8/8 | 8/8 · 8/8 | 2 → 1 · 3 → 1 | 4 · 6 | 7+38 · 6+42 | 129 · 123 | 0.53 · 0.51 |
+| example | 16/16 · 16/16 | 0/4 · 3/4 | 4/4 · 4/4 | 4/4 · 4/4 | 1 → 1 · 1 → 0 | 2 · 2 | 6+34 · 5+29 | 98 · 111 | 0.44 · 0.38 |
+
+The problems heard went down in 5 of 6 runs, and the notes were concrete ("please keep your left hand off my low G2 root on beat 1 of bar 6"). But most of the talk was the trumpet and the piano arguing about who plays the tune, since the piano kept the lead sheet's melody and the trumpet was briefed to carry it. In one lead-sheet run the bandleader settled it by telling the pianist to drop the melody, which the trumpet had never played, so the song lost its tune (1 of 4 bars kept). The bandleader asked for a second round in 5 of 6 runs, and musicians read the whole score again after every write: 29–42 musician calls, US$0.49 and 140 seconds per arrangement on average.
+
+**Tune plan and cheaper rehearsals.** The bandleader now plans how the tune moves through the piece (who carries it in which bars, alone or in unison), and `band_arrange` carries that plan out before anyone plays. The tune is copied into those parts, moved by octaves into each instrument's range, and taken off its old staff where another part carries it. The musicians may phrase it but not change its notes. When the request leaves the plan open, the bandleader proposes it and asks. Here the request said "You decide how the tune moves through the band", since no one answers in an evaluation. Also changed: a second round is refused unless the listening still hears a problem or the bandleader has notes; a musician's write returns its part as it now stands, so it checks there instead of reading the score again; and a rehearsal has 4 steps rather than 5.
+
+| Song | Parts filled | Crowded | Bass roots | Melody kept | Heard (first → final) | Notes | Steps + musician calls | Seconds | $ |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| lead sheet | 24/28 · 25/28 | 0/4 · 2/4 | 6/7 · 7/7 | 4/4 · 4/4 | 3 → 4 · 4 → 2 | 1 · 7 | 4+21 · 6+31 | 184 · 194 | 0.35 · 0.46 |
+| waltz | 28/32 · 30/32 | 2/4 · 1/8 | 8/8 · 8/8 | 8/8 · 8/8 | 1 → 1 · 3 → 1 | 2 · 2 | 7+27 · 5+32 | 152 · 168 | 0.41 · 0.43 |
+| example | 14/16 · 14/16 | 0/2 · 0/2 | 4/4 · 4/4 | 4/4 · 4/4 | 1 → 1 · 1 → 2 | 4 · 1 | 5+29 · 5+19 | 154 · 136 | 0.41 · 0.30 |
+
+Every run kept the tune, and the guard refused the pianist's rewrites of planned tune bars twice. The argument about who plays the tune is gone. The notes are about arranging instead: "your left hand E2–G2 in bar 3 sits right on my bass line", "drop the crash on beat 1 of bar 3 so my lyrical entrance can speak". "Parts filled" drops because a part now rests where the plan gives the tune to another. The cost came down to 19–32 musician calls and US$0.39 per arrangement on average, still about twice the first band's 0.19. The time did not come down (165 seconds on average): the first pass plays the four musicians one after another. The problems heard went down in only 2 of 6 runs this time and up in 2. With 6 runs that may be noise, so the arrangements should be listened to before reading much into it. Musicians still made 2–6 refused tool calls per run (a groove name not in the list, "dynamics" written where chord symbols go, another part's staff), each costing a call.
+
+A run in between, measuring the same version, was lost: its output folder was in `test-results/`, which Playwright empties when the browser tests start. The evaluation now writes to `eval-results/`.

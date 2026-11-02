@@ -23,8 +23,9 @@ const arg = (name: string, fallback: string) => {
   const index = process.argv.indexOf(`--${name}`);
   return index === -1 ? fallback : process.argv[index + 1];
 };
-const OUT_DIR = join("test-results", "band-eval");
-const OUT_FILE = join("test-results", "band-eval.json");
+// Not test-results/: Playwright empties that folder whenever the browser tests start.
+const OUT_DIR = join("eval-results", "band-eval");
+const OUT_FILE = join("eval-results", "band-eval.json");
 const THINKING: Thinking = "medium";
 
 if (process.argv.includes("--regrade")) {
@@ -87,7 +88,8 @@ async function arrange(song: Song, arm: Arm, run: number): Promise<Run> {
   const musicians = metered(models.musicians);
   const score = song.score();
   const request: AssistantRequest = {
-    instruction: `Arrange this for my band: drums, bass, piano and trumpet. ${song.style}`,
+    // No one answers questions here: the bandleader plans who carries the tune itself.
+    instruction: `Arrange this for my band: drums, bass, piano and trumpet. ${song.style} You decide how the tune moves through the band.`,
     score,
     selectedIds: [],
     history: [],
@@ -99,6 +101,7 @@ async function arrange(song: Song, arm: Arm, run: number): Promise<Run> {
     const result = await runAssistant(leader.model, request, undefined, undefined, services);
     const after = executeAll(createSession(score), result.commands).score;
     const used = total(leader.used, musicians.used);
+    mkdirSync(OUT_DIR, { recursive: true });
     writeFileSync(join(OUT_DIR, `${file}.txt`), `${scoreText(after)}\n\n--- reply ---\n${result.reply}\n`);
     writeFileSync(join(OUT_DIR, `${file}.json`), JSON.stringify(after));
     const refused = result.trace.filter((entry) => !entry.ok);

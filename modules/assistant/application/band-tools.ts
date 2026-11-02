@@ -1,63 +1,13 @@
-import { z } from "zod";
-import { INSTRUMENT_IDS, type InstrumentId } from "@/modules/score";
+import type { InstrumentId } from "@/modules/score";
 import { BANDLEADER, createBandBoard, type BandNote } from "./band-board";
 import { listenToBand } from "./band-listen";
-import { keepMelody, resolvePart } from "./band-setup";
-import type { ToolSpec } from "./model-port";
-import { noteSchema } from "./musician-brief";
-import { musicianName, rehearsalOrder, roleOf } from "./musicians";
+import { castBand } from "./band-setup";
+import { rehearsalOrder } from "./musicians";
 import { runMusician, type BandContext, type BandRoom, type MusicianJob } from "./run-musician";
 import { toolError } from "./score-tool-gateway";
-import { toolParameters } from "./tool-definitions";
 
-export const BAND_ARRANGE = "band_arrange";
-const BAND_LISTEN = "band_listen";
-const BAND_REHEARSE = "band_rehearse";
-/** Rehearsal rounds a turn may have: the one after the band first plays, and one more. */
-const MAX_REHEARSALS = 2;
-
-const arrangeSchema = z.strictObject({
-  feel: z.string().trim().min(1).max(300).describe("The style and feel the whole band plays in, and the passage."),
-  parts: z
-    .array(
-      z.strictObject({
-        part: z
-          .string()
-          .describe(
-            'An existing part\'s handle ("piano", "bass"), or an instrument to add. List the parts already in the song too when the new ones change what they should play.',
-          ),
-        brief: z.string().trim().min(1).max(400).describe("What this musician should play, in a musician's words."),
-      }),
-    )
-    .min(1)
-    .max(8),
-});
-
-const rehearseSchema = z.strictObject({
-  notes: z.array(noteSchema).max(8).default([]).describe("Your notes to musicians, by name, for this round."),
-});
-
-export const bandToolSpecs: ToolSpec[] = [
-  {
-    name: BAND_ARRANGE,
-    description: `Have the band play an arrangement: each part is played by its own musician, in rehearsal order (drums, bass, harmony, then lead lines), each hearing those before it; then the band rehearses once: every musician hears the whole band, reads the notes the others sent it and fixes its own part. Missing parts are added. Returns what each played, what they said to each other and what the band sounds like now. Instruments: ${INSTRUMENT_IDS.join(", ")}.`,
-    parameters: toolParameters(arrangeSchema),
-  },
-  {
-    name: BAND_LISTEN,
-    description:
-      "Listen to the band as it stands: each part in a line, and what could be better (clashes with the chords, a part looping one bar, the bass missing the kick, two parts in one register, notes out of range, silence where the others play).",
-    parameters: toolParameters(z.strictObject({})),
-  },
-  {
-    name: BAND_REHEARSE,
-    description: `Another rehearsal round, with your notes to musicians by name: they all hear the band, read your notes and theirs, and fix their parts. For problems that matter (at most ${MAX_REHEARSALS} rounds a turn, the one band_arrange runs included).`,
-    parameters: toolParameters(rehearseSchema),
-  },
-];
-
-const BAND_TOOLS = new Set([BAND_ARRANGE, BAND_LISTEN, BAND_REHEARSE]);
-export const isBandTool = (name: string) => BAND_TOOLS.has(name);
+export { BAND_ARRANGE, bandToolSpecs, isBandTool } from "./band-specs";
+import { arrangeSchema, BAND_ARRANGE, BAND_REHEARSE, MAX_REHEARSALS, rehearseSchema } from "./band-specs";
 
 /** What a musician told the bandleader, kept for the turn's result. */
 export type BandReport = { part: string; instrument: InstrumentId; name: string; report: string };
@@ -115,20 +65,7 @@ export function createBandTools(context: BandContext) {
   const arrange = async (raw: unknown): Promise<ToolResult> => {
     const parsed = arrangeSchema.parse(raw);
     feel = parsed.feel;
-    let melodyOn: string | null = null;
-    const jobs: MusicianJob[] = parsed.parts.map(({ part, brief }) => {
-      const resolved = resolvePart(context, part);
-      const kept = keepMelody(context, resolved.part, resolved.instrument);
-      if (kept) melodyOn = resolved.part;
-      const name = musicianName(resolved.instrument, resolved.part);
-      return { ...resolved, name, brief: kept ? `${brief} ${kept}` : brief };
-    });
-    // The tune already sounds on the piano: a lead line answers it rather than doubling it.
-    for (const job of jobs) {
-      if (melodyOn && job.part !== melodyOn && roleOf(job.instrument) === "lead") {
-        job.brief += ` The song's melody is already played by ${melodyOn}: don't double it note for note; answer it, harmonise it or play a countermelody, unless your brief says you take the melody.`;
-      }
-    }
+    const jobs = castBand(context, parsed);
     const ordered = rehearsalOrder(jobs);
     for (const job of ordered) board.seat(job);
     for (const job of ordered) wait(job, 0);
@@ -155,6 +92,10 @@ export function createBandTools(context: BandContext) {
     if (!board.lineup().length) return { ok: false, error: "The band has not played yet: band_arrange first." };
     if (rehearsals >= MAX_REHEARSALS)
       return { ok: false, error: `The band has rehearsed ${rehearsals} times: reply now.` };
+    // Another round is for something left to fix: what the band still sounds like, or the bandleader's notes.
+    if (!notes.length && !listening().problems.length) {
+      return { ok: false, error: "The band sounds right and you sent no notes: nothing to rehearse. Reply now." };
+    }
     for (const { to, note } of notes) {
       const refused = board.say(BANDLEADER, to, note);
       if (refused) return { ok: false, error: refused };

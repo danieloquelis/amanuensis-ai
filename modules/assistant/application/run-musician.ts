@@ -1,4 +1,4 @@
-import type { Score } from "@/modules/score";
+import { scoreText, type Score } from "@/modules/score";
 import { assistantTools } from "./assistant-tools";
 import type { ProgressListener } from "./assistant-types";
 import type { ChatMessage, ModelPort, TokenUsage, ToolCall } from "./model-port";
@@ -12,6 +12,7 @@ import {
   type MusicianRound,
 } from "./musician-brief";
 import { refuseOutsidePart } from "./part-scope";
+import { refuseTuneChange } from "./tune-line";
 import { parseArguments, runScoreTool } from "./score-tool-call";
 import type { createScoreToolGateway } from "./score-tool-gateway";
 import { toolError } from "./score-tool-gateway";
@@ -22,7 +23,7 @@ export type { MusicianJob, MusicianRound } from "./musician-brief";
 /** A musician's round trips to the model: read, write, look again, fix, talk, report. */
 const FIRST_STEPS = 6;
 /** In a rehearsal there is less to do: listen, change a few bars, say so. */
-const REHEARSAL_STEPS = 5;
+const REHEARSAL_STEPS = 4;
 const MUSICIAN_TOOLS = [
   ...assistantTools.filter((tool) => ["score_get_context", "score_edit", "score_write"].includes(tool.name)),
   bandNoteSpec,
@@ -78,10 +79,10 @@ export async function runMusician(
       round: pass,
       ...extra,
     });
-  const scoreText = (tools("score_get_context", { selectedIds: [] }) as { score?: string }).score ?? "";
+  const scoreNow = (tools("score_get_context", { selectedIds: [] }) as { score?: string }).score ?? "";
   const brief = musicianBrief(job, feel, round, {
     score: score(),
-    scoreText,
+    scoreText: scoreNow,
     bandmates: room.bandmates.filter((name) => name !== job.name),
     memory: context.memory,
   });
@@ -89,9 +90,13 @@ export async function runMusician(
     { role: "system", content: musicianSystem(job) },
     { role: "user", content: brief },
   ];
+  // Only its own part, and the tune where it carries it kept as planned.
   const refuse = (operation: Parameters<typeof refuseOutsidePart>[1]) =>
-    refuseOutsidePart(score(), operation, job.part);
+    refuseOutsidePart(score(), operation, job.part) ?? refuseTuneChange(score(), operation, job.kept ?? []);
   const cacheKey = `${turnId}-${job.part}-${pass}`;
+  // A write's reply shows the musician its part as it now stands: it checks it there, without reading the score again.
+  const written = (result: Result): Result =>
+    result.ok && "changes" in result ? { ...result, yourPart: scoreText(score(), { parts: [job.part] }) } : result;
   progress({ state: "playing" });
   for (let step = 1; step <= (pass ? REHEARSAL_STEPS : FIRST_STEPS); step++) {
     if (signal?.aborted) break;
@@ -117,7 +122,7 @@ export async function runMusician(
       const result =
         call.name === BAND_NOTE
           ? note(call, job, room)
-          : runScoreTool(own(call, score), tools, cacheKey, score, refuse);
+          : written(runScoreTool(own(call, score), tools, cacheKey, score, refuse));
       messages.push({ role: "tool", toolCallId: call.id, content: JSON.stringify(result) });
       context.onCall?.({
         tool: `${job.part}: ${call.name}`,
