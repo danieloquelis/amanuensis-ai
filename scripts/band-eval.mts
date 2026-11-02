@@ -118,6 +118,7 @@ async function arrange(song: Song, arm: Arm, run: number): Promise<Run> {
       reply: result.reply,
       band: result.band,
       talk: result.bandNotes?.map((n) => `${n.from} → ${n.to}: ${n.note}`),
+      arranged: result.trace.filter((entry) => entry.tool === "band_arrange").map((entry) => entry.arguments),
       heard: listenToBand(after).problems.length,
       ...(result.bandRounds?.length ? { heardFirst: result.bandRounds[0].problems.length } : {}),
       tools: result.trace.map((entry) => `${entry.tool}${entry.ok ? "" : "✗"}`).join(" "),

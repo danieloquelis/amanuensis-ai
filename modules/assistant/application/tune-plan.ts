@@ -68,7 +68,8 @@ export function playTunePlan(context: BandContext, plan: TunePlan, tune: TuneLin
       }
       const entry = parts.get(handle) ?? { kept: [], bars: [], with: [] };
       // Only a tune already written is kept: with none yet, the musician writes it there.
-      if (tune) entry.kept.push(...keptBars(context.score(), staff.voices[0].id, bars));
+      // Bars where the tune rests stay free: the part may fill them.
+      if (tune) entry.kept.push(...keptBars(context.score(), staff.voices[0].id, bars).filter((bar) => bar.notes));
       entry.bars.push(span.from === span.to ? `${span.from}` : `${span.from}–${span.to}`);
       entry.with.push(...handles.filter((other) => other !== handle && !entry.with.includes(other)));
       parts.set(handle, entry);

@@ -34,7 +34,7 @@ const CRAFT: Record<InstrumentId, { role: BandRole; craft: string }> = {
   drums: {
     role: "groove",
     craft:
-      'You keep time and set the feel. Start from putGroove when one of the grooves listed for this meter fits the style (it writes valid bars at once); then shape it: a fill into each new section, lighter in verses, a crash on the first beat of a section. Hands are the upper voice ("bar 3 drums: <ride snare>q …"), feet the lower ("bar 3 drums v2: <kick>q …"); every hit is in <…>.',
+      'You keep time and set the feel. Start from putGroove when one of the grooves listed for this meter fits the style (its name exactly as listed; it writes valid bars at once); then shape it: a fill into each new section, lighter in verses, a crash on the first beat of a section. Hands are the upper voice ("bar 3 drums: <ride snare>q …"), feet the lower ("bar 3 drums v2: <kick>q …"); every hit is in <…>.',
   },
   bass: {
     role: "bass",
@@ -73,6 +73,20 @@ export const roleOf = (instrument: InstrumentId): BandRole => CRAFT[instrument].
 /** The band in rehearsal order: groove, then bass, then harmony, then the lead lines. */
 export const rehearsalOrder = <T extends { instrument: InstrumentId }>(parts: T[]): T[] =>
   [...parts].sort((a, b) => ROLE_ORDER.indexOf(roleOf(a.instrument)) - ROLE_ORDER.indexOf(roleOf(b.instrument)));
+
+/** When each role plays its first pass: the groove, then the bass on it, then harmony and lead lines together. */
+const WAVE: Record<BandRole, number> = { groove: 0, bass: 1, harmony: 2, lead: 2 };
+
+/**
+ * The band's first pass in waves, in rehearsal order: each wave plays at once, hearing the waves
+ * before it. Harmony and lead lines share a wave: the tune plan tells them where each goes, and
+ * they hear each other in the rehearsal.
+ */
+export function firstPassWaves<T extends { instrument: InstrumentId }>(parts: T[]): T[][] {
+  const waves: T[][] = [];
+  for (const part of rehearsalOrder(parts)) (waves[WAVE[roleOf(part.instrument)]] ??= []).push(part);
+  return waves.filter(Boolean);
+}
 
 const midiName = (midi: number) => {
   const names = ["C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"];

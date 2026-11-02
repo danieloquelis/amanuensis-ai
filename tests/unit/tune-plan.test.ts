@@ -40,13 +40,14 @@ test("the tune moves through the band as planned: copied where it goes, freed wh
         }),
       ],
     },
-    // The pianist tries to rewrite the tune in bar 3 (refused), then comps.
+    // Pianist and trumpeter start together: the pianist tries to rewrite the tune in bar 3
+    // (refused), the trumpeter phrases it; then the pianist comps.
     {
       content: null,
       toolCalls: [call("score_write", { requestId: "p1", expectedRevision: 0, text: "bar 3 piano: C5q C5q C5q C5q" })],
     },
-    { content: "Comped under the tune.", toolCalls: [] },
     { content: "Phrased the tune.", toolCalls: [] },
+    { content: "Comped under the tune.", toolCalls: [] },
     // The rehearsal, then the bandleader's reply.
     { content: "Kept my comping.", toolCalls: [] },
     { content: "Kept the tune.", toolCalls: [] },
@@ -65,5 +66,5 @@ test("the tune moves through the band as planned: copied where it goes, freed wh
   const refused = result.trace.find((entry) => !entry.ok);
   assert.match(refused?.error ?? "", /Bars 3 carry the song's tune in your part/);
   assert.match(JSON.stringify(seen[1]), /You carry it in bars 3–4 \(with trumpet there too/);
-  assert.match(JSON.stringify(seen[3]), /You carry it in bars 1–2, 3–4 \(with piano there too/);
+  assert.match(JSON.stringify(seen[2]), /You carry it in bars 1–2, 3–4 \(with piano there too/);
 });

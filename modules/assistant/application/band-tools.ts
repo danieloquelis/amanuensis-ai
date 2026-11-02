@@ -2,7 +2,7 @@ import type { InstrumentId } from "@/modules/score";
 import { BANDLEADER, createBandBoard, type BandNote } from "./band-board";
 import { listenToBand } from "./band-listen";
 import { castBand } from "./band-setup";
-import { rehearsalOrder } from "./musicians";
+import { firstPassWaves, rehearsalOrder } from "./musicians";
 import { runMusician, type BandContext, type BandRoom, type MusicianJob } from "./run-musician";
 import { toolError } from "./score-tool-gateway";
 
@@ -69,12 +69,19 @@ export function createBandTools(context: BandContext) {
     const ordered = rehearsalOrder(jobs);
     for (const job of ordered) board.seat(job);
     for (const job of ordered) wait(job, 0);
+    // The first pass, wave by wave (groove, bass, then harmony and lead together).
     const before: string[] = [];
-    for (const job of ordered) {
-      const round = { kind: "first" as const, before: [...before], notes: board.take(job.name) };
-      const { report: text } = await runMusician(context, job, feel, round, room);
-      before.push(`${job.name} (${job.part}): ${text}`);
-      report(job, text);
+    for (const wave of firstPassWaves(ordered)) {
+      const heard = [...before];
+      const played = await Promise.all(
+        wave.map(async (job) => {
+          const round = { kind: "first" as const, before: heard, notes: board.take(job.name) };
+          const { report: text } = await runMusician(context, job, feel, round, room);
+          report(job, text);
+          return `${job.name} (${job.part}): ${text}`;
+        }),
+      );
+      before.push(...played);
     }
     heardAfter.push({ round: 0, problems: listening().problems });
     if (rehearsals < MAX_REHEARSALS) await rehearse();

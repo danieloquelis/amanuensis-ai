@@ -29,6 +29,8 @@ export type Run = {
   measures?: Measures;
   reply?: string;
   band?: unknown;
+  /** What the bandleader asked of the band (band_arrange's arguments, cut to the trace's length). */
+  arranged?: string[];
   /** What the musicians said to each other (band only). */
   talk?: string[];
   /** Problems the band's listening hears in the final score, and after the band's first pass (band only). */

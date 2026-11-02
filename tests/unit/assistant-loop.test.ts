@@ -557,6 +557,7 @@ test("in Band Mode the band plays in rehearsal order, then rehearses, each only 
             { part: "bass", brief: "roots on 1" },
             { part: "drums", brief: "brushes" },
           ],
+          tune: [{ from: 1, to: 4, parts: ["piano"] }],
         }),
       ],
     },
@@ -578,6 +579,17 @@ test("in Band Mode the band plays in rehearsal order, then rehearses, each only 
     {
       content: null,
       toolCalls: [call("score_write", { requestId: "b2", expectedRevision: 3, text: "bar 1 bass: C2w" })],
+    },
+    // A dynamic on its own note is the bassist's to add.
+    {
+      content: null,
+      toolCalls: [
+        call("score_edit", {
+          requestId: "b3",
+          expectedRevision: 4,
+          operation: { type: "putAnnotation", targetId: "bass/1#1", kind: "dynamic", text: "mf" },
+        }),
+      ],
     },
     { content: "Root on 1.", toolCalls: [] },
     // The rehearsal: both hear the band at once; the drummer answers the bassist, who keeps its part.
@@ -626,8 +638,8 @@ test("in Band Mode the band plays in rehearsal order, then rehearses, each only 
   );
   // The bassist read the drummer's note before it played; in the rehearsal it heard the whole band.
   assert.match(JSON.stringify(seen[3]), /Notes for you:\\n- [A-Za-z]+: Land with my kick on 1/);
-  assert.match(JSON.stringify(seen[7]), /Rehearsal, round 1/);
-  assert.match(JSON.stringify(seen[7]), /lands with the kick on/);
+  assert.match(JSON.stringify(seen[8]), /Rehearsal, round 1/);
+  assert.match(JSON.stringify(seen[8]), /lands with the kick on/);
   // The bassist has its name and what the agent knows about the band; its try at the piano was refused.
   assert.match(JSON.stringify(seen[3]), new RegExp(`You are ${bassist}, the band's Bass`));
   assert.match(JSON.stringify(seen[3]), /The bassist reads treble clef/);
@@ -638,23 +650,25 @@ test("in Band Mode the band plays in rehearsal order, then rehearses, each only 
     ["piano", "bass", "drums"],
   );
   assert.equal(executeAll(createSession(score), result.commands).past.length, 1, "one undo step");
-  // Every model call of the turn is counted, the musicians' too: 3 by the bandleader, 2 + 2 drums, 3 + 1 bass.
-  assert.equal(result.thinkingMs.length, 11);
+  // Every model call of the turn is counted, the musicians' too: 3 by the bandleader, 2 + 2 drums, 4 + 1 bass.
+  assert.equal(result.thinkingMs.length, 12);
+  // Only the bassist's try at the piano was refused; its own dynamic was not.
+  assert.deepEqual(
+    result.trace.filter((entry) => !entry.ok).map((entry) => entry.tool),
+    ["bass: score_write"],
+  );
 });
 
-test("with the tune on the piano, the pianist comps on a left hand and a horn is told not to double the tune", async () => {
+test("a song with a tune is arranged only with a plan for it; a piano keeping the tune comps on a left hand", async () => {
+  const parts = [
+    { part: "trumpet", brief: "answer the tune" },
+    { part: "piano", brief: "comp the chords" },
+  ];
   const { model, seen } = scriptedModel([
+    { content: null, toolCalls: [call("band_arrange", { feel: "a ballad", parts })] },
     {
       content: null,
-      toolCalls: [
-        call("band_arrange", {
-          feel: "a ballad",
-          parts: [
-            { part: "trumpet", brief: "play along" },
-            { part: "piano", brief: "comp the chords" },
-          ],
-        }),
-      ],
+      toolCalls: [call("band_arrange", { feel: "a ballad", parts, tune: [{ from: 1, to: 4, parts: ["piano"] }] })],
     },
     { content: "Comped.", toolCalls: [] },
     { content: "Answered the tune.", toolCalls: [] },
@@ -664,9 +678,11 @@ test("with the tune on the piano, the pianist comps on a left hand and a horn is
   ]);
   const score = createExample();
   const result = await runAssistant(model, { ...request("arrange it"), score, band: { on: true } }, "t11");
-  // The piano plays first (harmony before lead lines) and is told to keep the tune.
-  assert.match(JSON.stringify(seen[1]), /Your first staff holds the song's melody/);
-  assert.match(JSON.stringify(seen[2]), /already played by piano: don't double it note for note/);
+  assert.match(result.trace[0].error ?? "", /The song has a tune \(on piano\)\. Say how it moves through the band/);
+  // The piano plays first (harmony before lead lines), keeps the tune and gets a left hand to comp on.
+  assert.match(JSON.stringify(seen[2]), /You carry it in bars 1–4/);
+  assert.match(JSON.stringify(seen[2]), /left-hand staff to comp on/);
+  assert.match(JSON.stringify(seen[3]), /The tune, as planned: bars 1–4: piano/);
   const after = executeAll(createSession(score), result.commands).score;
   assert.equal(after.parts[0].staves.length, 2, "a left-hand staff for the comping");
 });

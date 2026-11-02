@@ -1,17 +1,27 @@
 import { applyCommand, findPart, voiceBars, type Operation, type Score } from "@/modules/score";
 
 /**
- * The score with one part's music taken out: its voices' bars and the slurs (which may join its
- * notes). What is left must not change when that part's musician edits: other parts, chords,
- * marks, the key, meter and tempo are the bandleader's.
+ * The score with one part's music taken out: its voices' bars, the slurs (which may join its
+ * notes), and the dynamics and directions on its notes or its staves. What is left must not change
+ * when that part's musician edits: other parts, chords, marks, the key, meter and tempo are the bandleader's.
  */
 function withoutPart(score: Score, partId: string): unknown {
   const part = score.parts.find((p) => p.id === partId);
   const own = new Set(part?.staves.flatMap((staff) => staff.voices.map((voice) => voice.id)) ?? []);
+  const staves = new Set(part?.staves.map((staff) => staff.id) ?? []);
+  const notes = new Set(
+    score.measures.flatMap((measure) =>
+      voiceBars(measure)
+        .filter((bar) => own.has(bar.voiceId))
+        .flatMap((bar) => bar.events.map((event) => event.id)),
+    ),
+  );
+  const theirs = (a: Score["annotations"][number]) => notes.has(a.targetId) || (a.staffId && staves.has(a.staffId));
   return {
     ...score,
     revision: 0,
     slurs: [],
+    annotations: score.annotations.filter((a) => !theirs(a)),
     parts: score.parts.filter((p) => p.id !== partId),
     measures: score.measures.map((measure) => ({
       ...measure,
