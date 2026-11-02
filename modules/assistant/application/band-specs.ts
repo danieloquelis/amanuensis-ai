@@ -71,13 +71,13 @@ export const rehearseSchema = z.strictObject({
 export const bandToolSpecs: ToolSpec[] = [
   {
     name: BAND_ARRANGE,
-    description: `Have the band play an arrangement: the tune is first placed as your plan says (copied to the parts that carry it, in their range), then each part is played by its own musician, in rehearsal order (drums, bass, harmony, then lead lines), each hearing those before it; then the band rehearses once: every musician hears the whole band, reads the notes the others sent it and fixes its own part. Missing parts are added. Returns what each played, what they said to each other and what the band sounds like now. Instruments: ${INSTRUMENT_IDS.join(", ")}.`,
+    description: `Have the band play an arrangement: the tune is first placed as your plan says (copied to the parts that carry it, in their range), then every part is played by its own musician at once, each reading the style, the form and the material; then the band rehearses once: every musician hears the whole band and what a listener would mark, reads the notes the others sent it, fixes its own part and answers. Missing parts are added. Returns what each played, what they said to each other and what the band sounds like now. Instruments: ${INSTRUMENT_IDS.join(", ")}.`,
     parameters: toolParameters(arrangeSchema),
   },
   {
     name: BAND_LISTEN,
     description:
-      "Listen to the band as it stands: each part in a line, and what could be better (clashes with the chords, a part looping one bar, the bass missing the kick, two parts in one register, notes out of range, silence where the others play).",
+      "Listen to the band as it stands: each part in a line, and what could be better (clashes with the chords, a part looping one bar, the bass missing the kick, two parts in one register, notes out of range, a part that never plays) and, in the style's terms, its craft (parallels, scale-only lines, plodding rhythm, literal repeats, one dynamic, everyone always playing).",
     parameters: toolParameters(z.strictObject({})),
   },
   {
