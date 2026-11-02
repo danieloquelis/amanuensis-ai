@@ -2,6 +2,7 @@ import { eventOnsets } from "../domain/rhythm";
 import type { Score } from "../domain/schema";
 import { isNotationHandle, notationAt } from "./notation-positions";
 import { findVoiceId } from "../domain/handles";
+import { AFTER_LAST_BAR } from "../domain/operations/copy-schemas";
 import { barEvents } from "../domain/voice-access";
 
 /**
@@ -14,7 +15,15 @@ import { barEvents } from "../domain/voice-access";
 
 /** Operation fields that name a note or rest, and those that name a bar (`targetId` may be either). */
 const EVENT_KEYS = new Set(["eventId", "startEventId", "endEventId", "beforeEventId", "targetId", "eventIds"]);
-const BAR_KEYS = new Set(["measureId", "afterMeasureId", "startMeasureId", "endMeasureId", "measureIds", "targetId"]);
+const BAR_KEYS = new Set([
+  "measureId",
+  "afterMeasureId",
+  "startMeasureId",
+  "endMeasureId",
+  "measureIds",
+  "targetId",
+  "toMeasureId",
+]);
 /**
  * "2:3" or "2v2:3" (bar 2, voice 2, beat 3); "2#5" or "2v2#5" (its fifth note or rest); with a
  * part or staff first for another staff: "trumpet/3#2", "piano.2/4v2:1".
@@ -70,6 +79,9 @@ function eventAt(score: Score, position: string): string {
 function resolveAddress(score: Score, key: string, value: unknown): unknown {
   if (key === "id" && isNotationHandle(value)) return notationAt(score, value);
   if (EVENT_KEYS.has(key) && isEventPosition(value)) return eventAt(score, value);
+  // A copy may land just past the last bar: it is added at the end.
+  if (key === "toMeasureId" && isBarPosition(value) && Number(value) === score.measures.length + 1)
+    return AFTER_LAST_BAR;
   if (BAR_KEYS.has(key) && isBarPosition(value)) return measureAt(score, value);
   return value;
 }

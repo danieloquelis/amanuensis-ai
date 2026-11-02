@@ -51,8 +51,15 @@ const TRIPLET_START = /^(\(?)3\[/;
 const TRIPLET_END = /\](\)?)$/;
 const ALTERS: Record<string, -1 | 0 | 1> = { b: -1, "": 0, n: 0, "#": 1 };
 
-/** Slips that can only mean one thing, read as meant: a trailing comma, a drum piece without its brackets. */
-const forgiven = (token: string) => token.replace(/,+$/, "").replace(BARE_DRUM, "$1<$2>$3");
+/** A rest with a capital R and a value ("Rq"): a whole-bar "R" is never followed by one, so it is a rest. */
+const CAPITAL_REST = /^(\(?)R([whqes])/;
+
+/**
+ * Slips that can only mean one thing, read as meant: a trailing comma, a drum piece without its
+ * brackets, a rest written with a capital ("Rq").
+ */
+const forgiven = (token: string) =>
+  token.replace(/,+$/, "").replace(BARE_DRUM, "$1<$2>$3").replace(CAPITAL_REST, "$1r$2");
 const DOT = 1.5;
 
 function parseToken(token: string, bar: number): WrittenEvent {

@@ -2,6 +2,7 @@ import { getMeasure } from "../queries";
 import { renameTuplets } from "../tuplets";
 import { createMeasure, measureEvents, replaceVoiceBars, voiceBars } from "../voice-access";
 import { copyAnchored, type CopyMap } from "./copy-anchored";
+import { AFTER_LAST_BAR } from "./copy-schemas";
 import { copyStaffBars } from "./copy-staff-bars";
 import { detachFrom, fullMeasureRest, type Draft, type OperationContext } from "./draft";
 import type { OperationOf } from "./schema";
@@ -19,7 +20,10 @@ export function copyBars(draft: Draft, op: OperationOf<"copyBars">, context: Ope
   const sources = op.measureIds.map((id) => structuredClone(getMeasure(draft, id)));
   const before = { annotations: structuredClone(draft.annotations), slurs: structuredClone(draft.slurs) };
   const chords = structuredClone(draft.chords);
-  const start = draft.measures.indexOf(getMeasure(draft, op.toMeasureId));
+  const start =
+    op.toMeasureId === AFTER_LAST_BAR
+      ? draft.measures.length
+      : draft.measures.indexOf(getMeasure(draft, op.toMeasureId));
   const map: CopyMap = { first: new Map(), last: new Map() };
   sources.forEach((source, k) => {
     let target = draft.measures[start + k];

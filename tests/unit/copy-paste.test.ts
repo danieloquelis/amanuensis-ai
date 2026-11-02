@@ -7,6 +7,7 @@ import {
   barStyle,
   createExample,
   numberedVoice,
+  resolvePositions,
   scoreText,
   writeBars,
   type Operation,
@@ -166,4 +167,49 @@ test("a bar pasted onto itself goes after it, adding a bar at the end of the sco
   assert.equal(pasted.measures.length, 5);
   assert.equal(bar(pasted, 5), bar(score, 4));
   assert.deepEqual(edit.pasted(pasted), [{ kind: "bar", id: pasted.measures[4].id }]);
+});
+
+test("a copied motif is developed on the way: moved in the key, inverted, backwards, augmented", () => {
+  const score = edit(createExample(), { type: "setKey", key: { fifths: 0, mode: "major" } });
+  const motif = ids(score, 1);
+  const develop = (extra: Partial<Extract<Operation, { type: "copyNotes" }>>) =>
+    bar(edit(score, { type: "copyNotes", eventIds: motif, toEventId: ids(score, 3)[0], ...extra }), 3);
+  // C E G E, a fifth up in C major: G B D E→B.
+  assert.equal(develop({ steps: 4 }), "G4q B4q D5q B4q");
+  // Mirrored around its first note: C A3 F3 A3.
+  assert.equal(develop({ invert: true }), "C4q A3q F3q A3q");
+  assert.equal(develop({ retrograde: true }), "E4q G4q E4q C4q");
+  // Twice as slow: two bars of half notes.
+  const slow = edit(score, { type: "copyNotes", eventIds: motif, toEventId: ids(score, 3)[0], factor: 2 });
+  assert.equal(bar(slow, 3), "C4h E4h");
+  assert.equal(bar(slow, 4), "G4h E4h");
+});
+
+test("a copy can start inside a rest, and a raised leading tone stays raised when it moves", () => {
+  let score = edit(createExample(), { type: "setKey", key: { fifths: -1, mode: "minor" } });
+  score = write(score, "bar 1: D4q E4q F4q C#4q\nbar 3: rw");
+  const answer = edit(score, {
+    type: "copyNotes",
+    eventIds: ids(score, 1),
+    toEventId: ids(score, 3)[0],
+    offset: 2,
+    steps: 4,
+  });
+  // Up a fifth in D minor, from beat 3: A B♭ C G♯ (the C♯ becomes G♯, not G).
+  assert.equal(bar(answer, 3), "rh A4q Bb4q");
+  assert.equal(bar(answer, 4).split(" ")[0], "C5q");
+  assert.match(bar(answer, 4), /G#4q/);
+});
+
+test("bars copied by number to the bar after the last are added at the end", () => {
+  const score = createExample();
+  const raw = { type: "copyBars", measureIds: ["1", "2"], toMeasureId: "5" };
+  const operation = resolvePositions(score, raw) as Operation;
+  const longer = edit(score, operation);
+  assert.equal(longer.measures.length, 6);
+  assert.equal(bar(longer, 5), bar(score, 1));
+  assert.equal(bar(longer, 6), bar(score, 2));
+  // A bar number inside the score is that bar, as everywhere else.
+  const over = edit(score, resolvePositions(score, { ...raw, toMeasureId: "3" }) as Operation);
+  assert.equal(bar(over, 3), bar(score, 1));
 });
