@@ -1,52 +1,227 @@
-# Amanuensis AI
+<p align="center">
+  <img src="docs/readme/cover.png" alt="Amanuensis" width="100%">
+</p>
 
-A voice-first musical workspace built around an owned notation engine. Meta-powered interpretation will use the same semantic commands as manual editing.
+# Amanuensis
 
-## Current implementation
+A music notation editor you can talk and sing to. Sing a melody and say what to do with it, and an agent writes it into the score. Amanuensis can also read sheet music from a photo or a PDF. In Band Mode, a separate agent plays each instrument and arranges the piece with the others. Built on Meta’s **Muse Spark** and **Muse Voice Transcribe**.
 
-The engine is AI-first: every capability below is a typed score operation, usable by people through the editor and by agents through the score tools (`@/modules/assistant`).
+<p align="center">
+  <img src="docs/readme/demo.gif" alt="Amanuensis in use" width="100%">
+</p>
 
-- **Melody:** notes and rests from whole to sixteenth, dots, articulations, dynamics pp–ff, accidentals. Shortening or deleting a note leaves rests written to the beat; edits never overwrite neighbouring notes.
-- **Meter and key:** 2/4 to 12/8 per bar (a change applies until the next one), a key signature from C♭ to C♯ in major or minor, and local tempo changes.
-- **Lead sheet:** chord symbols that sound softly in playback, slash bars, measure-repeat (%) bars, and section marks (A, B, Verse…).
-- **Form:** repeats, segno, coda, To Coda, Fine, D.C. and D.S. (al Fine / al Coda). Any number of each; playback follows them.
-- **Text:** indications anywhere, dragged freely on the page.
-- **Engraving:** duration- and width-aware spacing, balanced justified lines, sloped beams, chord and mark rows above the staff.
-- **Safety:** revision-checked atomic edits, undo/redo, local saving, native JSON with migrations, and print.
+## Contents
 
-Meta inference, voice capture, server persistence and collaboration are not connected yet. Ties/slurs, hairpins, tuplets, alternate endings, nested repeats, mid-score key or clef changes, polyphony and MusicXML remain unsupported; the tools report these limits.
+1. [Setup](#setup)
+2. [Tools](#tools)
+3. [Score format](#score-format)
+4. [Voice input](#voice-input)
+   - [Spectrum](#spectrum)
+   - [Singing model](#singing-model)
+5. [Sheet music input](#sheet-music-input)
+6. [Agents](#agents)
+   - [Agent loop](#agent-loop)
+   - [Band Mode](#band-mode)
+7. [Architecture](#architecture)
+8. [Licenses](#licenses)
 
-## Run
+## Setup
 
-```sh
-yarn install
-yarn dev
+1. Copy the example environment file. **The copy must be named `.env.local`**, because that is the file the app reads. Then paste your Meta API key (from [dev.meta.ai](https://dev.meta.ai)) after `META_AI_API_KEY=` in it:
+
+   ```sh
+   cp .env.example .env.local
+   ```
+
+2. Install the dependencies. This also downloads the instrument samples and checks them by hash:
+
+   ```sh
+   yarn install
+   ```
+
+3. Start the app and open [http://localhost:3000](http://localhost:3000):
+
+   ```sh
+   yarn dev
+   ```
+
+## Tools
+
+<img src="docs/readme/tools.png" alt="The agent tools, by group" width="100%">
+
+The agents act only through these tools. Each tool has a zod schema, and its description is the documentation the model reads.
+
+## Score format
+
+A song is stored as JSON. This is one bar of three notes:
+
+```json
+{ "id": "L0", "meter": { "numerator": 4, "denominator": 4 },
+  "voices": [{ "voiceId": "voice-1", "events": [
+    { "id": "L0-0", "duration": { "numerator": 1, "denominator": 1 }, "pitch": { "step": "E", "alter": -1, "octave": 4 } },
+    { "id": "L0-1", "duration": { "numerator": 1, "denominator": 1 }, "pitch": { "step": "G", "alter": 0, "octave": 4 } },
+    { "id": "L0-2", "duration": { "numerator": 2, "denominator": 1 }, "pitch": { "step": "C", "alter": 0, "octave": 4 } } ] }] }
 ```
 
-Open http://localhost:3000. `yarn install` also downloads the instrument samples (about 11 MB) into `public/sounds/v1/`; they are not kept in git. Only their `manifest.json` (URL, size and hash of every file) and `CREDITS.md` are. Run `yarn sounds:fetch` to download them again; offline, the app plays reference tones instead. `yarn build` fetches them first and fails without them, so a deploy always has sound. The app icons (`app/icon.svg`, `app/apple-icon.png`, `app/favicon.ico`) are built from the brand mark in `public/brand/mark.svg` by `yarn icons`. Yarn uses `node_modules` because the installed Next.js Turbopack does not support Plug'n'Play. Keep `.env` private; the planned server adapter will use `MODEL_API_KEY`.
+The agents never read or write this JSON. They use **score text** instead: one line per bar, the same notation a musician would type.
 
-## Checks
+<img src="docs/readme/score-text.png" alt="Three engraved bars with their score text" width="100%">
 
-```sh
-yarn check      # format:check, lint, typecheck, unit tests
-yarn build
-yarn playwright install chromium
-yarn test:e2e
+```text
+bar 1: Eb4q G4q C4h
 ```
 
-Browser tests start the production build on port 3100. Build first. Unit tests cover rhythm, commands, validation, stale writes, idempotency, undo/redo, engraving and playback plans. Browser tests exercise actual editing, dragging, persistence and recovery.
+A note is its pitch and octave, then its length: `w` whole, `h` half, `q` quarter, `e` eighth, `s` sixteenth, with `.` for dotted. A rest is `r`, a chord is `<C4 E4 G4>`, and a slur is `( … )`. With several instruments, each line names its staff (`bar 3 cello: …`).
 
-## Editing
+This piece takes 314 characters as score text and 5,346 as JSON, 17 times fewer. That leaves more of the model’s context for the music itself, and the model writes it the way musicians do.
 
-Select anything on the sheet and act on it; press Delete to remove it, Escape to deselect.
+- `score_get_context` returns score text.
+- `score_write` parses score text into typed operations.
+- `score_edit` takes operations directly and can point at notes by position (`2#5` is bar 2, note 5).
 
-- **Notes:** click a note or rest. Type A–G to enter that note (in the key, nearest the previous one), ↑/↓ to step it, Delete to turn it into a rest. The strip under it sets the duration. Right-click for accidentals and articulations. Drag vertically for pitch, horizontally to reorder.
-- **Bars:** click empty space in a bar (or its number) to select it; Delete removes it. Right-click for insert, duplicate, clear and a tempo change. Drag a barline to widen a bar.
-- **Toolbar:** time signature, key, Chord, ƒ, Text, Marks and + Bar act on the selected note or bar. In Chord, type a symbol and press Enter: the cursor moves to the next bar, so `C ⏎ Am7 ⏎ Dm7 ⏎ G7 ⏎` writes a progression.
-- **Chords, text, marks, sections, repeat signs:** click to select, Delete to remove, double-click a chord, text or section to edit it, drag text to move it.
+Every change, from the editor or from an agent, goes through one function, `applyCommand`. It checks the operation against the revision it expects, applies it to a copy, and validates the result. If anything fails, the score is unchanged and the agent gets a sentence explaining why.
 
-Cmd/Ctrl+Z undoes, Cmd/Ctrl+Shift+Z redoes. Local edits save on this device.
+## Voice input
+
+<img src="docs/readme/voice-pipeline.png" alt="From a recording to notes" width="100%">
+
+A single recording can mix talk and singing: “Put this in bar three… *da da da*… and make it swing.”
+
+- **Words:** Muse Voice Transcribe hears the words, with their times, biased toward music terms such as BPM, Allegro and compás.
+- **Pitch:** YIN and SwiftF0 (a small ONNX model on the server) measure the pitch every 10 ms.
+- **The agent:** Muse Spark never hears audio. It reads a timeline of what was said and when something was sung, then calls `voice_transcribe_melody`.
+- **Notes:** `voice_transcribe_melody` cuts the pitch track into notes and works out the tempo (following the singer’s drift) and the key.
+- **Check:** `voice_check` compares the written bars with what was sung.
+
+The app receives both the words and the audio. To tell instructions from sung parts, it combines the pitch tracker with the spectrum of frequencies (a Fourier transform of the sound) and with where Muse Voice Transcribe did and didn’t hear words. A small model of our own uses these to label every 10 ms of the recording as talk or singing. That labeling is what the timeline is built from, and the next two sections explain it.
+
+### Spectrum
+
+The first thing the model needs is a way to hear the difference between talk and singing in the sound itself. That is what the Fourier transform provides.
+
+<img src="docs/readme/voice-fourier.png" alt="Spectrum of a talk frame and a sung frame" width="100%">
+
+Every 10 ms, the app takes a 32 ms slice of sound, softens its edges with a Hann window, and runs a Fourier transform on it. The transform is our own radix-2 FFT in `modules/voice/domain/spectrum.ts`. The result shows how much energy the slice has at each frequency. The dots mark whole multiples of the pitch, called harmonics.
+
+A sung vowel is a steady tone, so its energy sits on the harmonics with deep gaps in between. Talk keeps changing, and its consonants are noise, so the gaps fill in. Three measures come from the spectrum:
+
+- **Harmonicity:** energy on the harmonics compared with energy halfway between them, in dB.
+- **Spectral flux:** how much the spectrum changed since the previous slice.
+- **Syllable rhythm:** a second FFT, of the loudness over one second: how much of its rise and fall happens 3 to 8 times a second, the rate of syllables in speech.
+
+<img src="docs/readme/voice-take.png" alt="A take that talks, sings and talks again, measured every 10 ms" width="100%">
+
+### Singing model
+
+**Why we need it.** No single measure is reliable by itself: in the take above, harmonicity dips at every note change of the sung part, and some talk frames score high. So the model combines ten measures. Three come from the spectrum, three from the pitch tracker, and four from where Muse Voice Transcribe did and didn’t hear words.
+
+**How it works.** Each measure gets a weight, and the weighted sum becomes the probability that the frame is singing:
+
+$$
+P(\text{singing}) = \sigma\Big(b + \sum_{i=1}^{10} w_i x_i\Big), \qquad \sigma(z) = \frac{1}{1 + e^{-z}}, \qquad b = -2.66
+$$
+
+Here $x_i$ are the ten measures (averaged over the quarter second around the frame and rescaled). A positive weight pushes toward singing, a negative one toward talk. The weights are learned from data, not set by hand:
+
+| Measure | From | Weight |
+| --- | --- | ---: |
+| Harmonicity | FFT | +2.34 |
+| No recognised words here (at a slow speaking rate) | Muse Voice Transcribe | +1.90 |
+| The word here is a sung syllable (“da”, “la”) | Muse Voice Transcribe | +0.95 |
+| Pitch tracker confidence | pitch tracker | +0.60 |
+| No recognised words here (typical rate) | Muse Voice Transcribe | +0.52 |
+| Syllable rhythm | FFT | +0.37 |
+| Spectral flux | FFT | +0.36 |
+| Share of time with voice | pitch tracker | −0.27 |
+| No recognised words here (fast rate) | Muse Voice Transcribe | −0.38 |
+| Pitch slide between frames | pitch tracker | −0.90 |
+
+A frame on its own can still be wrong, so a hidden Markov model decodes the whole recording at once. It assumes that the voice rarely switches between talk and singing (3 times in 1,000 frames), so a single odd frame can’t flip the label but a sustained change can.
+
+**Training.** `yarn fit:singing` fits the weights on 56 recordings made for this project: 29 talk only, 8 singing only, and 19 talk then singing. Pieces of the talk-only and singing-only recordings are joined into 40 mixed takes, so the right label for every frame is known. The model is tested on a half of them that share no recording with the half it was fitted on. It labels 97–99% of voice frames correctly and places 89–91% of the switches within 0.25 s. Read as whole recordings, it gets 55 of the 56 right.
+
+## Sheet music input
+
+<img src="docs/readme/vision.png" alt="A page as input, what the detector found, and the labeled page Muse Spark receives" width="100%">
+
+Muse Spark reads key, meter, form, chord symbols and rhythm from a picture well. It does not reliably see which line or space a notehead sits on: it is often one step off. So before Spark sees the page, a computer-vision detector measures the noteheads. It is plain image processing in `modules/page`, takes about 1 s per page, and uses no model:
+
+1. **Staves:** rows where the ink forms five evenly spaced lines.
+2. **Noteheads:** ovals on every line and space of each staff, including ledger lines.
+3. **Engraving rules:** a filled head needs a stem, a whole note has none, and nothing sits inside the clef.
+4. **Labels:** each head’s line or space is written next to it in red. The same heads are also listed bar by bar as text.
+
+Spark writes the score from the labeled page. Then `page_check` compares every written bar with the detected heads and returns any differences.
+
+In the example above, the detector missed the two half notes on a ledger line. PDFs are turned into page pictures in the browser with PDF.js.
+
+<img src="docs/readme/vision-eval.png" alt="Notes read with the right pitch, without and with the labels" width="100%">
+
+This chart shows notes read with the right pitch on four engraved test pages whose exact score is known. It uses Muse Spark 1.3 at low thinking (`yarn eval:sheet-reading`). Details: [docs/research/sheet-reading.md](docs/research/sheet-reading.md).
+
+## Agents
+
+### Agent loop
+
+<img src="docs/readme/agent-loop.png" alt="The agent loop, and a real turn" width="100%">
+
+Each turn, Muse Spark receives:
+
+- your words;
+- the timeline of a recording, if there is one;
+- any attached pages;
+- the selection;
+- the score as score text;
+- the song’s notes and what it remembers about you.
+
+It calls tools until it replies without one, up to 12 tool steps (24 when reading pages, 32 with a plan). The tool gateway turns positions into IDs and checks each call. A refused call goes back to the model as a sentence, so it can fix the call. In the real turn above, call 5 was refused and call 6 succeeded. Edits appear in the editor as they land, and the whole turn is one undo step.
+
+### Band Mode
+
+<img src="docs/readme/band-mode.png" alt="Band Mode, step by step" width="100%">
+
+In Band Mode, the chat agent becomes the bandleader:
+
+- **Plan.** The bandleader writes the material (a subject, hook or riff). Then it calls `band_arrange` with the style, the form, and who carries the tune where. `band_arrange` copies the tune into those parts.
+- **Musicians.** `band_arrange` starts one musician agent per part. Each is its own Muse Spark conversation with its own prompt: its instrument’s craft, the style, and its role in each section. Each has five tools: `score_get_context`, `score_write`, `score_edit`, `band_motif` (places the material, moved in the key, inverted or augmented) and `band_note`. Writes outside its own staves are refused.
+- **Round 1.** All musicians write at the same time, up to 3 tool steps each. They send each other notes with `band_note(to, note)`; the band board holds each note until its recipient’s next turn.
+- **Craft listener.** Plain code reads the whole score and marks what a composition teacher would: parallel fifths and octaves, lines that are only scales, every part in the same rhythm, bars copied note for note, one dynamic throughout, everyone always playing.
+- **Rehearsal.** All musicians again at the same time, up to 2 steps each, at low thinking. Each one reads the problems involving its part and the notes sent to it, fixes its part, and answers.
+- **Reply.** `band_listen` summarises the result for the bandleader, who replies to you.
+
+The band has a 120 s clock, plus 30 s of grace; a musician still writing when it runs out is stopped. The times in the figure are the means over 10 test pieces at medium thinking: about 3.3 minutes per piece.
+
+Notes the musicians sent each other in one run, for “a cinematic piece for strings and piano that builds to a big climax” (verbatim, with names replaced by instruments):
+
+<img src="docs/readme/band-talk.png" alt="Notes the musicians sent each other" width="100%">
 
 ## Architecture
 
-See [the documentation index](docs/README.md), [system design](docs/architecture/system-design.md), [delivery gates](docs/planning/delivery-plan.md) and [code conventions](docs/architecture/code-conventions.md). The domain contains no React, Next.js, audio SDK or model SDK dependencies. UI and future AI tools call typed score operations; SVG geometry is derived state.
+<img src="docs/readme/architecture.png" alt="Project architecture" width="100%">
+
+Built with Next.js 16 and TypeScript. Each module keeps its rules in plain TypeScript functions (`domain`, `application`), its adapters in `infrastructure`, and its React in `ui`. Modules import each other only through their public entry, and ESLint enforces that.
+
+```sh
+yarn check            # format, lint, typecheck, unit tests
+yarn build && yarn test:e2e
+yarn readme:figures   # redraws the figures in this README (README_BASE: a running app)
+```
+
+More in [docs/](docs/README.md).
+
+## Licenses
+
+<!-- The project's own license is not chosen yet: add it here (and a LICENSE file). -->
+
+| Part | Use | License |
+| --- | --- | --- |
+| [Muse Spark](https://dev.meta.ai), [Muse Voice Transcribe](https://dev.meta.ai) | Agents; speech recognition | Meta AI API terms |
+| [SwiftF0](https://github.com/lars76/swift-f0) | Pitch tracking (ONNX model) | MIT |
+| [Splendid Grand Piano](https://github.com/smpldsnds/sfzinstruments-splendid-grand-piano) | Piano samples | Public domain |
+| [FluidR3 GM](https://github.com/gleitz/midi-js-soundfonts) | Guitar, bass, brass, flute and string samples | CC BY 3.0 (Fluid R3: MIT) |
+| [Versilian Community Sample Library](https://github.com/sgossner/VCSL) | Drum samples | CC0 1.0 |
+| [Next.js](https://nextjs.org), [React](https://react.dev), [Phosphor Icons](https://phosphoricons.com), [smplr](https://github.com/danigb/smplr), [zod](https://zod.dev), [ONNX Runtime](https://onnxruntime.ai) | App, icons, sample playback, schemas, model runtime | MIT |
+| [PDF.js](https://mozilla.github.io/pdf.js/), [sharp](https://sharp.pixelplumbing.com) | PDF pages as pictures; image decoding | Apache 2.0 |
+| [“The Horseman”, read for LibriVox](https://archive.org/details/spc137_1411_librivox) | The talk in the voice figures | Public domain |
+
+Sample sources and hashes: [public/sounds/v1/CREDITS.md](public/sounds/v1/CREDITS.md).
