@@ -1,3 +1,4 @@
+import { INSTRUMENTS } from "./instruments";
 import type { Part, Score, Staff } from "./schema";
 
 /**
@@ -7,18 +8,25 @@ import type { Part, Score, Staff } from "./schema";
  * derived, never stored, so renaming a part renames its handle.
  */
 
-/** A part's handle: the first word of its name in lowercase letters, made unique by order. */
+/** The first word of a part's name in lowercase letters. */
+const firstWord = (name: string) =>
+  name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(" ")[0] || "part";
+
+/**
+ * A part's handle, made unique by order: the instrument's ID while the part has its instrument's
+ * own name ("Double Bass" → "doublebass", "Violoncello" → "cello"), otherwise the first word of
+ * its name ("Lead trumpet" → "lead").
+ */
 export function partHandles(score: Pick<Score, "parts">): Map<string, string> {
   const handles = new Map<string, string>();
   const used = new Map<string, number>();
   for (const part of score.parts) {
-    const base =
-      part.name
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[^a-z0-9]+/g, " ")
-        .trim()
-        .split(" ")[0] || "part";
+    const base = part.name === INSTRUMENTS[part.instrument].name ? part.instrument : firstWord(part.name);
     const count = (used.get(base) ?? 0) + 1;
     used.set(base, count);
     handles.set(part.id, count === 1 ? base : `${base}-${count}`);

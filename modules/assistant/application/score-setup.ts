@@ -22,15 +22,20 @@ import type { readSourceSchema } from "./source-tool-schemas";
 type Reading = z.infer<typeof readSourceSchema>;
 type InstrumentId = (typeof INSTRUMENT_IDS)[number];
 
-/** Words that name each instrument we have, or the nearest we have to it (a violin plays as a flute). */
+/** Words that name each instrument we have, or the nearest we have to it (an oboe plays as a flute). */
 const SOUNDS_LIKE: [RegExp, InstrumentId][] = [
   [/drum|kit|percussion/i, "drums"],
   [/trumpet|cornet|flugel/i, "trumpet"],
+  // The strings before "bass" and "alto": a double bass is not a bass guitar, a viola reads the alto clef.
+  [/cello|violoncell/i, "cello"],
+  [/viola|\bvla\b/i, "viola"],
+  [/violin|fiddle|\bvln\b/i, "violin"],
+  [/contrabass|double ?bass|upright|string bass|contrabajo/i, "doublebass"],
   // Before "guitar": a bass guitar is a bass. "Bass" alone never means the bass drum here (drums come first).
-  [/\bbass\b|bajo|contrabass|double bass|upright/i, "bass"],
+  [/\bbass\b|bajo/i, "bass"],
   [/trombone|tuba|euphonium|baritone/i, "trombone"],
   [/guitar|ukulele|banjo/i, "guitar"],
-  [/flute|piccolo|recorder|violin|voice|vocal|soprano|alto|tenor|sax|clarinet|oboe|melody|lead/i, "flute"],
+  [/flute|piccolo|recorder|voice|vocal|soprano|alto|tenor|sax|clarinet|oboe|melody|lead/i, "flute"],
   [/piano|keys|keyboard|organ|synth/i, "piano"],
 ];
 

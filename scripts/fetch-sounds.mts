@@ -27,7 +27,7 @@ const SOURCES: Source[] = [
   },
   {
     id: "fluidr3-gm",
-    name: "FluidR3 GM (guitar, bass, trumpet, flute, trombone)",
+    name: "FluidR3 GM (guitar, bass, trumpet, flute, trombone, strings)",
     author: "Frank Wen (Fluid R3); converted by Benjamin Gleitzman (midi-js-soundfonts)",
     license: "CC BY 3.0 as published by midi-js-soundfonts; Fluid R3 itself is MIT",
     url: "https://github.com/gleitz/midi-js-soundfonts",

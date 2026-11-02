@@ -9,10 +9,10 @@ import { join, relative } from "node:path";
 
 const ROOT = join(import.meta.dirname, "..", "..", "public", "sounds", "v1");
 /**
- * Every sample set together (piano, the wind, guitar and bass sounds, drums) stays under this. A
- * song loads only its own instruments' sounds, so this bounds what is hosted, not each page.
+ * Every sample set together (piano, the wind, guitar, bass and string sounds, drums) stays under
+ * this. A song loads only its own instruments' sounds, so this bounds what is hosted, not each page.
  */
-const BUDGET_BYTES = 28_000_000;
+const BUDGET_BYTES = 40_000_000;
 const OWN_FILES = new Set(["manifest.json", "CREDITS.md"]);
 
 type Entry = { file: string; bytes: number; sha256: string; source: string; license: string };

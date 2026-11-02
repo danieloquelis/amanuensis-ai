@@ -12,6 +12,7 @@ import {
   INSTRUMENTS,
   midiPitch,
   parseScore,
+  partHandles,
   pitchName,
   scoreText,
   STEPS,
@@ -81,6 +82,29 @@ test("on a bass staff G2 sits on the bottom line", () => {
   const system = layoutScore(score).systems[0];
   assert.equal(system.clef, "bass");
   assert.equal(system.events[0].y, system.top + 48);
+});
+
+test("a viola reads the alto clef: middle C on the middle line, its sharps a step below the treble's", () => {
+  let score = edit(createExample(), { type: "setInstrument", instrument: "viola" });
+  score = edit(score, { type: "setKey", key: { fifths: 1, mode: "major" } });
+  const system = layoutScore(score).systems[0];
+  assert.equal(system.clef, "alto");
+  // The example opens on C4.
+  assert.equal(system.events[0].y, system.top + 24);
+  // F♯ sits in the top space (F4) rather than on the top line.
+  assert.equal(system.keySignature[0].y, system.top + 6);
+});
+
+test("the strings get their own handles, and the double bass sounds an octave below the page", () => {
+  const score = edit(createExample(), {
+    type: "newScore",
+    instruments: ["violin", "viola", "cello", "doublebass"],
+  });
+  assert.deepEqual([...partHandles(score).values()], ["violin", "viola", "cello", "doublebass"]);
+  const bass = edit(createExample(), { type: "setInstrument", instrument: "doublebass" });
+  const written = layoutScore(bass).systems[0].events[0];
+  assert.equal(pitchName(written.event.pitch), "C5");
+  assert.equal(pitchName(written.sounds![0]), "C4");
 });
 
 test("guitar is drawn an octave above its sound; the concert view draws the sound", () => {

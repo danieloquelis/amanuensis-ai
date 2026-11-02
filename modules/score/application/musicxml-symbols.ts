@@ -30,6 +30,7 @@ const CLEFS: Record<Clef, string> = {
   treble: "<sign>G</sign><line>2</line>",
   bass: "<sign>F</sign><line>4</line>",
   treble8vb: "<sign>G</sign><line>2</line><clef-octave-change>-1</clef-octave-change>",
+  alto: "<sign>C</sign><line>3</line>",
   percussion: "<sign>percussion</sign>",
 };
 export const clefXml = (clef: Clef, number?: number) =>

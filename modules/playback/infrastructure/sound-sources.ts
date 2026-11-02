@@ -72,6 +72,10 @@ const FLUID_R3: Record<FluidSound, string> = {
   trumpet: "trumpet",
   flute: "flute",
   trombone: "trombone",
+  violin: "violin",
+  viola: "viola",
+  cello: "cello",
+  doublebass: "contrabass",
 };
 const FLUID_R3_REMOTE = "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM";
 const PIANO_REMOTE = "https://smpldsnds.github.io/sfzinstruments-splendid-grand-piano/samples";

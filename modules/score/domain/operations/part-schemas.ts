@@ -11,7 +11,9 @@ export const partOperationSchemas = [
       partId: handleSchema.optional().describe("Default: the first part."),
       instrument: z
         .enum(INSTRUMENT_IDS)
-        .describe("trumpet is a B♭ trumpet (written a major 2nd above its sound); guitar is written an octave up."),
+        .describe(
+          "trumpet is a B♭ trumpet (written a major 2nd above its sound); guitar, bass and doublebass are written an octave up; viola reads the alto clef.",
+        ),
       name: z.string().trim().min(1).max(40).optional().describe("Shown name. Default: the instrument's name."),
     })
     .describe(
@@ -23,7 +25,9 @@ export const partOperationSchemas = [
       staffId: handleSchema.optional().describe("Default: the first staff."),
       clef: z
         .enum(CLEFS)
-        .describe("treble8vb: treble clef with an 8 below, sounding an octave lower (guitar). percussion: drums only."),
+        .describe(
+          "treble8vb: treble clef with an 8 below, sounding an octave lower (guitar). alto: C clef, middle C on the middle line (viola). percussion: drums only.",
+        ),
     })
     .describe("Change a staff's clef, e.g. a guitar in plain treble. Notes keep their sound."),
 ] as const;

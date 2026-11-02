@@ -18,6 +18,7 @@ export function ClefGlyph({ clef, top, indent = 0 }: { clef: Clef; top: number; 
   }
   if (clef === "bass") return <BassClef top={top} />;
   if (clef === "percussion") return <PercussionClef top={top} />;
+  if (clef === "alto") return <AltoClef top={top} />;
   return (
     <>
       <TrebleClef top={top} />
@@ -52,6 +53,28 @@ function BassClef({ top }: { top: number }) {
       />
       <circle cx="36" cy={-STAFF_GAP / 2} r="2.4" />
       <circle cx="36" cy={STAFF_GAP / 2} r="2.4" />
+    </g>
+  );
+}
+
+/** The C clef's upper curl: from its ball near the top line, round to a point on the middle line. */
+const C_CURL = "M 17 -17 C 18 -23, 26 -26, 31 -22 C 37 -18, 36 -6, 29 -4 C 24 -3, 19 -4, 14 0";
+const C_BALL = { cx: 19, cy: -15, r: 3.8 };
+
+/** C clef: a thick and a thin bar the height of the staff, and two curls meeting on the middle line (C4). */
+function AltoClef({ top }: { top: number }) {
+  const height = STAFF_GAP * 4;
+  return (
+    <g transform={`translate(${CLEF_X + 1} ${top + height / 2})`} fill="currentColor">
+      <rect x="0" y={-height / 2} width="6" height={height} />
+      <rect x="10" y={-height / 2} width="2" height={height} />
+      {/* The lower curl mirrors the upper one. */}
+      {[1, -1].map((flip) => (
+        <g key={flip} transform={`scale(1 ${flip})`}>
+          <path d={C_CURL} fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" />
+          <circle {...C_BALL} />
+        </g>
+      ))}
     </g>
   );
 }

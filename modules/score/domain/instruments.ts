@@ -1,7 +1,19 @@
 import type { Clef, Part } from "./schema";
 
 /** The instruments a part can be played on. */
-export const INSTRUMENT_IDS = ["piano", "guitar", "bass", "trumpet", "flute", "trombone", "drums"] as const;
+export const INSTRUMENT_IDS = [
+  "piano",
+  "guitar",
+  "bass",
+  "trumpet",
+  "flute",
+  "trombone",
+  "violin",
+  "viola",
+  "cello",
+  "doublebass",
+  "drums",
+] as const;
 
 export type InstrumentId = (typeof INSTRUMENT_IDS)[number];
 
@@ -46,6 +58,18 @@ export const INSTRUMENTS: Record<InstrumentId, Instrument> = {
   },
   flute: { name: "Flute", abbreviation: "Fl.", clef: "treble", range: { low: 60, high: 96 } },
   trombone: { name: "Trombone", abbreviation: "Tbn.", clef: "bass", range: { low: 40, high: 77 } },
+  violin: { name: "Violin", abbreviation: "Vln.", clef: "treble", range: { low: 55, high: 100 } },
+  // The viola reads the alto clef: middle C on the middle line.
+  viola: { name: "Viola", abbreviation: "Vla.", clef: "alto", range: { low: 48, high: 88 } },
+  cello: { name: "Violoncello", abbreviation: "Vc.", clef: "bass", range: { low: 36, high: 81 } },
+  // Like the bass guitar, the double bass is written an octave above its sound.
+  doublebass: {
+    name: "Double Bass",
+    abbreviation: "Db.",
+    clef: "bass",
+    transposition: { steps: 7, semitones: 12 },
+    range: { low: 28, high: 67 },
+  },
   // A drum kit has no pitches: its hits name kit pieces (see drums.ts).
   drums: { name: "Drums", abbreviation: "Dr.", clef: "percussion", range: { low: 0, high: 127 } },
 };
@@ -84,5 +108,9 @@ export const GENERAL_MIDI_PROGRAM: Record<InstrumentId, number> = {
   trumpet: 56,
   flute: 73,
   trombone: 57,
+  violin: 40,
+  viola: 41,
+  cello: 42,
+  doublebass: 43,
   drums: 0,
 };

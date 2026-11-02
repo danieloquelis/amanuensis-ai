@@ -72,7 +72,7 @@ export const eventSchema = z.strictObject({
   tuplet: z.strictObject({ id: idSchema, actual: z.literal(3), normal: z.literal(2) }).optional(),
 });
 
-export const CLEFS = ["treble", "bass", "treble8vb", "percussion"] as const;
+export const CLEFS = ["treble", "bass", "treble8vb", "alto", "percussion"] as const;
 
 /** An independent line of music on a staff, such as a melody over a bass line. */
 const voiceSchema = z.strictObject({ id: idSchema });

@@ -21,6 +21,7 @@ import {
 
 const E4 = staffPosition({ step: "E", octave: 4, alter: 0 });
 const G2 = staffPosition({ step: "G", octave: 2, alter: 0 });
+const F3 = staffPosition({ step: "F", octave: 3, alter: 0 });
 
 /** Staff position of each clef's bottom line, for the pitches as the staff shows them. */
 export const CLEF_BOTTOM_LINE: Record<Clef, number> = {
@@ -28,6 +29,8 @@ export const CLEF_BOTTOM_LINE: Record<Clef, number> = {
   // Guitar music is already written an octave up (see transposition), so it sits like treble.
   treble8vb: E4,
   bass: G2,
+  // Alto (C) clef: middle C on the middle line, so F3 on the bottom one.
+  alto: F3,
   percussion: E4,
 };
 
@@ -36,11 +39,11 @@ const NO_KEY: KeySignature = { fifths: 0, mode: "major" };
 /** Any octave will do for spelling a chord root. */
 const CHORD_OCTAVE = 4;
 
-/** Key signature accidentals sit this many staff steps lower on a bass staff than on a treble one. */
-const BASS_KEY_SHIFT = -2;
+/** How many staff steps lower than on a treble staff a clef's key signature accidentals sit. */
+const KEY_SHIFT: Partial<Record<Clef, number>> = { bass: -2, alto: -1 };
 
 /** How far a clef's key signature accidentals sit from the treble positions. */
-export const keyShift = (clef: Clef) => (clef === "bass" ? BASS_KEY_SHIFT : 0);
+export const keyShift = (clef: Clef) => KEY_SHIFT[clef] ?? 0;
 
 /** The clef of the system's first staff. */
 export const staffClef = (score: Score): Clef => allStaves(score)[0].clef;
@@ -50,6 +53,7 @@ export const CLEF_NAMES: Record<Clef, string> = {
   treble: "treble",
   treble8vb: "treble 8vb",
   bass: "bass",
+  alto: "alto",
   percussion: "percussion",
 };
 

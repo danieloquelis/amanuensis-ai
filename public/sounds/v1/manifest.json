@@ -969,6 +969,38 @@
       "license": "CC BY 3.0 as published by midi-js-soundfonts; Fluid R3 itself is MIT"
     },
     {
+      "file": "fluidr3/violin-mp3.js",
+      "url": "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/violin-mp3.js",
+      "bytes": 2870964,
+      "sha256": "3c169ac4c7781fe145e545e909993371188aa6bad617bc3a5f0692b7678995f8",
+      "source": "fluidr3-gm",
+      "license": "CC BY 3.0 as published by midi-js-soundfonts; Fluid R3 itself is MIT"
+    },
+    {
+      "file": "fluidr3/viola-mp3.js",
+      "url": "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/viola-mp3.js",
+      "bytes": 2803843,
+      "sha256": "0aabb7733ddb5852cb41a5e4881ca2a96781009243ba31d62e3e114c642d9051",
+      "source": "fluidr3-gm",
+      "license": "CC BY 3.0 as published by midi-js-soundfonts; Fluid R3 itself is MIT"
+    },
+    {
+      "file": "fluidr3/cello-mp3.js",
+      "url": "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/cello-mp3.js",
+      "bytes": 3005203,
+      "sha256": "fc72c9351e0dda586802f97a1b890e415640f54dc6cc397bd5dc32b078f6ce4c",
+      "source": "fluidr3-gm",
+      "license": "CC BY 3.0 as published by midi-js-soundfonts; Fluid R3 itself is MIT"
+    },
+    {
+      "file": "fluidr3/contrabass-mp3.js",
+      "url": "https://gleitz.github.io/midi-js-soundfonts/FluidR3_GM/contrabass-mp3.js",
+      "bytes": 2149428,
+      "sha256": "fde56089e8e292e6d95c458c9fc2b8a9e205753647267c900cd0198a66ab5a77",
+      "source": "fluidr3-gm",
+      "license": "CC BY 3.0 as published by midi-js-soundfonts; Fluid R3 itself is MIT"
+    },
+    {
       "file": "drums/BDrumNew_hit_v3_rr1_Sum.ogg",
       "url": "https://smpldsnds.github.io/sgossner-vcsl/Membranophones/Struck%20Membranophones/Bass%20Drum%201/BDrumNew_hit_v3_rr1_Sum.ogg",
       "bytes": 19860,
