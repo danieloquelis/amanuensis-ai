@@ -10,8 +10,11 @@ import { createPageImages } from "@/modules/page/server";
 
 const DEVELOPMENT = process.env.NODE_ENV === "development";
 
-/** Several model steps, each of which may think for most of a minute; reading a page takes more of them. */
-export const maxDuration = 600;
+/**
+ * Several model steps, each of which may think for most of a minute; reading a page takes more of
+ * them. 300 seconds is the most Vercel's Hobby plan allows (a Band Mode turn takes 140–240 s).
+ */
+export const maxDuration = 300;
 
 /** Room for attached files next to the score JSON. */
 const MAX_BODY_BYTES = MAX_REQUEST_BYTES + ATTACHMENT_LIMITS.totalBytes;

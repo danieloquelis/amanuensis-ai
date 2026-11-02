@@ -1,0 +1,19 @@
+# `vercel deploy` uploads the folder as it is and does not read .gitignore, so list what must stay local.
+
+# personal voice recordings and cached transcriptions: never uploaded
+.takes
+.cache
+
+# secrets: the Meta API key is set as a Vercel environment variable instead
+.env
+.env.*
+!.env.example
+
+# local test and evaluation output
+eval-results
+test-results
+playwright-report
+.yarn
+
+# private planning notes kept out of git
+docs/research/hackathon-impact-and-positioning.md
