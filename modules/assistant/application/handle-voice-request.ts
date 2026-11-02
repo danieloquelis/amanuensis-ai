@@ -15,6 +15,7 @@ import {
 } from "@/modules/voice";
 import type { ModelPort } from "./model-port";
 import { runAssistant, type AssistantResult, type ProgressListener } from "./run-assistant";
+import { declineIfOutOfScope } from "./scope-gate";
 
 /** Two minutes of 16 kHz mono 16-bit audio, with room for the WAV header. */
 export const MAX_AUDIO_BYTES = 16_000 * 2 * 120 + 1024;
@@ -136,6 +137,13 @@ export async function handleVoiceRequest(
     };
   }
   try {
+    // A take that is only talk is judged by its words; one with singing is music.
+    const talkOnly = !take.sung.length && !take.voice.length;
+    const words = [request.instruction, ...take.speech.map((turn) => turn.text)].join(" ");
+    const outside = talkOnly
+      ? await declineIfOutOfScope(services.model, { instruction: words, history: request.history }, services.signal)
+      : null;
+    if (outside) return { status: 200, body: { ...outside, heard } };
     const result = await runAssistant(services.model, { ...request, score, take }, undefined, onProgress, {
       signal: services.signal,
       musicians: services.musicians,

@@ -36,6 +36,7 @@ export type {
   ToolCall,
   ToolSpec,
 } from "./application/model-port";
+export { askScope, OUT_OF_SCOPE_REPLY } from "./application/scope-gate";
 export { SYSTEM_PROMPT } from "./application/system-prompt";
 export {
   MAX_TOOL_STEPS,

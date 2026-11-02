@@ -31,6 +31,7 @@
     "eval:api": "tsx --env-file=.env.local scripts/api-compare.mts",
     "eval:band": "tsx --env-file=.env.local scripts/band-eval.mts",
     "eval:compose": "tsx --env-file=.env.local scripts/compose-eval.mts",
+    "eval:scope": "tsx --env-file=.env.local scripts/scope-gate-eval.mts",
     "readme:figures": "tsx --env-file=.env.local scripts/readme-figures.mts"
   },
   "dependencies": {

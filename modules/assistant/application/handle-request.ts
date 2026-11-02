@@ -4,6 +4,7 @@ import { parseScore } from "@/modules/score";
 import { readUploads, type Upload } from "./attachments";
 import type { ModelPort } from "./model-port";
 import { runAssistant, type AssistantResult, type ProgressListener } from "./run-assistant";
+import { declineIfOutOfScope } from "./scope-gate";
 import { MEMORY_LIMIT, SONG_NOTES_LIMIT } from "./agent-state";
 import { bandSchema } from "./musicians";
 import { thinkingSchema } from "./thinking";
@@ -59,6 +60,9 @@ export async function handleAssistantRequest(
     return { status: 400, body: { error: error instanceof Error ? error.message : "Invalid score." } };
   }
   try {
+    // Words about something else never reach the agent (attached music always does).
+    const outside = read.attachments.length ? null : await declineIfOutOfScope(model, parsed.data, signal);
+    if (outside) return { status: 200, body: outside };
     const result = await runAssistant(
       model,
       { ...parsed.data, score, attachments: read.attachments },
