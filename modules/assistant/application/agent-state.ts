@@ -107,6 +107,11 @@ export function createAgentState(songNotes = "", memory: string[] = []) {
   return {
     run,
     plan: () => plan,
+    /** Marks every step of the plan done: the work it planned was done another way (the band played it). */
+    completePlan: () => {
+      plan = plan.map((step) => ({ ...step, done: true }));
+      return plan;
+    },
     /** What changed this turn, for the browser to keep. */
     changes: () => ({
       ...(notesChanged ? { songNotes: notes } : {}),

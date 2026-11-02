@@ -9,7 +9,18 @@ import {
   type ModelPort,
   type ModelReply,
 } from "@/modules/assistant";
-import { barEvents, beats, createExample, createSession, executeAll, midiPitch, numberedVoice } from "@/modules/score";
+import {
+  barEvents,
+  beats,
+  createExample,
+  createSession,
+  execute,
+  executeAll,
+  midiPitch,
+  numberedVoice,
+  scoreText,
+  writeBars,
+} from "@/modules/score";
 import { createTake, type VoiceTake } from "@/modules/voice";
 import { midi, singMelody } from "../support/synthetic-voice";
 
@@ -547,12 +558,14 @@ test("checking a take finds a note struck without a pitch, and the bars may be r
 
 test("in Band Mode the band plays in rehearsal order, then rehearses, each only its own part, as one undo step", async () => {
   const { model, seen } = scriptedModel([
-    // The bandleader hands out the parts (bass named first: the band still starts with the drums).
+    // The bandleader hands out the parts (bass named first: the band still lines up drums first).
     {
       content: null,
       toolCalls: [
         call("band_arrange", {
+          style: "jazz",
           feel: "a gentle waltz",
+          form: [{ from: 1, to: 4, name: "Head", plan: "the tune, mp" }],
           parts: [
             { part: "bass", brief: "roots on 1" },
             { part: "drums", brief: "brushes" },
@@ -561,7 +574,8 @@ test("in Band Mode the band plays in rehearsal order, then rehearses, each only 
         }),
       ],
     },
-    // The drummer, with a word for the bassist.
+    // Both play their first pass at once, their replies interleaved: the drummer, with a word for
+    // the bassist; the bassist, trying the piano first (refused).
     {
       content: null,
       toolCalls: [
@@ -573,26 +587,26 @@ test("in Band Mode the band plays in rehearsal order, then rehearses, each only 
         call("band_note", { to: musicianName("bass", "bass"), note: "Land with my kick on 1." }),
       ],
     },
-    { content: "Rock groove in bar 1.", toolCalls: [] },
-    // The bassist tries the piano first: refused; then its own part.
     { content: null, toolCalls: [call("score_write", { requestId: "b1", expectedRevision: 3, text: "bar 1: C2w" })] },
-    {
-      content: null,
-      toolCalls: [call("score_write", { requestId: "b2", expectedRevision: 3, text: "bar 1 bass: C2w" })],
-    },
-    // A dynamic on its own note is the bassist's to add.
+    { content: "Rock groove in bar 1.", toolCalls: [] },
+    // Then its whole part in one reply: the bars, and a dynamic on its own note (the bassist's to add).
     {
       content: null,
       toolCalls: [
-        call("score_edit", {
-          requestId: "b3",
-          expectedRevision: 4,
-          operation: { type: "putAnnotation", targetId: "bass/1#1", kind: "dynamic", text: "mf" },
-        }),
+        call("score_write", { requestId: "b2", expectedRevision: 3, text: "bar 1 bass: C2w" }, "b2"),
+        call(
+          "score_edit",
+          {
+            requestId: "b3",
+            expectedRevision: 3,
+            operation: { type: "putAnnotation", targetId: "bass/1#1", kind: "dynamic", text: "mf" },
+          },
+          "b3",
+        ),
       ],
     },
     { content: "Root on 1.", toolCalls: [] },
-    // The rehearsal: both hear the band at once; the drummer answers the bassist, who keeps its part.
+    // The rehearsal: everyone hears the band at once; the drummer answers the bassist, who keeps its part.
     { content: null, toolCalls: [call("band_note", { to: musicianName("bass", "bass"), note: "Locked, thanks." })] },
     { content: "Kept my root: it lands with the kick.", toolCalls: [] },
     { content: "Kept the groove.", toolCalls: [] },
@@ -636,13 +650,13 @@ test("in Band Mode the band plays in rehearsal order, then rehearses, each only 
       [drummer, bassist, "Locked, thanks."],
     ],
   );
-  // The bassist read the drummer's note before it played; in the rehearsal it heard the whole band.
-  assert.match(JSON.stringify(seen[3]), /Notes for you:\\n- [A-Za-z]+: Land with my kick on 1/);
-  assert.match(JSON.stringify(seen[8]), /Rehearsal, round 1/);
-  assert.match(JSON.stringify(seen[8]), /lands with the kick on/);
+  // In the rehearsal the bassist heard the whole band and read the drummer's note.
+  assert.match(JSON.stringify(seen[7]), /Rehearsal, round 1/);
+  assert.match(JSON.stringify(seen[7]), /lands with the kick on/);
+  assert.match(JSON.stringify(seen[7]), /Notes for you:\\n- [A-Za-z]+: Land with my kick on 1/);
   // The bassist has its name and what the agent knows about the band; its try at the piano was refused.
-  assert.match(JSON.stringify(seen[3]), new RegExp(`You are ${bassist}, the band's Bass`));
-  assert.match(JSON.stringify(seen[3]), /The bassist reads treble clef/);
+  assert.match(JSON.stringify(seen[2]), new RegExp(`You are ${bassist}, the band's Bass`));
+  assert.match(JSON.stringify(seen[2]), /The bassist reads treble clef/);
   assert.match(JSON.stringify(seen[4].at(-1)), /You play Bass/);
   const after = executeAll(createSession(score), result.commands).score;
   assert.deepEqual(
@@ -650,8 +664,8 @@ test("in Band Mode the band plays in rehearsal order, then rehearses, each only 
     ["piano", "bass", "drums"],
   );
   assert.equal(executeAll(createSession(score), result.commands).past.length, 1, "one undo step");
-  // Every model call of the turn is counted, the musicians' too: 3 by the bandleader, 2 + 2 drums, 4 + 1 bass.
-  assert.equal(result.thinkingMs.length, 12);
+  // Every model call of the turn is counted, the musicians' too: 3 by the bandleader, 2 + 2 drums, 3 + 1 bass.
+  assert.equal(result.thinkingMs.length, 11);
   // Only the bassist's try at the piano was refused; its own dynamic was not.
   assert.deepEqual(
     result.trace.filter((entry) => !entry.ok).map((entry) => entry.tool),
@@ -660,15 +674,24 @@ test("in Band Mode the band plays in rehearsal order, then rehearses, each only 
 });
 
 test("a song with a tune is arranged only with a plan for it; a piano keeping the tune comps on a left hand", async () => {
+  const form = [{ from: 1, to: 4, name: "Verse", plan: "the tune over the band, mf" }];
   const parts = [
     { part: "trumpet", brief: "answer the tune" },
     { part: "piano", brief: "comp the chords" },
   ];
   const { model, seen } = scriptedModel([
-    { content: null, toolCalls: [call("band_arrange", { feel: "a ballad", parts })] },
+    { content: null, toolCalls: [call("band_arrange", { style: "pop", feel: "a ballad", form, parts })] },
     {
       content: null,
-      toolCalls: [call("band_arrange", { feel: "a ballad", parts, tune: [{ from: 1, to: 4, parts: ["piano"] }] })],
+      toolCalls: [
+        call("band_arrange", {
+          style: "pop",
+          feel: "a ballad",
+          form,
+          parts,
+          tune: [{ from: 1, to: 4, parts: ["piano"] }],
+        }),
+      ],
     },
     { content: "Comped.", toolCalls: [] },
     { content: "Answered the tune.", toolCalls: [] },
@@ -685,6 +708,135 @@ test("a song with a tune is arranged only with a plan for it; a piano keeping th
   assert.match(JSON.stringify(seen[3]), /The tune, as planned: bars 1–4: piano/);
   const after = executeAll(createSession(score), result.commands).score;
   assert.equal(after.parts[0].staves.length, 2, "a left-hand staff for the comping");
+});
+
+test("on a later turn the band in the song takes the composer's comments as the bandleader's notes", async () => {
+  const session = createSession(createExample());
+  const add = { type: "addPart", instrument: "bass" } as const;
+  const score = execute(session, { requestId: "add", expectedRevision: session.score.revision, operation: add }).score;
+  const [pianist, bassist] = [musicianName("piano", "piano"), musicianName("bass", "bass")];
+  const { model, seen } = scriptedModel([
+    // A round without notes has nothing to pass on; with them, the band already in the song plays it.
+    { content: null, toolCalls: [call("band_rehearse", {})] },
+    {
+      content: null,
+      toolCalls: [
+        call("band_rehearse", { feel: "a driving fugue", notes: [{ to: bassist, note: "Walk in eighths in bar 1." }] }),
+      ],
+    },
+    // Only the bassist has a note: the pianist sits the round out.
+    { content: "Walking in eighths now.", toolCalls: [] },
+    { content: "The bass walks now.", toolCalls: [] },
+  ]);
+  const result = await runAssistant(model, { ...request("more drive"), score, band: { on: true } }, "t13");
+  // The bandleader knows the band by name, and that comments go to them.
+  assert.match(
+    JSON.stringify(seen[0]),
+    new RegExp(`The band in the song: ${pianist} \\(piano\\), ${bassist} \\(bass\\)`),
+  );
+  assert.match(result.trace[0].error ?? "", /Tell the musicians what to change/);
+  // The bassist plays from its part as it stands, in the feel given, with the bandleader's note.
+  const brief = JSON.stringify(seen[2]);
+  assert.match(brief, /The band's feel: a driving fugue/);
+  assert.match(brief, /Your part as it stands in the song/);
+  assert.match(brief, /Notes for you:\\n- Bandleader: Walk in eighths in bar 1\./);
+  assert.deepEqual(
+    result.bandNotes?.map((n) => [n.from, n.to]),
+    [["Bandleader", bassist]],
+  );
+  assert.deepEqual(
+    result.band?.map((r) => [r.name, r.report]),
+    [[bassist, "Walking in eighths now."]],
+  );
+});
+
+test("musicians grow their parts from the bandleader's material, developed exactly with band_motif", async () => {
+  const { model, seen } = scriptedModel([
+    {
+      content: null,
+      toolCalls: [
+        call("band_arrange", {
+          style: "baroque",
+          feel: "a little invention",
+          form: [{ from: 1, to: 4, name: "Exposition", plan: "the motif, then the cello's answer, mf" }],
+          material: [{ name: "motif", part: "piano", from: 1, to: 1, about: "the head" }],
+          tune: [{ from: 1, to: 4, parts: ["piano"] }],
+          parts: [{ part: "cello", brief: "answer the motif an octave down in bar 2" }],
+        }),
+      ],
+    },
+    // The cellist reads the material and plays it an octave down, upside down, from bar 2.
+    { content: null, toolCalls: [call("band_motif", { material: "motif", bar: 2, steps: -7, invert: true })] },
+    { content: "Answered the motif upside down.", toolCalls: [] },
+    { content: "Kept my answer.", toolCalls: [] },
+    { content: "The cello answers the motif.", toolCalls: [] },
+  ]);
+  const score = createExample();
+  const result = await runAssistant(model, { ...request("an invention"), score, band: { on: true } }, "t14");
+  const brief = JSON.stringify(seen[1]);
+  assert.match(brief, /The style: Baroque counterpoint/);
+  assert.match(brief, /Exposition: the motif, then the cello's answer/);
+  assert.match(brief, /motif \(piano, bar 1\): the head\\nbar 1 piano: C4q E4q G4q E4q/);
+  const after = executeAll(createSession(score), result.commands).score;
+  // C E G E, mirrored around C and an octave down: C3 A2 F2 A2.
+  assert.match(scoreText(after), /bar 2 cello: C3q A2q F2q A2q/);
+  assert.deepEqual(
+    result.trace.filter((entry) => !entry.ok).map((entry) => entry.tool),
+    [],
+  );
+});
+
+test("material that is only a scale is sent back once, before the band plays on it", async () => {
+  const arrange = call("band_arrange", {
+    style: "baroque",
+    feel: "a fugue",
+    form: [{ from: 1, to: 4, name: "Exposition", plan: "the subject, then the answer" }],
+    material: [{ name: "subject", part: "piano", from: 1, to: 2 }],
+    tune: [{ from: 1, to: 4, parts: ["piano"] }],
+    parts: [{ part: "cello", brief: "the answer" }],
+  });
+  const { model } = scriptedModel([
+    {
+      content: null,
+      toolCalls: [
+        call("score_write", {
+          requestId: "s",
+          expectedRevision: 0,
+          text: "bar 1: C4q D4q E4q F4q\nbar 2: G4q A4q B4q C5q",
+        }),
+      ],
+    },
+    { content: null, toolCalls: [arrange] },
+    { content: "The subject needs work.", toolCalls: [] },
+  ]);
+  const result = await runAssistant(model, { ...request("a fugue"), band: { on: true } }, "t15");
+  const refused = result.trace.find((entry) => entry.tool === "band_arrange");
+  assert.match(
+    refused?.error ?? "",
+    /subject \(piano, bars 1–2\): it is mostly a scale; it moves only by step, with no leap; every note is the same length/,
+  );
+});
+
+test("the song's own tune is never sent back as plain material, however plain", async () => {
+  const plain = writeBars(createExample(), "bar 1: C4q D4q E4q F4q\nbar 2: G4q A4q B4q C5q", "plain").score;
+  const { model } = scriptedModel([
+    {
+      content: null,
+      toolCalls: [
+        call("band_arrange", {
+          style: "classical",
+          feel: "a minuet",
+          form: [{ from: 1, to: 4, name: "A", plan: "the tune, then its answer" }],
+          material: [{ name: "tune", part: "piano", from: 1, to: 2 }],
+          tune: [{ from: 1, to: 4, parts: ["piano"] }],
+          parts: [{ part: "cello", brief: "the bass" }],
+        }),
+      ],
+    },
+  ]);
+  const result = await runAssistant(model, { ...request("arrange it"), score: plain, band: { on: true } }, "t16");
+  const arranged = result.trace.find((entry) => entry.tool === "band_arrange");
+  assert.equal(arranged?.ok, true, arranged?.error);
 });
 
 test("a reply that only promises more work gets one more step to do it", async () => {

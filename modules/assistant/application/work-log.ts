@@ -83,6 +83,7 @@ const TOOL_WORDS: Record<string, string> = {
   band_listen: "listening to the band",
   band_rehearse: "another rehearsal",
   band_note: "a note to the band",
+  band_motif: "the band's material",
 };
 
 /**

@@ -1,4 +1,5 @@
 import { isDrumKit, isPlayable, partHandles, type Score } from "@/modules/score";
+import { craftOf, type CraftRules } from "./band-craft";
 import { bandLines, barList, chordAt, harmonies, median, noteName, onBeat, type Hit, type Line } from "./band-hits";
 
 /** What the band sounds like together: each line in a sentence, and what a musician would fix. */
@@ -20,10 +21,15 @@ const KICK_LOCK = 0.5;
 /**
  * Listens to the band's parts as they stand: facts about each line (where it plays, how busy,
  * its range) and the problems a band would hear (clashes with the chords, a loop instead of a
- * part, a bass not landing with the kick, two lines in one register, notes out of range, silence
- * where the others play). `names` gives each part handle its musician's name.
+ * part, a bass not landing with the kick, two lines in one register, notes out of range, a part
+ * that never plays) and, given the style's rules, its craft (see craftOf). `names` gives each part
+ * handle its musician's name.
  */
-export function listenToBand(score: Score, names: ReadonlyMap<string, string> = new Map()): Listening {
+export function listenToBand(
+  score: Score,
+  names: ReadonlyMap<string, string> = new Map(),
+  rules?: CraftRules,
+): Listening {
   const handles = partHandles(score);
   const who = (line: Line) => {
     const name = names.get(handles.get(line.part.id) ?? "");
@@ -51,6 +57,7 @@ export function listenToBand(score: Score, names: ReadonlyMap<string, string> = 
   }
   for (const lock of kickLock(playing, who)) (lock.locked ? summary : problems).push(lock.text);
   problems.push(...crowding(playing, who), ...silences(score, lines, who));
+  if (rules) problems.push(...craftOf(score, rules, names).problems);
   return { lines: summary, problems };
 }
 
@@ -142,15 +149,16 @@ function crowding(lines: Line[], who: (line: Line) => string): string[] {
   return found;
 }
 
-/** Parts silent in bars where the others play. */
+/**
+ * Parts that never play while others do. Resting through a passage is texture (a voice enters
+ * later, the band thins for a verse), so only a part silent all through is heard as missing.
+ */
 function silences(score: Score, lines: Line[], who: (line: Line) => string): string[] {
-  const busy = new Set(lines.flatMap((line) => line.hits.map((hit) => hit.bar)));
+  const busy = lines.some((line) => line.hits.length);
   const found: string[] = [];
   for (const part of score.parts) {
     const own = lines.filter((line) => line.part.id === part.id);
-    const plays = new Set(own.flatMap((line) => line.hits.map((hit) => hit.bar)));
-    const quiet = [...busy].filter((bar) => !plays.has(bar));
-    if (own.length && quiet.length) found.push(`${who(own[0])}: silent in bars ${barList(quiet)} while others play`);
+    if (busy && own.length && !own.some((line) => line.hits.length)) found.push(`${who(own[0])}: plays nothing`);
   }
   return found;
 }

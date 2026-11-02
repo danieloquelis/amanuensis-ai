@@ -1,4 +1,4 @@
-import { barEvents, findPart, INSTRUMENT_IDS, partHandles, type InstrumentId } from "@/modules/score";
+import { barEvents, findPart, INSTRUMENT_IDS, partHandles, type InstrumentId, type Score } from "@/modules/score";
 import type { z } from "zod";
 import type { arrangeSchema } from "./band-specs";
 import { musicianName } from "./musicians";
@@ -70,6 +70,27 @@ export function castBand(context: BandContext, arrangement: z.infer<typeof arran
       name: musicianName(instrument, part),
       brief: told.filter(Boolean).join(" "),
       ...(keep?.length ? { kept: keep } : {}),
+    };
+  });
+}
+
+/** What a musician seated from the song is told: its part is what the composer heard. */
+const AS_IT_STANDS =
+  "Your part as it stands in the song: the composer has heard it. Rework it where the Bandleader's notes ask, and keep the rest.";
+
+/**
+ * The band already in the song, on a later turn: one musician per part, with the name it had when
+ * it first played (names follow the part), so the bandleader can pass the composer's comments on.
+ */
+export function songBand(score: Score): MusicianJob[] {
+  const handles = partHandles(score);
+  return score.parts.map((part) => {
+    const handle = handles.get(part.id) ?? part.id;
+    return {
+      part: handle,
+      instrument: part.instrument,
+      name: musicianName(part.instrument, handle),
+      brief: AS_IT_STANDS,
     };
   });
 }

@@ -44,6 +44,8 @@ export function createBandBoard(onProgress: ProgressListener) {
       else lineup.push(job);
     },
     say,
+    /** Whether notes are waiting for a musician. */
+    waiting: (name: string) => (inbox.get(name)?.length ?? 0) > 0,
     /** The notes waiting for a musician, which it reads now. */
     take(name: string): string[] {
       const notes = inbox.get(name) ?? [];

@@ -12,7 +12,7 @@ export const tuneSchema = z
       parts: z
         .array(z.string())
         .min(1)
-        .max(4)
+        .max(8)
         .describe('Who plays the tune here: one part, or several in unison or octaves ("trumpet", "piano").'),
     }),
   )

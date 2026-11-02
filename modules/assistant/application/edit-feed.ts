@@ -20,5 +20,10 @@ export function createEditFeed() {
       sent = [...commands];
       return { stage: "edits", keep, add };
     },
+    /** Sends what changed since the last send, if anything did. */
+    send(commands: readonly Command[], onEvent: (event: EditsEvent) => void) {
+      const change = this.update(commands);
+      if (change) onEvent(change);
+    },
   };
 }

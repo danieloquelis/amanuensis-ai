@@ -34,6 +34,8 @@ export type CompleteOptions = {
   onThought?: (text: string) => void;
   /** Groups calls that share a beginning (one turn's steps), so the provider's prompt cache can reuse it. */
   cacheKey?: string;
+  /** This call's thinking, when it differs from the model's own (a short summing-up needs little). */
+  effort?: string;
 };
 
 /**

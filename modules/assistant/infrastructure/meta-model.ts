@@ -21,7 +21,12 @@ export type MetaApi = "chat" | "responses";
 /** The API from a setting such as `META_AI_API`: Responses unless it says "chat". */
 export const metaApi = (setting: string | undefined): MetaApi => (setting === "chat" ? "chat" : "responses");
 /** `retryMs` is the first wait before another try (tests shorten it). */
-export type MetaSettings = { api?: MetaApi; idleMs?: number; retryMs?: number };
+/**
+ * `parallelTools`: whether one reply may make several tool calls. Off for the agent, whose every
+ * edit names the revision it read; on for the band's musicians, whose edits are fitted to the
+ * score as it is when they run (a whole part in one reply).
+ */
+export type MetaSettings = { api?: MetaApi; idleMs?: number; retryMs?: number; parallelTools?: boolean };
 
 const BASE_URL = "https://api.meta.ai/v1";
 export const DEFAULT_META_MODEL = "muse-spark-1.3";
@@ -63,9 +68,10 @@ export function toMetaPart(part: ContentPart) {
 }
 
 /**
- * Meta Model API adapter (server-only: it holds the API key). One tool call per turn keeps the
- * loop easy to follow and every edit validated against the latest revision. `reasoningEffort`
- * (minimal … max) trades thinking time for depth; the model's default is used when it is unset.
+ * Meta Model API adapter (server-only: it holds the API key). One tool call per reply (unless
+ * `parallelTools`) keeps the loop easy to follow and every edit validated against the latest
+ * revision. `reasoningEffort` (minimal … max) trades thinking time for depth; the model's default
+ * is used when it is unset, and a call may ask for its own.
  * A call that fails before its answer begins (busy, a provider fault, a dropped connection) is
  * tried again a couple of times (see `model-retry.ts`).
  */
@@ -73,10 +79,14 @@ export function createMetaModel(
   apiKey: string,
   model = DEFAULT_META_MODEL,
   reasoningEffort?: string,
-  { api = "responses", idleMs = TIMEOUT_MS, retryMs = FIRST_RETRY_MS }: MetaSettings = {},
+  { api = "responses", idleMs = TIMEOUT_MS, retryMs = FIRST_RETRY_MS, parallelTools = false }: MetaSettings = {},
 ): ModelPort {
   /** The endpoint and request body for one call on the chosen API. */
-  const request = (messages: ChatMessage[], tools: ToolSpec[], cacheKey?: string) =>
+  const request = (
+    messages: ChatMessage[],
+    tools: ToolSpec[],
+    { cacheKey, effort = reasoningEffort }: CompleteOptions,
+  ) =>
     api === "responses"
       ? {
           url: `${BASE_URL}/responses`,
@@ -84,10 +94,10 @@ export function createMetaModel(
             model,
             ...responsesRequest(messages, tools),
             ...(cacheKey ? { prompt_cache_key: cacheKey } : {}),
-            parallel_tool_calls: false,
+            parallel_tool_calls: parallelTools,
             stream: true,
             // A short summary of its reasoning streams back: the musician sees what it is weighing.
-            reasoning: { summary: REASONING_SUMMARY, ...(reasoningEffort ? { effort: reasoningEffort } : {}) },
+            reasoning: { summary: REASONING_SUMMARY, ...(effort ? { effort } : {}) },
           },
         }
       : {
@@ -99,10 +109,10 @@ export function createMetaModel(
               type: "function",
               function: { name, description, parameters },
             })),
-            parallel_tool_calls: false,
+            parallel_tool_calls: parallelTools,
             stream: true,
             stream_options: { include_usage: true },
-            ...(reasoningEffort ? { reasoning_effort: reasoningEffort } : {}),
+            ...(effort ? { reasoning_effort: effort } : {}),
           },
         };
   /** One try. The deadline counts from the last sign of life: an answer may take long, but not go quiet. */
@@ -115,7 +125,7 @@ export function createMetaModel(
     };
     const signal = options.signal ? AbortSignal.any([options.signal, idle.signal]) : idle.signal;
     try {
-      const { url, body } = request(messages, tools, options.cacheKey);
+      const { url, body } = request(messages, tools, options);
       const response = await fetch(url, {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -184,6 +194,9 @@ export function createMetaModels(apiKey: string, env: Record<string, string | un
   const effort = thinking ?? env.META_AI_REASONING_EFFORT;
   return {
     model: createMetaModel(apiKey, env.META_AI_MODEL, effort, settings),
-    musicians: createMetaModel(apiKey, env.META_AI_MODEL, thinkingBelow(thinking), settings),
+    musicians: createMetaModel(apiKey, env.META_AI_MODEL, thinkingBelow(thinking), {
+      ...settings,
+      parallelTools: true,
+    }),
   };
 }

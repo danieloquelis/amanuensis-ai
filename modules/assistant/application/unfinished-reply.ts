@@ -4,14 +4,15 @@ const TAIL_CHARACTERS = 240;
 const PROMISES = /\b(?:I'll|I will|I'm going to|let me|next,? I|now I|then I)\b/i;
 
 /**
- * Whether a reply ends by announcing work it never did ("…I'll verify everything reads
- * correctly."): a reply with no tool call ends the turn, so that check never runs. The turn asks
- * the model once to do it or give its real answer.
+ * Whether a reply ends the turn with work left: it announces work it never did ("…I'll verify
+ * everything reads correctly."), or the plan it showed still has steps not done. A reply with no
+ * tool call ends the turn, so that work never runs. The turn asks the model once to do it or give
+ * its real answer.
  */
-export function soundsUnfinished(reply: string): boolean {
-  return PROMISES.test(reply.trim().slice(-TAIL_CHARACTERS));
+export function soundsUnfinished(reply: string, plan: { done: boolean }[] = []): boolean {
+  return PROMISES.test(reply.trim().slice(-TAIL_CHARACTERS)) || plan.some((step) => !step.done);
 }
 
 /** What the turn tells the model when its reply announced work it did not do. */
 export const FINISH_NUDGE =
-  "Your reply announces work you didn't do. Do it now with the tools, or give your final reply to the musician (plain, short).";
+  "Your reply announces work you didn't do, or your plan has steps not done. Do them now with the tools, or give your final reply to the musician (plain, short), saying what you left out.";

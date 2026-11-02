@@ -8,9 +8,11 @@ import {
   musicianBrief,
   musicianSystem,
   noteSchema,
+  type BandPlan,
   type MusicianJob,
   type MusicianRound,
 } from "./musician-brief";
+import { BAND_MOTIF, bandMotifSpec, playMotif } from "./musician-motif";
 import { refuseOutsidePart } from "./part-scope";
 import { refuseTuneChange } from "./tune-line";
 import { parseArguments, runScoreTool } from "./score-tool-call";
@@ -18,12 +20,12 @@ import type { createScoreToolGateway } from "./score-tool-gateway";
 import { toolError } from "./score-tool-gateway";
 import { withoutScoreBlocks } from "./score-blocks";
 
-export type { MusicianJob, MusicianRound } from "./musician-brief";
+export type { BandPlan, MusicianJob, MusicianRound } from "./musician-brief";
 
-/** A musician's round trips to the model: read, write, look again, fix, talk, report. */
-const FIRST_STEPS = 6;
-/** In a rehearsal there is less to do: listen, change a few bars, say so. */
-const REHEARSAL_STEPS = 4;
+/** A musician's round trips to the model: read, place the material, write, look again, fix, talk, report. */
+const FIRST_STEPS = 3;
+/** In a rehearsal there is less to do: listen, change some bars, say so. */
+const REHEARSAL_STEPS = 2;
 const MUSICIAN_TOOLS = [
   ...assistantTools.filter((tool) => ["score_get_context", "score_edit", "score_write"].includes(tool.name)),
   bandNoteSpec,
@@ -64,7 +66,7 @@ export type BandRoom = {
 export async function runMusician(
   context: BandContext,
   job: MusicianJob,
-  feel: string,
+  plan: BandPlan,
   round: MusicianRound,
   room: BandRoom,
 ): Promise<{ report: string; ok: boolean }> {
@@ -80,7 +82,7 @@ export async function runMusician(
       ...extra,
     });
   const scoreNow = (tools("score_get_context", { selectedIds: [] }) as { score?: string }).score ?? "";
-  const brief = musicianBrief(job, feel, round, {
+  const brief = musicianBrief(job, plan, round, {
     score: score(),
     scoreText: scoreNow,
     bandmates: room.bandmates.filter((name) => name !== job.name),
@@ -101,11 +103,20 @@ export async function runMusician(
   for (let step = 1; step <= (pass ? REHEARSAL_STEPS : FIRST_STEPS); step++) {
     if (signal?.aborted) break;
     const asked = Date.now();
-    const reply = await model.complete(messages, MUSICIAN_TOOLS, {
-      signal,
-      onThought: (thought) => progress({ state: "playing", thought }),
-      cacheKey,
-    });
+    const reply = await model
+      .complete(messages, plan.materials.length ? [...MUSICIAN_TOOLS, bandMotifSpec] : MUSICIAN_TOOLS, {
+        signal,
+        onThought: (thought) => progress({ state: "playing", thought }),
+        cacheKey,
+        // A rehearsal reacts to what the band sounds like: quick, not deep.
+        ...(pass ? { effort: "low" } : {}),
+      })
+      // Stopped by the band's clock (or the musician stopping the turn): what it wrote stays.
+      .catch((error: unknown) => {
+        if (signal?.aborted) return null;
+        throw error;
+      });
+    if (!reply) break;
     context.onModelCall?.(reply.usage, Date.now() - asked);
     messages.push({
       role: "assistant",
@@ -119,10 +130,13 @@ export async function runMusician(
       return { report, ok: true };
     }
     for (const call of reply.toolCalls as ToolCall[]) {
+      const edit = call.name === BAND_MOTIF ? playMotif(call, score(), plan.materials, job.part) : call;
       const result =
         call.name === BAND_NOTE
           ? note(call, job, room)
-          : written(runScoreTool(own(call, score), tools, cacheKey, score, refuse));
+          : "error" in edit
+            ? edit
+            : written(runScoreTool(own(edit, score), tools, cacheKey, score, refuse));
       messages.push({ role: "tool", toolCallId: call.id, content: JSON.stringify(result) });
       context.onCall?.({
         tool: `${job.part}: ${call.name}`,
@@ -133,7 +147,9 @@ export async function runMusician(
       if (call.name !== BAND_NOTE) onEdits();
     }
   }
-  const report = "I ran out of time before finishing my part.";
+  const report = signal?.aborted
+    ? "Time was up: I kept what I had written."
+    : "I ran out of time before finishing my part.";
   progress({ state: "done", report });
   return { report, ok: false };
 }
@@ -160,6 +176,7 @@ function own(call: ToolCall, score: () => Score): ToolCall {
   try {
     const args = JSON.parse(call.arguments || "{}");
     const current = { ...args, expectedRevision: score().revision };
+    if (args.operation) current.operation = namedTarget(args.operation);
     return {
       ...call,
       arguments: JSON.stringify(call.name === "score_write" ? { ...current, keepHarmony: true } : current),
@@ -167,4 +184,12 @@ function own(call: ToolCall, score: () => Score): ToolCall {
   } catch {
     return call;
   }
+}
+
+/** A dynamic or direction put on a note named as `eventId` (a slip musicians make) names it as `targetId`. */
+function namedTarget(operation: Record<string, unknown>): Record<string, unknown> {
+  if (Array.isArray(operation.operations)) return { ...operation, operations: operation.operations.map(namedTarget) };
+  if (operation.type !== "putAnnotation" || operation.targetId || !operation.eventId) return operation;
+  const { eventId, ...rest } = operation;
+  return { ...rest, targetId: eventId };
 }

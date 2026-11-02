@@ -28,7 +28,9 @@ test("the tune moves through the band as planned: copied where it goes, freed wh
       content: null,
       toolCalls: [
         call("band_arrange", {
+          style: "pop",
           feel: "a ballad",
+          form: [{ from: 1, to: 4, name: "Verse", plan: "the tune, mf" }],
           parts: [
             { part: "piano", brief: "comp the chords" },
             { part: "trumpet", brief: "sing it" },

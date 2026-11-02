@@ -2,7 +2,7 @@ import { summarizeChange, type Operation } from "@/modules/score";
 import { agentToolSpecs, createAgentState, isAgentTool, PLAN_TOOL } from "./agent-state";
 import type { AssistantRequest, AssistantResult, ProgressListener, TraceEntry, TurnServices } from "./assistant-types";
 import { ASK_TOOL, askSchema, assistantTools } from "./assistant-tools";
-import { BAND_ARRANGE, BAND_CONTEXT, bandToolSpecs, createBandTools, isBandTool } from "./band-tools";
+import { BAND_ARRANGE, bandToolSpecs, createBandTools, isBandTool } from "./band-tools";
 import { createMusicTools, isMusicTool, musicToolSpecs } from "./music-tools";
 import type { ChatMessage, ContentPart, ModelPort, TokenUsage, ToolCall } from "./model-port";
 import { refuseHeardBarEdit, writtenLines } from "./heard-bars-guard";
@@ -107,10 +107,7 @@ export async function runAssistant(
     runScoreTool(call, tools, turnId, edits.score, (operation, asked) =>
       refuseHeardBarEdit(edits.score(), operation, heard, asked, musicianWords(request), allowances),
     );
-  const sendEdits = () => {
-    const change = feed.update(edits.commands);
-    if (change) onProgress(change);
-  };
+  const sendEdits = () => feed.send(edits.commands, onProgress);
   // Bars written in <score> blocks go through score_write, under the request ID their draft used.
   const blocks = createScoreBlockWriter(turnId, onProgress, (requestId, text, pitches) => {
     const args = JSON.stringify({ requestId, expectedRevision: edits.score().revision, text, pitches });
@@ -132,7 +129,7 @@ export async function runAssistant(
   const messages: ChatMessage[] = [
     { role: "system", content: systemPrompt },
     ...historyMessages(request),
-    userMessage(request, [scoreContext(tools, request), agent.context(), ...(band ? [BAND_CONTEXT] : [])].join("\n\n")),
+    userMessage(request, [scoreContext(tools, request), agent.context(), ...(band ? [band.lead()] : [])].join("\n\n")),
   ];
   const finish = (reply: string, question: AssistantResult["question"], steps: number): AssistantResult => {
     // A server-side fault, caught here rather than as a failed replay in the musician's editor.
@@ -146,7 +143,8 @@ export async function runAssistant(
       usage,
       trace,
       thinkingMs,
-      ...(agent.plan().length ? { plan: agent.plan() } : {}),
+      // Once the band has played, the plan it carried out is done.
+      ...(agent.plan().length ? { plan: band?.played() ? agent.completePlan() : agent.plan() } : {}),
       ...agent.changes(),
       ...band?.result(),
     };
@@ -157,11 +155,13 @@ export async function runAssistant(
     onProgress({ stage: "thinking" });
     const asked = Date.now();
     blocks.start();
-    const reply = await model.complete(messages, toolList, {
+    const reply = await model.complete(messages, band?.finished() ? [] : toolList, {
       signal,
       onText: blocks.hear,
       onThought: (text) => onProgress({ stage: "thought", text }),
       cacheKey: turnId,
+      // Once the band has played, what is left is summing it up.
+      ...(band?.played() ? { effort: "low" } : {}),
     });
     count(reply.usage, Date.now() - asked);
     // The model's reasoning goes back with its reply, so the next step builds on it.
@@ -177,7 +177,7 @@ export async function runAssistant(
     if (!reply.toolCalls.length && (!written || written.ok)) {
       const text = withoutScoreBlocks(reply.content ?? "");
       // Once per turn: a reply that only promises more work gets one more step to do it.
-      if (!nudged && soundsUnfinished(text) && step < maxSteps) {
+      if (!nudged && soundsUnfinished(text, band?.played() ? [] : agent.plan()) && step < maxSteps) {
         nudged = true;
         messages.push({ role: "user", content: FINISH_NUDGE });
         continue;
