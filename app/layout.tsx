@@ -21,7 +21,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Amanuensis AI — Your musical workspace",
+  title: "Amanuensis",
   description:
     "A quiet space to capture, shape, and hear your musical ideas. An original score editor built for voice-first composition.",
 };
