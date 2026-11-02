@@ -1409,3 +1409,42 @@
     animation: none;
   }
 }
+
+/* What the musicians say to each other: a quiet thread under the band, each note sliding in. */
+.bandTalk {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 8px 0 0 12px;
+  border-left: 2px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  list-style: none;
+}
+
+.bandTalk li {
+  display: grid;
+  gap: 1px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.4;
+  animation: thought-in 360ms var(--ease-out) both;
+}
+
+.bandTalk .bandWho {
+  font-size: 12px;
+}
+
+.bandTalkLog {
+  margin: 0 0 10px;
+}
+
+.bandTalkLog summary {
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bandTalk li {
+    animation: none;
+  }
+}

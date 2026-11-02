@@ -95,7 +95,11 @@ function Thinking({ turn }: { turn: Turn }) {
   return (
     <div className={`${styles.answer} ${styles.thinking}`}>
       {turn.plan?.length ? <PlanChecklist steps={turn.plan} /> : null}
-      {turn.band?.length ? <BandRoom seats={turn.band} /> : turn.log?.length ? <LiveThought log={turn.log} /> : null}
+      {turn.band?.length ? (
+        <BandRoom seats={turn.band} talk={turn.talk} />
+      ) : turn.log?.length ? (
+        <LiveThought log={turn.log} />
+      ) : null}
       <span key={line} className={styles.activity} role="status">
         {line}…
       </span>
@@ -113,7 +117,7 @@ function Answer({ turn, canUndo, canRetry, busy, onUndo, onRetry, onChoose, onRe
         {turn.status === "failed" && <WarningCircle className={styles.warning} size={16} weight="fill" />}
         {turn.reply}
       </p>
-      {turn.band?.some((seat) => seat.report) ? <BandNotes seats={turn.band} onRedo={onRedo} /> : null}
+      {turn.band?.some((seat) => seat.report) ? <BandNotes seats={turn.band} talk={turn.talk} onRedo={onRedo} /> : null}
       {turn.question && (
         <div className={styles.choices}>
           {turn.question.choices.map((choice) => (

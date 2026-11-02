@@ -545,7 +545,7 @@ test("checking a take finds a note struck without a pitch, and the bars may be r
   );
 });
 
-test("in Band Mode the band plays in rehearsal order, each musician only its own part, as one undo step", async () => {
+test("in Band Mode the band plays in rehearsal order, then rehearses, each only its own part, as one undo step", async () => {
   const { model, seen } = scriptedModel([
     // The bandleader hands out the parts (bass named first: the band still starts with the drums).
     {
@@ -560,7 +560,7 @@ test("in Band Mode the band plays in rehearsal order, each musician only its own
         }),
       ],
     },
-    // The drummer.
+    // The drummer, with a word for the bassist.
     {
       content: null,
       toolCalls: [
@@ -569,6 +569,7 @@ test("in Band Mode the band plays in rehearsal order, each musician only its own
           expectedRevision: 2,
           operation: { type: "putGroove", partId: "drums", groove: "rock", measureIds: ["1"] },
         }),
+        call("band_note", { to: musicianName("bass", "bass"), note: "Land with my kick on 1." }),
       ],
     },
     { content: "Rock groove in bar 1.", toolCalls: [] },
@@ -579,8 +580,12 @@ test("in Band Mode the band plays in rehearsal order, each musician only its own
       toolCalls: [call("score_write", { requestId: "b2", expectedRevision: 3, text: "bar 1 bass: C2w" })],
     },
     { content: "Root on 1.", toolCalls: [] },
-    // The bandleader checks and replies.
-    { content: null, toolCalls: [call("band_review", {})] },
+    // The rehearsal: both hear the band at once; the drummer answers the bassist, who keeps its part.
+    { content: null, toolCalls: [call("band_note", { to: musicianName("bass", "bass"), note: "Locked, thanks." })] },
+    { content: "Kept my root: it lands with the kick.", toolCalls: [] },
+    { content: "Kept the groove.", toolCalls: [] },
+    // The bandleader listens and replies.
+    { content: null, toolCalls: [call("band_listen", {})] },
     { content: "The band played bar 1.", toolCalls: [] },
   ]);
   const score = createExample();
@@ -594,14 +599,35 @@ test("in Band Mode the band plays in rehearsal order, each musician only its own
     },
   );
   const [drummer, bassist] = [musicianName("drums", "drums"), musicianName("bass", "bass")];
-  assert.deepEqual(progress, [`${drummer} waiting`, `${bassist} waiting`, `${drummer} done`, `${bassist} done`]);
+  assert.deepEqual(progress, [
+    `${drummer} waiting`,
+    `${bassist} waiting`,
+    `${drummer} done`,
+    `${bassist} done`,
+    `${drummer} waiting`,
+    `${bassist} waiting`,
+    `${bassist} done`,
+    `${drummer} done`,
+  ]);
+  // Each musician's last word is from the rehearsal; what they said to each other is kept.
   assert.deepEqual(
     result.band?.map((r) => [r.name, r.report]),
     [
-      [drummer, "Rock groove in bar 1."],
-      [bassist, "Root on 1."],
+      [drummer, "Kept the groove."],
+      [bassist, "Kept my root: it lands with the kick."],
     ],
   );
+  assert.deepEqual(
+    result.bandNotes?.map((n) => [n.from, n.to, n.note]),
+    [
+      [drummer, bassist, "Land with my kick on 1."],
+      [drummer, bassist, "Locked, thanks."],
+    ],
+  );
+  // The bassist read the drummer's note before it played; in the rehearsal it heard the whole band.
+  assert.match(JSON.stringify(seen[3]), /Notes for you:\\n- [A-Za-z]+: Land with my kick on 1/);
+  assert.match(JSON.stringify(seen[7]), /Rehearsal, round 1/);
+  assert.match(JSON.stringify(seen[7]), /lands with the kick on/);
   // The bassist has its name and what the agent knows about the band; its try at the piano was refused.
   assert.match(JSON.stringify(seen[3]), new RegExp(`You are ${bassist}, the band's Bass`));
   assert.match(JSON.stringify(seen[3]), /The bassist reads treble clef/);
@@ -612,8 +638,8 @@ test("in Band Mode the band plays in rehearsal order, each musician only its own
     ["piano", "bass", "drums"],
   );
   assert.equal(executeAll(createSession(score), result.commands).past.length, 1, "one undo step");
-  // Every model call of the turn is counted, the musicians' too: 3 by the bandleader, 2 drums, 3 bass.
-  assert.equal(result.thinkingMs.length, 8);
+  // Every model call of the turn is counted, the musicians' too: 3 by the bandleader, 2 + 2 drums, 3 + 1 bass.
+  assert.equal(result.thinkingMs.length, 11);
 });
 
 test("with the tune on the piano, the pianist comps on a left hand and a horn is told not to double the tune", async () => {
@@ -632,6 +658,8 @@ test("with the tune on the piano, the pianist comps on a left hand and a horn is
     },
     { content: "Comped.", toolCalls: [] },
     { content: "Answered the tune.", toolCalls: [] },
+    { content: "Kept my comping.", toolCalls: [] },
+    { content: "Kept my answers.", toolCalls: [] },
     { content: "Done.", toolCalls: [] },
   ]);
   const score = createExample();

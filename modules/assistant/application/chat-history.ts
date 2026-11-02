@@ -95,10 +95,12 @@ const savedTurnSchema = z.object({
         instrument: z.enum(INSTRUMENT_IDS),
         name: z.string(),
         state: z.enum(["waiting", "playing", "done"]),
+        round: z.number().int().nonnegative().optional(),
         report: z.string().optional(),
       }),
     )
     .optional(),
+  talk: z.array(z.object({ from: z.string(), to: z.string(), note: z.string() })).optional(),
   log: z
     .array(
       z.discriminatedUnion("kind", [

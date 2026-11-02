@@ -5,11 +5,14 @@
 // and as JSON (so `--regrade` can measure it again for free after a measure changes).
 // Costs real API calls; stops starting runs once the spend passes --budget (US$).
 //
-//   yarn eval:band --confirm [--repeats 2] [--parallel 2] [--budget 6]
+// Band runs also record what the musicians said to each other and how many problems the band's
+// listening (`listenToBand`) heard after the first pass and at the end, so the rehearsal is measured.
+//
+//   yarn eval:band --confirm [--repeats 2] [--parallel 2] [--budget 6] [--arms band]
 //   yarn eval:band --regrade
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { runAssistant, type AssistantRequest, type ModelPort, type Thinking } from "@/modules/assistant";
+import { listenToBand, runAssistant, type AssistantRequest, type ModelPort, type Thinking } from "@/modules/assistant";
 import { createMetaModels } from "@/modules/assistant/server";
 import { createSession, executeAll, scoreText } from "@/modules/score";
 import { measure, melodyOf } from "./lib/band-measures.mjs";
@@ -40,6 +43,7 @@ if (!apiKey) throw new Error("META_AI_API_KEY is not set (run with --env-file=.e
 const repeats = Number(arg("repeats", "2"));
 const parallel = Number(arg("parallel", "2"));
 const budget = Number(arg("budget", "6"));
+const arms = ARMS.filter((arm) => arg("arms", ARMS.join(",")).split(",").includes(arm));
 /** Muse Spark standard prices, US$ per million tokens (as in api-compare.mts). */
 const PRICE = { input: 1.25, cachedInput: 0.15, output: 4.25 };
 const EMPTY: Used = { calls: 0, input: 0, cached: 0, output: 0 };
@@ -110,6 +114,9 @@ async function arrange(song: Song, arm: Arm, run: number): Promise<Run> {
       measures: measure(after, melodyOf(score)),
       reply: result.reply,
       band: result.band,
+      talk: result.bandNotes?.map((n) => `${n.from} → ${n.to}: ${n.note}`),
+      heard: listenToBand(after).problems.length,
+      ...(result.bandRounds?.length ? { heardFirst: result.bandRounds[0].problems.length } : {}),
       tools: result.trace.map((entry) => `${entry.tool}${entry.ok ? "" : "✗"}`).join(" "),
       errors: refused.map((entry) => `${entry.tool}: ${entry.error ?? "refused"}`),
     };
@@ -139,9 +146,9 @@ async function pool<T>(jobs: (() => Promise<T>)[], size: number): Promise<T[]> {
 
 mkdirSync(OUT_DIR, { recursive: true });
 const jobs = SONGS.flatMap((song) =>
-  ARMS.flatMap((arm) => Array.from({ length: repeats }, (_, i) => () => arrange(song, arm, i + 1))),
+  arms.flatMap((arm) => Array.from({ length: repeats }, (_, i) => () => arrange(song, arm, i + 1))),
 );
-console.log(`${jobs.length} runs (${SONGS.length} songs × 2 arms × ${repeats}), ${parallel} at a time`);
+console.log(`${jobs.length} runs (${SONGS.length} songs × ${arms.join(" and ")} × ${repeats}), ${parallel} at a time`);
 const runs = await pool(jobs, parallel);
 console.log(`\n\n${table(runs, SONGS)}`);
 for (const run of runs.filter((r) => r.error)) console.log(`  ${run.arm} ${run.song} ${run.run}: ${run.error}`);

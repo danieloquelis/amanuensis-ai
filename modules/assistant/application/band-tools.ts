@@ -1,23 +1,20 @@
 import { z } from "zod";
-import {
-  barEvents,
-  findPart,
-  INSTRUMENT_IDS,
-  isDrumKit,
-  isPlayable,
-  midiPitch,
-  partHandles,
-  type InstrumentId,
-  type Score,
-} from "@/modules/score";
+import { INSTRUMENT_IDS, type InstrumentId } from "@/modules/score";
+import { BANDLEADER, createBandBoard, type BandNote } from "./band-board";
+import { listenToBand } from "./band-listen";
+import { keepMelody, resolvePart } from "./band-setup";
 import type { ToolSpec } from "./model-port";
+import { noteSchema } from "./musician-brief";
 import { musicianName, rehearsalOrder, roleOf } from "./musicians";
-import { runMusician, type BandContext, type MusicianJob } from "./run-musician";
+import { runMusician, type BandContext, type BandRoom, type MusicianJob } from "./run-musician";
 import { toolError } from "./score-tool-gateway";
 import { toolParameters } from "./tool-definitions";
 
 export const BAND_ARRANGE = "band_arrange";
-const BAND_REVIEW = "band_review";
+const BAND_LISTEN = "band_listen";
+const BAND_REHEARSE = "band_rehearse";
+/** Rehearsal rounds a turn may have: the one after the band first plays, and one more. */
+const MAX_REHEARSALS = 2;
 
 const arrangeSchema = z.strictObject({
   feel: z.string().trim().min(1).max(300).describe("The style and feel the whole band plays in, and the passage."),
@@ -36,110 +33,92 @@ const arrangeSchema = z.strictObject({
     .max(8),
 });
 
+const rehearseSchema = z.strictObject({
+  notes: z.array(noteSchema).max(8).default([]).describe("Your notes to musicians, by name, for this round."),
+});
+
 export const bandToolSpecs: ToolSpec[] = [
   {
     name: BAND_ARRANGE,
-    description: `Have the band play an arrangement: each part is written by its own musician, in rehearsal order (drums, bass, harmony, then lead lines), each hearing those before it and writing only its own part. Missing parts are added. Returns each musician's report. Instruments: ${INSTRUMENT_IDS.join(", ")}.`,
+    description: `Have the band play an arrangement: each part is played by its own musician, in rehearsal order (drums, bass, harmony, then lead lines), each hearing those before it; then the band rehearses once: every musician hears the whole band, reads the notes the others sent it and fixes its own part. Missing parts are added. Returns what each played, what they said to each other and what the band sounds like now. Instruments: ${INSTRUMENT_IDS.join(", ")}.`,
     parameters: toolParameters(arrangeSchema),
   },
   {
-    name: BAND_REVIEW,
+    name: BAND_LISTEN,
     description:
-      "Check the band's parts: notes outside an instrument's range, and bars a part left empty where others play. Send a musician back (band_arrange with that part and your notes) for what matters.",
+      "Listen to the band as it stands: each part in a line, and what could be better (clashes with the chords, a part looping one bar, the bass missing the kick, two parts in one register, notes out of range, silence where the others play).",
     parameters: toolParameters(z.strictObject({})),
+  },
+  {
+    name: BAND_REHEARSE,
+    description: `Another rehearsal round, with your notes to musicians by name: they all hear the band, read your notes and theirs, and fix their parts. For problems that matter (at most ${MAX_REHEARSALS} rounds a turn, the one band_arrange runs included).`,
+    parameters: toolParameters(rehearseSchema),
   },
 ];
 
-const BAND_TOOLS = new Set([BAND_ARRANGE, BAND_REVIEW]);
+const BAND_TOOLS = new Set([BAND_ARRANGE, BAND_LISTEN, BAND_REHEARSE]);
 export const isBandTool = (name: string) => BAND_TOOLS.has(name);
 
 /** What a musician told the bandleader, kept for the turn's result. */
 export type BandReport = { part: string; instrument: InstrumentId; name: string; report: string };
+/** What the band's listening heard after a pass: 0 the first time through, then each rehearsal. */
+export type BandRound = { round: number; problems: string[] };
 
 type ToolResult = { ok: true; [key: string]: unknown } | { ok: false; error: string };
-
-/** Problems the band's parts show, by part and bar: out of range, or silent where others play. */
-function review(score: Score): string[] {
-  const handles = partHandles(score);
-  const busy = score.measures.map((measure) =>
-    score.parts.some((part) =>
-      part.staves.some((staff) => barEvents(measure, staff.voices[0].id).some((event) => event.pitch || event.drums)),
-    ),
-  );
-  return score.parts.flatMap((part) => {
-    const handle = handles.get(part.id) ?? part.id;
-    const out: string[] = [];
-    const empty: number[] = [];
-    score.measures.forEach((measure, i) => {
-      const events = part.staves.flatMap((staff) => staff.voices.flatMap((voice) => barEvents(measure, voice.id)));
-      if (busy[i] && !events.some((event) => event.pitch || event.drums)) empty.push(i + 1);
-      if (isDrumKit(part.instrument)) return;
-      for (const event of events) {
-        if (event.pitch && !isPlayable(midiPitch(event.pitch), part.instrument)) out.push(`bar ${i + 1}`);
-      }
-    });
-    return [
-      ...(out.length ? [`${handle}: notes outside its range in ${[...new Set(out)].join(", ")}`] : []),
-      ...(empty.length ? [`${handle}: silent in bars ${empty.join(", ")} while others play`] : []),
-    ];
-  });
-}
+const spoken = (note: BandNote) => `${note.from} → ${note.to}: ${note.note}`;
 
 /**
- * The band, for one turn: `band_arrange` runs each musician in rehearsal order on the turn's own
- * edits (one undo step), `band_review` checks the result. The bandleader puts the band together
- * from the parts it names; each musician gets its part's name (see `musicianName`); `reports`
- * collects what each musician said.
+ * The band, for one turn, on the turn's own edits (one undo step): `band_arrange` seats the
+ * musicians and plays the arrangement through once, in rehearsal order, then rehearses;
+ * `band_rehearse` runs another round with the bandleader's notes; `band_listen` hears it.
  */
 export function createBandTools(context: BandContext) {
-  const reports: BandReport[] = [];
-
-  /** The part a brief names, added first when the score has no such part yet. */
-  const resolve = (ref: string): { part: string; instrument: InstrumentId } => {
-    const existing = findPart(context.score(), ref);
-    const score = existing ? context.score() : null;
-    if (existing && score) return { part: partHandles(score).get(existing.id) ?? ref, instrument: existing.instrument };
-    if (!(INSTRUMENT_IDS as readonly string[]).includes(ref))
-      throw new Error(`There is no part or instrument "${ref}".`);
-    const before = context.score();
-    const added = context.tools("score_edit", {
-      requestId: `${context.turnId}-band-add-${ref}`,
-      expectedRevision: before.revision,
-      operation: { type: "addPart", instrument: ref },
-    });
-    if (!added.ok) throw new Error(added.error);
-    const after = context.score();
-    const part = after.parts.findLast((p) => p.instrument === ref)!;
-    context.onEdits();
-    return { part: partHandles(after).get(part.id) ?? part.id, instrument: ref as InstrumentId };
+  const board = createBandBoard(context.onProgress);
+  const reports = new Map<string, BandReport>();
+  /** What the band sounded like after each pass (0 the first time through), for the turn's result. */
+  const heardAfter: BandRound[] = [];
+  let rehearsals = 0;
+  const room: BandRoom = {
+    get bandmates() {
+      return board.lineup().map((job) => job.name);
+    },
+    say: (from, to, note) => board.say(from.name, to, note),
   };
+  const report = (job: MusicianJob, text: string) => reports.set(job.part, { ...job, report: text });
+  const played = () =>
+    board.lineup().map((job) => `${job.name} (${job.part}): ${reports.get(job.part)?.report ?? "—"}`);
+  const listening = () => listenToBand(context.score(), board.names());
+  /** The feel the band plays in, from the last arrangement. */
+  let feel = "";
+  const wait = ({ part, instrument, name }: MusicianJob, round: number) =>
+    context.onProgress({ stage: "musician", part, instrument, name, state: "waiting", round });
 
-  /**
-   * A piano part that already holds the song's melody (the lead sheet sung or played in) keeps it:
-   * the pianist gets a left-hand staff to comp on, added before it plays. Returns what to tell it.
-   */
-  const keepMelody = (part: string, instrument: InstrumentId): string | null => {
-    const score = context.score();
-    const found = findPart(score, part);
-    if (instrument !== "piano" || !found || found.staves.length > 1) return null;
-    const melody = score.measures.some((m) => barEvents(m, found.staves[0].voices[0].id).some((e) => e.pitch));
-    if (!melody) return null;
-    const added = context.tools("score_edit", {
-      requestId: `${context.turnId}-band-left-hand`,
-      expectedRevision: score.revision,
-      operation: { type: "setStaffCount", partId: found.id, staves: 2 },
-    });
-    if (!added.ok) return null;
-    context.onEdits();
-    return `Your first staff holds the song's melody: keep it as it is, and comp on your left-hand staff (bar N ${part}.2: …).`;
+  /** Every musician hears the band and fixes its part, all at once: each writes only its own part. */
+  const rehearse = async (): Promise<BandNote[]> => {
+    rehearsals++;
+    const before = board.said().length;
+    const heard = listening();
+    const together = played();
+    const band = rehearsalOrder(board.lineup());
+    for (const job of band) wait(job, rehearsals);
+    await Promise.all(
+      band.map(async (job) => {
+        const round = { kind: "rehearsal" as const, round: rehearsals, listening: heard, played: together };
+        const { report: text } = await runMusician(context, job, feel, { ...round, notes: board.take(job.name) }, room);
+        report(job, text);
+      }),
+    );
+    heardAfter.push({ round: rehearsals, problems: listening().problems });
+    return board.said().slice(before);
   };
 
   const arrange = async (raw: unknown): Promise<ToolResult> => {
-    const { feel, parts } = arrangeSchema.parse(raw);
+    const parsed = arrangeSchema.parse(raw);
+    feel = parsed.feel;
     let melodyOn: string | null = null;
-    const jobs: MusicianJob[] = parts.map(({ part, brief }) => {
-      const resolved = resolve(part);
-      const kept = keepMelody(resolved.part, resolved.instrument);
+    const jobs: MusicianJob[] = parsed.parts.map(({ part, brief }) => {
+      const resolved = resolvePart(context, part);
+      const kept = keepMelody(context, resolved.part, resolved.instrument);
       if (kept) melodyOn = resolved.part;
       const name = musicianName(resolved.instrument, resolved.part);
       return { ...resolved, name, brief: kept ? `${brief} ${kept}` : brief };
@@ -151,31 +130,51 @@ export function createBandTools(context: BandContext) {
       }
     }
     const ordered = rehearsalOrder(jobs);
+    for (const job of ordered) board.seat(job);
+    for (const job of ordered) wait(job, 0);
+    const before: string[] = [];
     for (const job of ordered) {
-      context.onProgress({
-        stage: "musician",
-        part: job.part,
-        instrument: job.instrument,
-        name: job.name,
-        state: "waiting",
-      });
+      const round = { kind: "first" as const, before: [...before], notes: board.take(job.name) };
+      const { report: text } = await runMusician(context, job, feel, round, room);
+      before.push(`${job.name} (${job.part}): ${text}`);
+      report(job, text);
     }
-    const heard: string[] = [];
-    for (const job of ordered) {
-      const { report } = await runMusician(context, job, feel, heard);
-      heard.push(`${job.name} (${job.part}): ${report}`);
-      reports.push({ part: job.part, instrument: job.instrument, name: job.name, report });
+    heardAfter.push({ round: 0, problems: listening().problems });
+    if (rehearsals < MAX_REHEARSALS) await rehearse();
+    return {
+      ok: true,
+      played: played(),
+      talked: board.said().map(spoken),
+      sounds: listening(),
+      next: "If what it sounds like has a problem worth another round, band_rehearse with your notes; else reply.",
+    };
+  };
+
+  const again = async (raw: unknown): Promise<ToolResult> => {
+    const { notes } = rehearseSchema.parse(raw);
+    if (!board.lineup().length) return { ok: false, error: "The band has not played yet: band_arrange first." };
+    if (rehearsals >= MAX_REHEARSALS)
+      return { ok: false, error: `The band has rehearsed ${rehearsals} times: reply now.` };
+    for (const { to, note } of notes) {
+      const refused = board.say(BANDLEADER, to, note);
+      if (refused) return { ok: false, error: refused };
     }
-    return { ok: true, played: heard, next: "band_review, then reply: what the band played, by musician." };
+    const talked = await rehearse();
+    return { ok: true, played: played(), talked: talked.map(spoken), sounds: listening() };
   };
 
   return {
-    reports: () => reports,
+    /** For the turn's result: what each played last, what they said, and what was heard after each pass. */
+    result: () => ({
+      ...(reports.size ? { band: [...reports.values()] } : {}),
+      ...(board.said().length ? { bandNotes: board.said() } : {}),
+      ...(heardAfter.length ? { bandRounds: heardAfter } : {}),
+    }),
     async run(name: string, raw: unknown): Promise<ToolResult> {
       try {
         if (name === BAND_ARRANGE) return await arrange(raw);
-        const problems = review(context.score());
-        return { ok: true, problems: problems.length ? problems : ["none: every part in range, no part silent"] };
+        if (name === BAND_REHEARSE) return await again(raw);
+        return { ok: true, ...listening() };
       } catch (error) {
         return { ok: false, error: toolError(error) };
       }

@@ -2,7 +2,8 @@ import type { PageImages } from "@/modules/page";
 import type { Command, InstrumentId, Score } from "@/modules/score";
 import type { TakePart, VoiceTake } from "@/modules/voice";
 import type { PlanStep } from "./agent-state";
-import type { BandReport } from "./band-tools";
+import type { BandNote } from "./band-board";
+import type { BandReport, BandRound } from "./band-tools";
 import type { Attachment } from "./attachments";
 import type { DraftEvent } from "./score-block-writer";
 import type { EditsEvent } from "./edit-feed";
@@ -53,6 +54,10 @@ export type AssistantResult = {
   memory?: string[];
   /** What each musician of the band played, when the band did. */
   band?: BandReport[];
+  /** What the musicians (and the bandleader) said to each other, when the band rehearsed. */
+  bandNotes?: BandNote[];
+  /** What the band's listening heard after each pass, for measuring the rehearsals. */
+  bandRounds?: BandRound[];
 };
 
 /** `ms` is how long the tool itself ran. */
@@ -68,16 +73,22 @@ export type ProgressEvent =
   | { stage: "thought"; text: string }
   /** The agent's plan, whenever it shows or updates it. */
   | { stage: "plan"; steps: PlanStep[] }
-  /** A musician of the band: waiting its turn, playing (with its thinking as it streams), or done. */
+  /**
+   * A musician of the band: waiting its turn, playing (with its thinking as it streams), or done;
+   * `round` is 0 the first time through, then the rehearsal round it is in.
+   */
   | {
       stage: "musician";
       part: string;
       instrument: InstrumentId;
       name: string;
       state: "waiting" | "playing" | "done";
+      round?: number;
       thought?: string;
       report?: string;
     }
+  /** A musician (or the bandleader) said something to a bandmate, or to the whole band ("band"). */
+  | { stage: "band_note"; from: string; to: string; note: string }
   | { stage: "tool"; tool: string }
   /** The turn's edits so far changed: the editor can show them before the turn ends. */
   | EditsEvent

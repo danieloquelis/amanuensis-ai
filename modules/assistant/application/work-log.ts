@@ -1,22 +1,30 @@
 import type { InstrumentId } from "@/modules/score";
 import type { PlanStep } from "./agent-state";
+import type { BandNote } from "./band-board";
 import type { ProgressEvent } from "./run-assistant";
 
 /** What a turn did, in order: its thinking (the model's reasoning summary) and the steps it took. */
 export type WorkEntry = { kind: "thought"; text: string } | { kind: "step"; tool: string };
 
-/** A musician of the band in a turn: its state, the thought it is on, and its note to the bandleader. */
+/**
+ * A musician of the band in a turn: its state, the round it is in (0 the first time through, then
+ * the rehearsal), the thought it is on, and its note to the bandleader.
+ */
 export type BandSeat = {
   part: string;
   instrument: InstrumentId;
   name: string;
   state: "waiting" | "playing" | "done";
+  round?: number;
   thought?: string;
   report?: string;
 };
 
-/** A turn's record of its work: the log, its plan when it made one, and its band in Band Mode. */
-export type TurnWork = { log?: WorkEntry[]; plan?: PlanStep[]; band?: BandSeat[] };
+/**
+ * A turn's record of its work: the log, its plan when it made one, and in Band Mode its band and
+ * what the musicians said to each other.
+ */
+export type TurnWork = { log?: WorkEntry[]; plan?: PlanStep[]; band?: BandSeat[]; talk?: BandNote[] };
 
 /** The thinking a turn keeps (characters): enough to see why, not the whole stream. */
 const KEPT_THOUGHT = 4000;
@@ -29,6 +37,10 @@ export function withProgress(work: TurnWork, event: ProgressEvent): TurnWork {
   const log = work.log ?? [];
   if (event.stage === "plan") return { ...work, plan: event.steps };
   if (event.stage === "musician") return { ...work, band: withMusician(work.band ?? [], event) };
+  if (event.stage === "band_note") {
+    const { from, to, note } = event;
+    return { ...work, talk: [...(work.talk ?? []), { from, to, note }] };
+  }
   if (event.stage === "tool") return { ...work, log: [...log, { kind: "step", tool: event.tool }] };
   if (event.stage !== "thought") return work;
   const last = log.at(-1);
@@ -67,6 +79,10 @@ const TOOL_WORDS: Record<string, string> = {
   song_notes_write: "the song notes",
   musician_remember: "what I remember about you",
   musician_forget: "what I remember about you",
+  band_arrange: "the band",
+  band_listen: "listening to the band",
+  band_rehearse: "another rehearsal",
+  band_note: "a note to the band",
 };
 
 /**
@@ -84,14 +100,15 @@ export function readableThought(text: string): string {
 
 /** The band after a musician's event: its seat added or updated; its thinking joins the thought it is on. */
 function withMusician(band: BandSeat[], event: Extract<ProgressEvent, { stage: "musician" }>): BandSeat[] {
-  const { part, instrument, name, state, thought, report } = event;
+  const { part, instrument, name, state, round, thought, report } = event;
   const seat = band.find((s) => s.part === part);
-  if (!seat) return [...band, { part, instrument, name, state, ...(report ? { report } : {}) }];
-  // A musician sent back plays again: its thought starts over.
-  const again = state === "playing" && seat.state === "done";
+  if (!seat) return [...band, { part, instrument, name, state, round, ...(report ? { report } : {}) }];
+  // A musician playing again (a rehearsal, or sent back) starts its thought over.
+  const again = state === "playing" && seat.state !== "playing";
   const next: BandSeat = {
     ...seat,
     state,
+    round: round ?? seat.round,
     thought: thought ? (again ? "" : (seat.thought ?? "")) + thought : again ? undefined : seat.thought,
     ...(report ? { report } : {}),
   };

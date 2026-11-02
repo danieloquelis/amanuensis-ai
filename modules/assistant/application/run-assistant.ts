@@ -148,7 +148,7 @@ export async function runAssistant(
       thinkingMs,
       ...(agent.plan().length ? { plan: agent.plan() } : {}),
       ...agent.changes(),
-      ...(band?.reports().length ? { band: band.reports() } : {}),
+      ...band?.result(),
     };
   };
 

@@ -1,29 +1,32 @@
-import { groovesFor, SCORE_TEXT_GUIDE, type InstrumentId, type Score } from "@/modules/score";
+import type { Score } from "@/modules/score";
 import { assistantTools } from "./assistant-tools";
 import type { ProgressListener } from "./assistant-types";
 import type { ChatMessage, ModelPort, TokenUsage, ToolCall } from "./model-port";
-import { craftCard } from "./musicians";
+import {
+  BAND_NOTE,
+  bandNoteSpec,
+  musicianBrief,
+  musicianSystem,
+  noteSchema,
+  type MusicianJob,
+  type MusicianRound,
+} from "./musician-brief";
 import { refuseOutsidePart } from "./part-scope";
-import { runScoreTool } from "./score-tool-call";
+import { parseArguments, runScoreTool } from "./score-tool-call";
 import type { createScoreToolGateway } from "./score-tool-gateway";
+import { toolError } from "./score-tool-gateway";
 import { withoutScoreBlocks } from "./score-blocks";
 
-/** A musician's round trips to the model for its part: read, write, look again, fix, report. */
-const MUSICIAN_STEPS = 6;
-const MUSICIAN_TOOLS = assistantTools.filter((tool) =>
-  ["score_get_context", "score_edit", "score_write"].includes(tool.name),
-);
+export type { MusicianJob, MusicianRound } from "./musician-brief";
 
-const MUSICIAN_PROMPT = `You are one musician in the band of Amanuensis, a music notation editor, writing your own part of an arrangement the bandleader asked for. The others play too: those before you have written their parts (read them in the score and their notes); those after you will listen to yours.
-
-How to work:
-- Write only your part, in its staves (score_write lines name them, "bar 3 bass: …"; score_edit takes voiceId or staffId). Everything else is the bandleader's: chords, marks, key, meter, tempo, other parts.
-- Your part may already hold music (a lead sheet's melody on the piano): keep it unless your brief says to replace it, and put yours beside it, on a second staff (setStaffCount, then "bar N piano.2: …") or a second voice ("bar N piano v2: …").
-- Fit the band: follow the chords in the score, the feel in the brief, and what the others play (lock with the drums' kick, stay out of the melody's register, leave room where another part speaks).
-- Write your whole part in one score_write call (every bar of the passage, all your staves), then look at the score once and fix what is off. Don't write a few bars at a time.
-- Then reply to the bandleader in one or two short sentences: what you played and why, as a musician would say it.
-
-${SCORE_TEXT_GUIDE}`;
+/** A musician's round trips to the model: read, write, look again, fix, talk, report. */
+const FIRST_STEPS = 6;
+/** In a rehearsal there is less to do: listen, change a few bars, say so. */
+const REHEARSAL_STEPS = 5;
+const MUSICIAN_TOOLS = [
+  ...assistantTools.filter((tool) => ["score_get_context", "score_edit", "score_write"].includes(tool.name)),
+  bandNoteSpec,
+];
 
 type Gateway = ReturnType<typeof createScoreToolGateway>;
 
@@ -45,53 +48,58 @@ export type BandContext = {
   onCall?: (entry: { tool: string; arguments: string; ok: boolean; error?: string }) => void;
 };
 
-/** One part to play: its handle, instrument, the musician's name and the bandleader's brief. */
-export type MusicianJob = { part: string; instrument: InstrumentId; name: string; brief: string };
+/** Where a musician's notes to its bandmates go, and who it may write to. */
+export type BandRoom = {
+  bandmates: string[];
+  /** Delivers a note; returns why it could not be, or null. */
+  say: (from: MusicianJob, to: string, note: string) => string | null;
+};
 
 /**
- * One musician plays its part: a short agent loop with its own instructions (its instrument's
- * craft), the score so far and the reports of those who played before, writing only its own part.
- * Returns its report to the bandleader.
+ * One musician plays its part, once through or in a rehearsal round: a short agent loop with its
+ * own instructions (its instrument's craft), the score as it stands and what the band said,
+ * writing only its own part and talking to its bandmates. Returns its report to the bandleader.
  */
 export async function runMusician(
   context: BandContext,
   job: MusicianJob,
   feel: string,
-  before: string[],
+  round: MusicianRound,
+  room: BandRoom,
 ): Promise<{ report: string; ok: boolean }> {
   const { model, tools, score, turnId, signal, onProgress, onEdits } = context;
+  const pass = round.kind === "first" ? 0 : round.round;
   const progress = (extra: { thought?: string; report?: string; state: "playing" | "done" }) =>
-    onProgress({ stage: "musician", part: job.part, instrument: job.instrument, name: job.name, ...extra });
-  const scoreNow = () => {
-    const result = tools("score_get_context", { selectedIds: [] }) as { score?: string };
-    return result.score ?? "";
-  };
+    onProgress({
+      stage: "musician",
+      part: job.part,
+      instrument: job.instrument,
+      name: job.name,
+      round: pass,
+      ...extra,
+    });
+  const scoreText = (tools("score_get_context", { selectedIds: [] }) as { score?: string }).score ?? "";
+  const brief = musicianBrief(job, feel, round, {
+    score: score(),
+    scoreText,
+    bandmates: room.bandmates.filter((name) => name !== job.name),
+    memory: context.memory,
+  });
   const messages: ChatMessage[] = [
-    { role: "system", content: `${MUSICIAN_PROMPT}\n\n${craftCard(job.instrument, job.name)}` },
-    {
-      role: "user",
-      content: [
-        `The band's feel: ${feel}`,
-        `Your part (${job.part}): ${job.brief}`,
-        before.length ? `What the others played:\n${before.map((line) => `- ${line}`).join("\n")}` : "You play first.",
-        ...(job.instrument === "drums" ? [`Grooves for this meter: ${grooves(score())}.`] : []),
-        ...(context.memory?.length
-          ? [`What you know about the musician and their band:\n${list(context.memory)}`]
-          : []),
-        `[Score context, as score_get_context returns it]\n${scoreNow()}`,
-      ].join("\n\n"),
-    },
+    { role: "system", content: musicianSystem(job) },
+    { role: "user", content: brief },
   ];
   const refuse = (operation: Parameters<typeof refuseOutsidePart>[1]) =>
     refuseOutsidePart(score(), operation, job.part);
+  const cacheKey = `${turnId}-${job.part}-${pass}`;
   progress({ state: "playing" });
-  for (let step = 1; step <= MUSICIAN_STEPS; step++) {
+  for (let step = 1; step <= (pass ? REHEARSAL_STEPS : FIRST_STEPS); step++) {
     if (signal?.aborted) break;
     const asked = Date.now();
     const reply = await model.complete(messages, MUSICIAN_TOOLS, {
       signal,
       onThought: (thought) => progress({ state: "playing", thought }),
-      cacheKey: `${turnId}-${job.part}`,
+      cacheKey,
     });
     context.onModelCall?.(reply.usage, Date.now() - asked);
     messages.push({
@@ -106,9 +114,10 @@ export async function runMusician(
       return { report, ok: true };
     }
     for (const call of reply.toolCalls as ToolCall[]) {
-      // A musician never clears the chords or sections its lines leave out: they are the bandleader's.
-      const own = call.name === "score_write" ? { ...call, arguments: withHarmonyKept(call.arguments) } : call;
-      const result = runScoreTool(own, tools, `${turnId}-${job.part}`, score, refuse);
+      const result =
+        call.name === BAND_NOTE
+          ? note(call, job, room)
+          : runScoreTool(own(call, score), tools, cacheKey, score, refuse);
       messages.push({ role: "tool", toolCallId: call.id, content: JSON.stringify(result) });
       context.onCall?.({
         tool: `${job.part}: ${call.name}`,
@@ -116,7 +125,7 @@ export async function runMusician(
         ok: result.ok,
         ...(result.ok ? {} : { error: result.error }),
       });
-      onEdits();
+      if (call.name !== BAND_NOTE) onEdits();
     }
   }
   const report = "I ran out of time before finishing my part.";
@@ -124,15 +133,33 @@ export async function runMusician(
   return { report, ok: false };
 }
 
-/** A score_write call's arguments with keepHarmony set; unreadable arguments are left for the tool to report. */
-function withHarmonyKept(json: string): string {
+type Result = { ok: true; [key: string]: unknown } | { ok: false; error: string };
+
+function note(call: ToolCall, job: MusicianJob, room: BandRoom): Result {
   try {
-    return JSON.stringify({ ...JSON.parse(json || "{}"), keepHarmony: true });
-  } catch {
-    return json;
+    const { to, note: text } = noteSchema.parse(parseArguments(call));
+    const refused = room.say(job, to, text);
+    return refused ? { ok: false, error: refused } : { ok: true, sent: `to ${to}` };
+  } catch (error) {
+    return { ok: false, error: toolError(error) };
   }
 }
 
-const list = (lines: string[]) => lines.map((line) => `- ${line}`).join("\n");
-/** The grooves putGroove has for the song's meter, for the drummer to start from. */
-const grooves = (score: Score) => groovesFor(score.measures[0].meter).join(", ") || "none: write it by hand";
+/**
+ * A musician's edit, made its own: it writes against the score as it is now (the others play
+ * their own parts meanwhile), and a write never clears the chords or sections its lines leave
+ * out, which are the bandleader's.
+ */
+function own(call: ToolCall, score: () => Score): ToolCall {
+  if (call.name !== "score_write" && call.name !== "score_edit") return call;
+  try {
+    const args = JSON.parse(call.arguments || "{}");
+    const current = { ...args, expectedRevision: score().revision };
+    return {
+      ...call,
+      arguments: JSON.stringify(call.name === "score_write" ? { ...current, keepHarmony: true } : current),
+    };
+  } catch {
+    return call;
+  }
+}

@@ -2,6 +2,7 @@
 // scores again (after a measure changes) without new model calls.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { listenToBand } from "@/modules/assistant";
 import { parseScore } from "@/modules/score";
 import { BAND, measure, melodyOf, type Measures } from "./band-measures.mjs";
 import type { Song } from "./band-songs.mjs";
@@ -28,6 +29,11 @@ export type Run = {
   measures?: Measures;
   reply?: string;
   band?: unknown;
+  /** What the musicians said to each other (band only). */
+  talk?: string[];
+  /** Problems the band's listening hears in the final score, and after the band's first pass (band only). */
+  heard?: number;
+  heardFirst?: number;
   tools?: string;
   /** What each refused tool call was told. */
   errors?: string[];
@@ -39,7 +45,7 @@ export function regrade(runs: Run[], songs: Song[], dir: string): Run[] {
     const song = songs.find((s) => s.name === run.song);
     if (run.error || !song) return run;
     const after = parseScore(JSON.parse(readFileSync(join(dir, `${run.file}.json`), "utf8")));
-    return { ...run, measures: measure(after, melodyOf(song.score())) };
+    return { ...run, measures: measure(after, melodyOf(song.score())), heard: listenToBand(after).problems.length };
   });
 }
 
@@ -50,12 +56,13 @@ const cell = (list: Run[], show: (run: Run, m: Measures) => string) =>
 /** The results, one row per song and arm, each run's value in each cell. */
 export function table(runs: Run[], songs: Song[]): string {
   const lines = [
-    "| Song | Arm | Parts filled | Out of range | Crowded | Bass roots | Drum bars | Melody kept | Steps + musician calls | Tool errors | Seconds | $ |",
-    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    "| Song | Arm | Parts filled | Out of range | Crowded | Bass roots | Drum bars | Melody kept | Heard (first → final) | Notes | Steps + musician calls | Tool errors | Seconds | $ |",
+    "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
   ];
   for (const song of songs) {
     for (const arm of ARMS) {
       const mine = runs.filter((r) => r.song === song.name && r.arm === arm);
+      if (!mine.length) continue;
       const columns = [
         cell(mine, (_, m) => `${m.parts}/4, ${m.filled}/${m.filledOf}`),
         cell(mine, (_, m) => `${m.outOfRange}`),
@@ -63,6 +70,8 @@ export function table(runs: Run[], songs: Song[]): string {
         cell(mine, (_, m) => `${m.roots}/${m.rootsOf}`),
         cell(mine, (_, m) => `${m.drumBars}/${m.filledOf / BAND.length}`),
         cell(mine, (_, m) => `${m.melodyKept}/${m.melodyOf}`),
+        cell(mine, (r) => (r.heardFirst === undefined ? `${r.heard ?? "?"}` : `${r.heardFirst} → ${r.heard}`)),
+        cell(mine, (r) => `${r.talk?.length ?? 0}`),
         cell(mine, (r) => `${r.steps}+${r.musicianCalls}`),
         cell(mine, (r) => `${r.toolErrors}`),
         mine.map((r) => r.seconds).join(" · "),
