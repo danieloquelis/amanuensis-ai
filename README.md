@@ -1,14 +1,10 @@
-<p align="center">
-  <img src="docs/readme/cover.png" alt="Amanuensis" width="100%">
-</p>
+![Amanuensis](docs/readme/cover.png)
 
 # Amanuensis
 
 A music notation editor you can talk and sing to. Sing a melody and say what to do with it, and an agent writes it into the score. Amanuensis can also read sheet music from a photo or a PDF. In Band Mode, a separate agent plays each instrument and arranges the piece with the others. Built on Meta’s **Muse Spark** and **Muse Voice Transcribe**.
 
-<p align="center">
-  <img src="docs/readme/demo.gif" alt="Amanuensis in use" width="100%">
-</p>
+![Amanuensis in use](docs/readme/demo.gif)
 
 ## Contents
 
@@ -47,7 +43,7 @@ A music notation editor you can talk and sing to. Sing a melody and say what to 
 
 ## Tools
 
-<img src="docs/readme/tools.png" alt="The agent tools, by group" width="100%">
+![The agent tools, by group](docs/readme/tools.png)
 
 The agents act only through these tools. Each tool has a zod schema, and its description is the documentation the model reads.
 
@@ -65,7 +61,7 @@ A song is stored as JSON. This is one bar of three notes:
 
 The agents never read or write this JSON. They use **score text** instead: one line per bar, the same notation a musician would type.
 
-<img src="docs/readme/score-text.png" alt="Three engraved bars with their score text" width="100%">
+![Three engraved bars with their score text](docs/readme/score-text.png)
 
 ```text
 bar 1: Eb4q G4q C4h
@@ -83,7 +79,7 @@ Every change, from the editor or from an agent, goes through one function, `appl
 
 ## Voice input
 
-<img src="docs/readme/voice-pipeline.png" alt="From a recording to notes" width="100%">
+![From a recording to notes](docs/readme/voice-pipeline.png)
 
 A single recording can mix talk and singing: “Put this in bar three… *da da da*… and make it swing.”
 
@@ -99,7 +95,7 @@ The app receives both the words and the audio. To tell instructions from sung pa
 
 The first thing the model needs is a way to hear the difference between talk and singing in the sound itself. That is what the Fourier transform provides.
 
-<img src="docs/readme/voice-fourier.png" alt="Spectrum of a talk frame and a sung frame" width="100%">
+![Spectrum of a talk frame and a sung frame](docs/readme/voice-fourier.png)
 
 Every 10 ms, the app takes a 32 ms slice of sound, softens its edges with a Hann window, and runs a Fourier transform on it. The transform is our own radix-2 FFT in `modules/voice/domain/spectrum.ts`. The result shows how much energy the slice has at each frequency. The dots mark whole multiples of the pitch, called harmonics.
 
@@ -109,7 +105,7 @@ A sung vowel is a steady tone, so its energy sits on the harmonics with deep gap
 - **Spectral flux:** how much the spectrum changed since the previous slice.
 - **Syllable rhythm:** a second FFT, of the loudness over one second: how much of its rise and fall happens 3 to 8 times a second, the rate of syllables in speech.
 
-<img src="docs/readme/voice-take.png" alt="A take that talks, sings and talks again, measured every 10 ms" width="100%">
+![A take that talks, sings and talks again, measured every 10 ms](docs/readme/voice-take.png)
 
 ### Singing model
 
@@ -142,7 +138,7 @@ A frame on its own can still be wrong, so a hidden Markov model decodes the whol
 
 ## Sheet music input
 
-<img src="docs/readme/vision.png" alt="A page as input, what the detector found, and the labeled page Muse Spark receives" width="100%">
+![A page as input, what the detector found, and the labeled page Muse Spark receives](docs/readme/vision.png)
 
 Muse Spark reads key, meter, form, chord symbols and rhythm from a picture well. It does not reliably see which line or space a notehead sits on: it is often one step off. So before Spark sees the page, a computer-vision detector measures the noteheads. It is plain image processing in `modules/page`, takes about 1 s per page, and uses no model:
 
@@ -155,7 +151,7 @@ Spark writes the score from the labeled page. Then `page_check` compares every w
 
 In the example above, the detector missed the two half notes on a ledger line. PDFs are turned into page pictures in the browser with PDF.js.
 
-<img src="docs/readme/vision-eval.png" alt="Notes read with the right pitch, without and with the labels" width="100%">
+![Notes read with the right pitch, without and with the labels](docs/readme/vision-eval.png)
 
 This chart shows notes read with the right pitch on four engraved test pages whose exact score is known. It uses Muse Spark 1.3 at low thinking (`yarn eval:sheet-reading`). Details: [docs/research/sheet-reading.md](docs/research/sheet-reading.md).
 
@@ -163,7 +159,7 @@ This chart shows notes read with the right pitch on four engraved test pages who
 
 ### Agent loop
 
-<img src="docs/readme/agent-loop.png" alt="The agent loop, and a real turn" width="100%">
+![The agent loop, and a real turn](docs/readme/agent-loop.png)
 
 Each turn, Muse Spark receives:
 
@@ -178,7 +174,7 @@ It calls tools until it replies without one, up to 12 tool steps (24 when readin
 
 ### Band Mode
 
-<img src="docs/readme/band-mode.png" alt="Band Mode, step by step" width="100%">
+![Band Mode, step by step](docs/readme/band-mode.png)
 
 In Band Mode, the chat agent becomes the bandleader:
 
@@ -193,11 +189,11 @@ The band has a 120 s clock, plus 30 s of grace; a musician still writing when it
 
 Notes the musicians sent each other in one run, for “a cinematic piece for strings and piano that builds to a big climax” (verbatim, with names replaced by instruments):
 
-<img src="docs/readme/band-talk.png" alt="Notes the musicians sent each other" width="100%">
+![Notes the musicians sent each other](docs/readme/band-talk.png)
 
 ## Architecture
 
-<img src="docs/readme/architecture.png" alt="Project architecture" width="100%">
+![Project architecture](docs/readme/architecture.png)
 
 Built with Next.js 16 and TypeScript. Each module keeps its rules in plain TypeScript functions (`domain`, `application`), its adapters in `infrastructure`, and its React in `ui`. Modules import each other only through their public entry, and ESLint enforces that.
 
