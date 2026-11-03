@@ -70,3 +70,76 @@ test("the tune moves through the band as planned: copied where it goes, freed wh
   assert.match(JSON.stringify(seen[1]), /You carry it in bars 3–4 \(with trumpet there too/);
   assert.match(JSON.stringify(seen[2]), /You carry it in bars 1–2, 3–4 \(with piano there too/);
 });
+
+test("a part that carries the tune in two passages gets it in both, moved into its range", async () => {
+  // The tune again at the peak: the bass carries bars 1–2, then bars 3–4 (each moved down by octaves).
+  const { model } = scriptedModel([
+    {
+      content: null,
+      toolCalls: [
+        call("band_arrange", {
+          style: "pop",
+          feel: "a ballad",
+          form: [{ from: 1, to: 4, name: "Verse", plan: "the tune, mf" }],
+          parts: [{ part: "bass", brief: "sing it low" }],
+          tune: [
+            { from: 1, to: 2, parts: ["bass"] },
+            { from: 3, to: 4, parts: ["bass"] },
+          ],
+        }),
+      ],
+    },
+  ]);
+  const score = createExample();
+  const tune = pitches(score, score.parts[0].staves[0].voices[0].id);
+  const request = { instruction: "arrange it", score, selectedIds: [], history: [], band: { on: true } };
+  const result = await runAssistant(model, request, "tp2");
+  const after = executeAll(createSession(score), result.commands).score;
+  const bass = after.parts.find((p) => p.instrument === "bass")!;
+  const played = pitches(after, bass.staves[0].voices[0].id);
+  assert.equal(result.trace.find((entry) => entry.tool === "band_arrange")?.ok, true);
+  // Every bar of the tune is on the bass, by whole octaves, each passage moved on its own.
+  played.forEach((bar, i) => {
+    assert.equal(bar.length, tune[i].length);
+    const shift = bar[0] - tune[i][0];
+    assert.equal(Math.abs(shift % 12), 0);
+    assert.ok(shift < 0);
+    assert.deepEqual(
+      bar,
+      tune[i].map((midi) => midi + shift),
+    );
+  });
+});
+
+test("arranging again in the same turn keeps the tune the first arrangement placed", async () => {
+  const arrangement = {
+    style: "pop",
+    feel: "a ballad",
+    form: [{ from: 1, to: 4, name: "Verse", plan: "the tune, mf" }],
+    parts: [
+      { part: "piano", brief: "comp" },
+      { part: "trumpet", brief: "sing" },
+    ],
+    tune: [
+      { from: 1, to: 2, parts: ["trumpet"] },
+      { from: 3, to: 4, parts: ["piano"] },
+    ],
+  };
+  // Each pass: pianist and trumpeter play, then rehearse; then the bandleader starts over.
+  const played = Array.from({ length: 4 }, () => ({ content: "Played.", toolCalls: [] }));
+  const { model } = scriptedModel([
+    { content: null, toolCalls: [call("band_arrange", arrangement, "a1")] },
+    ...played,
+    { content: null, toolCalls: [call("band_arrange", arrangement, "a2")] },
+    ...played,
+  ]);
+  const score = createExample();
+  const tune = pitches(score, score.parts[0].staves[0].voices[0].id);
+  const request = { instruction: "arrange it", score, selectedIds: [], history: [], band: { on: true } };
+  const result = await runAssistant(model, request, "tp3");
+  const after = executeAll(createSession(score), result.commands).score;
+  const trumpet = after.parts.find((p) => p.instrument === "trumpet")!;
+  assert.equal(result.trace.filter((entry) => entry.tool === "band_arrange" && entry.ok).length, 2);
+  // The piano's bars 1–2 were freed by the first arrangement: copying them again must not wipe the trumpet's tune.
+  assert.deepEqual(pitches(after, trumpet.staves[0].voices[0].id), [tune[0], tune[1], [], []]);
+});

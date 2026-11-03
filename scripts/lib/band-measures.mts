@@ -91,10 +91,32 @@ function chordAt(score: Score, index: number): Chord | undefined {
     .at(-1);
 }
 
-/** Measures `after`, the arranged score, against the song's bars and melody. */
+/** Melody bars some voice holds when the song's bars start at bar `start` of the arranged score. */
+const heldFrom = (after: Score, melody: number[][], start: number) =>
+  melody.filter((notes, i) =>
+    lines(after).some((line) => holds(barEvents(after.measures[start + i], line.voiceId), notes)),
+  ).length;
+
+/**
+ * Where the song's bars are in the arranged score: the bar offset where most of its melody is,
+ * the earliest on a tie (0 unless an intro was added before the tune).
+ */
+function songStart(after: Score, melody: number[][]): number {
+  let best = 0;
+  for (let start = 1; start + melody.length <= after.measures.length; start++) {
+    if (heldFrom(after, melody, start) > heldFrom(after, melody, best)) best = start;
+  }
+  return best;
+}
+
+/**
+ * Measures `after`, the arranged score, against the song's bars and melody: on the song's bars
+ * where the arrangement plays them (after an intro, if one was added before the tune).
+ */
 export function measure(after: Score, song: Melody): Measures {
   const melody = song.bars;
-  const bars = after.measures.slice(0, melody.length);
+  const start = songStart(after, melody);
+  const bars = after.measures.slice(start, start + melody.length);
   const all = lines(after);
   const ofInstrument = (id: InstrumentId) => all.filter((line) => line.instrument === id);
   const notesIn = (index: number, line: Line) => barEvents(bars[index], line.voiceId).filter(sounds);
@@ -135,7 +157,7 @@ export function measure(after: Score, song: Melody): Measures {
   let [roots, rootsOf] = [0, 0];
   const bass = ofInstrument("bass")[0];
   bars.forEach((_, i) => {
-    const chord = chordAt(after, i);
+    const chord = chordAt(after, start + i);
     if (!chord) return;
     rootsOf++;
     const first = bass ? barEvents(bars[i], bass.voiceId)[0] : undefined;

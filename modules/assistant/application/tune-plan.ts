@@ -57,14 +57,22 @@ export function playTunePlan(context: BandContext, plan: TunePlan, tune: TuneLin
       const staff = findPart(context.score(), handle)!.staves[0];
       if (tune && staff.id !== tune.staffId) {
         const toStaffId = staffHandle(context.score(), staff.id) ?? handle;
-        edit(`${n}-${handle}`, {
-          type: "copyBars",
-          measureIds: bars,
-          toMeasureId: bars[0],
-          fromStaffId: tune.handle,
-          toStaffId,
-        });
-        fitOctave(context, handle, staff.voices[0].id, bars, edit);
+        // Only bars where the tune staff has notes are copied: an empty one (freed by an earlier
+        // arrangement this turn) would wipe the tune already placed in this part.
+        const runs = soundingRuns(context.score(), tune.voiceId, bars);
+        runs.forEach((run, r) =>
+          edit(`${n}-${handle}-${r}`, {
+            type: "copyBars",
+            measureIds: run,
+            toMeasureId: run[0],
+            fromStaffId: tune.handle,
+            toStaffId,
+          }),
+        );
+        // Each passage moves on its own, under its own request ID (a part may carry several).
+        fitOctave(context, handle, staff.voices[0].id, runs.flat(), (operation) =>
+          edit(`${n}-octave-${handle}`, operation),
+        );
       }
       const entry = parts.get(handle) ?? { kept: [], bars: [], with: [] };
       // Only a tune already written is kept: with none yet, the musician writes it there.
@@ -91,7 +99,7 @@ function fitOctave(
   handle: string,
   voiceId: string,
   bars: string[],
-  edit: (id: string, operation: unknown) => void,
+  edit: (operation: unknown) => void,
 ) {
   const score = context.score();
   const instrument = findPart(score, handle)!.instrument;
@@ -110,8 +118,21 @@ function fitOctave(
     return out * OCTAVE * 4 + Math.abs(mean - middle);
   };
   const best = OCTAVES.reduce((a, b) => (cost(b) < cost(a) ? b : a));
-  if (best)
-    edit(`octave-${handle}`, { type: "transpose", eventIds: events.map((e) => e.id), steps: best * OCTAVE_STEPS });
+  if (best) edit({ type: "transpose", eventIds: events.map((e) => e.id), steps: best * OCTAVE_STEPS });
+}
+
+/** The bars (in order) where a voice has notes, as runs of consecutive bars. */
+function soundingRuns(score: Score, voiceId: string, bars: string[]): string[][] {
+  const runs: string[][] = [];
+  let last = -2;
+  for (const measureId of bars) {
+    const index = score.measures.findIndex((m) => m.id === measureId);
+    if (!barEvents(score.measures[index], voiceId).some((event) => event.pitch)) continue;
+    if (index === last + 1) runs.at(-1)!.push(measureId);
+    else runs.push([measureId]);
+    last = index;
+  }
+  return runs;
 }
 
 /** The plan in a line: "bars 1–8: trumpet; bars 9–16: piano and trumpet". */
