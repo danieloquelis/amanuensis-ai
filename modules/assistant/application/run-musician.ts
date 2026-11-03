@@ -19,6 +19,8 @@ import { parseArguments, runScoreTool } from "./score-tool-call";
 import type { createScoreToolGateway } from "./score-tool-gateway";
 import { toolError } from "./score-tool-gateway";
 import { withoutScoreBlocks } from "./score-blocks";
+import { completeOrRetryEmpty } from "./loop-guards";
+import { promptCacheKey } from "./prompt-cache";
 
 export type { BandPlan, MusicianJob, MusicianRound } from "./musician-brief";
 
@@ -88,14 +90,17 @@ export async function runMusician(
     bandmates: room.bandmates.filter((name) => name !== job.name),
     memory: context.memory,
   });
+  const system = musicianSystem(job);
   const messages: ChatMessage[] = [
-    { role: "system", content: musicianSystem(job) },
+    { role: "system", content: system },
     { role: "user", content: brief },
   ];
   // Only its own part, and the tune where it carries it kept as planned.
   const refuse = (operation: Parameters<typeof refuseOutsidePart>[1]) =>
     refuseOutsidePart(score(), operation, job.part) ?? refuseTuneChange(score(), operation, job.kept ?? []);
-  const cacheKey = `${turnId}-${job.part}-${pass}`;
+  // Its edits' request IDs are its own; the cache key is shared by every turn's same player (same instructions).
+  const requestPrefix = `${turnId}-${job.part}-${pass}`;
+  const cacheKey = promptCacheKey("musician", system);
   // A write's reply shows the musician its part as it now stands: it checks it there, without reading the score again.
   const written = (result: Result): Result =>
     result.ok && "changes" in result ? { ...result, yourPart: scoreText(score(), { parts: [job.part] }) } : result;
@@ -103,14 +108,14 @@ export async function runMusician(
   for (let step = 1; step <= (pass ? REHEARSAL_STEPS : FIRST_STEPS); step++) {
     if (signal?.aborted) break;
     const asked = Date.now();
-    const reply = await model
-      .complete(messages, plan.materials.length ? [...MUSICIAN_TOOLS, bandMotifSpec] : MUSICIAN_TOOLS, {
-        signal,
-        onThought: (thought) => progress({ state: "playing", thought }),
-        cacheKey,
-        // A rehearsal reacts to what the band sounds like: quick, not deep.
-        ...(pass ? { effort: "low" } : {}),
-      })
+    const offered = plan.materials.length ? [...MUSICIAN_TOOLS, bandMotifSpec] : MUSICIAN_TOOLS;
+    const reply = await completeOrRetryEmpty(model, messages, offered, {
+      signal,
+      onThought: (thought) => progress({ state: "playing", thought }),
+      cacheKey,
+      // A rehearsal reacts to what the band sounds like: quick, not deep.
+      ...(pass ? { effort: "low" } : {}),
+    })
       // Stopped by the band's clock (or the musician stopping the turn): what it wrote stays.
       .catch((error: unknown) => {
         if (signal?.aborted) return null;
@@ -136,7 +141,7 @@ export async function runMusician(
           ? note(call, job, room)
           : "error" in edit
             ? edit
-            : written(runScoreTool(own(edit, score), tools, cacheKey, score, refuse));
+            : written(runScoreTool(own(edit, score), tools, requestPrefix, score, refuse));
       messages.push({ role: "tool", toolCallId: call.id, content: JSON.stringify(result) });
       context.onCall?.({
         tool: `${job.part}: ${call.name}`,

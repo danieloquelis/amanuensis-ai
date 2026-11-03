@@ -13,7 +13,9 @@ import { createEditFeed } from "./edit-feed";
 import { createScoreBlockWriter } from "./score-block-writer";
 import { withoutScoreBlocks } from "./score-blocks";
 import { createSourceTools, isSourceTool, sourceToolSpecs } from "./source-tools";
-import { historyMessages, scoreContext, userMessage } from "./opening-messages";
+import { historyMessages, scoreContext, userMessage, vocabularyContext } from "./opening-messages";
+import { completeOrRetryEmpty, createRepeatWatch, GUARD_REPLIES } from "./loop-guards";
+import { promptCacheKey } from "./prompt-cache";
 import { SYSTEM_PROMPT } from "./system-prompt";
 import { createTurnEdits } from "./turn-edits";
 import { FINISH_NUDGE, soundsUnfinished } from "./unfinished-reply";
@@ -117,6 +119,9 @@ export async function runAssistant(
     return result;
   });
   let nudged = false;
+  const stuck = createRepeatWatch();
+  // One key per system prompt and tool set, shared by every turn that starts the same way.
+  const cacheKey = promptCacheKey("agent", systemPrompt, ...toolList.map((tool) => tool.name));
   const usage: TokenUsage = { inputTokens: 0, outputTokens: 0, cachedInputTokens: 0 };
   const count = (used: TokenUsage | undefined, ms: number) => {
     thinkingMs.push(ms);
@@ -127,7 +132,8 @@ export async function runAssistant(
   const trace: TraceEntry[] = [];
   const thinkingMs: number[] = [];
   const messages: ChatMessage[] = [
-    { role: "system", content: systemPrompt },
+    // The vocabulary is the same every turn: with the instructions, the prompt cache keeps it.
+    { role: "system", content: `${systemPrompt}\n\n${vocabularyContext(tools)}` },
     ...historyMessages(request),
     userMessage(request, [scoreContext(tools, request), agent.context(), ...(band ? [band.lead()] : [])].join("\n\n")),
   ];
@@ -155,11 +161,11 @@ export async function runAssistant(
     onProgress({ stage: "thinking" });
     const asked = Date.now();
     blocks.start();
-    const reply = await model.complete(messages, band?.finished() ? [] : toolList, {
+    const reply = await completeOrRetryEmpty(model, messages, band?.finished() ? [] : toolList, {
       signal,
       onText: blocks.hear,
       onThought: (text) => onProgress({ stage: "thought", text }),
-      cacheKey: turnId,
+      cacheKey,
       // Once the band has played, what is left is summing it up.
       ...(band?.played() ? { effort: "low" } : {}),
     });
@@ -182,8 +188,10 @@ export async function runAssistant(
         messages.push({ role: "user", content: FINISH_NUDGE });
         continue;
       }
-      return finish(text || "Done.", null, step);
+      // Empty even when asked again (see completeOrRetryEmpty): "Done." only if it changed something.
+      return finish(text || (edits.commands.length ? "Done." : GUARD_REPLIES.noAnswer), null, step);
     }
+    if (stuck(reply.toolCalls)) return finish(GUARD_REPLIES.stuck, null, step);
     for (const call of reply.toolCalls) {
       onProgress({ stage: "tool", tool: call.name });
       const entry: TraceEntry = { tool: call.name, arguments: call.arguments.slice(0, TRACE_ARGUMENT_ROOM), ok: true };
@@ -219,11 +227,7 @@ export async function runAssistant(
     if (after.length) messages.push({ role: "user", content: after });
     shown = [];
   }
-  return finish(
-    `I ran out of steps before finishing; what I changed so far is applied (Undo takes it back).`,
-    null,
-    maxSteps,
-  );
+  return finish(GUARD_REPLIES.outOfSteps, null, maxSteps);
 }
 
 /** Everything the musician said or typed this turn, for checking the agent's quotes of it. */

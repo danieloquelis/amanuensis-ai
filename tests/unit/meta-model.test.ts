@@ -156,6 +156,7 @@ test("on the Responses API, the conversation becomes input items, the text strea
   assert.equal(sent[0].store, false);
   assert.deepEqual(sent[0].include, ["reasoning.encrypted_content"]);
   assert.equal(sent[0].prompt_cache_key, "turn-1");
+  assert.equal(sent[0].prompt_cache_retention, "24h");
   assert.equal(sent[0].instructions, "Be brief.");
   // A short summary of its reasoning is asked for, so the musician can see it think.
   assert.deepEqual(sent[0].reasoning, { summary: "concise", effort: "low" });
@@ -210,4 +211,44 @@ test("a stream cut off before its text began is asked again; once its text is sh
   assert.equal(calls(), 2);
   serve(() => sse([{ choices: [{ delta: { content: "<score>\nbar 1:" } }] }], false));
   await assert.rejects(ask(quick()), /ended early/);
+});
+
+test("structured output goes as text.format on Responses and response_format on Chat Completions", async () => {
+  const format = {
+    name: "verdict",
+    schema: { type: "object", properties: {}, required: [], additionalProperties: false },
+  };
+  const messages = [{ role: "user" as const, content: "hi" }];
+  globalThis.fetch = (async (_url: string, init: RequestInit) => {
+    sent.push(JSON.parse(String(init.body)));
+    return Response.json({ output: [] });
+  }) as typeof fetch;
+  await createMetaModel("key").complete(messages, [], { responseFormat: format });
+  await createMetaModel("key", undefined, undefined, CHAT).complete(messages, [], { responseFormat: format });
+  assert.deepEqual(sent[0].text, { format: { type: "json_schema", strict: true, ...format } });
+  assert.equal(sent[0].response_format, undefined);
+  assert.deepEqual(sent[1].response_format, { type: "json_schema", json_schema: { strict: true, ...format } });
+});
+
+test("a past tool call with empty or broken arguments goes back as {}, which Meta accepts (it refuses the request otherwise)", async () => {
+  const messages = [
+    { role: "user" as const, content: "write it" },
+    {
+      role: "assistant" as const,
+      content: null,
+      toolCalls: [
+        { id: "a", name: "score_write", arguments: "" },
+        { id: "b", name: "score_write", arguments: '{"text": "bar 1' },
+        { id: "c", name: "score_write", arguments: '{"text":"bar 1: C4w"}' },
+      ],
+    },
+  ];
+  await createMetaModel("key", "muse-spark-1.3").complete(messages, []);
+  await createMetaModel("key", "muse-spark-1.3", undefined, CHAT).complete(messages, []);
+  const responses = (sent[0].input as { arguments?: string }[]).flatMap((item) => item.arguments ?? []);
+  const chat = (sent[1].messages as { tool_calls?: { function: { arguments: string } }[] }[])
+    .flatMap((message) => message.tool_calls ?? [])
+    .map((call) => call.function.arguments);
+  assert.deepEqual(responses, ["{}", "{}", '{"text":"bar 1: C4w"}']);
+  assert.deepEqual(chat, ["{}", "{}", '{"text":"bar 1: C4w"}']);
 });

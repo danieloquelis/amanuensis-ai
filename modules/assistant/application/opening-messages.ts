@@ -38,16 +38,25 @@ export function userMessage(request: AssistantRequest, context: string): ChatMes
 
 /**
  * The score as score_get_context returns it, sent with the request so the agent can act in its
- * first step instead of spending a model round trip reading the score.
+ * first step instead of spending a model round trip reading the score. The vocabulary that
+ * call also returns is the same every turn, so it goes with the instructions (see
+ * `vocabularyContext`), where the prompt cache keeps it, not after each new request.
  */
 export function scoreContext(tools: ReturnType<typeof createScoreToolGateway>, request: AssistantRequest): string {
   const result = tools("score_get_context", { selectedIds: request.selectedIds });
   if (!result.ok) return "";
-  const { score, selected, vocabulary, notYetSupported } = result as Record<string, unknown>;
+  const { score, selected } = result as Record<string, unknown>;
   const name = request.selectionName ? `${request.selectionName}: ` : "";
   const picked = (selected as string[]).length ? `\n[Selected: ${name}${(selected as string[]).join(", ")}]` : "";
+  return `[Score context, as score_get_context returns it]\n${score}${picked}`;
+}
+
+/** The supported vocabulary and what is not supported yet, as score_get_context returns them. */
+export function vocabularyContext(tools: ReturnType<typeof createScoreToolGateway>): string {
+  const result = tools("score_get_context", { selectedIds: [] });
+  if (!result.ok) return "";
+  const { vocabulary, notYetSupported } = result as Record<string, unknown>;
   return [
-    `[Score context, as score_get_context returns it]\n${score}${picked}`,
     `[Vocabulary] ${JSON.stringify(vocabulary)}`,
     `[Not yet supported] ${(notYetSupported as string[]).join("; ")}`,
   ].join("\n");

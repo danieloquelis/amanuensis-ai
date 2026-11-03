@@ -25,6 +25,12 @@ export type TokenUsage = {
   cachedInputTokens?: number;
 };
 
+/**
+ * A JSON Schema the reply's text must follow (the provider's structured output): `name` labels
+ * it, `schema` is a plain object schema with every property required and no others allowed.
+ */
+export type ResponseFormat = { name: string; schema: Record<string, unknown> };
+
 export type CompleteOptions = {
   /** Cancels the call (the musician stopped the turn). */
   signal?: AbortSignal;
@@ -32,10 +38,15 @@ export type CompleteOptions = {
   onText?: (text: string) => void;
   /** Hears a summary of the model's reasoning piece by piece, where the provider gives one. */
   onThought?: (text: string) => void;
-  /** Groups calls that share a beginning (one turn's steps), so the provider's prompt cache can reuse it. */
+  /**
+   * Names the beginning these calls share (a system prompt and its tools), so the provider's
+   * prompt cache can reuse it: one stable key per shared prefix, never one per turn.
+   */
   cacheKey?: string;
   /** This call's thinking, when it differs from the model's own (a short summing-up needs little). */
   effort?: string;
+  /** The reply is JSON that follows this schema (constrained decoding, for a verdict or a grade). */
+  responseFormat?: ResponseFormat;
 };
 
 /**

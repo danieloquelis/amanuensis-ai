@@ -8,7 +8,7 @@ import type {
 } from "../application/model-port";
 import { thinkingBelow, type Thinking } from "../application/thinking";
 import { readCompletionStream } from "./meta-stream";
-import { readResponsesStream, responseReply, responsesRequest } from "./meta-responses";
+import { readResponsesStream, replayedArguments, responseReply, responsesRequest } from "./meta-responses";
 import { FIRST_RETRY_MS, isRetryStatus, retryAfterMs, TransientError, withRetries } from "./model-retry";
 
 /**
@@ -38,8 +38,18 @@ export const DEFAULT_META_MODEL = "muse-spark-1.3";
 const TIMEOUT_MS = 180_000;
 /** "concise": a few sentences on the key steps ("auto" is about one; Meta's reasoning guide). */
 const REASONING_SUMMARY = "concise";
+/** How long Meta may keep a shared prefix cached: "in_memory" (the default) or "24h". */
+const CACHE_RETENTION = "24h";
 const TIMEOUT_MESSAGE = "The assistant went quiet for three minutes. Please try again.";
 const UNREACHABLE_MESSAGE = "The assistant couldn't be reached. Please try again.";
+
+/**
+ * The prompt cache fields for a call that names its shared prefix: the key routes calls with the
+ * same beginning to the same server, and "24h" asks Meta to keep that prefix past the default
+ * in-memory lifetime (a hint, not a guarantee; Meta's prompt caching guide).
+ */
+const cacheFields = (cacheKey: string | undefined) =>
+  cacheKey ? { prompt_cache_key: cacheKey, prompt_cache_retention: CACHE_RETENTION } : {};
 
 type MetaToolCall = { id: string; type: "function"; function: { name: string; arguments: string } };
 
@@ -50,7 +60,7 @@ function toMetaMessage(message: ChatMessage) {
     const toolCalls: MetaToolCall[] = message.toolCalls.map((call) => ({
       id: call.id,
       type: "function",
-      function: { name: call.name, arguments: call.arguments },
+      function: { name: call.name, arguments: replayedArguments(call.arguments) },
     }));
     return { role: "assistant", content: message.content, ...(toolCalls.length ? { tool_calls: toolCalls } : {}) };
   }
@@ -85,7 +95,7 @@ export function createMetaModel(
   const request = (
     messages: ChatMessage[],
     tools: ToolSpec[],
-    { cacheKey, effort = reasoningEffort }: CompleteOptions,
+    { cacheKey, effort = reasoningEffort, responseFormat }: CompleteOptions,
   ) =>
     api === "responses"
       ? {
@@ -93,7 +103,9 @@ export function createMetaModel(
           body: {
             model,
             ...responsesRequest(messages, tools),
-            ...(cacheKey ? { prompt_cache_key: cacheKey } : {}),
+            ...cacheFields(cacheKey),
+            // Structured output on the Responses API is `text.format` (`response_format` is a 400 there).
+            ...(responseFormat ? { text: { format: { type: "json_schema", strict: true, ...responseFormat } } } : {}),
             parallel_tool_calls: parallelTools,
             stream: true,
             // A short summary of its reasoning streams back: the musician sees what it is weighing.
@@ -113,6 +125,10 @@ export function createMetaModel(
             stream: true,
             stream_options: { include_usage: true },
             ...(effort ? { reasoning_effort: effort } : {}),
+            ...cacheFields(cacheKey),
+            ...(responseFormat
+              ? { response_format: { type: "json_schema", json_schema: { strict: true, ...responseFormat } } }
+              : {}),
           },
         };
   /** One try. The deadline counts from the last sign of life: an answer may take long, but not go quiet. */

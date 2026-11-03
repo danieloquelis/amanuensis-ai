@@ -152,9 +152,12 @@ test("an edit the model sends twice is made once, and the turn still replays", a
 });
 
 test("a model that never stops is cut off at the step limit", async () => {
+  // Calls that vary, so the repeated-call guard does not stop it first.
+  let step = 0;
   const forever: ModelPort = {
     async complete() {
-      return { content: null, toolCalls: [call("score_get_context", { selectedIds: [] })] };
+      const selectedIds = step++ % 2 ? ["bar-1"] : [];
+      return { content: null, toolCalls: [call("score_get_context", { selectedIds })] };
     },
   };
   assert.equal((await runAssistant(forever, request("loop"), "t6")).steps, MAX_TOOL_STEPS);
@@ -848,4 +851,39 @@ test("a reply that only promises more work gets one more step to do it", async (
   const result = await runAssistant(model, request("a chord"), "t12");
   assert.equal(result.reply, "Added Am7 to bar 2.");
   assert.equal(result.steps, 3);
+});
+
+test("the same tool call three times in a row ends the turn instead of using up its steps", async () => {
+  const same = () => ({ content: null, toolCalls: [call("score_edit", chordEdit)] });
+  // The same arguments written in another order are the same call.
+  const { requestId, expectedRevision, operation } = chordEdit;
+  const reordered = { content: null, toolCalls: [call("score_edit", { operation, expectedRevision, requestId })] };
+  const { model, seen } = scriptedModel([same(), reordered, same(), { content: "Never reached.", toolCalls: [] }]);
+  const result = await runAssistant(model, request("loop"), "t13");
+  assert.equal(result.steps, 3);
+  assert.equal(seen.length, 3);
+  assert.match(result.reply, /repeating the same step/);
+  // The third call was not run again.
+  assert.equal(result.trace.length, 2);
+});
+
+test("an empty reply is asked again once, and the turn goes on from the second answer", async () => {
+  const { model, seen } = scriptedModel([
+    { content: null, toolCalls: [], usage: { inputTokens: 100, outputTokens: 0 } },
+    { content: "Ok, nothing to change.", toolCalls: [], usage: { inputTokens: 100, outputTokens: 5 } },
+  ]);
+  const result = await runAssistant(model, request("hello"), "t14");
+  assert.equal(result.reply, "Ok, nothing to change.");
+  assert.equal(result.steps, 1);
+  // The retry is the same request: the empty reply is not added to the conversation.
+  assert.deepEqual(seen[1], seen[0]);
+  assert.equal(result.usage.inputTokens, 200);
+});
+
+test("a reply that comes back empty twice ends the turn with a clear message, not a silent Done", async () => {
+  const empty = { content: "  ", toolCalls: [] };
+  const { model, seen } = scriptedModel([empty, empty, { content: "Never reached.", toolCalls: [] }]);
+  const result = await runAssistant(model, request("hello"), "t15");
+  assert.equal(seen.length, 2);
+  assert.match(result.reply, /didn't get an answer/);
 });

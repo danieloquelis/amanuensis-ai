@@ -16,7 +16,11 @@ export function logTurn(instruction: string, selection: string | undefined, body
   if (!result?.thinkingMs) return;
   const thought = result.thinkingMs.reduce((sum, ms) => sum + ms, 0);
   const tools = (result.trace ?? []).map((t) => `${t.tool}${t.ok ? "" : "✗"}`).join(", ") || "no tools";
-  const usage = result.usage ? `${result.usage.inputTokens} in / ${result.usage.outputTokens} out` : "";
+  // Cached input tokens show whether the prompt cache key is doing its job.
+  const cached = result.usage?.cachedInputTokens ?? 0;
+  const usage = result.usage
+    ? `${result.usage.inputTokens} in (${cached} cached) / ${result.usage.outputTokens} out`
+    : "";
   console.log(
     `[assistant] "${instruction.slice(0, 60)}" [${selection ?? "nothing selected"}]: ${result.steps} steps, thought ${seconds(thought)} (${result.thinkingMs.map(seconds).join(" + ")}), ${tools}, ${usage}`,
   );

@@ -25,6 +25,20 @@ const toPart = (part: ContentPart) =>
       ? { type: "input_image", image_url: part.dataUrl }
       : { type: "input_file", filename: part.filename, file_data: part.dataUrl };
 
+/**
+ * A past tool call's arguments as Meta will take them back. The model sometimes writes a call
+ * with empty or broken arguments; its tool already answered with an error, but sending that text
+ * again makes Meta refuse the whole next request (400, "`arguments` must be valid JSON").
+ */
+export function replayedArguments(text: string): string {
+  try {
+    JSON.parse(text);
+    return text;
+  } catch {
+    return "{}";
+  }
+}
+
 /** Our provider-neutral request as a Responses API body: system prompt as instructions, the rest as input items. */
 export function responsesRequest(messages: ChatMessage[], tools: ToolSpec[]) {
   const instructions = messages
@@ -45,7 +59,7 @@ export function responsesRequest(messages: ChatMessage[], tools: ToolSpec[]) {
           type: "function_call",
           call_id: call.id,
           name: call.name,
-          arguments: call.arguments,
+          arguments: replayedArguments(call.arguments),
         })),
       ];
     }

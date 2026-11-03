@@ -32,11 +32,13 @@ export type {
   ContentPart,
   ModelPort,
   ModelReply,
+  ResponseFormat,
   TokenUsage,
   ToolCall,
   ToolSpec,
 } from "./application/model-port";
 export { askScope, OUT_OF_SCOPE_REPLY } from "./application/scope-gate";
+export { parseStructured, structuredFormat } from "./application/structured-output";
 export { SYSTEM_PROMPT } from "./application/system-prompt";
 export {
   MAX_TOOL_STEPS,
