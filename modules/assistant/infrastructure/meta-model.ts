@@ -10,6 +10,7 @@ import { thinkingBelow, type Thinking } from "../application/thinking";
 import { readCompletionStream } from "./meta-stream";
 import { readResponsesStream, replayedArguments, responseReply, responsesRequest } from "./meta-responses";
 import { FIRST_RETRY_MS, isRetryStatus, retryAfterMs, TransientError, withRetries } from "./model-retry";
+import { settledReply } from "./tool-call-markup";
 
 /**
  * Which Meta endpoint carries the conversation. The Responses API carries the model's reasoning
@@ -161,12 +162,17 @@ export function createMetaModel(
         throw new Error(message);
       }
       const streamed = response.headers.get("content-type")?.includes("text/event-stream");
+      // A call to one of these written as text is made as a call; other call markup is dropped.
+      const offered = tools.map((tool) => tool.name);
       if (api === "responses") {
         return streamed
-          ? await readResponsesStream(response, options.onText, alive, options.onThought)
-          : responseReply(await response.json());
+          ? await readResponsesStream(response, options.onText, alive, options.onThought, offered)
+          : responseReply(await response.json(), offered);
       }
-      return streamed ? await readCompletionStream(response, options.onText, alive) : wholeReply(await response.json());
+      const reply = streamed
+        ? await readCompletionStream(response, options.onText, alive)
+        : wholeReply(await response.json());
+      return { ...reply, ...settledReply(reply.content ? [reply.content] : [], reply.toolCalls, offered) };
     } catch (error) {
       if (idle.signal.aborted && !options.signal?.aborted) throw new Error(TIMEOUT_MESSAGE);
       throw error;

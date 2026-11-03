@@ -1,5 +1,6 @@
 import type { ChatMessage, ContentPart, ModelReply, ToolSpec } from "../application/model-port";
 import { endedEarly } from "./model-retry";
+import { settledReply } from "./tool-call-markup";
 
 // Meta's Responses API (`/v1/responses`): unlike Chat Completions, it streams the reply's text
 // while tools are offered, so the editor can draw bars as they are written, and it can carry the
@@ -76,17 +77,24 @@ export function responsesRequest(messages: ChatMessage[], tools: ToolSpec[]) {
   return { instructions, input, tools: functions, store: false, include: ["reasoning.encrypted_content"] };
 }
 
-/** A finished response in our provider-neutral shape. */
-export function responseReply(body: ResponseBody): ModelReply {
-  if (body.error?.message) throw new Error(`The model request failed: ${body.error.message.slice(0, 200)}`);
-  const output = body.output ?? [];
-  const text = output
-    .flatMap((item) => ("content" in item && item.type === "message" ? (item.content ?? []) : []))
+/** A message item's text. */
+const messageText = (item: OutputItem) =>
+  ("content" in item && item.type === "message" ? (item.content ?? []) : [])
     .map((part) => (part.type === "output_text" ? (part.text ?? "") : ""))
     .join("");
-  const toolCalls = output
+
+/**
+ * A finished response in our provider-neutral shape. `offered` names the tools the call offered:
+ * a call to one of them written as text is made as a call (see `tool-call-markup.ts`).
+ */
+export function responseReply(body: ResponseBody, offered: string[] = []): ModelReply {
+  if (body.error?.message) throw new Error(`The model request failed: ${body.error.message.slice(0, 200)}`);
+  const output = body.output ?? [];
+  const calls = output
     .filter((item): item is Extract<OutputItem, { type: "function_call" }> => item.type === "function_call")
     .map((item) => ({ id: item.call_id, name: item.name, arguments: item.arguments }));
+  const messages = output.filter((item) => item.type === "message").map(messageText);
+  const { content, toolCalls } = settledReply(messages, calls, offered);
   const usage = body.usage
     ? {
         inputTokens: Number(body.usage.input_tokens ?? 0),
@@ -104,19 +112,20 @@ export function responseReply(body: ResponseBody): ModelReply {
       summary: summary ?? [],
       encrypted_content,
     }));
-  return { content: text || null, toolCalls, usage, ...(reasoning.length ? { reasoning } : {}) };
+  return { content, toolCalls, usage, ...(reasoning.length ? { reasoning } : {}) };
 }
 
 /**
  * Reads a streamed response (server-sent events): its text, passed on piece by piece as it is
  * written (`onText`), its reasoning summary likewise (`onThought`), then the finished response.
- * `onChunk` hears every chunk, for an idle timeout.
+ * `onChunk` hears every chunk, for an idle timeout; `offered` names the tools offered (see `responseReply`).
  */
 export async function readResponsesStream(
   response: Response,
   onText: (text: string) => void = () => {},
   onChunk: () => void = () => {},
   onThought: (text: string) => void = () => {},
+  offered: string[] = [],
 ): Promise<ModelReply> {
   const reader = response.body!.pipeThrough(new TextDecoderStream()).getReader();
   let buffered = "";
@@ -148,5 +157,5 @@ export async function readResponsesStream(
     }
   }
   if (!finished) throw endedEarly(textSent);
-  return responseReply(finished);
+  return responseReply(finished, offered);
 }

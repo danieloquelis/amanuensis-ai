@@ -252,3 +252,35 @@ test("a past tool call with empty or broken arguments goes back as {}, which Met
   assert.deepEqual(responses, ["{}", "{}", '{"text":"bar 1: C4w"}']);
   assert.deepEqual(chat, ["{}", "{}", '{"text":"bar 1: C4w"}']);
 });
+
+// Seen in Band Mode (3 November 2026): a step that offered no tools came back as one message per
+// call the model tried, ending in the call written as markup. All of it reached the musician.
+test("a response's narration is not glued into the reply, and a tool call written as text is never shown", async () => {
+  const said = (text: string) => ({ type: "message", content: [{ type: "output_text", text }] });
+  const markup = [
+    '<atem:function_calls> <atem:invoke name="assistant_plan"> <atem:parameter name="steps">',
+    '[{"done": true, "text": "Poner armonía blues moderna"}] </atem:parameter> </atem:invoke> </atem:function_calls>',
+  ].join("");
+  const output = [
+    said("Saving the settled arrangement notes."),
+    { type: "reasoning", summary: [] },
+    said("I'll update the song notes with the settled 8-bar blues arrangement."),
+    said("Marking plan complete."),
+    said(markup),
+  ];
+  globalThis.fetch = (async () => Response.json({ output })) as unknown as typeof fetch;
+  const plan = { name: "assistant_plan", description: "Show the plan.", parameters: { type: "object" } };
+  const model = createMetaModel("key", undefined, undefined, { api: "responses" });
+  const offered = await model.complete([{ role: "user", content: "hi" }], [plan]);
+  assert.equal(offered.content, "Marking plan complete.");
+  // A tool the step offered: the call is made as the model meant it.
+  assert.equal(offered.toolCalls.length, 1);
+  assert.equal(offered.toolCalls[0].name, "assistant_plan");
+  assert.deepEqual(JSON.parse(offered.toolCalls[0].arguments), {
+    steps: [{ done: true, text: "Poner armonía blues moderna" }],
+  });
+  // No tools offered: the markup is dropped, and nothing is called.
+  const bare = await model.complete([{ role: "user", content: "hi" }], []);
+  assert.equal(bare.content, "Marking plan complete.");
+  assert.deepEqual(bare.toolCalls, []);
+});

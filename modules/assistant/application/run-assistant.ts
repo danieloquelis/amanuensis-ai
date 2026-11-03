@@ -161,7 +161,10 @@ export async function runAssistant(
     onProgress({ stage: "thinking" });
     const asked = Date.now();
     blocks.start();
-    const reply = await completeOrRetryEmpty(model, messages, band?.finished() ? [] : toolList, {
+    // Once the band's time is up, only its own state stays offered (the plan, the song's notes):
+    // with no tools at all, Muse Spark writes the calls it wants as text, over and over.
+    const offered = band?.finished() ? agentToolSpecs : toolList;
+    const reply = await completeOrRetryEmpty(model, messages, offered, {
       signal,
       onText: blocks.hear,
       onThought: (text) => onProgress({ stage: "thought", text }),
