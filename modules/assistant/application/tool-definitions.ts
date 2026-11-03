@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { commandSchema } from "@/modules/score";
+import { compactSchema, inlineCheapRefs } from "./compact-schema";
 
 export const readContextSchema = z.strictObject({
   selectedIds: z
@@ -103,27 +104,13 @@ const definitions: { name: ScoreToolName; description: string; schema: z.ZodType
 ];
 
 /**
- * Keys that only matter to strict validators; our gateway validates every call anyway. `pattern`
- * would hide that IDs may be given as positions ("2#5"), which are resolved before validation.
- */
-const VALIDATOR_ONLY_KEYS = new Set(["$schema", "additionalProperties", "pattern"]);
-
-function compactSchema(node: unknown): unknown {
-  if (Array.isArray(node)) return node.map(compactSchema);
-  if (!node || typeof node !== "object") return node;
-  return Object.fromEntries(
-    Object.entries(node)
-      .filter(([key]) => !VALIDATOR_ONLY_KEYS.has(key))
-      .map(([key, value]) => [key, compactSchema(value)]),
-  );
-}
-
-/**
  * JSON Schema for a model's tool list, generated from the same Zod schemas that validate the
- * calls (descriptions included), so they cannot drift. Repeated parts are shared through `$defs`
- * and validator-only keys are dropped: the schema is re-sent on every model step, so size is cost.
+ * calls (descriptions included), so they cannot drift. Large repeated parts are shared through
+ * `$defs`, the rest written out, and validator-only keys dropped (see `compact-schema.ts`): the
+ * schema is re-sent on every model step, so size is cost.
  */
-export const toolParameters = (schema: z.ZodType) => compactSchema(z.toJSONSchema(schema, { reused: "ref" }));
+export const toolParameters = (schema: z.ZodType) =>
+  inlineCheapRefs(compactSchema(z.toJSONSchema(schema, { reused: "ref" })));
 
 /** Provider-neutral function definitions for a model's tool list. */
 export const scoreTools = definitions.map(({ name, description, schema }) => ({
