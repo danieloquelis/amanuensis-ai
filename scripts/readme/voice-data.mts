@@ -1,5 +1,5 @@
 // The voice charts in the README, from the real pipeline: a take that talks, sings and talks
-// again, heard as the app hears it: Muse Voice Transcribe for the words, YIN and SwiftF0 for the
+// again, heard as the app hears it: Muse Voice Transcribe for the words, YIN for the
 // pitch, the FFT features, and the singing model's per-frame probability and its HMM reading.
 // The talk is a human reading in the public domain (LibriVox, "The Horseman", read for
 // LibriVox.org; Public Domain Mark 1.0); the singing is the test suite's synthetic singer.
@@ -17,10 +17,9 @@ import {
   soundFrames,
   SINGING_MODEL,
   trackPitch,
-  withPitchTrack,
   type Signal,
 } from "@/modules/voice";
-import { cachedRecognizer, createMuseTranscriber, createSwiftF0Tracker } from "@/modules/voice/server";
+import { cachedRecognizer, createMuseTranscriber } from "@/modules/voice/server";
 import { singMelody } from "../../tests/support/synthetic-voice";
 
 const RATE = 16_000;
@@ -104,7 +103,7 @@ export async function voiceData() {
   const signal = joined([spoken(source, TALK[0]), sung, spoken(source, TALK[1])]);
   const recognizer = cachedRecognizer(createMuseTranscriber(process.env.META_AI_API_KEY ?? ""), WORK);
   const speech = await recognizer.transcribe(encodeWav(signal));
-  const frames = withPitchTrack(trackPitch(signal), await createSwiftF0Tracker().track(signal));
+  const frames = trackPitch(signal);
   const sound = soundFrames(signal, frames);
   const probability = singingProbabilities(singingFeatures(frames, sound, speech), SINGING_MODEL);
   const singing = decodeSinging(probability, SINGING_MODEL);

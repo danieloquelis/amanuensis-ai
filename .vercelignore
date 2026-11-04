@@ -18,3 +18,6 @@ playwright-report
 # private planning notes kept out of git
 docs/research/hackathon-impact-and-positioning.md
 docs/video/
+
+# Training data for the singing model: in the repo, not in the deploy.
+datasets/

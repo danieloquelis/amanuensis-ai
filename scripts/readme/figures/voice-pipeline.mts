@@ -9,10 +9,10 @@ export function voicePipeline() {
     ${box("take", "", "Recording", "talk + singing")}
     <div style="display:flex;flex-direction:column;gap:12px">
       ${box("asr", "meta", "Muse Voice Transcribe", "words + times")}
-      ${box("pitch", "local", "YIN + SwiftF0", "pitch")}
+      ${box("pitch", "local", "YIN", "pitch")}
       ${box("fft", "local", "FFT", "spectrum measures")}
     </div>
-    ${box("model", "local", "Singing model", "talk or singing")}
+    ${box("model", "local", "Singing model", "logistic regression + HMM")}
     ${box("timeline", "", "Timeline", "words + sung spans")}
   </div>
   <div style="display:grid;grid-template-columns:170px 250px 200px;gap:58px;margin:40px 0 0 238px;align-items:center">
@@ -22,7 +22,7 @@ export function voicePipeline() {
   </div>
   ${legend([
     [COLOR.meta, "Meta model"],
-    [COLOR.local, "Our code"],
+    [COLOR.local, "Our code: plain maths, no pretrained model"],
   ])}`;
   const links: Link[] = [
     ["take", "asr"],

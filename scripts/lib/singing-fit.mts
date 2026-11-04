@@ -1,5 +1,5 @@
 // Hearing takes the way the app does, and fitting the singing model's evidence weights to them.
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   decodeSinging,
@@ -9,7 +9,6 @@ import {
   singingProbabilities,
   soundFrames,
   trackPitch,
-  withPitchTrack,
   wordsInFrames,
   type PitchFrame,
   type Signal,
@@ -17,10 +16,10 @@ import {
   type SoundFrame,
   type SpeechTurn,
 } from "@/modules/voice";
-import { cachedRecognizer, createMuseTranscriber, createSwiftF0Tracker } from "@/modules/voice/server";
+import { cachedRecognizer, createMuseTranscriber } from "@/modules/voice/server";
 import { emptyScore, scoreMix, type BoundaryScore } from "./boundary-score.mjs";
 import type { Mix } from "./singing-mixes.mjs";
-import { readRawSpeech } from "./takes.mjs";
+import { datasetTake, SINGING_DATASET } from "./singing-labels.mjs";
 
 const STEPS = 400;
 const LEARNING_RATE = 0.5;
@@ -28,8 +27,11 @@ const L2 = 0.001;
 /** Every third frame is plenty: neighbours share most of their evidence. */
 const SAMPLE_EVERY = 3;
 
-const tracker = createSwiftF0Tracker();
-const recognizer = cachedRecognizer(createMuseTranscriber(process.env.META_AI_API_KEY ?? ""), ".cache/transcripts");
+/** The mixes' words, as Muse Voice Transcribe heard them, are part of the dataset: refitting makes no calls. */
+const recognizer = cachedRecognizer(
+  createMuseTranscriber(process.env.META_AI_API_KEY ?? ""),
+  join(SINGING_DATASET, "mix-words"),
+);
 
 export type Heard = { frames: PitchFrame[]; sound: SoundFrame[]; speech: SpeechTurn[]; features: (number[] | null)[] };
 /** Frames with what each is known to be: 1 sung, 0 talk, null unknown or no voice. */
@@ -38,18 +40,16 @@ export type HeardMix = Heard & Labeled & { mix: Mix };
 
 /** Pitch, sound and words as the app gets them; words from the speech service unless given. */
 export async function hear(signal: Signal, speech?: SpeechTurn[]): Promise<Heard> {
-  const frames = withPitchTrack(trackPitch(signal), await tracker.track(signal));
+  const frames = trackPitch(signal);
   const sound = soundFrames(signal, frames);
   const words = speech ?? (await recognizer.transcribe(encodeWav(signal)));
   return { frames, sound, speech: words, features: singingFeatures(frames, sound, words) };
 }
 
 export async function hearTake(prefix: string): Promise<Heard> {
-  const folder = join(
-    ".takes",
-    readdirSync(".takes").find((name) => name.startsWith(prefix))!,
-  );
-  return hear(decodeWav(new Uint8Array(readFileSync(join(folder, "take.wav")))), readRawSpeech(folder));
+  const folder = datasetTake(prefix);
+  const words = JSON.parse(readFileSync(join(folder, "words.json"), "utf8")) as SpeechTurn[];
+  return hear(decodeWav(new Uint8Array(readFileSync(join(folder, "take.wav")))), words);
 }
 
 export async function hearMix(mix: Mix): Promise<HeardMix> {

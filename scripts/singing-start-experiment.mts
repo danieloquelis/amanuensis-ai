@@ -5,8 +5,7 @@
 // hears. Times each call. Costs real API calls (a few cents in all).
 //
 //   yarn tsx --env-file=.env.local scripts/singing-start-experiment.mts --confirm [--repeats 2]
-import { decodeWav, encodeWav, type Signal } from "@/modules/voice";
-import { createSwiftF0Tracker } from "@/modules/voice/server";
+import { decodeWav, encodeWav, trackPitch, type Signal } from "@/modules/voice";
 import { loadTakeWav, readRawSpeech } from "./lib/takes.mjs";
 
 if (!process.argv.includes("--confirm")) {
@@ -79,12 +78,12 @@ async function askStart(model: string, clip: Signal): Promise<{ start: number | 
 
 /** Starts of the runs of confident pitch the local tracker hears (seconds in the take). */
 async function onsets(signal: Signal): Promise<number[]> {
-  const track = await createSwiftF0Tracker().track(signal);
+  const frames = trackPitch(signal);
   const found: number[] = [];
   let run = 0;
-  track.confidence.forEach((confidence, i) => {
-    run = confidence >= CONFIDENT ? run + 1 : 0;
-    if (run === ONSET_FRAMES) found.push((i - ONSET_FRAMES + 1) * track.hop);
+  frames.forEach((frame, i) => {
+    run = frame.frequency !== null && frame.clarity >= CONFIDENT ? run + 1 : 0;
+    if (run === ONSET_FRAMES) found.push(frames[i - ONSET_FRAMES + 1].time);
   });
   return found;
 }

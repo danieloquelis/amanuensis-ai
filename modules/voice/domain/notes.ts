@@ -10,6 +10,7 @@ import {
   type Segment,
   type SungNote,
 } from "./note-pieces";
+import { dropFadingNotes } from "./fading-notes";
 import type { PitchFrame } from "./pitch-tracker";
 import { foldPitchDips } from "./pitch-excursions";
 
@@ -89,7 +90,7 @@ export function segmentNotes(frames: PitchFrame[]): SungNote[] {
   const notes = absorbSlides(mergeContinuations(segments.flatMap(splitAtRearticulations)))
     .filter((s) => duration(s) >= MIN_NOTE_SECONDS)
     .map(toNote);
-  return foldOctaveLeaps(notes);
+  return foldOctaveLeaps(dropFadingNotes(notes, frames));
 }
 
 /** Mean pitch of a note so far, skipping its attack: the middle of any vibrato. */

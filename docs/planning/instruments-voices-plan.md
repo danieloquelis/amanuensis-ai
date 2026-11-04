@@ -17,7 +17,7 @@ Each capability must work in the editor and as an agent tool. Each one goes thro
 
 | Area | Fact (file, function) |
 | --- | --- |
-| Package manager | Yarn 4.14.1 with `node_modules` (`package.json` `packageManager`). Runtime dependencies are `next 16.4.3`, `react 19.3`, `zod 4`, `onnxruntime-node` and `@phosphor-icons/react`. There is no audio library. |
+| Package manager | Yarn 4.14.1 with `node_modules` (`package.json` `packageManager`). Runtime dependencies are `next 16.4.3`, `react 19.3`, `zod 4` and `@phosphor-icons/react`. There is no audio library. |
 | Network / CSP | `next.config.ts` sets no `headers()`, CSP or `images`. There is no `proxy.ts` or `middleware.ts`. `public/` holds only starter SVGs. Nothing blocks self-hosted audio or a CDN today. |
 | Sound | `modules/playback/infrastructure/audio-player.ts` `AudioPlayer` builds one triangle `OscillatorNode` per note (`scheduleTone`) and sine pads for chord symbols (`scheduleChord`). It schedules the whole score up front ("Bounded to 32 short measures"). `audition(frequency)` plays a single note. |
 | Plan | `modules/playback/domain/plan.ts` `createPlaybackPlan(score, fromMeasureId)` gives `PlaybackEvent { id, beat, beats, start, duration, frequency, gain, gate, tiedTo }` plus `ChordSound[]`. Dynamics map to `DYNAMIC_GAIN`. Ties are handled by `joinTies`, repeats by `performance-order.ts` `performanceOrder` and `soundingSource`, chord symbols by `chord-track.ts` `voiceChord`. The file is 178 lines. |

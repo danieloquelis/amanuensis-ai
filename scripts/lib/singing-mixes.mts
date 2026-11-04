@@ -2,13 +2,11 @@
 // takes and of all-sung takes laid end to end ("talk, sing 2 s, talk, sing 5 s, talk"), with
 // pauses from none to most of a second between them. Each piece keeps the words the recognizer
 // wrote for it, moved to where the piece now sits.
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { decodeWav, trackPitch, type Signal, type SpeechTurn } from "@/modules/voice";
-import { ALL_SPOKEN, ALL_SUNG } from "./singing-labels.mjs";
-import { readRawSpeech } from "./takes.mjs";
+import { ALL_SPOKEN, ALL_SUNG, datasetTake } from "./singing-labels.mjs";
 
-const ROOT = ".takes";
 const RATE = 16_000;
 /** Pauses between pieces (seconds); none at all is the hardest case. */
 const GAPS = [0, 0, 0.15, 0.4, 0.8];
@@ -35,16 +33,14 @@ function random(seed: number) {
 
 /** The voiced part of a take (first to last voice), with its words. */
 function piece(prefix: string, kind: Piece["kind"]): Piece {
-  const folder = join(
-    ROOT,
-    readdirSync(ROOT).find((name) => name.startsWith(prefix))!,
-  );
+  const folder = datasetTake(prefix);
   const signal = decodeWav(new Uint8Array(readFileSync(join(folder, "take.wav"))));
   if (signal.sampleRate !== RATE) throw new Error(`${prefix} is not ${RATE} Hz.`);
   const voiced = trackPitch(signal).filter((f) => f.frequency !== null);
   const from = Math.max(0, voiced[0].time - 0.1);
   const to = voiced.at(-1)!.time + 0.1;
-  const speech = readRawSpeech(folder)
+  const words = JSON.parse(readFileSync(join(folder, "words.json"), "utf8")) as SpeechTurn[];
+  const speech = words
     .filter((t) => t.end > from && t.start < to)
     .map((t) => ({ ...t, start: Math.max(0, t.start - from), end: Math.min(to, t.end) - from }));
   const samples = signal.samples.slice(Math.floor(from * RATE), Math.ceil(to * RATE));

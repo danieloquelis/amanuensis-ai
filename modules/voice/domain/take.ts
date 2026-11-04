@@ -1,4 +1,4 @@
-import { trackPitch, withPitchTrack, type PitchFrame, type PitchTrack, type Signal } from "./pitch-tracker";
+import { trackPitch, type PitchFrame, type Signal } from "./pitch-tracker";
 import { sungStretches } from "./singing-decoder";
 import { soundFrames, type SoundFrame } from "./spectrum";
 import { speechAroundSinging } from "./sung-syllables";
@@ -9,15 +9,13 @@ export type SpeechTurn = { start: number; end: number; text: string };
 export type SungSpan = { id: string; start: number; end: number };
 /**
  * `sung` is what was heard as singing; `voice` is every other stretch of voice, which the agent
- * may still pass to the voice tools when the musician's words say they sang there. `track` is a
- * learned tracker's pitch over the whole take, when one ran (YIN is used otherwise).
+ * may still pass to the voice tools when the musician's words say they sang there.
  */
 export type VoiceTake = {
   signal: Signal;
   speech: SpeechTurn[];
   sung: SungSpan[];
   voice: SungSpan[];
-  track?: PitchTrack;
 };
 
 /** Voiced frames closer than this (seconds) are one stretch of voice. */
@@ -54,16 +52,14 @@ function otherVoice(frames: PitchFrame[], sung: SungSpan[]): SungSpan[] {
  * A take as the agent hears it: where the musician sang, what they said around it (without the
  * syllables the recognizer wrote down for the singing), and the rest of their voice.
  */
-export function createTake(signal: Signal, speech: SpeechTurn[], track?: PitchTrack): VoiceTake {
-  // The model was fitted on the learned tracker's voicing, which hears short sung syllables YIN misses.
-  const frames = track ? withPitchTrack(trackPitch(signal), track) : trackPitch(signal);
+export function createTake(signal: Signal, speech: SpeechTurn[]): VoiceTake {
+  const frames = trackPitch(signal);
   const sung = findSungSpans(frames, soundFrames(signal, frames), speech);
   return {
     signal,
     speech: speechAroundSinging(speech, sung),
     sung,
     voice: otherVoice(frames, sung),
-    ...(track ? { track } : {}),
   };
 }
 
@@ -80,10 +76,9 @@ export function spanSignal(take: VoiceTake, spanId: string): Signal | null {
   };
 }
 
-/** Pitch frames of one span: the learned tracker's pitch when the take has it, else YIN's. */
+/** YIN pitch frames of one span. */
 export function spanFrames(take: VoiceTake, spanId: string): PitchFrame[] | null {
   const signal = spanSignal(take, spanId);
   if (!signal) return null;
-  const start = spanOf(take, spanId)!.start;
-  return take.track ? withPitchTrack(trackPitch(signal), take.track, start) : trackPitch(signal);
+  return trackPitch(signal);
 }

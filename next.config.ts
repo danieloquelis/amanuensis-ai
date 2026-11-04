@@ -14,14 +14,6 @@ const nextConfig: NextConfig = {
       headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
     },
   ],
-  // The pitch model's native runtime (a .so beside the .node binding) and its model file are
-  // loaded at run time, so tracing the imports would miss them in a serverless deploy.
-  outputFileTracingIncludes: {
-    "/api/assistant/voice": [
-      "./node_modules/onnxruntime-node/bin/napi-v6/linux/x64/*",
-      "./modules/voice/infrastructure/models/swift-f0.onnx",
-    ],
-  },
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

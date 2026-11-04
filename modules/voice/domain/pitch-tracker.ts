@@ -98,21 +98,3 @@ function bestLag(difference: Float32Array, minLag: number, maxLag: number) {
   const shift = a + c - 2 * b ? (a - c) / (2 * (a + c - 2 * b)) : 0;
   return { value: lag + Math.max(-1, Math.min(1, shift)), aperiodicity: b };
 }
-
-/** A learned tracker's output (e.g. SwiftF0): a pitch (Hz) and voicing confidence every `hop` seconds. */
-export type PitchTrack = { hop: number; pitch: number[]; confidence: number[] };
-/** A learned tracker's frame counts as sung from this confidence. */
-const VOICED_CONFIDENCE = 0.5;
-
-/**
- * YIN's frames with the pitch and voicing of a better tracker; loudness stays YIN's own. `offset`
- * is where the frames' signal starts in the track (a sung span within the whole take).
- */
-export function withPitchTrack(frames: PitchFrame[], track: PitchTrack, offset = 0): PitchFrame[] {
-  return frames.map((frame) => {
-    const index = Math.round((frame.time + offset) / track.hop);
-    const confidence = track.confidence[index] ?? 0;
-    const frequency = confidence >= VOICED_CONFIDENCE ? track.pitch[index] : null;
-    return { ...frame, frequency, clarity: frequency === null ? 0 : confidence };
-  });
-}
