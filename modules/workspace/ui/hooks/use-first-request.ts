@@ -32,7 +32,7 @@ export function useFirstRequest({ workspaceId, ready, assistant, openChat }: Opt
       if (!request) return;
       const { assistant, openChat } = latest.current;
       openChat();
-      if (request.kind === "take") void assistant.sendTake(request.wav, WHOLE_SCORE);
+      if (request.kind === "take") void assistant.sendTake(request.wav, WHOLE_SCORE, request.files);
       else void assistant.send(request.text, WHOLE_SCORE, request.files);
     });
     return () => cancelAnimationFrame(frame);

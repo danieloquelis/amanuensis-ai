@@ -169,8 +169,9 @@ export async function runAssistant(
       onText: blocks.hear,
       onThought: (text) => onProgress({ stage: "thought", text }),
       cacheKey,
-      // Once the band has played, what is left is summing it up.
-      ...(band?.played() ? { effort: "low" } : {}),
+      // Once the band has played, what is left is summing it up. Reading attached pages is
+      // faster and more accurate at low effort (docs/research/sheet-reading.md).
+      ...(band?.played() || attachments.length ? { effort: "low" } : {}),
     });
     count(reply.usage, Date.now() - asked);
     // The model's reasoning goes back with its reply, so the next step builds on it.

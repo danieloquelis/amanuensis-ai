@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MEMORY_LIMIT, SONG_NOTES_LIMIT } from "./agent-state";
+import { readUploads, type Upload } from "./attachments";
 import { bandSchema } from "./musicians";
 import { thinkingSchema } from "./thinking";
 import { parseScore } from "@/modules/score";
@@ -11,6 +12,7 @@ import {
   type SpeechTurn,
   type SungSpan,
 } from "@/modules/voice";
+import type { PageImages } from "@/modules/page";
 import type { ModelPort } from "./model-port";
 import { runAssistant, type AssistantResult, type ProgressListener } from "./run-assistant";
 import { declineIfOutOfScope } from "./scope-gate";
@@ -73,6 +75,9 @@ export async function handleVoiceRequest(
     /** The band's musicians' model, a level of thinking below (Band Mode). */
     musicians?: ModelPort;
     recognizer: SpeechRecognizer;
+    /** Files attached with the take (a page the musician talks about), read as in a typed request. */
+    uploads?: Upload[];
+    pageImages?: PageImages | null;
     signal?: AbortSignal;
   },
   onProgress: ProgressListener = () => {},
@@ -81,6 +86,8 @@ export async function handleVoiceRequest(
   if (input.audio.length > MAX_AUDIO_BYTES) return failure(413, "Takes can be up to two minutes long.");
   const parsed = payloadSchema.safeParse(input.payload);
   if (!parsed.success) return failure(400, "Send the current score with the take.");
+  const read = readUploads(services.uploads ?? []);
+  if ("error" in read) return failure(400, read.error);
   let signal;
   let score;
   try {
@@ -110,7 +117,8 @@ export async function handleVoiceRequest(
   const pitchMs = Date.now() - pitchStarted;
   const heard = { speech: take.speech, sung: take.sung, recognized: speech, ms: { speech: speechMs, pitch: pitchMs } };
   onProgress({ stage: "heard", parts: takeParts(take.speech, take.sung) });
-  if (!take.speech.length && !take.sung.length && !take.voice.length && !parsed.data.instruction) {
+  const silent = !take.speech.length && !take.sung.length && !take.voice.length;
+  if (silent && !parsed.data.instruction && !read.attachments.length) {
     const reply = "I didn't hear anything. Try again a little closer to the microphone.";
     return {
       status: 200,
@@ -128,17 +136,20 @@ export async function handleVoiceRequest(
     };
   }
   try {
-    // A take that is only talk is judged by its words; one with singing is music.
-    const talkOnly = !take.sung.length && !take.voice.length;
+    // A take that is only talk is judged by its words; one with singing, or with attached music, is music.
+    const talkOnly = !take.sung.length && !take.voice.length && !read.attachments.length;
     const words = [request.instruction, ...take.speech.map((turn) => turn.text)].join(" ");
     const outside = talkOnly
       ? await declineIfOutOfScope(services.model, { instruction: words, history: request.history }, services.signal)
       : null;
     if (outside) return { status: 200, body: { ...outside, heard } };
-    const result = await runAssistant(services.model, { ...request, score, take }, undefined, onProgress, {
-      signal: services.signal,
-      musicians: services.musicians,
-    });
+    const result = await runAssistant(
+      services.model,
+      { ...request, score, take, attachments: read.attachments },
+      undefined,
+      onProgress,
+      { pageImages: services.pageImages ?? null, signal: services.signal, musicians: services.musicians },
+    );
     return { status: 200, body: { ...result, heard } };
   } catch (error) {
     return failure(502, error instanceof Error ? error.message : "The assistant is unavailable.");

@@ -96,9 +96,9 @@ export function ComposeDock({ assistant, dock, context, revision, onUndo }: Comp
       onSend={sendText}
       onStop={stop}
       attachments={attachments}
-      onTake={(wav) => {
+      onTake={(wav, files) => {
         dock.openChat();
-        void sendTake(wav, context);
+        void sendTake(wav, context, files);
       }}
       accessory={
         <>

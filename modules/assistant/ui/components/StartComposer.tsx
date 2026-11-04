@@ -44,7 +44,7 @@ export function StartComposer({ onStart }: { onStart: (request: StartRequest) =>
         onDraft={setDraft}
         attachments={attachments}
         onSend={(text, files) => start({ kind: "text", text, files })}
-        onTake={(wav) => start({ kind: "take", wav })}
+        onTake={(wav, files) => start({ kind: "take", wav, files })}
         onStop={() => undefined}
         accessory={
           <>

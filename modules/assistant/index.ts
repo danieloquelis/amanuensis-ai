@@ -59,6 +59,7 @@ export { SCORE_TOOL_NAMES, scoreTools, toolParameters, type ScoreToolName } from
 export { localWorkspaceChats } from "./infrastructure/local-chat";
 export type { StartRequest } from "./application/start-request";
 export { askedAfter, withHeardWords, type AskedTake } from "./application/asked-take";
+export { filesAfter, filesFor } from "./application/open-files";
 export { DEFAULT_THINKING, THINKING_LEVELS, thinkingOf, type Thinking } from "./application/thinking";
 export { readableThought, withProgress } from "./application/work-log";
 export { musicianName } from "./application/musicians";

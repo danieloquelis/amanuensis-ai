@@ -1,6 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { handleVoiceRequest, type ModelPort, type ProgressEvent, type VoiceResult } from "@/modules/assistant";
+import {
+  handleVoiceRequest,
+  type ModelPort,
+  type ProgressEvent,
+  type Upload,
+  type VoiceResult,
+} from "@/modules/assistant";
 import { createExample } from "@/modules/score";
 import { decodeWav, encodeWav, type SpeechRecognizer, type SpeechTurn } from "@/modules/voice";
 import { singMelody } from "../support/synthetic-voice";
@@ -126,6 +132,18 @@ test("a speech service failure becomes a readable 502", async () => {
   const audio = encodeWav({ samples: sine(1), sampleRate: RATE });
   const response = await handleVoiceRequest({ audio, payload }, { model, recognizer });
   assert.deepEqual(response, { status: 502, body: { error: "Speech recognition failed (503)." } });
+});
+
+test("a page attached to a spoken take reaches the agent with the take", async () => {
+  const { recognizer } = fakeRecognizer([{ start: 0, end: 0.8, text: "copy this page into the score" }]);
+  const { model, seen } = fakeModel();
+  const page: Upload = { name: "page.png", mediaType: "image/png", bytes: new Uint8Array([137, 80, 78, 71]) };
+  const audio = encodeWav({ samples: new Float32Array(RATE), sampleRate: RATE });
+  const response = await handleVoiceRequest({ audio, payload }, { model, recognizer, uploads: [page] });
+  assert.equal(response.status, 200);
+  const message = seen.find((m) => m.includes("[Attachment 1: page.png]"));
+  assert.ok(message, "the request's message names the attached page");
+  assert.match(message, /"type":"image"/);
 });
 
 test("what was said and sung is reported before the agent starts thinking", async () => {

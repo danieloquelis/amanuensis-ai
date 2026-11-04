@@ -2,6 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   ATTACHMENT_LIMITS,
+  filesAfter,
+  filesFor,
   handleAssistantRequest,
   readUploads,
   type ChatMessage,
@@ -56,4 +58,15 @@ test("a request with neither words nor files is refused", async () => {
   const model: ModelPort = { complete: async () => ({ content: "", toolCalls: [] }) };
   const body = { instruction: " ", score: createExample(), selectedIds: [], history: [] };
   assert.equal((await handleAssistantRequest(body, model)).status, 400);
+});
+
+test("a page stays with the conversation until a turn finishes the work on it", () => {
+  const page = ["page.png"];
+  // Stopped or failed (no result), or ended with a question: "continue" goes with the same page.
+  assert.deepEqual(filesAfter(page, null), page);
+  assert.deepEqual(filesAfter(page, { question: { text: "Which part?" } }), page);
+  assert.deepEqual(filesFor([], filesAfter(page, null)), page);
+  // Finished: the next request goes without it; newly attached files always win.
+  assert.deepEqual(filesAfter(page, { question: null }), []);
+  assert.deepEqual(filesFor(["other.pdf"], page), ["other.pdf"]);
 });

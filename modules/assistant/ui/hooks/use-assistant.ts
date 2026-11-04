@@ -1,27 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 import type { Command, Score } from "@/modules/score";
-import { askedAfter, withHeardWords, type AskedTake } from "../../application/asked-take";
+import { askedAfter, type AskedTake } from "../../application/asked-take";
 import { useAssistantSettings } from "./use-assistant-settings";
-import { attachmentKind } from "../../application/attachments";
+import { attachedOf } from "../../application/attachments";
+import { filesAfter, filesFor } from "../../application/open-files";
 import type { ChatRepository, Turn } from "../../application/chat-history";
 import type { HeardTake } from "../../application/handle-voice-request";
-import type { AssistantResult, ProgressListener } from "../../application/run-assistant";
+import type { AssistantResult } from "../../application/run-assistant";
 import { describeHeard, heardOf, historyOf } from "../../application/turn-text";
 import { STOPPED_RECEIPT, stoppedReply } from "../../application/stopped-turn";
 import { withProgress } from "../../application/work-log";
-import { requestAssistant, requestVoiceAssistant, type AssistantPayload } from "../../infrastructure/assistant-client";
+import { typedRequest, voiceRequest, type TurnRequest } from "./turn-requests";
 import { useLiveTurn } from "./use-live-turn";
 
 const VOICE_LABEL = "Voice take";
 
-type Request = (
-  payload: AssistantPayload,
-  onProgress: ProgressListener,
-  signal: AbortSignal,
-) => Promise<AssistantResult & { heard?: HeardTake }>;
-
 /** What a turn sent, kept for this session so a failed turn can be sent again as it was. */
-type Attempt = { instruction: string; request: Request; context: RequestContext };
+type Attempt = { instruction: string; request: TurnRequest; context: RequestContext };
 
 /** What a request is about: the picked IDs and their name. Empty IDs mean the whole score. */
 export type RequestContext = { ids: string[]; name: string | null };
@@ -50,6 +45,8 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
   const attempts = useRef(new Map<string, Attempt>());
   // The last take, which typed words go with: an answer about it, or a follow-up once written.
   const asked = useRef<AskedTake | null>(null);
+  // Files a stopped, failed or questioning turn left open: the next words go with them.
+  const openFiles = useRef<File[]>([]);
   const busy = turns.some((turn) => turn.status === "working");
   const live = useLiveTurn();
   const { thinking, memory, band, request: settings } = useAssistantSettings(chats);
@@ -183,28 +180,27 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
     }
   };
 
-  /**
-   * Sends a typed instruction, with any attached files; resolves once it is answered. Ignored
-   * while another is running.
-   */
+  /** Sends typed words with any attached files; resolves once answered. Ignored while another runs. */
   const send = async (instruction: string, context: RequestContext, files: File[] = []) => {
     const text = instruction.trim();
     if ((!text && !files.length) || busy) return;
     const take = files.length ? null : asked.current;
+    const used = filesFor(files, openFiles.current);
     // An answer to a question about a take: the agent hears the take again, not just the answer.
-    const request: Request = take
-      ? (payload, progress, signal) => requestVoiceAssistant(take.wav, withHeardWords(payload, take), progress, signal)
-      : (payload, progress, signal) => requestAssistant(payload, progress, files, signal);
-    const attached = files.map((file) => ({ name: file.name, kind: attachmentKind(file.type, file.name) ?? "text" }));
-    const result = await run(text, { instruction: text, request, context }, false, undefined, attached);
+    const request = take ? voiceRequest(take.wav, used, take) : typedRequest(used);
+    const result = await run(text, { instruction: text, request, context }, false, undefined, attachedOf(used));
+    openFiles.current = filesAfter(used, result);
     // Attached files start something else: the take is left behind.
     asked.current = askedAfter(asked.current, take, result, files.length > 0);
   };
 
-  const sendTake = async (wav: Uint8Array, context: RequestContext) => {
+  /** Sends a recorded take, with any attached files (a page the musician talks about). */
+  const sendTake = async (wav: Uint8Array, context: RequestContext, files: File[] = []) => {
     if (busy) return;
-    const request: Request = (payload, progress, signal) => requestVoiceAssistant(wav, payload, progress, signal);
-    const result = await run(VOICE_LABEL, { instruction: "", request, context }, true);
+    const used = filesFor(files, openFiles.current);
+    const request = voiceRequest(wav, used);
+    const result = await run(VOICE_LABEL, { instruction: "", request, context }, true, undefined, attachedOf(used));
+    openFiles.current = filesAfter(used, result);
     asked.current = askedAfter(asked.current, { wav, speech: result?.heard?.recognized }, result);
   };
 
@@ -223,6 +219,7 @@ export function useAssistant({ getScore, applyCommands, chats }: Options) {
   const clear = () => {
     attempts.current.clear();
     asked.current = null;
+    openFiles.current = [];
     setTurns([]);
   };
 

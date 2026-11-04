@@ -35,6 +35,11 @@ export function attachmentKind(mediaType: string, name: string): AttachmentKind 
   return null;
 }
 
+/** How a turn's files are shown in the chat: their names and kinds. */
+export function attachedOf(files: readonly { name: string; type: string }[]): { name: string; kind: AttachmentKind }[] {
+  return files.map((file) => ({ name: file.name, kind: attachmentKind(file.type, file.name) ?? "text" }));
+}
+
 /** Whether a browser must re-encode a picture: too large, or a format the model does not take (HEIC). */
 export function needsResize(mediaType: string, width: number, height: number): boolean {
   return !IMAGE_TYPES.includes(mediaType) || Math.max(width, height) > ATTACHMENT_LIMITS.imageSide;

@@ -167,19 +167,43 @@ g:hover > .hoverOnly,
   content: "";
   position: absolute;
   inset: 0 auto 0 0;
-  width: 35%;
-  background: linear-gradient(90deg, transparent, rgb(143 208 160 / 85%), transparent);
+  width: 100%;
+  /* A long wave: a soft rise, two fading trails, and a bright crest at its front. */
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(143 208 160 / 18%) 22%,
+    rgb(143 208 160 / 8%) 34%,
+    rgb(143 208 160 / 40%) 50%,
+    rgb(143 208 160 / 15%) 62%,
+    rgb(143 208 160 / 95%) 84%,
+    transparent 100%
+  );
   mix-blend-mode: lighten;
   pointer-events: none;
-  animation: sweep 2.2s var(--ease-in-out) infinite;
+  /* It glides across slowly, easing gently in and out; the next wave follows right after. */
+  animation:
+    sweep 2.8s cubic-bezier(0.37, 0, 0.63, 1) infinite,
+    swell 2.8s linear infinite;
 }
 
 @keyframes sweep {
   from {
-    transform: translateX(-100%);
+    transform: translateX(-85%);
   }
   to {
-    transform: translateX(300%);
+    transform: translateX(100%);
+  }
+}
+
+@keyframes swell {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  8%,
+  88% {
+    opacity: 1;
   }
 }
 

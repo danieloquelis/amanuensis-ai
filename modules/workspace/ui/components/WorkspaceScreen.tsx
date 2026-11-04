@@ -143,6 +143,7 @@ export function WorkspaceScreen({ workspaceId }: { workspaceId: string }) {
                   playing={playback.playing}
                   loading={playback.loading}
                   startBar={playFrom?.bar ?? null}
+                  working={assistant.busy}
                   onTogglePlay={() => playback.toggle(editor.score, editor.setError, playFrom?.measureId)}
                 />
               }

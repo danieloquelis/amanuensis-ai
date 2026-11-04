@@ -47,16 +47,18 @@ export async function requestAssistant(
   return readStream<AssistantResult>(await fetch("/api/assistant", { method: "POST", body: form, signal }), onProgress);
 }
 
-/** Sends a recorded take (WAV) with the score; the server hears it and runs the assistant. */
+/** Sends a recorded take (WAV) with the score and any attached files; the server hears it and runs the assistant. */
 export async function requestVoiceAssistant(
   wav: Uint8Array,
   payload: AssistantPayload,
   onProgress?: ProgressListener,
   signal?: AbortSignal,
+  files: File[] = [],
 ) {
   const form = new FormData();
   form.append("audio", new Blob([new Uint8Array(wav)], { type: "audio/wav" }), "take.wav");
   form.append("request", JSON.stringify(payload));
+  for (const file of files) form.append("files", file, file.name);
   const response = await fetch("/api/assistant/voice", { method: "POST", body: form, signal });
   return readStream<VoiceResult>(response, onProgress);
 }

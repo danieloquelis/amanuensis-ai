@@ -20,7 +20,8 @@ type ComposerProps = {
   onDraft: (text: string) => void;
   /** Sends the words and the attached files (either may be empty, not both). */
   onSend: (text: string, files: File[]) => void;
-  onTake: (wav: Uint8Array) => void;
+  /** Sends a recorded take with the attached files, if any. */
+  onTake: (wav: Uint8Array, files: File[]) => void;
   /** Files waiting to go with the next request; held by the caller, like the draft. */
   attachments: Attachments;
   /** Stops the turn that is running; what it wrote so far is kept. */
@@ -63,7 +64,12 @@ export function Composer(props: ComposerProps) {
   // Once the text runs past two lines it gets a row of its own, above the orb and the buttons, until the field is empty again.
   const [wrapped, setWrapped] = useState(false);
   const expanded = wrapped && draft.length > 0;
-  const recorder = useVoiceRecorder(onTake);
+  const recorder = useVoiceRecorder((wav) =>
+    onTake(
+      wav,
+      attachments.take().map((item) => item.file),
+    ),
+  );
   const recording = recorder.status === "recording";
   const preparing = recorder.status === "processing";
   const capturing = recording || preparing;

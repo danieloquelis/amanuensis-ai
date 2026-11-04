@@ -10,27 +10,30 @@ type PlaybackControlsProps = {
   loading: boolean;
   /** The bar playback starts from when something is selected; null plays from the beginning. */
   startBar: number | null;
+  /** The assistant is writing: the score isn't final, so it can't be started (a playing score can still be stopped). */
+  working: boolean;
   onTogglePlay: () => void;
 };
 
 /** Play/stop, the global tempo and (with several parts) the mixer, first in the toolbar: listen, then edit. */
-export function PlaybackControls({ editor, playing, loading, startBar, onTogglePlay }: PlaybackControlsProps) {
+export function PlaybackControls({ editor, playing, loading, startBar, working, onTogglePlay }: PlaybackControlsProps) {
   const fromBar = !playing && startBar !== null;
   const label = loading
     ? "Loading sounds"
     : playing
       ? "Stop playback"
-      : fromBar
-        ? `Play from bar ${startBar}`
-        : "Play score";
+      : working
+        ? "Play is available once the assistant is done"
+        : fromBar
+          ? `Play from bar ${startBar}`
+          : "Play score";
   return (
     <div className={styles.transport} role="group" aria-label="Playback">
       <button
         type="button"
         className={styles.play}
         data-playing={playing}
-        // Playing the score is fine while the assistant works on it: it plays what is committed.
-        disabled={!editor.loaded}
+        disabled={!editor.loaded || (working && !playing)}
         onClick={onTogglePlay}
         aria-busy={loading}
         aria-label={label}

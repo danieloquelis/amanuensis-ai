@@ -282,6 +282,11 @@
     0 24px 60px -20px rgb(30 45 30 / 18%);
 }
 
+/* While the assistant writes, the sheet takes no clicks: its turn commits as one step. */
+.paper[data-working="true"] {
+  pointer-events: none;
+}
+
 .scoreHeading {
   text-align: center;
   margin: 32px 0 34px;

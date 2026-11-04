@@ -58,7 +58,13 @@ export function ScoreCanvas({
   useSheetView(canvas, workspaceId, editor.loaded, localSheetViews);
   return (
     <div ref={canvas} className={styles.canvas} onPointerDown={onPress}>
-      <article className={styles.paper} style={{ "--zoom": zoom / 100 } as CSSProperties} aria-label="Music sheet">
+      <article
+        className={styles.paper}
+        data-working={working}
+        style={{ "--zoom": zoom / 100 } as CSSProperties}
+        aria-label="Music sheet"
+        aria-busy={working}
+      >
         <div className={styles.scoreHeading}>
           <input
             key={`${score.id}-${score.title}`}
