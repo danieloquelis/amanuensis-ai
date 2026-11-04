@@ -7,8 +7,10 @@ const MODEL = "muse-voice-transcribe-1.0";
 const TIMEOUT_MS = 30_000;
 const MS_PER_SECOND = 1000;
 /**
- * Words the recognizer should expect in a musician's instructions (Muse Voice Transcribe's keyword
- * biasing), in English and Spanish: without them, "de la batería" was heard as "del día".
+ * Music terms the recognizer should expect in a musician's instructions (Muse Voice Transcribe's
+ * keyword biasing). It hears most of them unaided; the list keeps the rare ones from turning into
+ * common words ("chords" heard as "courts"). Any language can be added; the song's part names are
+ * sent with every take as well.
  */
 const MUSIC_WORDS = [
   ...["beats per minute", "BPM", "Allegro", "Andante", "Adagio", "major", "minor", "sharp", "flat"],
