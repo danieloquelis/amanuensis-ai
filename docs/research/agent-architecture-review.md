@@ -39,7 +39,7 @@ The problems are one level down, and they are cheap to fix:
 ```mermaid
 flowchart LR
   B[Browser: score + selection + history] -->|POST /api/assistant| R[Route: Meta key, model settings]
-  V[Browser: WAV take] -->|POST /api/assistant/voice| H[Muse Voice Transcribe + SwiftF0 locally]
+  V[Browser: WAV take] -->|POST /api/assistant/voice| H[Muse Voice Transcribe + YIN locally]
   H --> RA
   R --> RA[runAssistant: fresh Session from the sent score]
   RA <-->|messages + tools| M[Meta Model API, muse-spark-1.3*]
@@ -60,7 +60,7 @@ flowchart LR
 | --- | --- | --- |
 | Typed words | Text | `application/opening-messages.ts` 25–33 |
 | Spoken words | **Text only.** Muse Voice Transcribe turns with ms times, rendered as a take timeline (`said: "…"`) | `modules/voice/infrastructure/muse-transcriber.ts`; `modules/voice/domain/timeline.ts` 26–39 |
-| Singing | **No audio.** SwiftF0 (MIT ONNX, server-side) plus local domain code find spans, notes and rhythm. The model sees span IDs and lengths, then calls `voice_*` tools that return notes and evidence as JSON | `modules/voice/infrastructure/swift-f0.ts`; `application/music-tools.ts`, `voice-transcription-tool.ts` |
+| Singing | **No audio.** YIN pitch detection and the singing model (our own code, no pretrained model) find spans, notes and rhythm. The model sees span IDs and lengths, then calls `voice_*` tools that return notes and evidence as JSON | `modules/voice/domain/pitch-tracker.ts`, `singing-decoder.ts`; `application/music-tools.ts`, `voice-transcription-tool.ts` |
 | Pictures of sheet music | **Image parts.** Labelled pictures from the notehead detector are shown again after the tool results, plus the detected heads as text | `application/attachments.ts` 69–85; `infrastructure/meta-model.ts` 46–50; `application/source-reading-tool.ts` 77–90; `run-assistant.ts` 132, 227–229 |
 | PDFs | Turned into one picture per page in the browser when attached (pdf.js, `assistant/ui/pdf-pages.ts`), so the detector and the page check run on them like photos. A PDF that cannot be drawn still goes as a file part, read by eye | `use-attachments.ts` |
 | Text files (ABC, chord charts) | Inline text | `attachments.ts` 72 |
@@ -232,7 +232,7 @@ The system prompt is a short TypeScript constant (`application/system-prompt.ts`
 
 - [delivery-plan.md](../planning/delivery-plan.md) line 3 still says "Planning is the current task… No application implementation".
 - The same plan (lines 25, 61) offers count-in, which the product has since ruled out.
-- The SwiftF0 exception to the Meta-first policy is justified with measurements only in commit `755ae27`, not in a decision record. [system-design.md](../architecture/system-design.md) line 50 asks for one.
+- Update 2026-11-04: the SwiftF0 pitch model was removed; pitch is YIN only, and the singing model was refitted on it ([datasets/singing-voice](../../datasets/singing-voice/README.md)). The app uses no models other than Meta's.
 
 ## Framework and SDK
 
@@ -265,7 +265,7 @@ Effort: S ≈ 1–2 days, M ≈ 3–5 days, L ≈ more than a week. All of them 
 
 - `ModelPort` and its scripted fakes.
 - The deterministic engine and typed operations as the only mutation path.
-- The local ear (SwiftF0 plus the domain) for notes, with Muse Voice Transcribe for words.
+- The local ear (YIN plus the domain) for notes, with Muse Voice Transcribe for words.
 - The detector-plus-vision split for pages.
 - Single-step tool calls with hard caps.
 - Act, don't ask, with undo.

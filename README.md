@@ -7,17 +7,20 @@ An agentic music notation editor. You tell it what to write by talking, singing,
 ## Contents
 
 1. [Setup](#setup)
-2. [Tools](#tools)
-3. [Score format](#score-format)
-4. [Voice input](#voice-input)
+2. [Recording a melody](#recording-a-melody)
+   - [How to get the notes right](#how-to-get-the-notes-right)
+   - [How accurate it is](#how-accurate-it-is)
+3. [Tools](#tools)
+4. [Score format](#score-format)
+5. [Voice input](#voice-input)
    - [Spectrum](#spectrum)
    - [Singing model](#singing-model)
-5. [Sheet music input](#sheet-music-input)
-6. [Agents](#agents)
+6. [Sheet music input](#sheet-music-input)
+7. [Agents](#agents)
    - [Agent loop](#agent-loop)
    - [Band Mode](#band-mode)
-7. [Architecture](#architecture)
-8. [Licenses](#licenses)
+8. [Architecture](#architecture)
+9. [Licenses](#licenses)
 
 ## Setup
 
@@ -38,6 +41,33 @@ An agentic music notation editor. You tell it what to write by talking, singing,
    ```sh
    yarn dev
    ```
+
+## Recording a melody
+
+Press **Record a take**, say what you want, play or sing the melody, and press it again to stop. A take can be up to two minutes long.
+
+> “This is the verse, in G, chords G C D G, about 100 BPM… *da da da da*… put it in bar one.”
+
+**What it can hear.** One note at a time (monophonic), sung or played on an instrument such as guitar, piano or trumpet, from about C♯2 to C6. It cannot hear chords. No click or count-in is needed: the tempo comes from the take.
+
+### How to get the notes right
+
+1. **Sing on syllables like “da” or “ta”, not lyrics.** The consonant marks where each note starts, and recognised words count as talk.
+2. **Say the key and chords first** (“in D, chords D G A”). For rough singing this takes exact notes from 39% to 72%.
+3. **Leave a short breath between talking and singing**, and play or sing the last note as loud as the others.
+
+### How accurate it is
+
+Measured on the ear alone, before the agent checks the result (`yarn eval:voice`):
+
+| Take | Notes exactly right |
+| --- | ---: |
+| Steady, in-tune singing (126 notes) | 100% |
+| Untrained singing (18 notes) | 39% |
+| Untrained singing, chords said first (18 notes) | 72% |
+| Real fast riff, sung (96 notes) | 25% (63% right pitch) |
+
+The first three are a synthetic test voice with controlled mistakes. The tempo is found within 5% in every synthetic take.
 
 ## Tools
 
@@ -82,12 +112,12 @@ Every change, from the editor or from an agent, goes through one function, `appl
 A single recording can mix talk and singing: “Put this in bar three… *da da da*… and make it swing.”
 
 - **Words:** Muse Voice Transcribe hears the words, with their times, biased toward music terms such as BPM, Allegro and compás.
-- **Pitch:** YIN and SwiftF0 (a small ONNX model on the server) measure the pitch every 10 ms.
+- **Pitch:** YIN, a classic pitch-detection algorithm implemented in our own code, measures the pitch every 10 ms.
 - **The agent:** Muse Spark never hears audio. It reads a timeline of what was said and when something was sung, then calls `voice_transcribe_melody`.
 - **Notes:** `voice_transcribe_melody` cuts the pitch track into notes and works out the tempo (following the singer’s drift) and the key.
 - **Check:** `voice_check` compares the written bars with what was sung.
 
-The app receives both the words and the audio. To tell instructions from sung parts, it combines the pitch tracker with the spectrum of frequencies (a Fourier transform of the sound) and with where Muse Voice Transcribe did and didn’t hear words. A small model of our own uses these to label every 10 ms of the recording as talk or singing. That labeling is what the timeline is built from, and the next two sections explain it.
+The app receives both the words and the audio. To tell instructions from sung parts, it combines the pitch from YIN with the spectrum of frequencies (a Fourier transform of the sound) and with where Muse Voice Transcribe did and didn’t hear words. A small model of our own uses these to label every 10 ms of the recording as talk or singing. It is plain maths (a logistic regression and a hidden Markov model) trained from scratch on recordings made for this project. No pretrained model is involved; the only models the app uses are Meta's. That labeling is what the timeline is built from, and the next two sections explain it.
 
 ### Spectrum
 
@@ -107,32 +137,36 @@ A sung vowel is a steady tone, so its energy sits on the harmonics with deep gap
 
 ### Singing model
 
-**Why we need it.** No single measure is reliable by itself: in the take above, harmonicity dips at every note change of the sung part, and some talk frames score high. So the model combines ten measures. Three come from the spectrum, three from the pitch tracker, and four from where Muse Voice Transcribe did and didn’t hear words.
+**Why we need it.** No single measure is reliable by itself: in the take above, harmonicity dips at every note change of the sung part, and some talk frames score high. So the model combines ten measures. Three come from the spectrum, three from YIN, and four from where Muse Voice Transcribe did and didn’t hear words.
 
 **How it works.** Each measure gets a weight, and the weighted sum becomes the probability that the frame is singing:
 
 $$
-P(\text{singing}) = \sigma\Big(b + \sum_{i=1}^{10} w_i x_i\Big), \qquad \sigma(z) = \frac{1}{1 + e^{-z}}, \qquad b = -2.66
+P(\text{singing}) = \sigma\Big(b + \sum_{i=1}^{10} w_i x_i\Big), \qquad \sigma(z) = \frac{1}{1 + e^{-z}}, \qquad b = -1.96
 $$
 
 Here $x_i$ are the ten measures (averaged over the quarter second around the frame and rescaled). A positive weight pushes toward singing, a negative one toward talk. The weights are learned from data, not set by hand:
 
 | Measure | From | Weight |
 | --- | --- | ---: |
-| Harmonicity | FFT | +2.34 |
-| No recognised words here (at a slow speaking rate) | Muse Voice Transcribe | +1.90 |
-| The word here is a sung syllable (“da”, “la”) | Muse Voice Transcribe | +0.95 |
-| Pitch tracker confidence | pitch tracker | +0.60 |
-| No recognised words here (typical rate) | Muse Voice Transcribe | +0.52 |
-| Syllable rhythm | FFT | +0.37 |
-| Spectral flux | FFT | +0.36 |
-| Share of time with voice | pitch tracker | −0.27 |
-| No recognised words here (fast rate) | Muse Voice Transcribe | −0.38 |
-| Pitch slide between frames | pitch tracker | −0.90 |
+| Harmonicity | FFT | +2.25 |
+| No recognised words here (at a slow speaking rate) | Muse Voice Transcribe | +2.10 |
+| The word here is a sung syllable (“da”, “la”) | Muse Voice Transcribe | +1.13 |
+| No recognised words here (typical rate) | Muse Voice Transcribe | +0.61 |
+| Syllable rhythm | FFT | +0.47 |
+| Pitch clarity | YIN | +0.18 |
+| Spectral flux | FFT | +0.03 |
+| Share of time with voice | YIN | −0.20 |
+| No recognised words here (fast rate) | Muse Voice Transcribe | −0.35 |
+| Pitch slide between frames | YIN | −1.19 |
 
 A frame on its own can still be wrong, so a hidden Markov model decodes the whole recording at once. It assumes that the voice rarely switches between talk and singing (3 times in 1,000 frames), so a single odd frame can’t flip the label but a sustained change can.
 
-**Training.** `yarn fit:singing` fits the weights on 56 recordings made for this project: 29 talk only, 8 singing only, and 19 talk then singing. Pieces of the talk-only and singing-only recordings are joined into 40 mixed takes, so the right label for every frame is known. The model is tested on a half of them that share no recording with the half it was fitted on. It labels 97–99% of voice frames correctly and places 89–91% of the switches within 0.25 s. Read as whole recordings, it gets 55 of the 56 right.
+**Training.** The weights are found by gradient descent on the log-loss (400 steps, a small L2 penalty), and the two HMM settings by a grid search. The data is 56 recordings made for this project: 29 talk only, 8 singing only, and 19 talk then singing. Pieces of the talk-only and singing-only recordings are joined into 40 mixed takes, so the right label for every frame is known.
+
+**Results.** Each half of the mixes is read by a model fitted on the other half, which shares no recording with it. It labels 93–98% of voice frames correctly and places 85–86% of the switches within 0.25 s. Read as whole recordings, it gets 55 of the 56 right.
+
+**Dataset.** Everything the model was trained on is in [`datasets/singing-voice`](datasets/singing-voice/README.md): the 56 recordings, their labels, and the words Muse Voice Transcribe heard in them and in the mixes. Its README explains each step. `yarn fit:singing` reads only that folder, makes no API calls, and reproduces the weights above exactly.
 
 ## Sheet music input
 
@@ -214,11 +248,10 @@ The third-party parts below keep their own licenses:
 | Part | Use | License |
 | --- | --- | --- |
 | [Muse Spark](https://dev.meta.ai), [Muse Voice Transcribe](https://dev.meta.ai) | Agents; speech recognition | Meta AI API terms |
-| [SwiftF0](https://github.com/lars76/swift-f0) | Pitch tracking (ONNX model) | MIT |
 | [Splendid Grand Piano](https://github.com/smpldsnds/sfzinstruments-splendid-grand-piano) | Piano samples | Public domain |
 | [FluidR3 GM](https://github.com/gleitz/midi-js-soundfonts) | Guitar, bass, brass, flute and string samples | CC BY 3.0 (Fluid R3: MIT) |
 | [Versilian Community Sample Library](https://github.com/sgossner/VCSL) | Drum samples | CC0 1.0 |
-| [Next.js](https://nextjs.org), [React](https://react.dev), [Phosphor Icons](https://phosphoricons.com), [smplr](https://github.com/danigb/smplr), [zod](https://zod.dev), [ONNX Runtime](https://onnxruntime.ai) | App, icons, sample playback, schemas, model runtime | MIT |
+| [Next.js](https://nextjs.org), [React](https://react.dev), [Phosphor Icons](https://phosphoricons.com), [smplr](https://github.com/danigb/smplr), [zod](https://zod.dev) | App, icons, sample playback, schemas | MIT |
 | [PDF.js](https://mozilla.github.io/pdf.js/), [sharp](https://sharp.pixelplumbing.com) | PDF pages as pictures; image decoding | Apache 2.0 |
 | [“The Horseman”, read for LibriVox](https://archive.org/details/spc137_1411_librivox) | The talk in the voice figures | Public domain |
 

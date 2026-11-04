@@ -17,6 +17,7 @@ Read [docs/architecture/code-conventions.md](docs/architecture/code-conventions.
 - `tests` - unit, integration and Playwright e2e tests, with fixtures
 - `scripts` - evals, experiments and asset tooling run with `tsx`
 - `docs` - architecture conventions and planning notes
+- `datasets` - the data the singing model is trained on (`yarn fit:singing`); nothing else goes there
 
 <!-- BEGIN:nextjs-agent-rules -->
 

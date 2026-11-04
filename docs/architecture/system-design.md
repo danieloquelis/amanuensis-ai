@@ -47,7 +47,7 @@ Use Muse Spark for orchestration and Muse Voice Transcribe for spoken instructio
 
 SAM Audio is an optional separation adapter. Clean unaccompanied voice should not require a separation call. It must improve measured note extraction before joining the main path. The hosted visual SAM API must not be mistaken for SAM Audio hosting.
 
-Activity classification and F0/onset estimation require explicit evaluation. Start by comparing a DSP baseline and a specialist monophonic model while evaluating suitable Meta capabilities. A non-Meta adapter needs a recorded reason: missing capability, unavailable access, or measured quality/latency failure. Select model versions independently and regression-test migrations. No fallback should silently send recordings to a new provider.
+Activity classification and F0/onset estimation are our own code, with no pretrained model: YIN for pitch, our FFT for the spectrum, and a logistic regression with a hidden Markov model for talk versus singing. That model is trained from scratch on [datasets/singing-voice](../../datasets/singing-voice/README.md). A pretrained pitch model (SwiftF0) was tried and removed on 2026-11-04: the only models the app uses are Meta's. No fallback should silently send recordings to a new provider.
 
 ## Runtime and deployment
 

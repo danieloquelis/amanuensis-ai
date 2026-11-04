@@ -7,8 +7,6 @@ import {
   createTake,
   decodeWav,
   takeParts,
-  type PitchTracker,
-  type PitchTrack,
   type SpeechRecognizer,
   type SpeechTurn,
   type SungSpan,
@@ -75,7 +73,6 @@ export async function handleVoiceRequest(
     /** The band's musicians' model, a level of thinking below (Band Mode). */
     musicians?: ModelPort;
     recognizer: SpeechRecognizer;
-    pitchTracker?: PitchTracker;
     signal?: AbortSignal;
   },
   onProgress: ProgressListener = () => {},
@@ -98,15 +95,7 @@ export async function handleVoiceRequest(
   let speech: SpeechTurn[];
   const { speech: heardBefore, ...request } = parsed.data;
   onProgress({ stage: "hearing" });
-  // The learned pitch tracker runs while the words are recognized; without it the ear uses YIN.
   const started = Date.now();
-  let pitchMs = 0;
-  const tracking: Promise<PitchTrack | undefined> = services.pitchTracker
-    ? services.pitchTracker
-        .track(signal)
-        .catch(() => undefined)
-        .finally(() => (pitchMs = Date.now() - started))
-    : Promise.resolve(undefined);
   try {
     // A take sent again with an answer was heard already: it is not paid for twice.
     // The song's own parts are words the musician is likely to say.
@@ -116,7 +105,9 @@ export async function handleVoiceRequest(
     return failure(502, error instanceof Error ? error.message : "Speech recognition failed.");
   }
   const speechMs = Date.now() - started;
-  const take = createTake(signal, speech, await tracking);
+  const pitchStarted = Date.now();
+  const take = createTake(signal, speech);
+  const pitchMs = Date.now() - pitchStarted;
   const heard = { speech: take.speech, sung: take.sung, recognized: speech, ms: { speech: speechMs, pitch: pitchMs } };
   onProgress({ stage: "heard", parts: takeParts(take.speech, take.sung) });
   if (!take.speech.length && !take.sung.length && !take.voice.length && !parsed.data.instruction) {

@@ -1,0 +1,22 @@
+[
+  {
+    "start": 0,
+    "end": 1.42,
+    "text": "make it in C"
+  },
+  {
+    "start": 2.38,
+    "end": 8.54,
+    "text": "Let's review the chords and see if it it fits the melody. If not, propose new changes."
+  },
+  {
+    "start": 8.62,
+    "end": 8.62,
+    "text": "new changes"
+  },
+  {
+    "start": 15.1,
+    "end": 23.42,
+    "text": "Now let's increment the beat to 120. Let's add a new new bar and this will be a reflection like a copy of the first bar only."
+  }
+]

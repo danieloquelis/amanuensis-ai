@@ -1,73 +1,22 @@
-// Takes in .takes/ labeled by what they hold, for fitting and checking the singing model
-// (yarn fit:singing). Named by the start of their folder name; labeled from the words and by ear.
+// The singing model's dataset (datasets/singing-voice, see its README): takes labeled by what
+// they hold, for fitting and checking the model (yarn fit:singing). Labeled from the words and by ear.
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+export const SINGING_DATASET = "datasets/singing-voice";
+/** One take of the dataset: its recording and the words Muse Voice Transcribe heard in it. */
+export const datasetTake = (id: string) => join(SINGING_DATASET, "takes", id);
+
+const labels: { allSung: string[]; talkThenSinging: string[]; allSpoken: string[] } = JSON.parse(
+  readFileSync(join(SINGING_DATASET, "labels.json"), "utf8"),
+);
 
 /** Nothing but singing (or syllables sung): every moment of voice is singing. */
-export const ALL_SUNG = [
-  "2026-10-29T00-58-30",
-  "2026-10-29T13-18-17",
-  "2026-10-29T13-19-35",
-  "2026-10-29T15-04-54",
-  "2026-10-29T15-05-22",
-  "2026-10-29T15-05-38",
-  "2026-10-29T15-06-44",
-  "2026-10-29T15-04-28",
-];
-
+export const ALL_SUNG = labels.allSung;
 /** Talk, then singing. Only the moments the words account for are labeled: sung where the words are syllables. */
-export const TALK_THEN_SINGING = [
-  "2026-10-29T15-05-59",
-  "2026-10-29T13-10-53",
-  "2026-10-29T13-06-05",
-  "2026-10-29T10-03-23",
-  "2026-10-28T19-50-50",
-  "2026-10-28T20-07-01",
-  "2026-10-28T20-23-34",
-  "2026-10-28T20-45-16",
-  "2026-10-28T20-54-31",
-  "2026-10-28T21-04-58",
-  "2026-10-28T21-12-38",
-  "2026-10-28T21-23-53",
-  "2026-10-28T23-24-24",
-  "2026-10-28T23-24-41",
-  "2026-10-28T23-25-01",
-  "2026-10-28T23-36-38",
-  "2026-10-28T23-37-08",
-  "2026-10-28T23-38-11",
-  "2026-10-28T23-38-46",
-];
-
+export const TALK_THEN_SINGING = labels.talkThenSinging;
 /** Talk only: no moment of voice is singing. */
-export const ALL_SPOKEN = [
-  "2026-10-29T13-22-41",
-  "2026-10-29T13-21-12",
-  "2026-10-29T13-20-09",
-  "2026-10-29T13-11-38",
-  "2026-10-29T13-02-03",
-  "2026-10-29T01-23-04",
-  "2026-10-29T01-21-19",
-  "2026-10-29T01-19-22",
-  "2026-10-29T01-14-49",
-  "2026-10-29T01-09-05",
-  "2026-10-29T01-07-41",
-  "2026-10-29T01-05-08",
-  "2026-10-29T01-00-09",
-  "2026-10-29T13-05-12",
-  "2026-10-29T13-03-57",
-  "2026-10-29T13-01-13",
-  "2026-10-28T20-22-28",
-  "2026-10-28T20-24-23",
-  "2026-10-28T20-25-08",
-  "2026-10-28T20-26-17",
-  "2026-10-28T20-28-05",
-  "2026-10-28T20-28-37",
-  "2026-10-28T20-34-47",
-  "2026-10-28T20-36-54",
-  "2026-10-28T20-37-49",
-  "2026-10-28T20-46-07",
-  "2026-10-28T20-46-47",
-  "2026-10-28T20-50-53",
-  "2026-10-28T23-21-38",
-];
+export const ALL_SPOKEN = labels.allSpoken;
 
 /**
  * Kept as unit-test fixtures (pitch and words, no audio): the syllable takes that used to be

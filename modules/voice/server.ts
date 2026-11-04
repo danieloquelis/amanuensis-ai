@@ -3,4 +3,3 @@
 export { cachedRecognizer } from "./infrastructure/cached-recognizer";
 export { createMuseTranscriber, META_API_URL } from "./infrastructure/muse-transcriber";
 export { archiveTake } from "./infrastructure/take-archive";
-export { createSwiftF0Tracker } from "./infrastructure/swift-f0";

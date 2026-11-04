@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { handleVoiceRequest, type ModelPort, type ProgressEvent, type VoiceResult } from "@/modules/assistant";
 import { createExample } from "@/modules/score";
-import { decodeWav, encodeWav, type PitchTracker, type SpeechRecognizer, type SpeechTurn } from "@/modules/voice";
+import { decodeWav, encodeWav, type SpeechRecognizer, type SpeechTurn } from "@/modules/voice";
 import { singMelody } from "../support/synthetic-voice";
 
 const RATE = 16_000;
@@ -126,21 +126,6 @@ test("a speech service failure becomes a readable 502", async () => {
   const audio = encodeWav({ samples: sine(1), sampleRate: RATE });
   const response = await handleVoiceRequest({ audio, payload }, { model, recognizer });
   assert.deepEqual(response, { status: 502, body: { error: "Speech recognition failed (503)." } });
-});
-
-test("when the learned pitch tracker fails, the take is still heard with the built-in ear", async () => {
-  const { recognizer } = fakeRecognizer();
-  const { model, seen } = fakeModel();
-  const pitchTracker: PitchTracker = {
-    async track() {
-      throw new Error("model file missing");
-    },
-  };
-  const audio = encodeWav(singMelody(phrase, { bpm: 120, sampleRate: RATE }));
-  const response = await handleVoiceRequest({ audio, payload }, { model, recognizer, pitchTracker });
-  assert.equal(response.status, 200);
-  assert.equal((response.body as VoiceResult).heard.sung.length, 1);
-  assert.match(seen[0], /sang: sung-1/);
 });
 
 test("what was said and sung is reported before the agent starts thinking", async () => {

@@ -25,7 +25,6 @@ export function architecture() {
     <div style="display:flex;flex-direction:column;gap:12px">
       <div class="box meta"><b>Muse Spark</b><small>used by assistant</small></div>
       <div class="box meta"><b>Muse Voice Transcribe</b><small>used by voice</small></div>
-      <div class="box"><b>SwiftF0</b><small>local model, used by voice</small></div>
     </div>
   </div>
   ${legend([[COLOR.meta, "Meta API, or a module that calls it"]])}`;

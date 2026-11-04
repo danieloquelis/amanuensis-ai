@@ -4,7 +4,7 @@
 // Usage: yarn fit:singing             fit, report, and write the model
 //        yarn fit:singing --check     report on the model in the code, without fitting
 //        yarn fit:singing --fixture   also write the FIXTURE takes' sound for the unit tests
-// The mixes are heard by the speech service as the app hears a take (cached in .cache/transcripts).
+// Everything it reads is in datasets/singing-voice (see its README); it makes no API calls.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { sungStretches, SINGING_MODEL, type SingingModel } from "@/modules/voice";
 import { describeScore, within, type BoundaryScore } from "./lib/boundary-score.mjs";
@@ -98,7 +98,7 @@ console.log(
   `Real takes: ${takes.right}/${real.size} read as labeled (talk only, or some singing); ${takes.falseAlarms} talk taken for singing.`,
 );
 
-// Pitch, sound and words only: no audio leaves .takes/.
+// Pitch, sound and words only, for the unit tests.
 if (process.argv.includes("--fixture")) {
   const round = (x: number, places: number) => Math.round(x * 10 ** places) / 10 ** places;
   const kept = FIXTURE.map((prefix) => {

@@ -1,13 +1,6 @@
 // Public API of the voice module (framework-free).
 export { frequencyToMidi, segmentNotes, type SungNote } from "./domain/notes";
-export {
-  trackPitch,
-  withPitchTrack,
-  VOICE_RANGE_HZ,
-  type PitchFrame,
-  type PitchTrack,
-  type Signal,
-} from "./domain/pitch-tracker";
+export { trackPitch, VOICE_RANGE_HZ, type PitchFrame, type Signal } from "./domain/pitch-tracker";
 export {
   estimateTempo,
   quantizeNotes,
@@ -40,7 +33,6 @@ export {
   type ResolvedNote,
 } from "./domain/musical-priors";
 export type { SpeechRecognizer } from "./application/speech-port";
-export type { PitchTracker } from "./application/pitch-port";
 export { decodeWav, encodeWav } from "./domain/wav";
 export { barEvidence, hearingOf, type BarEvidence, type Hearing } from "./domain/evidence";
 export {
