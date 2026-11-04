@@ -205,7 +205,11 @@ More in [docs/](docs/README.md).
 
 ## Licenses
 
-<!-- The project's own license is not chosen yet: add it here (and a LICENSE file). -->
+© 2026 Daniel Oquelis. All rights reserved.
+
+The source is public for judging the Meta Global AI Developer Hackathon. Hackathon judges and organizers may clone, install and run it to evaluate the entry. No other license to copy, modify or redistribute it is granted.
+
+The third-party parts below keep their own licenses:
 
 | Part | Use | License |
 | --- | --- | --- |
