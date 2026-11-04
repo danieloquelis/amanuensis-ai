@@ -4,8 +4,6 @@
 
 A music notation editor you can talk and sing to. Sing a melody and say what to do with it, and an agent writes it into the score. Amanuensis can also read sheet music from a photo or a PDF. In Band Mode, a separate agent plays each instrument and arranges the piece with the others. Built on Meta’s **Muse Spark** and **Muse Voice Transcribe**.
 
-![Amanuensis in use](docs/readme/demo.mp4)
-
 ## Contents
 
 1. [Setup](#setup)
