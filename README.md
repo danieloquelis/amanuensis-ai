@@ -111,7 +111,7 @@ Every change, from the editor or from an agent, goes through one function, `appl
 
 A single recording can mix talk and singing: “Put this in bar three… *da da da*… and make it swing.”
 
-- **Words:** Muse Voice Transcribe hears the words, with their times, biased toward music terms such as BPM, Allegro and compás.
+- **Words:** Muse Voice Transcribe hears the words, with their times, biased toward music terms such as BPM, Allegro, chord and triplet.
 - **Pitch:** YIN, a classic pitch-detection algorithm implemented in our own code, measures the pitch every 10 ms.
 - **The agent:** Muse Spark never hears audio. It reads a timeline of what was said and when something was sung, then calls `voice_transcribe_melody`.
 - **Notes:** `voice_transcribe_melody` cuts the pitch track into notes and works out the tempo (following the singer’s drift) and the key.
@@ -185,7 +185,7 @@ In the example above, the detector missed the two half notes on a ledger line. P
 
 ![Notes read with the right pitch, without and with the labels](docs/readme/vision-eval.png)
 
-This chart shows notes read with the right pitch on four engraved test pages whose exact score is known. It uses Muse Spark 1.3 at low thinking (`yarn eval:sheet-reading`). Details: [docs/research/sheet-reading.md](docs/research/sheet-reading.md).
+This chart shows notes read with the right pitch on four engraved test pages whose exact score is known. It uses Muse Spark 1.3 at low thinking (`yarn eval:sheet-reading`), the level the app uses whenever a page is attached: more thinking was slower and less accurate. Details: [docs/research/sheet-reading.md](docs/research/sheet-reading.md).
 
 ## Agents
 
@@ -213,7 +213,7 @@ In Band Mode, the chat agent becomes the bandleader:
 - **Plan.** The bandleader writes the material (a subject, hook or riff). Then it calls `band_arrange` with the style, the form, and who carries the tune where. `band_arrange` copies the tune into those parts.
 - **Musicians.** `band_arrange` starts one musician agent per part. Each is its own Muse Spark conversation with its own prompt: its instrument’s craft, the style, and its role in each section. Each has five tools: `score_get_context`, `score_write`, `score_edit`, `band_motif` (places the material, moved in the key, inverted or augmented) and `band_note`. Writes outside its own staves are refused.
 - **Round 1.** All musicians write at the same time, up to 3 tool steps each. They send each other notes with `band_note(to, note)`; the band board holds each note until its recipient’s next turn.
-- **Craft listener.** Plain code reads the whole score and marks what a composition teacher would: parallel fifths and octaves, lines that are only scales, every part in the same rhythm, bars copied note for note, one dynamic throughout, everyone always playing.
+- **Craft listener.** Plain code reads the whole score and flags common arranging problems: parallel fifths and octaves, lines that are only scales, every part in the same rhythm, bars copied note for note, one dynamic throughout, everyone always playing.
 - **Rehearsal.** All musicians again at the same time, up to 2 steps each, at low thinking. Each one reads the problems involving its part and the notes sent to it, fixes its part, and answers.
 - **Reply.** `band_listen` summarises the result for the bandleader, who replies to you.
 
